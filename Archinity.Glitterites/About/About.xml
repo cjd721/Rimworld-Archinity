@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Archinity - Glitterites</name>
+  <author>cjd72</author>
+  <packageId>archinity.glitterites</packageId>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>Part of the Archinity suite.
+
+Adds the Glitterites: an Ultra-tech permanent enemy, seeded by the archons as a threshold. They hold orbit, they field mixed forces of overclocked soldiers and mechanoids, and they will not be negotiated with.
+
+Their settlements generate in orbit only. Their planetside presence comes from Ushanka's Glittertech Expansion, whose glitterheart outpost and facility quests are rebound to this faction - so every glitterheart you take is taken off them.
+
+Those quests are also re-gated for a long multi-era playthrough: vanilla ships them at day 45 with 1000 threat points, which is far too early for a run that begins in the neolithic.
+
+Mechanoid deployment uses vanilla mechs as a guaranteed backbone, with Alpha Mechs layered on where present.
+
+Requires Odyssey (orbit layer) and Biotech. Glittertech Expansion and Alpha Mechs are optional - without them the faction simply fields a smaller roster and gains no planetside sites.</description>
+  <loadAfter>
+    <li>Ludeon.RimWorld</li>
+    <li>Ludeon.RimWorld.Royalty</li>
+    <li>Ludeon.RimWorld.Ideology</li>
+    <li>Ludeon.RimWorld.Biotech</li>
+    <li>Ludeon.RimWorld.Odyssey</li>
+    <li>OskarPotocki.VanillaFactionsExpanded.Core</li>
+    <li>Ushanka.GlittertechExpansion</li>
+    <li>sarg.alphamechs</li>
+    <li>archinity.origins</li>
+    <li>archinity.pacing</li>
+    <li>archinity.drifters</li>
+  </loadAfter>
+</ModMetaData>

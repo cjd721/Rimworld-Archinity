@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Ultra-tier humans. Deliberately expensive per head: the Glitterites
+       field few bodies and a lot of machine, so combatPower runs high and
+       the faction's maxPawnCostPerTotalPointsCurve is raised to match.
+
+       Gear tags mirror Ushanka's USH_AncientGlittertechSoldier so the whole
+       force reads as one armoury. -->
+
+  <PawnKindDef Name="Archinity_GLBase" Abstract="True">
+    <race>Human</race>
+    <defaultFactionDef>Archinity_Glitterites</defaultFactionDef>
+    <backstoryCryptosleepCommonality>1</backstoryCryptosleepCommonality>
+    <chemicalAddictionChance>0.05</chemicalAddictionChance>
+    <maxGenerationAge>60</maxGenerationAge>
+    <apparelIgnoreSeasons>true</apparelIgnoreSeasons>
+    <apparelIgnorePollution MayRequire="Ludeon.RimWorld.Biotech">true</apparelIgnorePollution>
+    <invNutrition>2.55</invNutrition>
+    <itemQuality>Excellent</itemQuality>
+    <biocodeWeaponChance>0.85</biocodeWeaponChance>
+    <initialWillRange>4~6</initialWillRange>
+    <initialResistanceRange>20~32</initialResistanceRange>
+    <requiredWorkTags>
+      <li>Violent</li>
+    </requiredWorkTags>
+  </PawnKindDef>
+
+  <!-- Non-combatant, settlements only. -->
+  <PawnKindDef ParentName="Archinity_GLBase">
+    <defName>Archinity_GL_Technician</defName>
+    <label>threshold technician</label>
+    <labelPlural>threshold technicians</labelPlural>
+    <combatPower>60</combatPower>
+    <isFighter>false</isFighter>
+    <requiredWorkTags Inherit="False" />
+    <gearHealthRange>0.6~1.0</gearHealthRange>
+    <apparelTags>
+      <li>IndustrialAdvanced</li>
+      <li>SpacerMilitary</li>
+    </apparelTags>
+    <apparelMoney>1200~2500</apparelMoney>
+    <apparelAllowHeadgearChance>0.5</apparelAllowHeadgearChance>
+    <weaponTags>
+      <li>SpacerGun</li>
+    </weaponTags>
+    <weaponMoney>400~900</weaponMoney>
+    <techHediffsChance>0.3</techHediffsChance>
+    <techHediffsMoney>800~2000</techHediffsMoney>
+    <techHediffsTags>
+      <li>Advanced</li>
+    </techHediffsTags>
+  </PawnKindDef>
+
+  <!-- Line infantry. -->
+  <PawnKindDef ParentName="Archinity_GLBase">
+    <defName>Archinity_GL_Warden</defName>
+    <label>threshold warden</label>
+    <labelPlural>threshold wardens</labelPlural>
+    <combatPower>160</combatPower>
+    <gearHealthRange>1~1</gearHealthRange>
+    <apparelTags>
+      <li>IndustrialMilitaryAdvanced</li>
+      <li>SpacerMilitary</li>
+      <li>BeltDefensePop</li>
+    </apparelTags>
+    <apparelMoney>4000~7000</apparelMoney>
+    <apparelAllowHeadgearChance>1</apparelAllowHeadgearChance>
+    <weaponTags>
+      <li>SpacerGun</li>
+    </weaponTags>
+    <weaponMoney>1500~3000</weaponMoney>
+    <techHediffsChance>0.45</techHediffsChance>
+    <techHediffsMoney>2000~4000</techHediffsMoney>
+    <techHediffsTags>
+      <li>Advanced</li>
+      <li>AdvancedWeapon</li>
+    </techHediffsTags>
+    <techHediffsRequired>
+      <li>DeathAcidifier</li>
+    </techHediffsRequired>
+    <combatEnhancingDrugsChance>0.5</combatEnhancingDrugsChance>
+    <combatEnhancingDrugsCount>1~2</combatEnhancingDrugsCount>
+    <skills>
+      <li>
+        <skill>Shooting</skill>
+        <range>10~16</range>
+      </li>
+    </skills>
+  </PawnKindDef>
+
+  <!-- Elite. -->
+  <PawnKindDef ParentName="Archinity_GLBase">
+    <defName>Archinity_GL_Lector</defName>
+    <label>threshold lector</label>
+    <labelPlural>threshold lectors</labelPlural>
+    <combatPower>260</combatPower>
+    <gearHealthRange>1~1</gearHealthRange>
+    <maxGenerationAge>45</maxGenerationAge>
+    <apparelTags>
+      <li>SpacerMilitary</li>
+      <li>BeltDefensePop</li>
+    </apparelTags>
+    <apparelMoney>6000~10000</apparelMoney>
+    <apparelAllowHeadgearChance>1</apparelAllowHeadgearChance>
+    <apparelRequired Inherit="False">
+      <li>Apparel_PowerArmor</li>
+      <li>Apparel_PowerArmorHelmet</li>
+    </apparelRequired>
+    <weaponTags>
+      <li>SpacerGun</li>
+    </weaponTags>
+    <weaponMoney>3000~5000</weaponMoney>
+    <techHediffsChance>0.85</techHediffsChance>
+    <techHediffsMoney>4000~9000</techHediffsMoney>
+    <techHediffsTags>
+      <li>Advanced</li>
+      <li>AdvancedWeapon</li>
+    </techHediffsTags>
+    <techHediffsRequired>
+      <li>DeathAcidifier</li>
+    </techHediffsRequired>
+    <combatEnhancingDrugsChance>0.9</combatEnhancingDrugsChance>
+    <combatEnhancingDrugsCount>2~3</combatEnhancingDrugsCount>
+    <disallowedTraits>
+      <li>Brawler</li>
+    </disallowedTraits>
+    <skills>
+      <li>
+        <skill>Shooting</skill>
+        <range>14~20</range>
+      </li>
+    </skills>
+  </PawnKindDef>
+
+  <!-- Faction leader. -->
+  <PawnKindDef ParentName="Archinity_GLBase">
+    <defName>Archinity_GL_Magistrate</defName>
+    <label>threshold magistrate</label>
+    <labelPlural>threshold magistrates</labelPlural>
+    <factionLeader>true</factionLeader>
+    <combatPower>320</combatPower>
+    <gearHealthRange>1~1</gearHealthRange>
+    <maxGenerationAge>70</maxGenerationAge>
+    <apparelTags>
+      <li>SpacerMilitary</li>
+      <li>BeltDefensePop</li>
+    </apparelTags>
+    <apparelMoney>8000~14000</apparelMoney>
+    <apparelAllowHeadgearChance>1</apparelAllowHeadgearChance>
+    <weaponTags>
+      <li>SpacerGun</li>
+    </weaponTags>
+    <weaponMoney>4000~7000</weaponMoney>
+    <techHediffsChance>1</techHediffsChance>
+    <techHediffsMoney>8000~14000</techHediffsMoney>
+    <techHediffsTags>
+      <li>Advanced</li>
+      <li>AdvancedWeapon</li>
+    </techHediffsTags>
+    <techHediffsRequired>
+      <li>DeathAcidifier</li>
+    </techHediffsRequired>
+    <combatEnhancingDrugsChance>1</combatEnhancingDrugsChance>
+    <combatEnhancingDrugsCount>2~3</combatEnhancingDrugsCount>
+    <initialResistanceRange>30~45</initialResistanceRange>
+    <skills>
+      <li>
+        <skill>Shooting</skill>
+        <range>16~20</range>
+      </li>
+    </skills>
+  </PawnKindDef>
+
+</Defs>

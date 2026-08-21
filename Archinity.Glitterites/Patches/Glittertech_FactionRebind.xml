@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       REBIND USHANKA'S GLITTERTECH EXPANSION TO THE GLITTERITES
+
+       Glittertech Expansion ships combat quests for glitterheart facilities
+       and outposts, defended by USH_AncientGlittertechSoldier, all owned by
+       the generic Core faction AncientsHostile.
+
+       Repointing those at the Glitterites makes the discovery arc and the
+       antagonist arc the same thing mechanically, not just thematically:
+       every glitterheart you strip is taken off THEM, and their installations
+       are the reason those sites exist at all.
+
+       It also solves the surface-presence problem. The Glitterites generate
+       settlements in orbit only, because FactionDef has no per-layer
+       settlement weighting and whitelisting Surface would make them a
+       planetside faction by sheer tile count. These quest sites spawn 2-6
+       tiles from your colony, so their planetside footprint is dynamic,
+       always reachable, and always relevant.
+
+       Four bindings. The selectionWeightAncientsHostile slate variable is
+       just an identifier and is deliberately left alone.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationFindMod">
+    <mods>
+      <li>Ushankas Glittertech Expansion</li>
+    </mods>
+    <match Class="PatchOperationSequence">
+      <operations>
+
+        <!-- 1. The soldiers belong to us now. -->
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/PawnKindDef[defName="USH_AncientGlittertechSoldier"]/defaultFactionDef</xpath>
+          <value>
+            <defaultFactionDef>Archinity_Glitterites</defaultFactionDef>
+          </value>
+        </li>
+
+        <!-- 2. The quest's faction-exists guard. -->
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechQuestBase"]//li[@Class="QuestNode_FactionExists"]/faction</xpath>
+          <value>
+            <faction>Archinity_Glitterites</faction>
+          </value>
+        </li>
+
+        <!-- 3. The site's owning faction.
+             The text() predicate matters. Without it this xpath also matches
+             a second node whose value is the slate REFERENCE "$siteFaction",
+             and rewriting that would turn a variable lookup into a literal. -->
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechQuestBase"]//li[name="siteFaction"]/value[text()="AncientsHostile"]</xpath>
+          <value>
+            <value>Archinity_Glitterites</value>
+          </value>
+        </li>
+
+        <!-- 4. The garrison symbol used by their structure layouts.
+             This is a KCSG.SymbolDef, not a StructureLayoutDef. Scoped by
+             both defName and current value so it cannot stray onto another
+             mod's symbol of the same name. -->
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/KCSG.SymbolDef[defName="AncientSoldier"]/faction[text()="AncientsHostile"]</xpath>
+          <value>
+            <faction>Archinity_Glitterites</faction>
+          </value>
+        </li>
+
+      </operations>
+    </match>
+  </Operation>
+
+</Patch>

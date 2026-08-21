@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Bureaucratic, not martial. The Glitterites do not name themselves after
+       conquests; they name themselves after a job nobody assigned them and
+       nobody can relieve them of. Stations are numbered installations. -->
+
+  <RulePackDef>
+    <defName>Archinity_NamerFactionGlitterites</defName>
+    <rulePack>
+      <rulesStrings>
+        <li>r_name->the [role] [body]</li>
+        <li>r_name->the [adj] [role]</li>
+        <li>r_name->[role] of the [adj] threshold</li>
+
+        <li>role->custodial</li>
+        <li>role->wardens</li>
+        <li>role->threshold</li>
+        <li>role->quarantine</li>
+        <li>role->containment</li>
+        <li>role->attendance</li>
+        <li>role->assay</li>
+
+        <li>body->authority</li>
+        <li>body->office</li>
+        <li>body->standing order</li>
+        <li>body->mandate</li>
+        <li>body->accord</li>
+        <li>body->directorate</li>
+
+        <li>adj->unrelieved</li>
+        <li>adj->unbroken</li>
+        <li>adj->patient</li>
+        <li>adj->immaculate</li>
+        <li>adj->uncounted</li>
+        <li>adj->final</li>
+      </rulesStrings>
+    </rulePack>
+  </RulePackDef>
+
+  <RulePackDef>
+    <defName>Archinity_NamerSettlementGlitterites</defName>
+    <rulePack>
+      <rulesStrings>
+        <li>r_name->[prefix]-[number]</li>
+        <li>r_name->[prefix]-[number] [suffix]</li>
+        <li>r_name->[suffix] [prefix]-[number]</li>
+
+        <li>prefix->threshold</li>
+        <li>prefix->custody</li>
+        <li>prefix->assay</li>
+        <li>prefix->vigil</li>
+        <li>prefix->tally</li>
+        <li>prefix->ward</li>
+        <li>prefix->lien</li>
+        <li>prefix->seal</li>
+
+        <li>number->01</li>
+        <li>number->04</li>
+        <li>number->09</li>
+        <li>number->12</li>
+        <li>number->17</li>
+        <li>number->23</li>
+        <li>number->31</li>
+        <li>number->44</li>
+        <li>number->60</li>
+        <li>number->88</li>
+
+        <li>suffix->station</li>
+        <li>suffix->installation</li>
+        <li>suffix->array</li>
+        <li>suffix->works</li>
+        <li>suffix->overlook</li>
+      </rulesStrings>
+    </rulePack>
+  </RulePackDef>
+
+</Defs>
