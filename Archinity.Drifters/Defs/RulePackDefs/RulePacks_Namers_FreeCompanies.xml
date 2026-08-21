@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Faction names read as chartered crews rather than nations: "the Ninth
+       Free Company", "Halloran's Charter". Settlement names are working
+       infrastructure, not monuments - a drydock, a chandlery, a mooring. -->
+
+  <RulePackDef>
+    <defName>Archinity_NamerFactionFreeCompanies</defName>
+    <rulePack>
+      <rulesStrings>
+        <li>r_name->the [ordinal] free company</li>
+        <li>r_name->the [ordinal] charter</li>
+        <li>r_name->[surname]'s charter</li>
+        <li>r_name->[surname]'s company</li>
+        <li>r_name->the [voidAdj] charter</li>
+        <li>r_name->the [voidAdj] companies</li>
+        <li>r_name->[voidAdj] free company</li>
+
+        <li>ordinal->third</li>
+        <li>ordinal->fifth</li>
+        <li>ordinal->seventh</li>
+        <li>ordinal->ninth</li>
+        <li>ordinal->eleventh</li>
+        <li>ordinal->thirteenth</li>
+        <li>ordinal->twenty-first</li>
+
+        <li>surname->halloran</li>
+        <li>surname->vasque</li>
+        <li>surname->okonkwo</li>
+        <li>surname->rill</li>
+        <li>surname->sadeghi</li>
+        <li>surname->marchetti</li>
+        <li>surname->cortez</li>
+        <li>surname->tenzin</li>
+        <li>surname->abernathy</li>
+        <li>surname->kestrel</li>
+
+        <li>voidAdj->unbound</li>
+        <li>voidAdj->untethered</li>
+        <li>voidAdj->freeflying</li>
+        <li>voidAdj->longhaul</li>
+        <li>voidAdj->openbirth</li>
+        <li>voidAdj->driftborn</li>
+        <li>voidAdj->farwake</li>
+        <li>voidAdj->deepdrift</li>
+      </rulesStrings>
+    </rulePack>
+  </RulePackDef>
+
+  <RulePackDef>
+    <defName>Archinity_NamerSettlementFreeCompanies</defName>
+    <rulePack>
+      <rulesStrings>
+        <li>r_name->[stationAdj] [station]</li>
+        <li>r_name->[station] [numeral]</li>
+        <li>r_name->[stationAdj] [station] [numeral]</li>
+
+        <li>stationAdj->longwake</li>
+        <li>stationAdj->slack</li>
+        <li>stationAdj->openhand</li>
+        <li>stationAdj->far</li>
+        <li>stationAdj->tallwater</li>
+        <li>stationAdj->coldiron</li>
+        <li>stationAdj->lowlight</li>
+        <li>stationAdj->quiet</li>
+        <li>stationAdj->crooked</li>
+        <li>stationAdj->last</li>
+        <li>stationAdj->second</li>
+        <li>stationAdj->windward</li>
+
+        <li>station->drydock</li>
+        <li>station->mooring</li>
+        <li>station->chandlery</li>
+        <li>station->anchorage</li>
+        <li>station->berth</li>
+        <li>station->spar</li>
+        <li>station->roost</li>
+        <li>station->haul</li>
+        <li>station->yards</li>
+        <li>station->stopover</li>
+        <li>station->keel</li>
+        <li>station->rigging</li>
+
+        <li>numeral->II</li>
+        <li>numeral->III</li>
+        <li>numeral->IV</li>
+        <li>numeral->VI</li>
+        <li>numeral->VII</li>
+        <li>numeral->IX</li>
+        <li>numeral->XI</li>
+      </rulesStrings>
+    </rulePack>
+  </RulePackDef>
+
+</Defs>

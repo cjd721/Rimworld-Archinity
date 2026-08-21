@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Archinity - Drifters</name>
+  <author>cjd72</author>
+  <packageId>archinity.drifters</packageId>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>Part of the Archinity suite.
+
+Adds the Starjack Free Companies: a neutral, hostile-capable spacefaring faction that lives entirely in orbit.
+
+Unlike Odyssey's Traders Guild, the Free Companies are a real power - they can send military aid, they generate quest sites, and they field a full combat ladder. You can ally with them, hire them against the Glitterites, or take their stations by force.
+
+Starjack-dominant, and contained: the xenotype never leaks into planetside factions. While relations are neutral they stay off the surface entirely, so a spacer faction will not come wandering into a neolithic camp.
+
+Requires Odyssey (orbit layer, starjack xenotype, astropolitan culture) and Biotech.</description>
+  <loadAfter>
+    <li>Ludeon.RimWorld</li>
+    <li>Ludeon.RimWorld.Royalty</li>
+    <li>Ludeon.RimWorld.Ideology</li>
+    <li>Ludeon.RimWorld.Biotech</li>
+    <li>Ludeon.RimWorld.Odyssey</li>
+    <li>OskarPotocki.VanillaFactionsExpanded.Core</li>
+    <li>vanillaracesexpanded.starjack</li>
+    <li>shunter.bettertradersguild</li>
+    <li>archinity.origins</li>
+    <li>archinity.pacing</li>
+  </loadAfter>
+</ModMetaData>

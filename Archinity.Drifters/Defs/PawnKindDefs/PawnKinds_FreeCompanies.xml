@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Modelled on Odyssey's TradersGuild pawnkind ladder, retuned. The Free
+       Companies field fewer non-combatants and more shooters: every crew is
+       expected to fight for its own ship. -->
+
+  <PawnKindDef Name="Archinity_FCBase" Abstract="True">
+    <race>Human</race>
+    <defaultFactionDef>Archinity_FreeCompanies</defaultFactionDef>
+    <chemicalAddictionChance>0.08</chemicalAddictionChance>
+    <combatPower>45</combatPower>
+    <invNutrition>2.55</invNutrition>
+    <itemQuality>Normal</itemQuality>
+    <backstoryCryptosleepCommonality>0.15</backstoryCryptosleepCommonality>
+    <maxGenerationAge>65</maxGenerationAge>
+    <combatEnhancingDrugsChance>0.15</combatEnhancingDrugsChance>
+    <combatEnhancingDrugsCount>0~2</combatEnhancingDrugsCount>
+    <biocodeWeaponChance>0.2</biocodeWeaponChance>
+    <initialWillRange>0~1</initialWillRange>
+    <initialResistanceRange>10~17</initialResistanceRange>
+  </PawnKindDef>
+
+  <!-- ============================ Crew ============================ -->
+
+  <PawnKindDef ParentName="Archinity_FCBase">
+    <defName>Archinity_FC_Deckhand</defName>
+    <label>deckhand</label>
+    <labelPlural>deckhands</labelPlural>
+    <isFighter>false</isFighter>
+    <gearHealthRange>0.2~2.0</gearHealthRange>
+    <weaponTags>
+      <li>Gun</li>
+    </weaponTags>
+    <weaponMoney>150~250</weaponMoney>
+    <apparelMoney>200~400</apparelMoney>
+    <apparelAllowHeadgearChance>0.4</apparelAllowHeadgearChance>
+    <techHediffsChance>0.08</techHediffsChance>
+    <techHediffsMoney>50~600</techHediffsMoney>
+    <techHediffsTags>
+      <li>Simple</li>
+    </techHediffsTags>
+    <apparelRequired Inherit="False">
+      <li>Apparel_VacsuitHelmet</li>
+      <li MayRequire="Ludeon.RimWorld.Biotech">Apparel_VacsuitChildren</li>
+    </apparelRequired>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="Archinity_FCBase">
+    <defName>Archinity_FC_Child</defName>
+    <label>ship-born child</label>
+    <labelPlural>ship-born children</labelPlural>
+    <isFighter>false</isFighter>
+    <weaponTags />
+    <weaponMoney>0</weaponMoney>
+    <apparelMoney>200~400</apparelMoney>
+    <pawnGroupDevelopmentStage>Child</pawnGroupDevelopmentStage>
+  </PawnKindDef>
+
+  <!-- ========================== Mid tier ========================== -->
+
+  <PawnKindDef Name="Archinity_FCMidBase" ParentName="Archinity_FCBase" Abstract="True">
+    <combatPower>120</combatPower>
+    <gearHealthRange>0.5~2.5</gearHealthRange>
+    <techHediffsChance>0.18</techHediffsChance>
+    <techHediffsMoney>700~1200</techHediffsMoney>
+    <techHediffsTags>
+      <li>Simple</li>
+      <li>Advanced</li>
+    </techHediffsTags>
+    <apparelTags>
+      <li>IndustrialBasic</li>
+      <li>IndustrialAdvanced</li>
+      <li>IndustrialMilitaryBasic</li>
+      <li>IndustrialMilitaryAdvanced</li>
+    </apparelTags>
+    <apparelMoney>400~1200</apparelMoney>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="Archinity_FCMidBase">
+    <defName>Archinity_FC_Gunner</defName>
+    <label>company gunner</label>
+    <labelPlural>company gunners</labelPlural>
+    <apparelAllowHeadgearChance>0.7</apparelAllowHeadgearChance>
+    <weaponMoney>400~900</weaponMoney>
+    <weaponTags>
+      <li>IndustrialGunAdvanced</li>
+    </weaponTags>
+    <initialResistanceRange>6~10</initialResistanceRange>
+    <combatEnhancingDrugsChance>0.05</combatEnhancingDrugsChance>
+    <skills>
+      <li>
+        <skill>Shooting</skill>
+        <range>4~14</range>
+      </li>
+    </skills>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="Archinity_FCMidBase">
+    <defName>Archinity_FC_Corsair</defName>
+    <label>corsair</label>
+    <labelPlural>corsairs</labelPlural>
+    <combatPower>140</combatPower>
+    <canBeSapper>true</canBeSapper>
+    <gearHealthRange>0.7~3.2</gearHealthRange>
+    <apparelRequired>
+      <li>Apparel_ShieldBelt</li>
+    </apparelRequired>
+    <apparelAllowHeadgearChance>0</apparelAllowHeadgearChance>
+    <weaponMoney>200~500</weaponMoney>
+    <weaponTags>
+      <li>MedievalMeleeDecent</li>
+      <li>MedievalMeleeAdvanced</li>
+    </weaponTags>
+    <initialResistanceRange>10~16</initialResistanceRange>
+    <skills>
+      <li>
+        <skill>Melee</skill>
+        <range>6~14</range>
+      </li>
+    </skills>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="Archinity_FCMidBase">
+    <defName>Archinity_FC_Heavy</defName>
+    <label>company heavy</label>
+    <labelPlural>company heavies</labelPlural>
+    <combatPower>140</combatPower>
+    <gearHealthRange>0.7~3.2</gearHealthRange>
+    <apparelTags Inherit="False">
+      <li>IndustrialBasic</li>
+      <li>IndustrialAdvanced</li>
+      <li>IndustrialMilitaryBasic</li>
+      <li>IndustrialMilitaryAdvanced</li>
+      <li>BeltDefensePop</li>
+    </apparelTags>
+    <apparelMoney>200~350</apparelMoney>
+    <apparelAllowHeadgearChance>0.5</apparelAllowHeadgearChance>
+    <weaponMoney>1200~1200</weaponMoney>
+    <weaponTags Inherit="False">
+      <li>GunHeavy</li>
+      <li>GunSingleUse</li>
+    </weaponTags>
+    <initialResistanceRange>14~23</initialResistanceRange>
+  </PawnKindDef>
+
+  <!-- ========================= Elite tier ========================= -->
+
+  <PawnKindDef Name="Archinity_FCEliteBase" ParentName="Archinity_FCBase" Abstract="True">
+    <combatPower>130</combatPower>
+    <maxGenerationAge>45</maxGenerationAge>
+    <backstoryCryptosleepCommonality>0.3</backstoryCryptosleepCommonality>
+    <gearHealthRange>1~1</gearHealthRange>
+    <apparelTags>
+      <li>IndustrialBasic</li>
+      <li>IndustrialAdvanced</li>
+      <li>IndustrialMilitaryBasic</li>
+      <li>IndustrialMilitaryAdvanced</li>
+      <li>SpacerMilitary</li>
+      <li>BeltDefensePop</li>
+    </apparelTags>
+    <apparelMoney>2500~3500</apparelMoney>
+    <apparelAllowHeadgearChance>0.9</apparelAllowHeadgearChance>
+    <weaponMoney>500~1400</weaponMoney>
+    <weaponTags>
+      <li>IndustrialGunAdvanced</li>
+    </weaponTags>
+    <disallowedTraits>
+      <li>Brawler</li>
+    </disallowedTraits>
+    <techHediffsMoney>1000~1200</techHediffsMoney>
+    <techHediffsTags>
+      <li>Advanced</li>
+    </techHediffsTags>
+    <techHediffsChance>0.4</techHediffsChance>
+    <combatEnhancingDrugsChance>0.8</combatEnhancingDrugsChance>
+    <combatEnhancingDrugsCount>1~2</combatEnhancingDrugsCount>
+    <biocodeWeaponChance>0.3</biocodeWeaponChance>
+    <initialWillRange>3~5</initialWillRange>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="Archinity_FCEliteBase">
+    <defName>Archinity_FC_Voidwright</defName>
+    <label>voidwright</label>
+    <labelPlural>voidwrights</labelPlural>
+    <initialResistanceRange>15~23</initialResistanceRange>
+    <inventoryOptions>
+      <skipChance>0.9</skipChance>
+      <subOptionsChooseOne>
+        <li>
+          <thingDef>MedicineIndustrial</thingDef>
+          <countRange>1</countRange>
+        </li>
+      </subOptionsChooseOne>
+    </inventoryOptions>
+    <skills>
+      <li>
+        <skill>Shooting</skill>
+        <range>10~15</range>
+      </li>
+    </skills>
+    <apparelRequired Inherit="False">
+      <li>Apparel_PowerArmor</li>
+      <li>Apparel_PowerArmorHelmet</li>
+    </apparelRequired>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="Archinity_FCEliteBase">
+    <defName>Archinity_FC_FreeCaptain</defName>
+    <label>free captain</label>
+    <labelPlural>free captains</labelPlural>
+    <factionLeader>true</factionLeader>
+    <canBeSapper>true</canBeSapper>
+    <initialResistanceRange>17~27</initialResistanceRange>
+    <apparelRequired Inherit="False" />
+  </PawnKindDef>
+
+</Defs>
