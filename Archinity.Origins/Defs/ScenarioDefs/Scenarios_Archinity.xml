@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <ScenarioDef ParentName="ScenarioBase">
+    <defName>Archinity_SeedOfTheArchinity</defName>
+    <label>Seed of the Archinity</label>
+    <description>Your tribe knows fire, stone, and the two who cannot die.\n\nThey were born among you and they never grew old. They bleed and close. They drown and stand back up. They will not eat what you eat.\n\nThe elders say the sky-things made them as a message. Nobody can read it yet.\n\nNote: you start at the absolute bottom of the technology tree with two immensely powerful but permanently unstable colonists who require human blood. This is a very long game.</description>
+    <scenario>
+      <summary>A neolithic tribe carrying two archite-tainted immortals, at the very beginning of everything.</summary>
+      <playerFaction>
+        <factionDef>PlayerTribe</factionDef>
+      </playerFaction>
+      <parts>
+
+        <!-- Config pages: 2 achonions + 3 baseliners = 5 starting pawns -->
+        <li Class="ScenPart_ConfigPage_ConfigureStartingPawns_Xenotypes">
+          <def>ConfigurePawnsXenotypes</def>
+          <pawnChoiceCount>10</pawnChoiceCount>
+          <customSummary>Start with two adult achonion sanguophages and three ordinary tribespeople.</customSummary>
+          <xenotypeCounts>
+            <li>
+              <xenotype>Archinity_AchonionSanguophage</xenotype>
+              <count>2</count>
+              <description>adult achonion sanguophage</description>
+              <requiredAtStart>true</requiredAtStart>
+              <allowedDevelopmentalStages>Adult</allowedDevelopmentalStages>
+            </li>
+            <li>
+              <xenotype>Baseliner</xenotype>
+              <count>3</count>
+            </li>
+          </xenotypeCounts>
+        </li>
+
+        <!-- Arrival -->
+        <li Class="ScenPart_PlayerPawnsArriveMethod">
+          <def>PlayerPawnsArriveMethod</def>
+          <method>Standing</method>
+        </li>
+
+        <!-- Game start dialog -->
+        <li Class="ScenPart_GameStartDialog">
+          <def>GameStartDialog</def>
+          <text>Your people have walked a long way from the burned place.\n\nFive of you are left. Three who bleed properly, and two who do not.\n\nThe two do not remember being born. They do not remember anything before the light in the sky that the elders still refuse to describe. They have buried every person they ever loved and they have not aged a day doing it.\n\nThey are hungry in a way that no animal can fix for long.\n\nHere there is water, stone, and nobody to ask. Build something. The sky-things are watching, and they are further up than anyone can climb.\n\nNot yet.</text>
+          <closeSound>GameStartSting</closeSound>
+        </li>
+
+        <!-- Starting things: neolithic kit -->
+        <li Class="ScenPart_StartingThing_Defined">
+          <def>StartingThing_Defined</def>
+          <thingDef>Pemmican</thingDef>
+          <count>350</count>
+        </li>
+        <li Class="ScenPart_StartingThing_Defined">
+          <def>StartingThing_Defined</def>
+          <thingDef>MedicineHerbal</thingDef>
+          <count>15</count>
+        </li>
+        <li Class="ScenPart_StartingThing_Defined">
+          <def>StartingThing_Defined</def>
+          <thingDef>HemogenPack</thingDef>
+          <count>12</count>
+        </li>
+        <li Class="ScenPart_StartingThing_Defined">
+          <def>StartingThing_Defined</def>
+          <thingDef>MeleeWeapon_Club</thingDef>
+          <stuff>WoodLog</stuff>
+          <count>2</count>
+        </li>
+        <li Class="ScenPart_StartingThing_Defined">
+          <def>StartingThing_Defined</def>
+          <thingDef>MeleeWeapon_Ikwa</thingDef>
+          <stuff>Steel</stuff>
+        </li>
+        <li Class="ScenPart_StartingThing_Defined">
+          <def>StartingThing_Defined</def>
+          <thingDef>Bow_Short</thingDef>
+          <count>2</count>
+        </li>
+        <li Class="ScenPart_StartingAnimal">
+          <def>StartingAnimal</def>
+          <count>2</count>
+          <bondToRandomPlayerPawnChance>1.0</bondToRandomPlayerPawnChance>
+        </li>
+
+        <!-- Scatter -->
+        <li Class="ScenPart_ScatterThingsNearPlayerStart">
+          <def>ScatterThingsNearPlayerStart</def>
+          <thingDef>WoodLog</thingDef>
+          <count>400</count>
+        </li>
+
+      </parts>
+    </scenario>
+  </ScenarioDef>
+
+</Defs>

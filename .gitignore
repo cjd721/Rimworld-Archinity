@@ -1,0 +1,13 @@
+# RimWorld / Steam artifacts
+*/About/PublishedFileId.txt
+
+# Decompiler + scratch output
+/scratch/
+*.cs
+*.pdb
+
+# OS / editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/

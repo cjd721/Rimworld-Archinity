@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Archinity - Origins</name>
+  <author>cjd72</author>
+  <packageId>archinity.origins</packageId>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>Part of the Archinity suite.
+
+Adds the Achonion Sanguophage xenotype and the "Seed of the Archinity" scenario: a neolithic tribe carrying two archite-tainted immortals, and no idea what they are yet.
+
+Requires Biotech. Genes are drawn from Biotech, Odyssey, Vanilla Quests Expanded - Ancients, and Vanilla Races Expanded - Sanguophage / Saurid / Waster. Missing sources degrade gracefully - the xenotype simply loses those genes.</description>
+  <modDependencies>
+    <li>
+      <packageId>vanillaquestsexpanded.ancients</packageId>
+      <displayName>Vanilla Quests Expanded - Ancients</displayName>
+      <steamWorkshopUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=3618306875</steamWorkshopUrl>
+    </li>
+    <li>
+      <packageId>vanillaracesexpanded.sanguophage</packageId>
+      <displayName>Vanilla Races Expanded - Sanguophage</displayName>
+      <steamWorkshopUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=2963116383</steamWorkshopUrl>
+    </li>
+    <li>
+      <packageId>vanillaracesexpanded.saurid</packageId>
+      <displayName>Vanilla Races Expanded - Saurid</displayName>
+      <steamWorkshopUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=2880990495</steamWorkshopUrl>
+    </li>
+    <li>
+      <packageId>vanillaracesexpanded.waster</packageId>
+      <displayName>Vanilla Races Expanded - Waster</displayName>
+      <steamWorkshopUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=2983471725</steamWorkshopUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>Ludeon.RimWorld</li>
+    <li>Ludeon.RimWorld.Royalty</li>
+    <li>Ludeon.RimWorld.Ideology</li>
+    <li>Ludeon.RimWorld.Biotech</li>
+    <li>Ludeon.RimWorld.Odyssey</li>
+    <li>vanillaquestsexpanded.ancients</li>
+    <li>vanillaracesexpanded.sanguophage</li>
+    <li>vanillaracesexpanded.saurid</li>
+    <li>vanillaracesexpanded.waster</li>
+  </loadAfter>
+</ModMetaData>

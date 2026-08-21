@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Converted from the in-game custom xenotype "Achonion Sanguophage".
+       Baked into a def rather than loaded from a local .xtp file so that it is
+       byte-identical on every client - a hard requirement for multiplayer. -->
+  <XenotypeDef>
+    <defName>Archinity_AchonionSanguophage</defName>
+    <label>achonion sanguophage</label>
+    <iconPath>UI/Icons/Xenotypes/Custom/CustomXenotypeIcon5</iconPath>
+    <inheritable>false</inheritable>
+    <canGenerateAsCombatant>false</canGenerateAsCombatant>
+    <factionlessGenerationWeight>0</factionlessGenerationWeight>
+    <combatPowerFactor>2.5</combatPowerFactor>
+    <displayPriority>500</displayPriority>
+    <description>Something reached backwards through time and touched a handful of neolithic humans.\n\nThe archons do not explain themselves. What they left behind were creatures that do not age, do not scar, and do not stay dead - wearing plasteel under their skin and carrying archite machinery in blood they cannot produce for themselves.\n\nThey woke among people who had no word for what they were, and were worshipped for it. They remember nothing of the touch. They only know that they are unfinished, and that the thing which made them is still out there, further up.</description>
+    <descriptionShort>Ageless, deathless archite-tainted immortals. Effectively unkillable in a fair fight and incapable of reproducing, they must drink human blood to survive and are permanently psychologically unstable. Every gene they carry points toward something they have not become yet.</descriptionShort>
+    <genes>
+
+      <!-- Archite frame: ageless, deathless, self-repairing -->
+      <li>Ageless</li>
+      <li>Deathless</li>
+      <li>DiseaseFree</li>
+      <li>PerfectImmunity</li>
+      <li>TotalHealing</li>
+      <li>Coagulate</li>
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_Woundless</li>
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_SelfRepairingTissue</li>
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_PlasteelSkin</li>
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_Herculean</li>
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_PerfectVision</li>
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_BlurRunner</li>
+      <li>LongjumpLegs</li>
+      <li>Neversleep</li>
+      <li MayRequire="ludeon.rimworld.odyssey">VacuumResistance_Total</li>
+
+      <!-- Hemogenic dependency: the price of the gift -->
+      <li>Hemogenic</li>
+      <li>Bloodfeeder</li>
+      <li>Deathrest</li>
+      <li MayRequire="vanillaracesexpanded.sanguophage">VRE_Hemosmosis</li>
+      <li MayRequire="vanillaracesexpanded.sanguophage">VRE_LowHemogenDrain</li>
+      <li MayRequire="vanillaracesexpanded.sanguophage">VRE_AnimalFeeder</li>
+
+      <!-- Propagation: they cannot breed, only convert -->
+      <li>Sterile</li>
+      <li>XenogermReimplanter</li>
+
+      <!-- Costs -->
+      <li MayRequire="vanillaracesexpanded.waster">VRE_Instability_Extreme</li>
+
+      <!-- Presentation -->
+      <li>Beauty_Beautiful</li>
+      <li>Aggression_DeadCalm</li>
+      <li>Voice_Human</li>
+      <li>Body_Standard</li>
+      <li>Skin_LightGray</li>
+      <li>Hair_SnowWhite</li>
+      <li>ElongatedFingers</li>
+      <li MayRequire="vanillaracesexpanded.sanguophage">VRE_SanguineHair</li>
+      <li MayRequire="vanillaracesexpanded.saurid">VRESaurids_Pheromones</li>
+
+    </genes>
+  </XenotypeDef>
+
+</Defs>
