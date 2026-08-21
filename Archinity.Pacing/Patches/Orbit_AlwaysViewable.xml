@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       ORBIT: ALWAYS VIEWABLE
+
+       PlanetLayerDef defaults viewGizmoOnlyVisibleWithDirectConnection to
+       true, and Odyssey's Orbit layer does not override it. The "view orbit"
+       button therefore only appears once you have a presence up there -
+       which means that for the entire pre-gravship game you cannot look at
+       space at all, and cannot confirm anything generated in it.
+
+       Flipping it to false makes the view-orbit gizmo always available on
+       the world map.
+
+       This is VIEWING ONLY. Reaching orbit is gated separately and
+       independently: SpaceSettlement sets requiresSignalJammerToReach, and
+       you still need a gravship to travel there. Nothing here lets you
+       arrive anywhere early.
+
+       Two reasons to keep it:
+         - Verification. Without it there is no way to check that orbit
+           generated correctly, or that orbital factions got placed, short
+           of playing for many hours.
+         - Theme. Being able to look up at the stations you cannot reach
+           yet, from a neolithic camp, is the whole premise of the run.
+
+       If you would rather have the vanilla reveal-on-arrival behaviour,
+       delete this file. Nothing else depends on it.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationAdd">
+    <xpath>/Defs/PlanetLayerDef[defName="Orbit"]</xpath>
+    <value>
+      <viewGizmoOnlyVisibleWithDirectConnection>false</viewGizmoOnlyVisibleWithDirectConnection>
+    </value>
+  </Operation>
+
+</Patch>
