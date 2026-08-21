@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Defs>
 
   <ScenarioDef ParentName="ScenarioBase">
-    <defName>Archinity_SeedOfTheArchinity</defName>
-    <label>Seed of the Archinity</label>
+    <defName>Archinity_SeedOfArchinity</defName>
+    <label>Seed of Archinity</label>
     <description>Your tribe knows fire, stone, and the two who cannot die.\n\nThey were born among you and they never grew old. They bleed and close. They drown and stand back up. They will not eat what you eat.\n\nThe elders say the sky-things made them as a message. Nobody can read it yet.\n\nNote: you start at the absolute bottom of the technology tree with two immensely powerful but permanently unstable colonists who require human blood. This is a very long game.</description>
     <scenario>
       <summary>A neolithic tribe carrying two archite-tainted immortals, at the very beginning of everything.</summary>

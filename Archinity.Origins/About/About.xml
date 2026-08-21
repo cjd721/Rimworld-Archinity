@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
   <name>Archinity - Origins</name>
   <author>cjd72</author>
@@ -8,7 +8,7 @@
   </supportedVersions>
   <description>Part of the Archinity suite.
 
-Adds the Achonion Sanguophage xenotype and the "Seed of the Archinity" scenario: a neolithic tribe carrying two archite-tainted immortals, and no idea what they are yet.
+Adds the Achonion Sanguophage xenotype and the "Seed of Archinity" scenario: a neolithic tribe carrying two archite-tainted immortals, and no idea what they are yet.
 
 Requires Biotech. Genes are drawn from Biotech, Odyssey, Vanilla Quests Expanded - Ancients, and Vanilla Races Expanded - Sanguophage / Saurid / Waster. Missing sources degrade gracefully - the xenotype simply loses those genes.</description>
   <modDependencies>

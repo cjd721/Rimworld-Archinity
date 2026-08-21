@@ -11,7 +11,7 @@ carry no simulation code, which makes them inherently multiplayer-safe.
 
 | Mod | Status | Contents |
 |---|---|---|
-| `Archinity.Origins` | **built** | Achonion Sanguophage xenotype + "Seed of the Archinity" scenario |
+| `Archinity.Origins` | **built** | Achonion Sanguophage xenotype + "Seed of Archinity" scenario |
 | `Archinity.Pacing` | planned | Orbit size, tech-gated quests, research curve, Archon fixes |
 | `Archinity.Drifters` | planned | Starjack Free Companies — neutral spacefaring faction |
 | `Archinity.Glitterites` | planned | Ultra-tech antagonist, orbital fortresses, mech deployment |
