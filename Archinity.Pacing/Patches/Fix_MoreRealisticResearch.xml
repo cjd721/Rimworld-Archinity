@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       FIX: More Realistic Research broken cross-reference
+
+       Startup log error:
+         Could not resolve cross-reference: No Verse.ResearchProjectDef
+         named SecurityDoor found to give to
+         ResearchMakesSense.ManualAnalysisDef 9
+
+       More Realistic Research ships a ManualAnalysisDef (defName "9")
+       targeting a research project called SecurityDoor. No such
+       ResearchProjectDef exists in this load order - the only SecurityDoor
+       in the game is a ThingDef from VFE Medieval 2, not a research
+       project. The reference is stale, pointing at a mod we do not run.
+
+       Removing the orphaned def is correct. Adding a stub ResearchProjectDef
+       to satisfy the reference would put a phantom entry in the research
+       tree, which is worse.
+
+       success = Always because the mod's About.xml <name> has a trailing
+       space ("More Realistic Research "), which makes PatchOperationFindMod
+       unreliable here. If the author ever fixes the reference upstream, this
+       operation simply finds nothing and does nothing.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationRemove">
+    <xpath>/Defs/ResearchMakesSense.ManualAnalysisDef[researchProject="SecurityDoor"]</xpath>
+    <success>Always</success>
+  </Operation>
+
+</Patch>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       RESERVE TRANSCENDENCE FOR THE QUEST LINE
+
+       VQE Ancients' archite injection draws from every gene in the loaded
+       def database where biostatArc > 0, minus a blacklist:
+
+           GetFilteredGenes(pawn, g => g.biostatArc > 0)
+
+       With VRE Archon loaded, that pool includes VRE_Transcendent - the
+       endgame gene this whole playthrough is aimed at. Leaving it in the
+       random pool means it can drop from a routine injection, which would
+       resolve the central arc by accident.
+
+       InjectionBlacklistDef.blacklistedGenes is a List<string>, so entries
+       are plain defName strings. They are NOT cross-referenced, meaning a
+       name for a gene that is not loaded is silently ignored rather than
+       throwing a def error. That makes this patch safe to over-specify.
+
+       Add any other gene here that should only ever arrive by quest.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationFindMod">
+    <mods>
+      <li>Vanilla Quests Expanded - Ancients</li>
+    </mods>
+    <match Class="PatchOperationAdd">
+      <xpath>/Defs/VanillaQuestsExpandedAncients.InjectionBlacklistDef[defName="VQEA_InjectionBlacklist"]/blacklistedGenes</xpath>
+      <value>
+        <li>VRE_Transcendent</li>
+      </value>
+    </match>
+  </Operation>
+
+</Patch>

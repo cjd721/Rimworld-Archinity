@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       ARCHONS: NEVER RAID ON THEIR OWN INITIATIVE
+
+       VRE_Archons ships with earliestRaidDays = 45, meaning an Archotech
+       tier faction can raid a 45-day-old colony. In a playthrough that
+       spends its first several years in the neolithic era, that is fatal.
+
+       We push it out of reach rather than deleting the faction, because:
+         - the faction must exist at worldgen for our quest chain to have
+           something to summon;
+         - hidden = true already keeps them off the faction list;
+         - they generate no settlements, so they cost nothing to leave in.
+
+       DELIBERATELY NOT CHANGED: permanentEnemy stays true. "Joining" the
+       archons in this playthrough means acquiring the VRE_Transcendent
+       gene, not forming an alliance. Leaving permanentEnemy true keeps
+       them out of trade, peace talks, and every other diplomatic system,
+       which is the intended "man behind the curtain" behaviour.
+
+       Ignorance Is Bliss (useActualTechLevel = true) should already keep
+       Archotech factions out of the hostile pool until the player reaches
+       that tier. This patch is a second, independent line of defence.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationFindMod">
+    <mods>
+      <li>Vanilla Races Expanded - Archon</li>
+    </mods>
+    <match Class="PatchOperationReplace">
+      <xpath>/Defs/FactionDef[defName="VRE_Archons"]/earliestRaidDays</xpath>
+      <value>
+        <earliestRaidDays>999999</earliestRaidDays>
+      </value>
+    </match>
+  </Operation>
+
+</Patch>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       ORBIT LAYER SIZE
+
+       Odyssey's orbit layer is generated as an icosphere with HALF the
+       subdivision depth of the planet surface:
+
+           Core   Surface : radius 100, subdivisions 10
+           Odyssey Orbit  : radius 130, subdivisions 5
+
+       Tile count scales with ~4^subdivisions, so orbit has orders of
+       magnitude fewer tiles than the surface. Since PlanetLayerDef.Orbit
+       sets settlementsPer100kTiles to 1000~1000 (one settlement per ~100
+       tiles), a small tile count also means very few orbital settlements,
+       asteroids and points of interest.
+
+       Raising subdivisions by 1 multiplies tile count by roughly 4, and
+       scales settlements/sites/travel distance with it.
+
+       COST: worldgen time and orbit mesh vertex count grow with the same
+       factor. 5 -> 6 is the conservative step. 7 is a 16x jump; try it only
+       after confirming 6 generates in acceptable time.
+
+       MULTIPLAYER: this is a def, so both clients get an identical value
+       as long as they run the same mod version.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationReplace">
+    <xpath>/Defs/PlanetLayerSettingsDef[defName="Orbit"]/settings/subdivisions</xpath>
+    <value>
+      <subdivisions>6</subdivisions>
+    </value>
+  </Operation>
+
+</Patch>

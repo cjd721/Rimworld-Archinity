@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Archinity - Pacing</name>
+  <author>cjd72</author>
+  <packageId>archinity.pacing</packageId>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>Part of the Archinity suite.
+
+World and timing adjustments for a long multi-era playthrough:
+
+- Enlarges the Odyssey orbit layer so space has room for real factions.
+- Stops the Vanilla Races Expanded - Archon faction from ever raiding on the storyteller's initiative. They appear only when a quest summons them.
+- Removes the Transcendent gene from the archite injection random pool, reserving it for the Archinity quest line.
+- Fixes a broken cross-reference in More Realistic Research.
+
+Pure XML patches. No assemblies, no Harmony, multiplayer-safe. Every patch is guarded so a missing mod is a no-op rather than an error.</description>
+  <loadAfter>
+    <li>Ludeon.RimWorld</li>
+    <li>Ludeon.RimWorld.Royalty</li>
+    <li>Ludeon.RimWorld.Ideology</li>
+    <li>Ludeon.RimWorld.Biotech</li>
+    <li>Ludeon.RimWorld.Odyssey</li>
+    <li>OskarPotocki.VanillaFactionsExpanded.Core</li>
+    <li>vanillaquestsexpanded.ancients</li>
+    <li>vanillaracesexpanded.archon</li>
+    <li>fridgeBaron.TechBlock</li>
+    <li>sae.ResearchMod</li>
+    <li>archinity.origins</li>
+  </loadAfter>
+</ModMetaData>

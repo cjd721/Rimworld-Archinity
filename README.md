@@ -12,7 +12,7 @@ carry no simulation code, which makes them inherently multiplayer-safe.
 | Mod | Status | Contents |
 |---|---|---|
 | `Archinity.Origins` | **built** | Archonian Sanguophage xenotype + "Seed of Archinity" scenario |
-| `Archinity.Pacing` | planned | Orbit size, tech-gated quests, research curve, Archon fixes |
+| `Archinity.Pacing` | **partial** | Orbit size, Archon raid lockout, Transcendent reserved, MRR fix |
 | `Archinity.Drifters` | planned | Starjack Free Companies — neutral spacefaring faction |
 | `Archinity.Glitterites` | planned | Ultra-tech antagonist, orbital fortresses, mech deployment |
 | `Archinity.Chronicle` | planned | Quest chain spine tying the arc together |

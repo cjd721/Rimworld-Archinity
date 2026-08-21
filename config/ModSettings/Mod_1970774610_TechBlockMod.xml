@@ -1,15 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <SettingsBlock>
 	<ModSettings Class="TechBlock.TechBlockSettings">
-		<requiredPoints>0.5</requiredPoints>
+		<requiredPoints>0.75</requiredPoints>
 		<requiredPointsOverride>True</requiredPointsOverride>
-		<requiredPointsAnimal>0.506999969</requiredPointsAnimal>
-		<requiredPointsNeolithic>0.5</requiredPointsNeolithic>
-		<requiredPointsMedieval>0.5</requiredPointsMedieval>
-		<requiredPointsIndustrial>0.5</requiredPointsIndustrial>
-		<requiredPointsSpacer>0.5</requiredPointsSpacer>
-		<requiredPointsUltra>0.5</requiredPointsUltra>
-		<requiredPointsArcho>0.5</requiredPointsArcho>
+		<requiredPointsAnimal>0.75</requiredPointsAnimal>
+		<requiredPointsNeolithic>0.75</requiredPointsNeolithic>
+		<requiredPointsMedieval>0.75</requiredPointsMedieval>
+		<requiredPointsIndustrial>0.75</requiredPointsIndustrial>
+		<requiredPointsSpacer>0.75</requiredPointsSpacer>
+		<requiredPointsUltra>0.75</requiredPointsUltra>
+		<requiredPointsArcho>0.75</requiredPointsArcho>
 		<neolithicBaseCost>500</neolithicBaseCost>
 		<medievalBaseCost>500</medievalBaseCost>
 		<insudtrialBaseCost>1000</insudtrialBaseCost>
