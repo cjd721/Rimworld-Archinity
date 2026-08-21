@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Defs>
 
-  <!-- Converted from the in-game custom xenotype "Achonion Sanguophage".
-       Baked into a def rather than loaded from a local .xtp file so that it is
-       byte-identical on every client - a hard requirement for multiplayer. -->
+  <!-- Converted from the in-game custom xenotype, originally saved as
+       "Achonion Sanguophage". Baked into a def rather than loaded from a local
+       .xtp file so that it is byte-identical on every client - a hard
+       requirement for multiplayer.
+
+       Genes marked [ARCHITE] have biostatArc > 0, which means VQE Ancients'
+       archite injection system can also grant them later. See README. -->
   <XenotypeDef>
-    <defName>Archinity_AchonionSanguophage</defName>
-    <label>achonion sanguophage</label>
+    <defName>Archinity_ArchonianSanguophage</defName>
+    <label>archonian sanguophage</label>
     <iconPath>UI/Icons/Xenotypes/Custom/CustomXenotypeIcon5</iconPath>
     <inheritable>false</inheritable>
     <canGenerateAsCombatant>false</canGenerateAsCombatant>
@@ -18,21 +22,21 @@
     <genes>
 
       <!-- Archite frame: ageless, deathless, self-repairing -->
-      <li>Ageless</li>
-      <li>Deathless</li>
-      <li>DiseaseFree</li>
-      <li>PerfectImmunity</li>
-      <li>TotalHealing</li>
+      <li>Ageless</li>                                                          <!-- [ARCHITE] -->
+      <li>Deathless</li>                                                        <!-- [ARCHITE] -->
+      <li>DiseaseFree</li>                                                      <!-- [ARCHITE] -->
+      <li>PerfectImmunity</li>                                                  <!-- [ARCHITE] -->
+      <li>TotalHealing</li>                                                     <!-- [ARCHITE] -->
       <li>Coagulate</li>
-      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_Woundless</li>
-      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_SelfRepairingTissue</li>
-      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_PlasteelSkin</li>
-      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_Herculean</li>
-      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_PerfectVision</li>
-      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_BlurRunner</li>
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_Woundless</li>            <!-- [ARCHITE] -->
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_SelfRepairingTissue</li>  <!-- [ARCHITE] -->
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_PlasteelSkin</li>         <!-- [ARCHITE] -->
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_Herculean</li>            <!-- [ARCHITE] -->
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_PerfectVision</li>        <!-- [ARCHITE] -->
+      <li MayRequire="vanillaquestsexpanded.ancients">VQEA_BlurRunner</li>           <!-- [ARCHITE] -->
       <li>LongjumpLegs</li>
       <li>Neversleep</li>
-      <li MayRequire="ludeon.rimworld.odyssey">VacuumResistance_Total</li>
+      <li MayRequire="ludeon.rimworld.odyssey">VacuumResistance_Total</li>       <!-- [ARCHITE] -->
 
       <!-- Hemogenic dependency: the price of the gift -->
       <li>Hemogenic</li>
@@ -44,7 +48,7 @@
 
       <!-- Propagation: they cannot breed, only convert -->
       <li>Sterile</li>
-      <li>XenogermReimplanter</li>
+      <li>XenogermReimplanter</li>                                              <!-- [ARCHITE] -->
 
       <!-- Costs -->
       <li MayRequire="vanillaracesexpanded.waster">VRE_Instability_Extreme</li>

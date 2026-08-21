@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="DIgnoranceIsBliss.IgnoranceSettings">
+		<changeQuests>True</changeQuests>
+		<usePercentResearched>False</usePercentResearched>
+		<percentResearchNeeded>0.75</percentResearchNeeded>
+		<useActualTechLevel>True</useActualTechLevel>
+	</ModSettings>
+</SettingsBlock>

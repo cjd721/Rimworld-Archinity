@@ -12,22 +12,22 @@
       </playerFaction>
       <parts>
 
-        <!-- Config pages: 2 achonions + 3 baseliners = 5 starting pawns -->
+        <!-- Config pages: 2 archonians + 2 baseliners = 4 starting pawns -->
         <li Class="ScenPart_ConfigPage_ConfigureStartingPawns_Xenotypes">
           <def>ConfigurePawnsXenotypes</def>
           <pawnChoiceCount>10</pawnChoiceCount>
-          <customSummary>Start with two adult achonion sanguophages and three ordinary tribespeople.</customSummary>
+          <customSummary>Start with two adult archonian sanguophages and two ordinary tribespeople.</customSummary>
           <xenotypeCounts>
             <li>
-              <xenotype>Archinity_AchonionSanguophage</xenotype>
+              <xenotype>Archinity_ArchonianSanguophage</xenotype>
               <count>2</count>
-              <description>adult achonion sanguophage</description>
+              <description>adult archonian sanguophage</description>
               <requiredAtStart>true</requiredAtStart>
               <allowedDevelopmentalStages>Adult</allowedDevelopmentalStages>
             </li>
             <li>
               <xenotype>Baseliner</xenotype>
-              <count>3</count>
+              <count>2</count>
             </li>
           </xenotypeCounts>
         </li>
@@ -41,7 +41,7 @@
         <!-- Game start dialog -->
         <li Class="ScenPart_GameStartDialog">
           <def>GameStartDialog</def>
-          <text>Your people have walked a long way from the burned place.\n\nFive of you are left. Three who bleed properly, and two who do not.\n\nThe two do not remember being born. They do not remember anything before the light in the sky that the elders still refuse to describe. They have buried every person they ever loved and they have not aged a day doing it.\n\nThey are hungry in a way that no animal can fix for long.\n\nHere there is water, stone, and nobody to ask. Build something. The sky-things are watching, and they are further up than anyone can climb.\n\nNot yet.</text>
+          <text>Your people have walked a long way from the burned place.\n\nFour of you are left. Two who bleed properly, and two who do not.\n\nThe two do not remember being born. They do not remember anything before the light in the sky that the elders still refuse to describe. They have buried every person they ever loved and they have not aged a day doing it.\n\nThey are hungry in a way that no animal can fix for long.\n\nHere there is water, stone, and nobody to ask. Build something. The sky-things are watching, and they are further up than anyone can climb.\n\nNot yet.</text>
           <closeSound>GameStartSting</closeSound>
         </li>
 
@@ -79,7 +79,7 @@
         </li>
         <li Class="ScenPart_StartingAnimal">
           <def>StartingAnimal</def>
-          <count>2</count>
+          <count>1</count>
           <bondToRandomPlayerPawnChance>1.0</bondToRandomPlayerPawnChance>
         </li>
 
