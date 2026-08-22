@@ -16,12 +16,20 @@ Last updated 2026-08-22.
 
 ## Status of the project, honestly
 
-Four mods load. One (`archinity.altar`) has **never loaded in game** — it is not in
-`ModsConfig.xml`. Nothing has been through worldgen. The two mods the entire progression
-design is written about (**Medieval Overhaul**, **VFE Tribals**) are **not installed**.
+**Medieval Overhaul and VFE Tribals are now enabled** (Conrad enabled both and booted a
+game; `config/ModsConfig.xml` in the repo predates that and must be re-snapshotted after
+the game is closed).
 
-So the content design is well ahead of the foundation. This map exists to put the
-foundation in dependency order.
+The content design is still ahead of the foundation. This map exists to put the foundation
+in dependency order.
+
+Last boot: **one config error**, ours —
+
+> `Config error in Archinity_GL_Technician: Cheapest weapon with one of my weaponTags costs
+> 1010 but weaponMoney min is 400, so could end up weaponless.`
+
+Fix in `sys/05`. It is also a clean demonstration of how gear selection actually works:
+tags intersected with a money ceiling, no techLevel anywhere.
 
 ---
 
@@ -53,14 +61,28 @@ These are blocking. Nothing downstream is safe to build until they land.
 
 | ID | Decision | Why it blocks | Options |
 |---|---|---|---|
-| **D1** | **Is VFE Tribals in?** | `VISION.md` rejects it. `Player Progression Ideology.txt` calls it "the perfect start" and builds the whole Neolithic on it. Both are in the docs folder right now. | In / Out. Downloaded but not enabled. Verified: it does what the Ideology wants, and the tribal-mode exit is automatic. |
-| **D2** | **Is Medieval Overhaul in?** | "Route A: enable and strip" was decided session 4 and never executed — MO is not installed. Half the Ideology doc is about MO's systems. Without it the Medieval era has ~0 research and VFE Classical contributes nothing. | Enable+strip / hand-port / neither |
+| ~~D1~~ | ~~Is VFE Tribals in?~~ | — | **RESOLVED: in.** Its own tech-advancement ritual is disabled; TechBlock is the sole advancement lever. |
+| ~~D2~~ | ~~Is Medieval Overhaul in?~~ | — | **RESOLVED: in, and gutted.** Enabled for the assets; the systems in `sys/04`'s kill list get stripped. |
 | **D3** | **Founder access model** | Blocks the lottery, which blocks beat placement. | Two altars / one altar split by ammunition — `QUESTLINE.md` §3 |
 | **D4** | **Capsule timing** | Same. | Neolithic / Industrial — `QUESTLINE.md` §4 |
 | **D5** | **Can the player decline all four lottery options?** | Decides whether the bad-gene band has teeth. | `QUESTLINE.md` §5 |
 
-D1 and D2 are the ones that unblock the most work. D3–D5 are content decisions
-already framed in `QUESTLINE.md` and are not repeated in the `sys/` briefs.
+D1 and D2 are resolved, which unblocks 02–07. D3–D5 are content decisions already framed
+in `QUESTLINE.md` and are not repeated in the `sys/` briefs.
+
+### Settled this session — do not reopen
+
+- **TechBlock `randomInsights` is off.** Not just for the desync — Conrad does not want RNG
+  research progress at all. Disable the feature outright.
+- **VFE Tribals' tech-advancement ritual is disabled.** TechBlock is the only advancement
+  lever. This also resolves the premature-advancement conflict between the two mods.
+- **Recipe gating on a linked facility is acceptable via research** — you research the
+  augment, which unlocks a band of recipes, and keep researching more advanced ones until
+  the next augment. A stricter mechanism also exists (`RecipeWorker`, `sys/03`) and is
+  worth using where it fits, but nothing depends on it.
+- **QoL items need a *guaranteed* route, not a *quest* route.** Luck into one early from
+  trade or loot and that is fine. What must never happen is a required item with no
+  reliable way to get it.
 
 ### Decisions a session may make on its own
 
@@ -103,10 +125,16 @@ Full detail and source paths in `scratch/recon-*.md`.
   Trade: `StockGenerator_SingleDef` with `countRange` min ≥ 1 (a uniform draw, not a chance,
   and no techLevel filter). Raid: `PawnKindDef.fixedInventory`, which runs unconditionally.
   Quest: `QuestNode_SetItemStashContents`. See `sys/05`.
-- **Does faction `techLevel` make a faction feel era-appropriate?** **No — and this is the
-  trap most likely to waste a session.** `PawnWeaponGenerator` never consults faction
-  techLevel; it reads `weaponTags` and `weaponMoney` only. Era-appropriate factions are an
-  authoring job on `PawnKindDef`s and `TraderKindDef`s.
+- **Does faction `techLevel` make a faction feel era-appropriate?** **No.** Vanilla achieves
+  it by hand-authoring `weaponTags` on every PawnKindDef — there is no systemic filter, and
+  no `Faction.def.techLevel` vs `ThingDef.techLevel` check exists anywhere in the 1.6 gear
+  path. Proof: Core's `Tribal_ChiefMelee` carries `MedievalMeleeAdvanced`, so a Medieval
+  longsword spawns on a Neolithic pawn in the base game. Era-appropriate factions are an
+  authoring job on `PawnKindDef`s and `TraderKindDef`s — see `sys/05` for the 7-point
+  minimum set.
+- **Does Ignorance Is Bliss guarantee era-appropriate raids?** **Partly — it gates which
+  *factions* can raid, never what they *carry*.** The two protections are complementary and
+  we need both.
 - **Can research require a specific item?** **Yes**, via More Realistic Research — but read
   the trap below.
 
@@ -114,14 +142,16 @@ Full detail and source paths in `scratch/recon-*.md`.
 
 1. **TechBlock `randomInsights` is a guaranteed multiplayer desync and is currently ON.**
    `TechBlock_Component.GameComponentUpdate()` is *frame-based, not tick-based*, and calls
-   `Rand`-driven `AddRandomProgress()`. Our snapshot has rate = 1. **Turn it off.**
-2. **More Realistic Research auto-generates material requirements, by techLevel, for every
-   research project not explicitly listed.** Every Archinity project will silently acquire
-   gates we did not author. Almost certainly the source of the 36 recorded deadlocks.
-   Declare an empty `ManualAnalysisDef` for anything we do not want gated.
-3. **VFET's advancement ritual unlocks when no project at the current techLevel is
-   startable. TechBlock's injected prerequisites make projects not-startable.** The two
-   backbone mods interact badly — the ritual can unlock prematurely. See `sys/02`.
+   `Rand`-driven `AddRandomProgress()`. Our snapshot has rate = 1.
+   **Decided: disable the feature entirely.** No RNG research progress, desync aside.
+2. **Research Mod auto-generates material requirements, by techLevel, for every research
+   project not explicitly listed.** Every Archinity project will silently acquire gates we
+   did not author. Almost certainly the source of the recorded deadlocks. Declare an empty
+   `ManualAnalysisDef` for anything we do not want gated.
+3. ~~VFET's advancement ritual can fire prematurely against TechBlock's prerequisites.~~
+   **Resolved: VFET's advancement ritual is disabled outright.** TechBlock is the sole
+   advancement lever. Cornerstones still work — they key off any faction techLevel
+   increase, which TechBlock provides.
 4. **Deleting a `ResearchProjectDef` strips the prerequisite off its dependants**, leaving
    them buildable with *no* research. Neuter referencing defs first, delete research last.
 5. **`--` inside an XML comment silently drops the entire file.**
@@ -134,11 +164,13 @@ Full detail and source paths in `scratch/recon-*.md`.
    the things its trader was selling.
 10. **A RimWorld year is 60 days.**
 
-### Naming correction
+### Naming
 
-**"MRR" / "More Research Requirements" is not installed and does not exist in this project.**
-Every doc reference to it means `sae.ResearchMod` = **More Realistic Research** (workshop
-`3771646847`), which has a different schema. Any plan written against "MRR" needs re-reading.
+The item-gating mod is `sae.ResearchMod` — **More Realistic Research**, workshop
+`3771646847`. Call it **Research Mod**. Older docs call it "MRR" / "More Research
+Requirements"; that mod is a different thing and is not installed, but the plans written
+against the name still hold, because its `experimental` / `reverseEngineering` /
+`theoretical` material levers are exactly the mechanism those plans wanted.
 
 ---
 
@@ -193,14 +225,13 @@ distinguish them inline. Two tiers:
 | `archite-gene-pool.md` | Gene tiering. Reference data. |
 | `scratch/recon-*.md` | This session's raw research. Source paths and code excerpts. |
 
-### Recommended deletions — not executed, Conrad's call
+### Deleted
 
-`HANDOFF.md`, `WORKLIST.md`, `DECISION-medieval-route.md` have been fully mined into
-`scratch/recon-doc-extract.md` and into the briefs. They contain stale, actively
-contradictory claims (HANDOFF still frames the Medieval route as open; it was resolved in
-session 4). Recommend deleting all three.
+`HANDOFF.md`, `WORKLIST.md` and `DECISION-medieval-route.md` were mined into
+`scratch/recon-doc-extract.md` and the briefs, then deleted. They are recoverable from
+git history at commit `56b5c44` if anything turns out to be missing.
 
-`VISION.md` is a harder call — `CLAUDE.md` says it holds intent unrecoverable from code.
-But it **explicitly rejects Medieval Overhaul** (reversed by Route A) and **claims VFE
-Classical carries the Medieval era** (false — all 18 of its projects are Neolithic).
-Recommend it be corrected rather than deleted, and that D1 be resolved inside it.
+`VISION.md` was corrected rather than deleted — it holds intent unrecoverable from code.
+Fixed: the Medieval Overhaul and VFE Tribals rejections are reversed with reasons, the
+false "VFE Classical carries the Medieval era" claim is gone, and the founder-marker
+section now names the custom gene instead of the rejected `Deathrest`-absence idea.

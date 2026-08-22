@@ -18,27 +18,110 @@ The player-facing contract, from `Player Progression Ideology.txt`:
 
 ## The single most important correction
 
-**Faction `techLevel` does not control what raiders carry or what traders sell.**
+**Faction `techLevel` does not control what raiders carry.** Era-appropriate gear in vanilla
+is **entirely emergent from hand-authored tag sets on every PawnKindDef.** There is no
+systemic filter — Ludeon did the authoring work, per pawnkind, for every faction.
 
-- `PawnWeaponGenerator` reads **only** `weaponTags` ∩ `ThingDef.weaponTags`, with
-  `weaponMoney` as a price ceiling. Faction techLevel is **never consulted**.
-- `PawnApparelGenerator` reads faction techLevel exactly once — in the free-warm-parka
-  fallback.
+This is worth stating carefully because the observation that motivates doubt is correct:
+tribals never do raid you with charge rifles. The reason is that `Tribal_Archer` carries
+exactly one weapon tag, `NeolithicRangedBasic`, and that tag exists only on `Bow_Short`,
+`Bow_Recurve`, `Bow_Great`, `Pila`, `MeleeWeapon_Club`, `Ikwa` and `Spear`. Guns live in a
+disjoint namespace — `SimpleGun`, `IndustrialGunAdvanced`, `SpacerGun`, `GunHeavy` — that no
+tribal kind ever asks for.
+
+**The decisive proof it is not systemic:** `Tribal_ChiefMelee` lists `MedievalMeleeAdvanced`,
+so a `techLevel Medieval` longsword spawns on a Neolithic-faction pawn in the base game. If
+any tech gate existed, that could not happen.
+
+Confirmed mechanics:
+
+- `PawnWeaponGenerator.TryGenerateWeaponFor` filters, in order: `Price <= weaponMoney.RandomInRange`;
+  `kindDef.weaponTags` ∩ `thing.weaponTags`; `weaponStuffOverride`; ranged rejected if
+  Shooting disabled; `stuffProps.allowedInStuffGeneration`; seeded `generateAllowChance`.
+  **`techLevel` appears nowhere.**
+- `PawnApparelGenerator` calls `CorrectFactionForApparel` from exactly two places —
+  `HatPairValidator` and `ParkaPairValidator` inside `AddFreeWarmthAsNeeded`. It gates only
+  the free-warmth layer, and `anyTechLevelCanUseForWarmth` short-circuits even that.
+- A full search of the 28 MB decompile finds **no systemic `Faction.def.techLevel` vs
+  `ThingDef.techLevel` check on equipped gear anywhere in 1.6.**
 - Trade ignores faction techLevel entirely. Only per-generator `maxTechLevelGenerate` /
   `maxTechLevelBuy` matter, and `StockGenerator_SingleDef` / `_MultiDef` ignore even those.
 
-So **era-appropriate factions are an authoring job on `PawnKindDef`s and `TraderKindDef`s,
-not a techLevel setting.** Patching `FactionDef.techLevel` and expecting medieval raiders
-to show up with medieval weapons does not work. This is the natural assumption and it is
-wrong.
+**Live example from our own last boot:** `Archinity_GL_Technician` errored with *"cheapest
+weapon with one of my weaponTags costs 1010 but weaponMoney min is 400."* Tags intersected
+with a money ceiling — no techLevel in sight.
 
-What faction techLevel *does* affect: settlement loot filtering, drop-pod raid availability
-(`PawnsArrivalModeWorker.minTechLevel`), many `QuestNode_Root_*` requiring `> Medieval`, and
-— for the *player* faction — the research cost multiplier TechBlock writes. Do not fight
-TechBlock with a static patch there.
+### What faction techLevel *does* buy
+
+Real, just not gear: settlement loot filtering (`ThingSetMakerUtility.GetAllowedThingDefs`
+applies `x.techLevel <= parms.techLevel`, seeded from the faction), drop-pod raid
+availability (`PawnsArrivalModeWorker.minTechLevel`), drug exclusion in
+`PawnInventoryGenerator`, map-gen, many `QuestNode_Root_*` requiring `> Medieval`, Ignorance
+Is Bliss bucketing — and, for the *player* faction, the research cost multiplier TechBlock
+writes. Do not fight TechBlock with a static patch there.
 
 `FactionDef.techLevel` is def-level state saved by defName, so an XML patch **applies
 retroactively to existing saves**. It **cannot** differ per faction instance of the same def.
+
+### Cross-mod hazard
+
+The weapon pool is built from the **merged** def database with no tech screen. Any mod that
+tags a modern weapon `NeolithicMeleeBasic` injects it into our factions. With 60+ mods
+loaded this is a real risk.
+
+**The only fully mod-proof option is a private tag namespace** — `Archinity_NeoRangedBasic`
+and friends — stamped onto approved weapons via PatchOperation, with our PawnKindDefs asking
+only for our own tags. Recommended for any faction we care about.
+
+## What Ignorance Is Bliss actually guarantees
+
+**It gates which factions can raid you. It never touches gear.** Zero references to
+`PawnWeaponGenerator`, `PawnApparelGenerator`, `weaponTags` or `ThingDef.techLevel` in the
+whole assembly.
+
+Everything funnels through `FactionInEligibleTechRange(f)` → `TechIsEligibleForIncident(f.def.techLevel)`.
+The main hook is `Patch_FactionCanBeGroupSource_Postfix` on
+`IncidentWorker_PawnsArrive.FactionCanBeGroupSource`, and since
+`IncidentWorker_RaidEnemy : IncidentWorker_Raid : IncidentWorker_PawnsArrive`, raids are covered.
+
+Settings:
+
+- `usePercentResearched` (default true, 0.75) / `useHighestResearched` / `useActualTechLevel` /
+  `useFixedTechRange` — mutually exclusive, they decide how `GetPlayerTech()` computes your level.
+- `NumTechsAhead` / `NumTechsBehind` — both default 1; `-1` means unlimited.
+- `EmpireIsAlwaysEligible` (default **true**) and `MechanoidsAreAlwaysEligible` — hard bypasses.
+- `changeQuests` (default false) — enables two `QuestScriptDef.CanRun` prefixes over a
+  one-entry hardcoded table, and flips `CanFireNowSub` from "let it fire anyway" to
+  "substitute an eligible faction."
+
+**Gaps in the guarantee**, worth knowing before relying on it: the
+`TryGetRandomFactionForCombatPawnGroup` prefix is a no-op if the caller already passed a
+validator; with `changeQuests` off, an out-of-range `parms.faction` in `CanFireNowSub` gets
+`__result = true` and is not blocked; mech clusters are covered only via a hardcoded
+`incidentWorkers` table.
+
+**Net:** IIB stops a spacer faction from showing up in the Neolithic. It does nothing to stop
+a Neolithic faction from carrying a charge rifle if its pawnkinds are tagged badly. The two
+protections are complementary and we need both.
+
+## Minimum set to make a faction era-appropriate
+
+1. `FactionDef.techLevel` — buys IIB bucketing, loot ceilings, drug exclusion, map-gen,
+   arrival modes. **Buys nothing on weapons.**
+2. **`PawnKindDef.weaponTags` — this is the actual enforcement.** Only `Neolithic*` /
+   `Medieval*` tags; never `Gun` / `SimpleGun` / `IndustrialGunAdvanced` / `SpacerGun`, and
+   never the bare `Neolithic` umbrella tag (concrete weapon defs re-declare and replace it,
+   so it is close to meaningless).
+3. `weaponMoney` ceiling near the era band, as a backstop.
+4. `apparelTags: [Neolithic]`.
+5. `apparelRequired` — era-correct defs only. **It bypasses tag filtering entirely.**
+6. `techHediffsTags` restricted to `Poor`, low `techHediffsChance` — no techLevel filter
+   exists there either.
+7. `pawnGroupMakers` referencing only our own kinds.
+
+Also recommended: set `apparelStuffFilter` (Core's `TribeBase` omits it, so vanilla tribals
+can wear **plasteel**), era-appropriate `raidLootMaker` and trader kinds, and an
+`arrivalModeBlacklist` for drop pods.
 
 ---
 
@@ -192,9 +275,15 @@ stop appearing.
 - [ ] Set `startingCountAtWorldCreation` on everything we require. Four VFEM2 factions ship
       at 0 (`KingdomRough`, `KingdomSavage`, `ClanSavage`, `CivilClan`) and currently need
       hand-adding at world creation — fix at the def level instead.
-- [ ] **Author era-appropriate `PawnKindDef`s** — weaponTags, apparelTags, weaponMoney,
-      apparelMoney per faction per era. This is the real work of "medieval factions feel
-      medieval," and techLevel will not do it for you.
+- [ ] **Author era-appropriate `PawnKindDef`s** — the 7-point minimum set above, per faction
+      per era. This is the real work of "medieval factions feel medieval," and techLevel
+      will not do it for you.
+- [ ] **Decide on a private tag namespace** (`Archinity_NeoRangedBasic` etc.) stamped onto
+      approved weapons via PatchOperation. It is the only mod-proof way to stop a 60-mod
+      load order from injecting a modern weapon into a Neolithic faction. Cost is one
+      PatchOperation pass over the approved weapon list.
+- [ ] Set `apparelStuffFilter` on our factions — Core's `TribeBase` omits it, so tribals
+      can wear plasteel.
 - [ ] Build the **acquisition ledger**: for every gated item, which faction supplies it and
       by which route (trade / raid / quest). This is the artifact that makes `sys/04`'s
       research gating legible. Cross-check against `check_availability.py`'s 2-route rule.
@@ -209,6 +298,10 @@ stop appearing.
       VFEM2 factions; add `canSiege` (no VFEM2 faction sets it).
 - [ ] Open question: can `RaidStrategyWorker_MedievalSiege`'s `techLevel == 3` check be
       satisfied for a Neolithic-tier siege without C#?
+- [ ] **Fix `Archinity_GL_Technician`.** Logged config error from the last boot: cheapest
+      weapon matching its `weaponTags` costs 1010, but `weaponMoney` min is 400 — it can
+      spawn **weaponless**. Raise the money floor or widen the tags. Audit our other nine
+      Drifters and five Glitterites pawnkinds for the same mismatch while in there.
 - [ ] Replace the two generated placeholder faction icons.
 - [ ] Faction diplomacy + ideology pass across the world map — flagged, never touched.
 - [ ] Evaluate dropping Faction Customizer and Xenotype Spawn Control.

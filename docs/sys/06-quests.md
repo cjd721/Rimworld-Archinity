@@ -101,6 +101,25 @@ The design requirement from `Player Progression Ideology.txt` is that the player
 source legible: the quest description, the research description, or both, should name what
 it yields.
 
+## Parked idea — player-initiated quests
+
+**Not scheduled. Recorded so it is not lost.**
+
+The player hits a research node, sees it needs an item, and asks *"where do I find this?"*
+Today the answer is guesswork. The idea: some form of **intel workbench**, or a thinking
+action performed against a specific research node, which either **spawns a quest** that
+yields the item or **tells the player where to get it**.
+
+Why it is attractive: it makes the acquisition ledger (`sys/05`) player-facing without
+needing a wiki, and it turns "I am blocked" into an action rather than a search. It also
+inverts the usual quest relationship — the player requests the quest instead of waiting for
+the storyteller to offer one.
+
+Cost, unassessed: quests are normally storyteller- or chain-driven. Player-initiated
+generation almost certainly needs C#, which means a second assembly or an addition to
+`Archinity.Altar`. Do not scope this until the core acquisition ledger exists and we know
+whether the problem it solves is actually painful in play.
+
 ## Work items
 
 - [ ] Strip `QuestChainExtension` from VQE Ancients' six quest defs. Do not touch conditions

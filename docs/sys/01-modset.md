@@ -24,9 +24,18 @@ identically, containing exactly the content the design needs and nothing that di
 4. **All four DLCs are listed twice.** Harmless in play, but configs must match byte-for-byte
    between players — normalise it once and re-snapshot.
 
-## Decisions this brief is blocked on
+## Decisions — both resolved
 
-### D1 — Is VFE Tribals in?
+**D1 and D2 are both YES.** Conrad enabled Medieval Overhaul and VFE Tribals and booted a
+game successfully. The reasoning is kept below because it explains *how* each is used.
+
+**VFE Tribals' own tech-advancement ritual is disabled** — TechBlock is the sole
+advancement lever. See `sys/02`.
+
+**Medieval Overhaul is enabled to be gutted**, not adopted whole. We want its assets,
+research volume and faction content; the systems in `sys/04`'s kill list get stripped.
+
+### D1 — VFE Tribals (resolved: in)
 
 `VISION.md` rejects it. `Player Progression Ideology.txt` opens by calling it "the perfect
 start" and builds the entire Neolithic experience on its research-by-gathering, its work-tag
@@ -45,7 +54,7 @@ Verified facts to decide on:
 The technical objections that might have motivated VISION's rejection do not survive
 contact with the source. If it is rejected it should be on taste, not mechanics.
 
-### D2 — Is Medieval Overhaul in?
+### D2 — Medieval Overhaul (resolved: in, and gutted)
 
 Without it the Medieval era is nearly empty: VFE Classical contributes **zero** Medieval
 research projects (all 18 are Neolithic — `VISION.md` is wrong about this), and VFE
@@ -64,14 +73,24 @@ ruled on and should be decided with D2.
 
 ## Work items
 
-- [ ] **Add `archinity.altar` to `ModsConfig.xml`.** Highest-value single line in the project.
-- [ ] Remove duplicate DLC entries; re-snapshot config.
-- [ ] **Turn TechBlock `randomInsights` off.** Frame-based `Rand` = guaranteed MP desync,
-      currently on at rate 1. Copy the settings file, never re-click — `RecalculateBlockValues`
-      runs live from `DoSettingsWindowContents`.
-- [ ] Resolve D1. If in: add `3079786283`, load before TechBlock.
-- [ ] Resolve D2. If in: add MO + confirm Processor Framework (already subscribed), set
-      `metalChain` off, rule on `woodChain`, then execute the `sys/04` strip.
+- [ ] **Re-snapshot `config/ModsConfig.xml`** once the game is closed. The committed copy
+      predates MO and Tribals being enabled and does not list them, `archinity.altar`, or
+      the current order. Everything below should be verified against the fresh snapshot.
+- [ ] **Add `archinity.altar` to the load order** if the fresh snapshot still lacks it.
+      Highest-value single line in the project — it has never loaded in game.
+- [ ] Remove duplicate DLC entries; re-snapshot.
+- [ ] **Disable TechBlock `randomInsights`.** Two reasons: frame-based `Rand` is a
+      guaranteed MP desync, and Conrad does not want RNG research progress at all. Copy the
+      settings file, never re-click — `RecalculateBlockValues` runs live from
+      `DoSettingsWindowContents`.
+- [ ] **Disable VFE Tribals' tech-advancement ritual.** TechBlock is the sole advancement
+      lever. Confirm cornerstones still fire — they key off any faction techLevel increase,
+      which TechBlock provides, so they should be unaffected. Verify in game.
+- [ ] Confirm MO load position + Processor Framework (already subscribed), set `metalChain`
+      off, rule on `woodChain`, then execute the `sys/04` strip.
+- [ ] **Fix `Archinity_GL_Technician`** — logged config error: cheapest weapon matching its
+      `weaponTags` costs 1010, `weaponMoney` min is 400, so it can spawn weaponless. Raise
+      the money floor or widen the tags. (Also tracked in `sys/05`.)
 - [ ] Apply the rest of the settings table: IIB `NumTechsAhead=0` / `NumTechsBehind=1`,
       `useHighestResearched` on, `EmpireIsAlwaysEligible` false, `ChangeQuests` true.
       Faction Customizer's settings file is missing.

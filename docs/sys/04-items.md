@@ -1,7 +1,7 @@
 # 04 — Items & resources
 
-**Blocked by 01.** The kill list is mostly Medieval Overhaul content; D2 decides whether
-it exists.
+**Blocked by 01.** The kill list is mostly Medieval Overhaul content. **D2 resolved yes —
+MO is enabled specifically so it can be gutted, so this brief is now the point of it.**
 
 ## What this system must do
 
@@ -56,10 +56,15 @@ Kept, most needing simplification. The pattern is **keep the surface, cut the ma
 A small set of items that **massively improve quality of life without gating progression**.
 Scarecrow, mine shaft, crane, sprinkler, trough.
 
-These are the correct target for hard requirements: a specific item obtained by raiding a
-faction or completing a quest, wired in via More Realistic Research's
-`reverseEngineeringMaterials` (the item is damaged, not consumed, so the player keeps the
-trophy). Resource cost can be near zero — **the going and getting is the cost.**
+These are the correct target for hard requirements: a specific item wired in via Research
+Mod's `reverseEngineeringMaterials` (the item is damaged, not consumed, so the player keeps
+the trophy). Resource cost can be near zero — **the going and getting is the cost.**
+
+**The requirement is a guaranteed route, not a quest.** A quest is one route. Trade and
+raid loot are others, and lucking into the item early from a trader or a corpse is a
+perfectly good outcome — it rewards paying attention. What must never happen is a required
+item with no reliable way to obtain it. Every gated item needs at least one guaranteed
+source in the acquisition ledger (`sys/05`); more than one is better.
 
 Two rules, both from the Ideology and both easy to violate:
 

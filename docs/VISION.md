@@ -50,7 +50,7 @@ Every era, slowly, in order. No skipping.
 | Era | Intended length | Feel |
 |---|---|---|
 | Neolithic | 1–2 years | Learning the world. Research is genuinely slow. |
-| Medieval | 3–4 years | The long middle. VFE Classical and Medieval 2 carry it. |
+| Medieval | 3–4 years | The long middle. Medieval Overhaul and VFE Medieval 2 carry it. |
 | Industrial | 2–4 years | Research lightens. The gravship arrives. |
 | Spacer → Ultra → Archotech | — | Roaming the planet, then the stars. |
 
@@ -117,10 +117,24 @@ will are not chosen.
 Not `Deathless` and not `Ageless` — every vanilla sanguophage gets both, so
 they cannot be the distinction.
 
-**It is the absence of `Deathrest`.** The founders never go into the ground.
-Every vampire they make must. Differentiation by what you lack.
+**It is a custom marker gene**, working names *Chosen of Archinity* / *Child of
+Archinity* / *Seed of the Archons*: a plain endogene on the starting xenotype,
+`biostatArc 0` so it can never appear in the lottery, with no mechanical effect
+of its own. It exists to be keyed off.
+
+> **Superseded.** This section previously named *the absence of `Deathrest`* as
+> the distinction. That was rejected — an absence means nothing on a pawn that
+> would never have had the gene, so it cannot serve as a key. `Deathrest` is
+> still stripped from the starting xenotype and that removal is still
+> load-bearing; it simply is not the marker. See `QUESTLINE.md` §3.
+
+The intent it was reaching for is unchanged, and still governs:
 
 > *I can make you like me. I cannot make you deathless. Only They can do that.*
+
+Two chosen ones who can mint copies of themselves at will are not chosen.
+Ordinary colonists may become special slowly; they must never reach what the
+founders are.
 
 ### On randomness
 
@@ -236,13 +250,36 @@ else.
 
 ## Explicitly rejected
 
-- **Medieval Overhaul** — suits a strictly medieval run, fights multi-era
-  progression. Subscribed, deliberately off.
-- **VFE Tribals** — changes research too heavily. *"I'm not trying to spend 4
-  years in the tribal era, but I don't want to totally skip it either."*
-  Subscribed, deliberately off. VFE Classical covers this ground instead.
 - **RimWorld Together** — the run uses the **Multiplayer** mod for co-op with
   one friend.
+
+### Reversed — both of these were rejected here and are now in
+
+- **Medieval Overhaul.** Previously rejected as suiting a strictly medieval run.
+  Now **enabled and gutted**: we take the assets, the research volume and the
+  faction content, and strip the systems that fight multi-era progression — the
+  wood→plank→board chain, paper and cartography, textile spinning and linen,
+  Mithril, the plant and ingredient bloat. Without it the Medieval era is nearly
+  empty. The old note that *"VFE Classical covers this ground"* was simply
+  wrong: **all 18 of VFE Classical's research projects are Neolithic.** It
+  contributes zero Medieval research.
+- **VFE Tribals.** Previously rejected for *"changing research too heavily."*
+  Verified against source, that concern does not hold: gathering-research is not
+  a mode, it is the `Intellectual` work tag being disabled until `VFET_Culture`
+  completes. It **ends itself** — the ritual hard-hides above Neolithic and
+  bench research takes over with no work from us. It delivers the exact pattern
+  `Player Progression Ideology.txt` asks for, where research grants *jobs and
+  gizmos* rather than only recipes. It has zero mod settings, so no multiplayer
+  risk.
+
+  **Its own tech-advancement ritual is disabled.** TechBlock is the single
+  advancement lever. This also removes a real conflict: VFET's advancement
+  ritual fires when no project at the current techLevel is startable, and
+  TechBlock's injected prerequisites make projects not-startable, so the two
+  together could advance the era prematurely.
+
+  *"I'm not trying to spend 4 years in the tribal era, but I don't want to
+  totally skip it either"* still governs. The target is roughly 20–30 days.
 
 ---
 

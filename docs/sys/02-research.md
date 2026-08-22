@@ -106,21 +106,25 @@ For that use vanilla `requiredResearchBuilding` (exact `bench.def` equality) and
    project silently acquires gates we did not author. **Declare an empty `ManualAnalysisDef`
    for anything that should be ungated.** Near-certainly the cause of the 36 recorded
    deadlocks.
-2. **VFET × TechBlock premature advancement.** VFET's
+2. ~~VFET × TechBlock premature advancement.~~ **Resolved — disable VFET's advancement
+   ritual outright.** TechBlock is the sole advancement lever. The conflict was that VFET's
    `RitualObligationTargetWorker_AnyGatherSpotForAdvancement` fires when *no* project at the
-   current techLevel is `CanStartNow`. TechBlock's injected prerequisites make projects
-   not-startable. The ritual can unlock early. Needs a call: accept, or patch the worker.
+   current techLevel is `CanStartNow`, and TechBlock's injected prerequisites make projects
+   not-startable, so the ritual could unlock early. Removing the ritual removes the conflict.
+   **Cornerstones are unaffected** — they key off any faction techLevel increase, which
+   TechBlock writes on tier-up.
 3. **Deleting a `ResearchProjectDef` strips the prerequisite off its dependants**, leaving
    them buildable with no research at all. Neuter referencing defs first, delete last.
 4. `rootMinProgressScore` ignores research entirely —
    `progressScore = freeColonists + wealth×0.0001`. Do not use it to pace anything.
 5. `BuildForProject` in More Realistic Research returns null for `techLevel <= Neolithic`
    and for Archotech. `Devilstrand` is a circular Neolithic deadlock.
-6. TechBlock `randomInsights` is frame-based `Rand` — **MP desync, currently on.** See `sys/01`.
+6. TechBlock `randomInsights` — **disable the feature entirely.** Frame-based `Rand` is an
+   MP desync, and separately Conrad does not want RNG research progress in the game at all.
 
 ## Work items
 
-- [ ] Turn `randomInsights` off (also in `sys/01` — do it once).
+- [ ] Disable `randomInsights` and VFET's advancement ritual (both in `sys/01` — do once).
 - [ ] Audit every project More Realistic Research auto-gated; declare empty
       `ManualAnalysisDef`s where we want no gate. Resolve the 36 deadlocks — prioritise the
       vanilla ship chain, GravTech, `VGE_GravshipPower`, `HeatDissipation`, `AstrofuelRefining`.

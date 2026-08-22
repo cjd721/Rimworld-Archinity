@@ -1,8 +1,12 @@
 # 03 — Benches & production
 
 **Blocked by 01, 02.** Recipes are research-unlocked; the tree must exist first.
-**Partly gated on decision D2** (is Medieval Overhaul in?) — the mechanic below is
-unconditional, the domain table at the bottom is not.
+
+**Decided:** research-based gating is the primary mechanism and is sufficient. You research
+an augment, which unlocks a band of recipes, and keep researching more advanced ones until
+the next augment. The `RecipeWorker` mechanism below is a genuine second door — it exists,
+it is cheap, and it is worth using where a hard requirement improves the feel — but nothing
+in the design depends on it.
 
 ## What this system must do
 
@@ -100,10 +104,9 @@ hard when the node is absent, which is common.
 
 ## Domains to author
 
-> **This table assumes D2 (Medieval Overhaul is in) resolves yes.** The Smithing and
-> Tailoring rows describe MO content specifically; the Cooking row assumes MO + VCE. If D2
-> resolves no, the *pattern* is unchanged but every named bench and augment must be
-> re-sourced from VFE Medieval 2 and vanilla. Check D2 in `MAP.md` before authoring these.
+> **D2 resolved yes — Medieval Overhaul is enabled**, so the MO content named below exists.
+> Note that MO is enabled *to be gutted*: cross-check every bench here against `sys/04`'s
+> kill list before building on it.
 
 | Domain | Core bench | Augment candidates | Notes |
 |---|---|---|---|
