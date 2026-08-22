@@ -122,38 +122,66 @@ mechanical if he says yes.
 
 ## How the orbital gate works (built this session)
 
-Worth understanding because it is the least obvious part of the design.
+The least obvious part of the design. Read before touching any of it.
 
-**The problem:** Ushanka's glittertech tree is gated only by craftable vanilla
-benches (`HiTechResearchBench` + `MultiAnalyzer`, plus `USH_ResearchProbe` at
-100 steel / 10 plasteel / 1 spacer component). You could ignore every glitter
-site in the game and still research all of it. Space had no purpose.
+**The problem.** Ushanka's glittertech RESEARCH is gated only by craftable
+vanilla benches (`HiTechResearchBench` + `MultiAnalyzer`, plus
+`USH_ResearchProbe` at 100 steel / 10 plasteel / 1 spacer component). Ushanka
+does gate some BUILDING on `USH_Glitterheart` — three glitterpanels and the
+targeter, 1 each — but hearts came from SURFACE sites, so nothing required
+going to orbit.
 
-**The fix**, in `Archinity.Glitterites`:
+**Do not reinvent the heart.** An earlier pass in this session created
+`Archinity_Glitterheart`, a duplicate of an item that already existed. It was
+deleted. `USH_Glitterheart` is the real item: uncraftable, `tradeability
+Sellable` (sell only, cannot buy), `stackLimit 3`, and already a crafting
+ingredient.
 
-1. `Archinity_Glitterheart` — a ThingDef that is uncraftable, `tradeability
-   None`, and never decays.
-2. It is added to Odyssey's `Reward_GravshipUpgrade` options list — an
-   **additive** patch, so `FuelOptimizer` and `GravshipShieldGenerator` rewards
-   are untouched. Two orbital quests draw from that maker
-   (`OrbitalFugitivePlatform`, orbital survey sites). Also added to the
-   Glitterite raid loot table.
-3. 18 `ResearchMakesSense.ManualAnalysisDef` entries — one per glittertech
-   project — each requiring glitterhearts to reverse-engineer.
+**The fix**, all in `Archinity.Glitterites`:
 
-Net: the glittertech tree cannot be finished without going to orbit, and
-nothing was taken away from Odyssey or Vanilla Gravship Expanded.
+1. **Research gate** — `Defs/ManualAnalysisDefs/`, 10 of 18 projects require
+   `USH_Glitterheart` to reverse-engineer. Fabrication 3, seven
+   production/deep projects 2, two entry projects 1. Telepad, teeth,
+   overclock, skin and the four skilltrainer lines are deliberately free.
+2. **Orbital garrisons** — `Patches/Ascension_OrbitalPlatforms.xml` repoints
+   `factionDef` on `Opportunity_AbandonedPlatform` and
+   `Opportunity_OrbitalWreck` to the Glitterites. One field each. **No new
+   locations, no new quests** — Odyssey's `OrbitalScanner` (research
+   `OrbitalTech`, must be unroofed) was already the discovery loop.
+3. **Chunks in orbit** — `Defs/PrefabDefs/` places a `USH_GlittershipChunk` on
+   those platforms. 2x2, 600 HP, 20000 work, killedLeavings include 3 hearts.
+   The richest single source, and it costs real time on a vacuum map.
+4. **Loose drops** — `Patches/Ascension_OrbitalLoot.xml` adds hearts to
+   Odyssey's `Reward_GravshipUpgrade` at weights 3/5/2, i.e. ~30/50/20 for
+   1/2/3 hearts. Additive: `FuelOptimizer` and `GravshipShieldGenerator` are
+   untouched, so Odyssey and VGE progression is unaffected.
+5. **Earth closed off** — `Patches/Ascension_NoEarthHearts.xml` sets the
+   glittercrate's heart roll to weight 0 and rewrites the single layout row
+   that placed a chunk on the surface so it places slag instead. Surface
+   glitter sites stay worth raiding for their other loot; they are no longer
+   a heart farm.
 
-**Untested.** Nobody has yet confirmed a glitterheart actually drops in game.
-That is the second verification task after worldgen.
+**Economy.** ~19 hearts for the gated tree plus ~4-6 for Ushanka's building
+costs = **~25 total**. Expected yield is ~3-4 per orbital raid (1.9 loose
+average, plus a ~50% chance of a 3-heart chunk), so roughly **7 raids**. That
+is slightly generous against the "closer to 10" target — to tighten it, lower
+the weight-2 and weight-3 options in `Ascension_OrbitalLoot.xml` first, not
+the chunk. The chunk is what makes a raid feel like a haul.
 
-**Revised in session 1, late:** the first version invented a duplicate item.
-`USH_Glitterheart` already existed in Glittertech Expansion and is already a
-crafting ingredient (3 glitterpanels + the targeter, 1 each). The duplicate was
-deleted and everything repointed at the real item. Do not reintroduce a custom
-heart.
+**Untested.** Nobody has confirmed a heart actually drops in game. Second
+verification task after worldgen.
 
----
+### Traps found the hard way in this area
+
+- `Opportunity_OrbitalWreck` uses `GenStep_OrbitalWreck` with a `<prefabs>`
+  list of weights. `Opportunity_AbandonedPlatform` uses `GenStep_OrbitalPlatform`
+  with `<exteriorPrefabs>` and count ranges. **They are different classes with
+  different field names.** Do not assume symmetry.
+- `USH_GlittershipChunk_North` is not a def. KCSG generates rotation variants at
+  runtime, so only the base symbol is patchable; the `_North` reference had to be
+  handled by rewriting the layout row that used it.
+- XML comments cannot contain a double hyphen. `<!-- ---- x ---- -->` is a parse
+  error, and RimWorld will silently drop the whole file.
 
 ## Tooling
 
