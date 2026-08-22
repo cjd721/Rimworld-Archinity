@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       NO GLITTERHEARTS ON THE GROUND
+
+       Ushanka's surface sites are two heart sources, and both have to close
+       or the orbital gate is decorative.
+
+       1. USH_Glittercrate opens into USH_RewardGlittercrate, whose first
+          RandomOption is a weight-0.5 glitterheart - the single most likely
+          outcome. Weight goes to 0 rather than deleting the node: a
+          RandomOption never selects a zero-weight entry, the structure stays
+          intact, and reverting is a one-character change. The crate's other
+          options (plasteel, and the rest of the table) are untouched, so
+          surface sites stay worth clearing.
+
+       2. The KCSG symbol USH_GlittershipChunk places a real chunk in their
+          surface layouts, and a chunk deconstructs into 3 hearts. Rather
+          than editing KCSG layout strings - fragile, and hundreds of cells -
+          the SYMBOL is repointed at plain slag. Surface sites still show
+          wreckage; the wreckage just is not glitterworld any more.
+
+          The real USH_GlittershipChunk ThingDef is untouched, so the
+          orbital prefab (Archinity_GlittershipDebris) still places the
+          genuine article. Chunks become an orbit-only thing, which is where
+          a piece of a glittership should have been all along.
+
+       Net: surface glitter sites remain husks worth raiding for plasteel,
+       components and their normal loot table. They stop being a heart farm.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationFindMod">
+    <mods>
+      <li>Ushankas Glittertech Expansion</li>
+    </mods>
+    <match Class="PatchOperationSequence">
+      <operations>
+
+        <!-- 1. Crates no longer roll hearts. -->
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/ThingSetMakerDef[defName="USH_RewardGlittercrate"]//li[thingSetMaker/fixedParams/filter/thingDefs/li="USH_Glitterheart"]/weight</xpath>
+          <value>
+            <weight>0</weight>
+          </value>
+        </li>
+
+        <!-- 2. Surface wreckage is ordinary slag, not glitterworld debris. -->
+        <li Class="PatchOperationReplace">
+          <xpath>/Defs/KCSG.SymbolDef[defName="USH_GlittershipChunk"]/thing</xpath>
+          <value>
+            <thing>ChunkSlagSteel</thing>
+          </value>
+        </li>
+        <!-- USH_GlittershipChunk_North is NOT a def - KCSG generates rotation
+             variants at runtime from the ThingDef, so it cannot be patched.
+             The layout references it directly in exactly one row, so that row
+             is rewritten instead. Only one line in 649 contains it. -->
+        <li Class="PatchOperationReplace">
+          <xpath>//li[text()="HiddenConduit,.,.,.,.,USH_GlittershipChunk_North,.,.,AncientRazorWire,.,HiddenConduit"]</xpath>
+          <value>
+            <li>HiddenConduit,.,.,.,.,ChunkSlagSteel,.,.,AncientRazorWire,.,HiddenConduit</li>
+          </value>
+        </li>
+
+      </operations>
+    </match>
+  </Operation>
+
+</Patch>

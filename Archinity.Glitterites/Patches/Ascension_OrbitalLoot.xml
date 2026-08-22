@@ -2,50 +2,86 @@
 <Patch>
 
   <!-- ====================================================================
-       PUT GLITTERHEARTS IN ORBIT
+       LOOSE GLITTERHEARTS FROM ORBITAL QUESTS
 
-       Odyssey's Reward_GravshipUpgrade is a ThingSetMaker_RandomOption with a
-       weighted <options> list. Two orbital quests draw from it:
+       Odyssey's Reward_GravshipUpgrade is a ThingSetMaker_RandomOption.
+       Two ORBITAL quests draw from it:
 
            Script_OrbitalFugitive.xml:113   OrbitalFugitivePlatform
            Script_Site.xml:177              orbital survey sites
 
-       Both are Orbit-layer only. Adding an option is purely ADDITIVE - the
-       existing FuelOptimizer / GravshipShieldGenerator rewards are untouched,
-       so Odyssey and Vanilla Gravship Expanded progression is unaffected. We
-       are not taking anyone's stations or rewards; we are adding a reason to
-       visit them.
+       Adding an option is ADDITIVE. FuelOptimizer and GravshipShieldGenerator
+       are untouched, so Odyssey and Vanilla Gravship Expanded progression is
+       unaffected. We are not taking anyone's rewards, only adding a reason to
+       fly up.
 
-       Weight 2 against the vanilla options' weight 1 each, so glitterhearts
-       are the most common single outcome without crowding out the others.
-       Tune this first if the tree gates too slow or too fast.
+       DROP SHAPE, per spec: roughly 30% one heart, 50% two, 20% three.
+       Weights 3 / 5 / 2 give exactly that, averaging 1.9 per pull.
+
+       COMBINED WITH the 0~1 glittership chunk on platforms (3 hearts each,
+       ~50% of platforms), expected yield is roughly 3-4 hearts per orbital
+       raid. Against ~25 total demand that is about 7 raids for the full
+       gated tree - slightly generous versus the "closer to 10" target.
+
+       TO TUNE: lower the weight-2 and weight-3 options here first. That
+       moves the average without touching the chunk, which is the part that
+       makes a raid feel like a haul.
        ==================================================================== -->
 
-  <Operation Class="PatchOperationAdd">
+  <Operation Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
     <xpath>/Defs/ThingSetMakerDef[defName="Reward_GravshipUpgrade"]/root/options</xpath>
     <value>
+      <!-- ~30%: one heart -->
       <li>
-        <weight>2</weight>
-        <thingSetMaker Class="ThingSetMaker_StackCount">
+        <weight>3</weight>
+        <thingSetMaker Class="ThingSetMaker_Count">
           <fixedParams>
             <filter>
               <thingDefs>
-                <li>Archinity_Glitterheart</li>
+                <li>USH_Glitterheart</li>
               </thingDefs>
             </filter>
-            <countRange>1~2</countRange>
+            <countRange>1~1</countRange>
+          </fixedParams>
+        </thingSetMaker>
+      </li>
+      <!-- ~50%: two hearts -->
+      <li>
+        <weight>5</weight>
+        <thingSetMaker Class="ThingSetMaker_Count">
+          <fixedParams>
+            <filter>
+              <thingDefs>
+                <li>USH_Glitterheart</li>
+              </thingDefs>
+            </filter>
+            <countRange>2~2</countRange>
+          </fixedParams>
+        </thingSetMaker>
+      </li>
+      <!-- ~20%: three hearts, the good haul -->
+      <li>
+        <weight>2</weight>
+        <thingSetMaker Class="ThingSetMaker_Count">
+          <fixedParams>
+            <filter>
+              <thingDefs>
+                <li>USH_Glitterheart</li>
+              </thingDefs>
+            </filter>
+            <countRange>3~3</countRange>
           </fixedParams>
         </thingSetMaker>
       </li>
     </value>
   </Operation>
 
-  <!-- Glitterite raids also carry them, so their orbital settlements are
-       worth assaulting directly rather than only waiting for quests. -->
-  <Operation Class="PatchOperationAdd">
+  <!-- Glitterite raids carry hearts too, so their orbital settlements are
+       worth assaulting directly rather than only waiting for a scan. -->
+  <Operation Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
     <xpath>/Defs/ThingSetMakerDef[defName="Archinity_GlitteritesRaidLootMaker"]/root/fixedParams/filter/thingDefs</xpath>
     <value>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </value>
   </Operation>
 

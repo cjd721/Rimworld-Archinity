@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       ORBITAL PLATFORMS BECOME GLITTERITE
+
+       Odyssey already ships the whole loop. An orbital scanner (research
+       OrbitalTech, 180 steel + 6 industrial + 2 spacer components, must be
+       unroofed) periodically detects orbital locations and turns them into
+       quests. Those locations generate via GenStep_OrbitalPlatform, which
+       already handles everything KCSG could not: solid platformTerrain,
+       temperature 20, sentry drones, and exterior turret prefabs.
+
+       We change exactly one field per site - who garrisons it - and add one
+       prefab. No new locations, no new quests, nothing hidden. The door was
+       already there; this puts our villain behind it.
+
+       Three sites carry the genstep. Opportunity_MechanoidPlatform is left
+       alone deliberately: it is Odyssey's mechanoid content and should stay
+       mechanoid.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationSequence">
+    <operations>
+
+      <!-- Abandoned platform -->
+      <li Class="PatchOperationReplace">
+        <xpath>/Defs/GenStepDef[defName="Opportunity_AbandonedPlatform"]/genStep/factionDef</xpath>
+        <value>
+          <factionDef>Archinity_Glitterites</factionDef>
+        </value>
+      </li>
+
+      <!-- Orbital wreck -->
+      <li Class="PatchOperationReplace">
+        <xpath>/Defs/GenStepDef[defName="Opportunity_OrbitalWreck"]/genStep/factionDef</xpath>
+        <value>
+          <factionDef>Archinity_Glitterites</factionDef>
+        </value>
+      </li>
+
+      <!-- Glitterworld debris on the abandoned platform.
+           0~1 per platform, so roughly half carry one. A chunk yields
+           3 glitterhearts on deconstruct (killedLeavings), and takes
+           20000 work to break down - so it is a real haul, not a pickup.
+
+           MayRequire-guarded via the prefab def itself; if Glittertech
+           Expansion is absent the prefab simply never loads. -->
+      <li Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
+        <xpath>/Defs/GenStepDef[defName="Opportunity_AbandonedPlatform"]/genStep/exteriorPrefabs</xpath>
+        <value>
+          <Archinity_GlittershipDebris>0~1</Archinity_GlittershipDebris>
+        </value>
+      </li>
+
+      <!-- The wreck uses GenStep_OrbitalWreck, a DIFFERENT class whose prefab
+           list is <prefabs> and whose values are weights, not count ranges.
+           Verified against the def; do not assume the two gensteps match. -->
+      <li Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
+        <xpath>/Defs/GenStepDef[defName="Opportunity_OrbitalWreck"]/genStep/prefabs</xpath>
+        <value>
+          <Archinity_GlittershipDebris>0.5</Archinity_GlittershipDebris>
+        </value>
+      </li>
+
+    </operations>
+  </Operation>
+
+</Patch>

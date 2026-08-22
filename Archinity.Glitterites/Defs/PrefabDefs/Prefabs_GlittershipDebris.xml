@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- A single glitterworld debris chunk, placed as an exterior prefab on
+       Glitterite orbital platforms.
+
+       USH_GlittershipChunk is 2x2, 600 HP, 20000 work to break down, and its
+       killedLeavings are Plasteel 15 / ComponentSpacer 2 / USH_Glitterheart 3.
+       That makes one chunk the single richest heart source in a raid, and it
+       costs real time on a vacuum map to extract.
+
+       Guarded on the whole def: without Glittertech Expansion the ThingDef
+       does not exist and this would be an unresolved cross-reference. -->
+
+  <PrefabDef MayRequire="Ushanka.GlittertechExpansion">
+    <defName>Archinity_GlittershipDebris</defName>
+    <size>(2,2)</size>
+    <things>
+      <USH_GlittershipChunk>
+        <rects>
+          <li>(0,0,0,0)</li>
+        </rects>
+      </USH_GlittershipChunk>
+    </things>
+  </PrefabDef>
+
+</Defs>

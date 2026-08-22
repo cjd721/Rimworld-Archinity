@@ -4,59 +4,51 @@
   <!-- ====================================================================
        THE ORBITAL GATE
 
-       More Realistic Research (sae.ResearchMod) makes physical materials a
-       hard prerequisite for a named research project. Its own readme:
+       Uses USH_Glitterheart - Ushanka's own item, not a duplicate. It is
+       already uncraftable, already tradeability Sellable (you can sell one,
+       you cannot buy one), and already stackLimit 3.
 
-         "Any research projects (vanilla or modded) that are not listed in
-          this file will automatically generate their own analysis
-          requirements based on their Tech Level."
+       Ushanka gates BUILDING on hearts (three glitterpanels and the targeter,
+       1 each) but leaves RESEARCH free behind craftable benches. These defs
+       add the research half, so the tree cannot be climbed from the ground.
 
-       Anything we DO list overrides that default. So by naming every
-       glittertech project and demanding glitterhearts - an item that exists
-       only in orbit and cannot be crafted or bought - the whole tree becomes
-       impossible to finish from the ground.
+       SCOPE: 10 of 18 projects. Core materials and production only. The other
+       8 - telepad, teeth, overclock, skin, and the four skilltrainer lines -
+       are deliberately left free. They are conveniences, not the point.
 
-       This is the mechanism that makes space mandatory rather than merely
-       rewarding. Ushanka's own gating is just craftable benches; without
-       this file you can research the entire glittertech tree and never
-       leave the planet.
+       COSTS, per the agreed shape:
+         3 hearts  USH_GlittertechFabrication  - the fabricator, gates all
+                                                 downstream production. The
+                                                 single most expensive unlock.
+         2 hearts  the seven production/deep projects
+         1 heart   the two entry-tier projects
 
-       COSTS ARE TIERED by depth in their tech tree:
-         1 heart  - foundation and the cheaper utility branches
-         2 hearts - fabrication, panels, the heavy/alchemy line
-         3 hearts - the resurrector, the deepest project in the mod
-
-       Each entry also lists a cheap secondary material so the analysis has
-       something to consume besides the heart itself. Reverse-engineering a
-       glitterheart is the gate; the rest is busywork that reads as lab time.
-
-       If this proves too punishing, lower the pointsRequired values before
-       removing hearts - the number of hearts is the story, the points are
-       the grind.
+       Total demand: 3 + 14 + 2 = 19 hearts for the whole gated tree, plus
+       roughly 4-6 for Ushanka's own building costs. Call it ~25.
        ==================================================================== -->
 
-  <!-- ============ Foundation ============ -->
+  <!-- ===================== 3 hearts: the keystone ===================== -->
 
   <ResearchMakesSense.ManualAnalysisDef>
     <defName>Archinity_GT_Fabrication</defName>
     <researchProject>USH_GlittertechFabrication</researchProject>
     <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
+    <reverseEngineeringPointsRequired>3</reverseEngineeringPointsRequired>
     <theoreticalMaterials>
       <li>ComponentSpacer</li>
     </theoreticalMaterials>
     <theoreticalPointsRequired>8</theoreticalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <!-- ============ Panels and utilities ============ -->
+  <!-- ================ 2 hearts: production and deep ================ -->
 
   <ResearchMakesSense.ManualAnalysisDef>
     <defName>Archinity_GT_LightPanels</defName>
     <researchProject>USH_LightGlitterpanelsRes</researchProject>
     <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </reverseEngineeringMaterials>
     <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
@@ -65,47 +57,27 @@
     <defName>Archinity_GT_DarkPanels</defName>
     <researchProject>USH_DarkGlitterpanelsRes</researchProject>
     <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </reverseEngineeringMaterials>
     <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_Utilities</defName>
-    <researchProject>USH_GlittertechUtilitiesRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_Telepad</defName>
-    <researchProject>USH_TelepadRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
   <ResearchMakesSense.ManualAnalysisDef>
     <defName>Archinity_GT_Disassembler</defName>
     <researchProject>USH_MolecularDisassemblerRes</researchProject>
     <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </reverseEngineeringMaterials>
     <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
-
-  <!-- ============ Heavy line ============ -->
 
   <ResearchMakesSense.ManualAnalysisDef>
     <defName>Archinity_GT_Heavy</defName>
     <researchProject>USH_HeavyGlittertechRes</researchProject>
     <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>3</reverseEngineeringPointsRequired>
+    <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
     <theoreticalMaterials>
       <li>Plasteel</li>
     </theoreticalMaterials>
@@ -116,18 +88,7 @@
     <defName>Archinity_GT_Alchemy</defName>
     <researchProject>USH_GlittertechAlchemyRes</researchProject>
     <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>3</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <!-- ============ Neural line ============ -->
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_Neuromodifiers</defName>
-    <researchProject>USH_NeuromodifiersBasicsRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </reverseEngineeringMaterials>
     <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
@@ -136,91 +97,52 @@
     <defName>Archinity_GT_DeepMind</defName>
     <researchProject>USH_DeepMindScanningRes</researchProject>
     <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>3</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <!-- ============ Body modification ============ -->
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_Teeth</defName>
-    <researchProject>USH_TeethRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_Overclock</defName>
-    <researchProject>USH_OverclockRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </reverseEngineeringMaterials>
     <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_Skin</defName>
-    <researchProject>USH_SkinRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <!-- ============ Skilltrainers ============ -->
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_CombatTrainers</defName>
-    <researchProject>USH_CombatSkilltrainersRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_EngineeringTrainers</defName>
-    <researchProject>USH_EngineeringSkilltrainersRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_IntellectualTrainers</defName>
-    <researchProject>USH_IntellectualSkilltrainersRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <ResearchMakesSense.ManualAnalysisDef>
-    <defName>Archinity_GT_SurvivalTrainers</defName>
-    <researchProject>USH_SurvivalSkilltrainersRes</researchProject>
-    <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
-    </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
-  </ResearchMakesSense.ManualAnalysisDef>
-
-  <!-- ============ The deepest project ============ -->
 
   <ResearchMakesSense.ManualAnalysisDef>
     <defName>Archinity_GT_Resurrector</defName>
     <researchProject>USH_ResurrectorRes</researchProject>
     <reverseEngineeringMaterials>
-      <li>Archinity_Glitterheart</li>
+      <li>USH_Glitterheart</li>
     </reverseEngineeringMaterials>
-    <reverseEngineeringPointsRequired>4</reverseEngineeringPointsRequired>
+    <reverseEngineeringPointsRequired>2</reverseEngineeringPointsRequired>
     <theoreticalMaterials>
       <li>ComponentSpacer</li>
     </theoreticalMaterials>
     <theoreticalPointsRequired>12</theoreticalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
+
+  <!-- ===================== 1 heart: entry tier ===================== -->
+
+  <ResearchMakesSense.ManualAnalysisDef>
+    <defName>Archinity_GT_Utilities</defName>
+    <researchProject>USH_GlittertechUtilitiesRes</researchProject>
+    <reverseEngineeringMaterials>
+      <li>USH_Glitterheart</li>
+    </reverseEngineeringMaterials>
+    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
+  </ResearchMakesSense.ManualAnalysisDef>
+
+  <ResearchMakesSense.ManualAnalysisDef>
+    <defName>Archinity_GT_Neuromodifiers</defName>
+    <researchProject>USH_NeuromodifiersBasicsRes</researchProject>
+    <reverseEngineeringMaterials>
+      <li>USH_Glitterheart</li>
+    </reverseEngineeringMaterials>
+    <reverseEngineeringPointsRequired>1</reverseEngineeringPointsRequired>
+  </ResearchMakesSense.ManualAnalysisDef>
+
+  <!-- ==================================================================
+       LEFT FREE ON PURPOSE (8 projects):
+         USH_TelepadRes, USH_TeethRes, USH_OverclockRes, USH_SkinRes,
+         USH_CombatSkilltrainersRes, USH_EngineeringSkilltrainersRes,
+         USH_IntellectualSkilltrainersRes, USH_SurvivalSkilltrainersRes
+
+       Unlisted projects fall through to More Realistic Research's own
+       tech-level defaults, so they still cost something - just not hearts.
+       ================================================================== -->
 
 </Defs>

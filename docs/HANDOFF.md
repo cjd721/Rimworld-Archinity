@@ -147,6 +147,12 @@ nothing was taken away from Odyssey or Vanilla Gravship Expanded.
 **Untested.** Nobody has yet confirmed a glitterheart actually drops in game.
 That is the second verification task after worldgen.
 
+**Revised in session 1, late:** the first version invented a duplicate item.
+`USH_Glitterheart` already existed in Glittertech Expansion and is already a
+crafting ingredient (3 glitterpanels + the targeter, 1 each). The duplicate was
+deleted and everything repointed at the real item. Do not reintroduce a custom
+heart.
+
 ---
 
 ## Tooling
