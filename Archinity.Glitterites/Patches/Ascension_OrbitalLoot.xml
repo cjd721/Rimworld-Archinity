@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       PUT GLITTERHEARTS IN ORBIT
+
+       Odyssey's Reward_GravshipUpgrade is a ThingSetMaker_RandomOption with a
+       weighted <options> list. Two orbital quests draw from it:
+
+           Script_OrbitalFugitive.xml:113   OrbitalFugitivePlatform
+           Script_Site.xml:177              orbital survey sites
+
+       Both are Orbit-layer only. Adding an option is purely ADDITIVE - the
+       existing FuelOptimizer / GravshipShieldGenerator rewards are untouched,
+       so Odyssey and Vanilla Gravship Expanded progression is unaffected. We
+       are not taking anyone's stations or rewards; we are adding a reason to
+       visit them.
+
+       Weight 2 against the vanilla options' weight 1 each, so glitterhearts
+       are the most common single outcome without crowding out the others.
+       Tune this first if the tree gates too slow or too fast.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationAdd">
+    <xpath>/Defs/ThingSetMakerDef[defName="Reward_GravshipUpgrade"]/root/options</xpath>
+    <value>
+      <li>
+        <weight>2</weight>
+        <thingSetMaker Class="ThingSetMaker_StackCount">
+          <fixedParams>
+            <filter>
+              <thingDefs>
+                <li>Archinity_Glitterheart</li>
+              </thingDefs>
+            </filter>
+            <countRange>1~2</countRange>
+          </fixedParams>
+        </thingSetMaker>
+      </li>
+    </value>
+  </Operation>
+
+  <!-- Glitterite raids also carry them, so their orbital settlements are
+       worth assaulting directly rather than only waiting for quests. -->
+  <Operation Class="PatchOperationAdd">
+    <xpath>/Defs/ThingSetMakerDef[defName="Archinity_GlitteritesRaidLootMaker"]/root/fixedParams/filter/thingDefs</xpath>
+    <value>
+      <li>Archinity_Glitterheart</li>
+    </value>
+  </Operation>
+
+</Patch>

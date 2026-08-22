@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- ====================================================================
+       GLITTERHEART
+
+       The key that makes orbit mandatory.
+
+       Ushanka's glittertech research tree is gated only by craftable vanilla
+       benches (HiTechResearchBench + MultiAnalyzer, and USH_ResearchProbe at
+       100 steel / 10 plasteel / 1 spacer component). You could ignore every
+       glitter site in the game and still research the whole tree.
+
+       This item fixes that. More Realistic Research's ManualAnalysisDef makes
+       physical materials a hard prerequisite for a given research project, so
+       requiring glitterhearts turns the entire glittertech tree into
+       something you cannot finish without going up.
+
+       Deliberate properties:
+         tradeability None   - cannot be bought. Silver is not a shortcut.
+         no DeteriorationRate - found early, kept indefinitely. Matches the
+                                ArchiteCapsule precedent; a glitterheart
+                                looted in year three must survive to year ten.
+         no recipe            - not craftable at any tech level, ever.
+       ==================================================================== -->
+
+  <ThingDef ParentName="ResourceBase">
+    <defName>Archinity_Glitterheart</defName>
+    <label>glitterheart</label>
+    <description>A dense lattice of self-organising computronium, still faintly warm. Glitterworld fabrication was never a matter of knowing how - the mathematics survived, printed in a thousand ruined archives. What did not survive was the ability to grow one of these.\n\nEvery glitterheart in existence was made somewhere far above this planet, by people who are no longer answering. The custodians hold what is left of them, and they hold it in orbit.\n\nA colony that wants glitterworld technology does not need a better research bench. It needs to go up there and take one.</description>
+    <thingClass>ThingWithComps</thingClass>
+    <graphicData>
+      <texPath>Things/Item/Resource/ArchiteCapsule</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(0.85,0.85)</drawSize>
+      <color>(200, 235, 180)</color>
+    </graphicData>
+    <soundInteract>Standard_Drop</soundInteract>
+    <soundDrop>Standard_Drop</soundDrop>
+    <useHitPoints>true</useHitPoints>
+    <healthAffectsPrice>false</healthAffectsPrice>
+    <statBases>
+      <MaxHitPoints>150</MaxHitPoints>
+      <MarketValue>1100</MarketValue>
+      <Mass>0.6</Mass>
+      <Flammability>0</Flammability>
+      <!-- No DeteriorationRate: the stat defaults to 0, so these never decay,
+           indoors or out. Do not add one. -->
+    </statBases>
+    <tradeability>None</tradeability>
+    <thingCategories>
+      <li>ResourcesRaw</li>
+    </thingCategories>
+    <stackLimit>25</stackLimit>
+    <alwaysHaulable>true</alwaysHaulable>
+    <isTechHediff>false</isTechHediff>
+    <comps>
+      <li Class="CompProperties_Forbiddable" />
+    </comps>
+  </ThingDef>
+
+  <!-- Wraps the item so quest reward nodes can hand it out. -->
+  <ThingSetMakerDef>
+    <defName>Archinity_GlitterheartReward</defName>
+    <root Class="ThingSetMaker_StackCount">
+      <fixedParams>
+        <filter>
+          <thingDefs>
+            <li>Archinity_Glitterheart</li>
+          </thingDefs>
+        </filter>
+        <countRange>1~2</countRange>
+      </fixedParams>
+    </root>
+  </ThingSetMakerDef>
+
+</Defs>

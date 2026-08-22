@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
   <name>Archinity - Glitterites</name>
   <author>cjd72</author>
@@ -16,6 +16,8 @@ Those quests are also re-gated for a long multi-era playthrough: vanilla ships t
 
 Mechanoid deployment uses vanilla mechs as a guaranteed backbone, with Alpha Mechs layered on where present.
 
+Also adds the glitterheart: an uncraftable, untradeable item that drops only from orbital sites, and which More Realistic Research requires for every glittertech project. Ushanka's tree is otherwise gated only by craftable benches, so without this you can research all of glittertech without ever leaving the ground.
+
 Requires Odyssey (orbit layer) and Biotech. Glittertech Expansion and Alpha Mechs are optional - without them the faction simply fields a smaller roster and gains no planetside sites.</description>
   <loadAfter>
     <li>Ludeon.RimWorld</li>
@@ -26,6 +28,7 @@ Requires Odyssey (orbit layer) and Biotech. Glittertech Expansion and Alpha Mech
     <li>OskarPotocki.VanillaFactionsExpanded.Core</li>
     <li>Ushanka.GlittertechExpansion</li>
     <li>sarg.alphamechs</li>
+    <li>sae.ResearchMod</li>
     <li>archinity.origins</li>
     <li>archinity.pacing</li>
     <li>archinity.drifters</li>

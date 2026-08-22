@@ -14,8 +14,10 @@ carry no simulation code, which makes them inherently multiplayer-safe.
 | `Archinity.Origins` | **built** | Archonian Sanguophage xenotype + "Seed of Archinity" scenario |
 | `Archinity.Pacing` | **partial** | Orbit size, Archon raid lockout, Transcendent reserved, MRR fix |
 | `Archinity.Drifters` | **built** | Starjack Free Companies — neutral, hostile-capable orbital faction |
-| `Archinity.Glitterites` | **built** | Ultra-tech permanent enemy, orbital holdings, mixed human/mech forces |
+| `Archinity.Glitterites` | **built** | Ultra-tech permanent enemy, orbital holdings, mixed human/mech forces, glitterheart orbital gate |
 | `Archinity.Chronicle` | planned | Quest chain spine tying the arc together |
+
+New session? Read [docs/HANDOFF.md](docs/HANDOFF.md) first.
 
 ## Setup
 

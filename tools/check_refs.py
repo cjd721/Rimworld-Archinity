@@ -100,6 +100,17 @@ def main():
                         "AM_Siegebreaker", "AM_Demolisher", "Highmate",
                         "MedicineUltratech", "DeathAcidifier", "Uranium",
                         "Apparel_PowerArmor", "Apparel_PowerArmorHelmet"],
+        "ascension":   ["Archinity_Glitterheart", "Archinity_GlitterheartReward",
+                        "Reward_GravshipUpgrade", "ResourcesRaw",
+                        "USH_GlittertechFabrication", "USH_LightGlitterpanelsRes",
+                        "USH_DarkGlitterpanelsRes", "USH_GlittertechUtilitiesRes",
+                        "USH_TelepadRes", "USH_MolecularDisassemblerRes",
+                        "USH_HeavyGlittertechRes", "USH_GlittertechAlchemyRes",
+                        "USH_NeuromodifiersBasicsRes", "USH_DeepMindScanningRes",
+                        "USH_TeethRes", "USH_OverclockRes", "USH_SkinRes",
+                        "USH_CombatSkilltrainersRes", "USH_EngineeringSkilltrainersRes",
+                        "USH_IntellectualSkilltrainersRes", "USH_SurvivalSkilltrainersRes",
+                        "USH_ResurrectorRes", "USH_ResearchProbe"],
     }
 
     missing_total = 0
