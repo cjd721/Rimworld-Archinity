@@ -10,7 +10,9 @@ State of the Archinity project at the end of session 3.
    you read nothing else, read this.
 2. **[`../CLAUDE.md`](../CLAUDE.md)** — the failures that produce no error
    message. Short, and every entry has already cost someone an evening.
-3. **[`technical-findings.md`](technical-findings.md)** — every fact verified
+3. **[`QUESTLINE.md`](QUESTLINE.md)** — the sixteen-beat outline: what each
+   beat gates on, what it gives, and what every reward mechanically does.
+4. **[`technical-findings.md`](technical-findings.md)** — every fact verified
    against decompiled source. Re-deriving it is expensive and the wiki is wrong
    about several of them.
 
