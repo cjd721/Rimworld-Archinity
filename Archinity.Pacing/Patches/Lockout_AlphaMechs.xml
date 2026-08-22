@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       ALPHA MECHS: THEIRS, NOT OURS
+
+       Alpha Mechs is loaded so the Glitterites can field AM_Daggersnout,
+       AM_Phalanx, AM_Goliath and the rest as part of their combined-arms
+       raids. The player is not supposed to get any of it: no mechtech
+       research, no gestation, no mechanitor gear, no buying it off traders.
+
+       WHAT IS AND IS NOT TOUCHED
+
+       Untouched: every mech PawnKindDef and ThingDef, their bodies,
+       abilities, damage defs and sounds. That is the whole reason the mod
+       is here, and Archinity.Glitterites references those kinds by name.
+
+       Removed or neutered: only the things the PLAYER interacts with.
+       Alpha Mechs keeps its player-facing content in a Biotech submodule
+       (1.6/Mods/Biotech, loaded via loadFolders because Biotech is active),
+       which is what makes this surgical:
+
+         26 MechGestator RecipeDefs   gestation of every AM mech
+         11 mechanitor buildings      band nodes, boosters, rechargers
+          8 apparel items             packs, commander suits, prestige gear
+          9 ResearchProjectDefs       AM_*Mechtech and the Ultra four
+
+       ORDER MATTERS. The research projects are removed LAST, and the
+       referencing defs are neutered rather than deleted, for one specific
+       reason: when RimWorld cannot resolve a cross-reference it logs an
+       error and OMITS the entry rather than storing null. So deleting the
+       research first would strip researchPrerequisites off the buildings
+       and leave them buildable with no research at all, which is the exact
+       opposite of the intent. Neutering first, deleting second, is safe in
+       either resolution order.
+
+       Removing the research also pulls 4,100 Industrial and 3,000 Ultra
+       points out of TechBlock's tier totals, which slightly lowers the
+       TB_SpacerTechLock and TB_ArchoTechLock costs. That is a side effect,
+       not the goal, and it is in the helpful direction.
+
+       Note: xpath predicates use starts-with() on "AM_" so this keeps
+       working if Alpha Mechs adds more mechs later.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationFindMod">
+    <mods>
+      <li>Alpha Mechs</li>
+    </mods>
+    <match Class="PatchOperationSequence">
+      <operations>
+
+        <!-- 1. No gestation.
+
+             Matching on researchPrerequisite does NOT work here. Alpha Mechs
+             declares it once on four Abstract parents
+             (AM_LightMechanoidRecipe, AM_MediumMechanoidRecipe,
+             AM_HeavyMechanoidRecipe, AM_SuperHeavyMechanoidRecipe) and the 26
+             concrete recipes inherit it. PatchOperations run on the raw XML
+             BEFORE ParentName inheritance is resolved, so a predicate on
+             researchPrerequisite sees only the four abstracts, and deleting
+             those would leave 26 children pointing at a missing parent.
+
+             Match the children by ParentName, then the parents by Name. -->
+        <li Class="PatchOperationRemove">
+          <xpath>/Defs/RecipeDef[starts-with(@ParentName,"AM_") and contains(@ParentName,"MechanoidRecipe")]</xpath>
+          <success>Always</success>
+        </li>
+        <li Class="PatchOperationRemove">
+          <xpath>/Defs/RecipeDef[starts-with(@Name,"AM_") and contains(@Name,"MechanoidRecipe")]</xpath>
+          <success>Always</success>
+        </li>
+        <!-- Belt and braces for any AM recipe that does declare it directly. -->
+        <li Class="PatchOperationRemove">
+          <xpath>/Defs/RecipeDef[starts-with(researchPrerequisite,"AM_")]</xpath>
+          <success>Always</success>
+        </li>
+
+        <!-- 2. No crafting the mechanitor apparel. The recipeMaker goes,
+                the ThingDef stays, so nothing that references the item by
+                name breaks. -->
+        <li Class="PatchOperationRemove">
+          <xpath>/Defs/ThingDef[starts-with(recipeMaker/researchPrerequisite,"AM_")]/recipeMaker</xpath>
+          <success>Always</success>
+        </li>
+
+        <!-- 3. No buying it either. Every AM_ item loses its tradeTags, so
+                no stock generator can offer one. Also covers the prestige
+                gear that the Royalty and VFE Pirates submodule patches add,
+                which have no recipeMaker of their own. -->
+        <li Class="PatchOperationRemove">
+          <xpath>/Defs/ThingDef[starts-with(defName,"AM_")]/tradeTags</xpath>
+          <success>Always</success>
+        </li>
+
+        <!-- 4. No building the band nodes, boosters and rechargers.
+                Dropping designationCategory takes them out of the architect
+                menu entirely, and unlike deleting the def it cannot dangle. -->
+        <li Class="PatchOperationRemove">
+          <xpath>/Defs/ThingDef[starts-with(researchPrerequisites/li,"AM_")]/designationCategory</xpath>
+          <success>Always</success>
+        </li>
+
+        <!-- 5. Finally, out of the research tree. Safe now that nothing
+                above depends on these to stay locked. -->
+        <li Class="PatchOperationRemove">
+          <xpath>/Defs/ResearchProjectDef[starts-with(defName,"AM_")]</xpath>
+          <success>Always</success>
+        </li>
+
+      </operations>
+    </match>
+  </Operation>
+
+</Patch>
