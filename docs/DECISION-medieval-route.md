@@ -1,6 +1,29 @@
 # Open decision: how do we build the Medieval era?
 
-**Status: UNRESOLVED. This is the first thing to work in the next session.**
+> **RESOLVED IN SESSION 4 — Route A (enable Medieval Overhaul).**
+>
+> Keep this document for its measurements and its walkthrough, but **several of
+> its numbers did not survive re-measurement.** Corrections, with evidence, are
+> in [`technical-findings.md`](technical-findings.md) under *Session 4
+> findings*; actions are in [`WORKLIST.md`](WORKLIST.md).
+>
+> The four that matter most:
+> - **Processor Framework IS already subscribed** (workshop `3210544395`).
+>   Route A needs no new Steam subscription.
+> - **Both routes yield the same 37,900 Medieval points from MO.** The
+>   "Route B ~37,700" figure was MO's own total presented as a port estimate.
+>   The routes never differed on research; they differ on attached content and
+>   maintenance.
+> - **`requiredCountAtGameStart` is dead code in 1.6.** The proposed fix of
+>   patching it to 0 would do nothing.
+> - **"7 MO factions force-spawn" is 9, of which 6 are hidden.** Only the four
+>   Noble Houses are visible, and those are the wanted ones.
+>
+> Also corrected: 39 JobDrivers is 10; 7 research baseCost changes is 4; the 39+7
+> building lists are really 60 buildings, and MO ships four Electricity-gated
+> successor buildings the audit missed.
+
+**Status: RESOLVED. Superseded in part — read the banner above.**
 
 Read [`VISION.md`](VISION.md) first if you have not. The Medieval era is the
 longest single stretch of the campaign (intended 3–4 years, 180–240 days) and

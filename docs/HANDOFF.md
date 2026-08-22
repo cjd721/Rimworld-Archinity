@@ -1,6 +1,6 @@
 # Handoff — read this first
 
-State of the Archinity project at the end of session 3.
+State of the Archinity project at the end of session 4.
 
 ## Reading order
 
@@ -8,15 +8,36 @@ State of the Archinity project at the end of session 3.
    the arc, the altar, and the design principles that drove nearly every
    decision. **This is the part that cannot be recovered from the code.** If
    you read nothing else, read this.
-2. **[`../CLAUDE.md`](../CLAUDE.md)** — the failures that produce no error
+2. **[`Player Progression Ideology.txt`](Player%20Progression%20Ideology.txt)** —
+   Conrad's own account of how progression through an era should *feel*: base
+   station plus augments rather than a graveyard of benches, surface without
+   complexity, and the rule that every added resource dilutes the vanilla pools.
+   **This is the design authority for pacing and progression.** Do not propose a
+   progression arc without reading it first.
+3. **[`../CLAUDE.md`](../CLAUDE.md)** — the failures that produce no error
    message. Short, and every entry has already cost someone an evening.
-3. **[`QUESTLINE.md`](QUESTLINE.md)** — the sixteen-beat outline: what each
+4. **[`QUESTLINE.md`](QUESTLINE.md)** — the sixteen-beat outline: what each
    beat gates on, what it gives, and what every reward mechanically does.
-4. **[`technical-findings.md`](technical-findings.md)** — every fact verified
+5. **[`technical-findings.md`](technical-findings.md)** — every fact verified
    against decompiled source. Re-deriving it is expensive and the wiki is wrong
    about several of them.
+6. **[`WORKLIST.md`](WORKLIST.md)** — everything session 4 found that needs
+   doing, with the verified fact behind each item. Start here for actions.
 
 This document is build status and next actions.
+
+## Session 4, in one paragraph
+
+Nine research agents verified the Medieval route against decompiled source. The
+route question resolved to **enable Medieval Overhaul** rather than hand-port it.
+Far more valuable than the route answer were the mechanics: **a RecipeDef cannot
+be gated on a linked facility** (which constrains the augment doctrine), **the
+KCSG structure exporter exists in 1.6** (which makes authoring castles cheap),
+**`requiredCountAtGameStart` is dead code**, and **`AltarFacilityExtension` is
+applied to zero defs**, so the altar's twelve facilities have never done
+anything. Two doc conflicts surfaced and are unresolved — see `WORKLIST.md` §0.
+A progression arc was drafted and then discarded: `Player Progression
+Ideology.txt` supersedes it.
 
 ---
 
