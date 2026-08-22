@@ -60,7 +60,7 @@
          tech-band filtering (they are Ultra, so they stay out of the hostile
          pool until you are near that tier); this is an independent backstop
          so a settings mistake cannot drop an Ultra raid on a stone-age camp. -->
-    <earliestRaidDays>800</earliestRaidDays>
+    <earliestRaidDays>400</earliestRaidDays>
 
     <settlementGenerationWeight>1.2</settlementGenerationWeight>
     <requiredCountAtGameStart>1</requiredCountAtGameStart>

@@ -182,6 +182,25 @@ fine: that is exactly when guaranteed-specific-gene rewards are wanted anyway.
 
 ---
 
+## Time
+
+`GenDate.DaysPerYear = 60`. A RimWorld year is **60 days**, four 15-day
+quadrums. Any gate expressed in years must be multiplied by 60, not 365.
+
+Conrad's target era lengths, converted:
+
+| Era | Years | Days | Cumulative day |
+|---|---|---|---|
+| Neolithic | 1–1.5 | 60–90 | ~90 |
+| Medieval | 2–4 | 120–240 | ~330 |
+| Industrial | 1–2 | 60–120 | ~450 |
+| Spacer | 1–2 | 60–120 | ~570 |
+
+So the whole planned arc through Spacer lands around **day 570**, not day
+3000. Day-based gates above ~600 are effectively "never" for this campaign.
+
+---
+
 ## Odyssey space layer
 
 | Layer | radius | subdivisions |

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Patch>
 
   <!-- ====================================================================
@@ -13,10 +13,11 @@
        1000 threat points arrives long before you have any business fighting
        Ultra-tech custodians, and day 45 is absurd.
 
-       Both levers are raised. rootMinPoints is the more reliable of the two
-       since it tracks colony strength rather than the calendar, but days act
-       as a floor for a colony that snowballs wealth early - which, with two
-       archonians on the roster, yours will.
+       A RimWorld year is 60 DAYS (GenDate.DaysPerYear = 60), not 365. The
+       target is the 6-7 year mark, so day 360 and day 420 respectively.
+       Days are the primary lever here because the target was expressed in
+       years; rootMinPoints is a sanity floor so a weak colony cannot trip
+       into an Ultra-tech fight just because the calendar rolled over.
 
        These are the first numbers to revisit after real playtesting. If the
        glitterheart hunt opens too late, lower rootMinPoints before touching
@@ -40,26 +41,26 @@
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechOutpost"]/rootEarliestDay</xpath>
           <value>
-            <rootEarliestDay>1200</rootEarliestDay>
+            <rootEarliestDay>360</rootEarliestDay>
           </value>
         </li>
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechOutpost"]/rootMinPoints</xpath>
           <value>
-            <rootMinPoints>5000</rootMinPoints>
+            <rootMinPoints>2500</rootMinPoints>
           </value>
         </li>
 
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechFacility"]/rootEarliestDay</xpath>
           <value>
-            <rootEarliestDay>1400</rootEarliestDay>
+            <rootEarliestDay>420</rootEarliestDay>
           </value>
         </li>
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechFacility"]/rootMinPoints</xpath>
           <value>
-            <rootMinPoints>6000</rootMinPoints>
+            <rootMinPoints>3000</rootMinPoints>
           </value>
         </li>
 
