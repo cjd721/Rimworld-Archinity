@@ -38,17 +38,30 @@
       <li>Neversleep</li>
       <li MayRequire="ludeon.rimworld.odyssey">VacuumResistance_Total</li>       <!-- [ARCHITE] -->
 
-      <!-- Hemogenic dependency: the price of the gift -->
+      <!-- Hemogenic dependency: the price of the gift.
+
+           NO DEATHREST, deliberately. Every sanguophage in the world must
+           periodically go into the ground; these two never do. That absence is
+           what separates the founders from anyone they later convert - vanilla
+           sanguophages already get Deathless and Ageless, so those cannot be
+           the distinction. Archinity.Altar's reimplant patch ADDS Deathrest to
+           every convert, so the asymmetry holds no matter how many are made. -->
       <li>Hemogenic</li>
       <li>Bloodfeeder</li>
-      <li>Deathrest</li>
       <li MayRequire="vanillaracesexpanded.sanguophage">VRE_Hemosmosis</li>
       <li MayRequire="vanillaracesexpanded.sanguophage">VRE_LowHemogenDrain</li>
       <li MayRequire="vanillaracesexpanded.sanguophage">VRE_AnimalFeeder</li>
 
-      <!-- Propagation: they cannot breed, only convert -->
+      <!-- Propagation: they cannot breed, and for a long time cannot convert.
+
+           XenogermReimplanter is REMOVED from the start. Two chosen ones who
+           can mint copies of themselves at will are not chosen. For roughly
+           400 days there is no way at all to share what they are - until the
+           Descent Engine quest returns the gene in the Industrial era, gated
+           on Xenogermination, at the exact moment the colony understands what
+           it has been doing. That beat only exists because the gene was taken
+           away first. -->
       <li>Sterile</li>
-      <li>XenogermReimplanter</li>                                              <!-- [ARCHITE] -->
 
       <!-- Costs -->
       <li MayRequire="vanillaracesexpanded.waster">VRE_Instability_Extreme</li>

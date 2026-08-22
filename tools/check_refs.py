@@ -42,7 +42,49 @@ def harvest(root):
     return found
 
 
+def check_wellformed():
+    """Parse every XML file we ship.
+
+    RimWorld does not report a def file that fails to parse. It drops the whole
+    file and carries on, so the defs simply never exist and the damage surfaces
+    somewhere else entirely as unresolved references - or as nothing at all.
+
+    The classic cause is a double hyphen inside an XML comment, which is
+    illegal, and which separator rules like <!-- ===== --> produce by accident
+    the moment they are drawn with hyphens.
+
+    Returns the number of broken files.
+    """
+    import xml.etree.ElementTree as ET
+
+    broken = 0
+    for dirpath, dirnames, filenames in os.walk(REPO):
+        dirnames[:] = [d for d in dirnames if d not in (".git", "__pycache__",
+                                                        "obj", "bin")]
+        for fn in filenames:
+            if not fn.endswith(".xml"):
+                continue
+            path = os.path.join(dirpath, fn)
+            try:
+                ET.parse(path)
+            except ET.ParseError as exc:
+                print("  BROKEN  %s" % os.path.relpath(path, REPO))
+                print("          %s" % exc)
+                print("          (a double hyphen inside an XML comment "
+                      "is the usual cause)")
+                broken += 1
+    return broken
+
+
 def main():
+    print("parsing shipped XML ...")
+    broken = check_wellformed()
+    if broken:
+        print("\n%d file(s) would be silently dropped by RimWorld. "
+              "Fix before loading." % broken)
+        return 1
+    print("  all files parse\n")
+
     known = set()
     for root in (DATA, WORKSHOP, REPO):
         known |= harvest(root)
@@ -100,6 +142,22 @@ def main():
                         "AM_Siegebreaker", "AM_Demolisher", "Highmate",
                         "MedicineUltratech", "DeathAcidifier", "Uranium",
                         "Apparel_PowerArmor", "Apparel_PowerArmorHelmet"],
+        # Everything Archinity.Altar reaches into another mod for. The twelve
+        # facilities matter most: a typo there silently produces an altar that
+        # nothing can link to, with no error anywhere.
+        "altar":       ["Archinity_Altar", "Archinity_ArchitePool",
+                        "Archinity_RiteShock", "Archinity_ArchiteSustenance",
+                        "Archinity_LoadAltar", "MinifiedThing",
+                        "Deathless", "Ageless", "Deathrest",
+                        "XenogermReimplanter",
+                        "VQEA_PlasteelSkin", "VQEA_PerfectVision",
+                        "VQEA_Electromagnetized",
+                        "VQEA_NeurostabilizerArray", "VQEA_CognitiveRecoveryArray",
+                        "VQEA_RapidInfusionPump", "VQEA_ArchiteRecycler",
+                        "VQEA_GenomicAttenuator", "VQEA_RejectionBufferCoil",
+                        "VQEA_SpliceframeUplink", "VQEA_MutagenInhibitorCore",
+                        "VQEA_TraitSelectionPrism", "VQEA_AberrationRedirector",
+                        "VQEA_ComplexityHarmonizer", "VQEA_ArchitePathingArray"],
         "ascension":   ["USH_Glitterheart", "USH_GlittershipChunk",
                         "Archinity_GlittershipDebris", "ChunkSlagSteel",
                         "USH_RewardGlittercrate", "Opportunity_AbandonedPlatform",

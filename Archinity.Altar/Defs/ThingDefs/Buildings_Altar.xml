@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- ====================================================================
+       THE ALTAR
+
+       Never buildable, never researched. It is given to you in the Neolithic
+       era, before you have any idea what it is for, and it runs on blood
+       rather than power - which is why it works from the first hour of the
+       game and never becomes obsolete when a windmill arrives.
+
+       The art is VRE-Ancients' archogen injector, referenced by path rather
+       than copied. RimWorld resolves texture paths across every loaded mod,
+       and that mod has to be loaded anyway: 33 of the 50 archite genes are
+       its defs.
+
+       It accepts the same twelve facilities their injector does, so the whole
+       lab rack keeps working - reskinned by AltarFacilityExtension rather
+       than rebuilt.
+       ==================================================================== -->
+
+  <ThingDef ParentName="BuildingBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Altar</defName>
+    <label>altar of the archons</label>
+    <description>A sealed pod of unidentifiable material, warm to the touch, that was already ancient when the first fire was lit. It does not draw power and cannot be opened, repaired or understood.\n\nIt wants blood, and it is not subtle about it. A living person placed inside is drawn out entirely over several hours; what remains is a corpse and a charge held somewhere within the machine that does not fade, spoil or leak.\n\nSpend that charge, with the right archite vector, and the person who steps inside willingly steps out as something else. The one who pays is never the one who changes.</description>
+    <thingClass>Archinity.Building_Altar</thingClass>
+    <category>Building</category>
+    <containedPawnsSelectable>true</containedPawnsSelectable>
+    <drawerType>MapMeshAndRealTime</drawerType>
+    <tickerType>Normal</tickerType>
+    <size>(3,2)</size>
+    <rotatable>true</rotatable>
+    <canOverlapZones>false</canOverlapZones>
+    <hasInteractionCell>true</hasInteractionCell>
+    <interactionCellOffset>(0, 0, 2)</interactionCellOffset>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <passability>PassThroughOnly</passability>
+    <pathCost>50</pathCost>
+    <blockWind>true</blockWind>
+    <fillPercent>0.5</fillPercent>
+    <castEdgeShadows>true</castEdgeShadows>
+    <selectable>true</selectable>
+    <claimable>true</claimable>
+    <!-- Given, never built. There is no research that leads here. -->
+    <destroyable>false</destroyable>
+    <neverMultiSelect>false</neverMultiSelect>
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <thingCategories>
+      <li>BuildingsSpecial</li>
+    </thingCategories>
+    <statBases>
+      <MaxHitPoints>800</MaxHitPoints>
+      <Flammability>0</Flammability>
+      <Mass>80</Mass>
+      <Beauty>-4</Beauty>
+      <WorkToBuild>0</WorkToBuild>
+    </statBases>
+    <graphicData>
+      <texPath>Things/Building/LabEquipment/ArchogenInjector</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(4,3)</drawSize>
+    </graphicData>
+    <building>
+      <isEdifice>true</isEdifice>
+      <destroySound>BuildingDestroyed_Metal_Big</destroySound>
+    </building>
+    <comps>
+      <li Class="CompProperties_AffectedByFacilities">
+        <linkableFacilities>
+          <li>VQEA_NeurostabilizerArray</li>
+          <li>VQEA_CognitiveRecoveryArray</li>
+          <li>VQEA_RapidInfusionPump</li>
+          <li>VQEA_ArchiteRecycler</li>
+          <li>VQEA_GenomicAttenuator</li>
+          <li>VQEA_RejectionBufferCoil</li>
+          <li>VQEA_SpliceframeUplink</li>
+          <li>VQEA_MutagenInhibitorCore</li>
+          <li>VQEA_TraitSelectionPrism</li>
+          <li>VQEA_AberrationRedirector</li>
+          <li>VQEA_ComplexityHarmonizer</li>
+          <li>VQEA_ArchitePathingArray</li>
+        </linkableFacilities>
+      </li>
+      <li Class="CompProperties_Forbiddable" />
+    </comps>
+  </ThingDef>
+
+</Defs>

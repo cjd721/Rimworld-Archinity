@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- ====================================================================
+       ARCHITE VECTORS
+
+       The item that made this mod need an assembly. A vector is a sealed
+       capsule that means exactly one gene - the thing vanilla has no way to
+       express, because Genepack rolls its contents the moment it is made.
+
+       Because it is an ordinary item, deterministic delivery stops being a
+       quest-system problem. A vector can sit in a hand-authored ruin, a quest
+       stash, a loot table or a trader's stock, and it always means the same
+       thing when you pick it up.
+
+       Vectors are quest-only: no recipe, no trade tags, excluded from reward
+       generation. The world never hands one out by accident.
+
+       These two are worked examples so the system can be tested end to end.
+       The remaining vectors get authored alongside the quest beats that
+       deliver them, since cost and gate belong to the beat rather than here.
+       ==================================================================== -->
+
+  <ThingDef Name="Archinity_VectorBase" Abstract="True" ParentName="ResourceBase">
+    <thingClass>ThingWithComps</thingClass>
+    <techLevel>Archotech</techLevel>
+    <stackLimit>1</stackLimit>
+    <tradeability>None</tradeability>
+    <destroyOnDrop>false</destroyOnDrop>
+    <alwaysHaulable>true</alwaysHaulable>
+    <useHitPoints>false</useHitPoints>
+    <graphicData>
+      <texPath>Things/Item/Special/ArchiteCapsule</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(0.85, 0.85)</drawSize>
+    </graphicData>
+    <statBases>
+      <MarketValue>1200</MarketValue>
+      <Mass>0.4</Mass>
+      <Flammability>0</Flammability>
+      <DeteriorationRate>0</DeteriorationRate>
+    </statBases>
+    <thingCategories>
+      <li>Items</li>
+    </thingCategories>
+    <!-- Never generated as loot or a reward by anything but our own quests. -->
+    <thingSetMakerTags Inherit="False" />
+  </ThingDef>
+
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_PlasteelSkin</defName>
+    <label>archite vector (plasteel skin)</label>
+    <description>A sealed capsule of archite matter, still warm. Whatever is written inside it is not a substance so much as an instruction, and the instruction is legible only to the altar.\n\nThis one will lace the recipient's skin with plasteel.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_PlasteelSkin</gene>
+        <chargeCost>3</chargeCost>
+        <baseHours>16</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- The first vector, given in the Neolithic era at beat 2 - the moment the
+       altar stops being a mystery. Cheap on purpose: one person. The colony
+       has to work out what that means on its own. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_PerfectVision</defName>
+    <label>archite vector (perfect vision)</label>
+    <description>A sealed capsule of archite matter, cool and very light. It is the least of the things the archons have left lying about, and it is still beyond anything your people can make.\n\nThis one will remake the recipient's eyes.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_PerfectVision</gene>
+        <chargeCost>1</chargeCost>
+        <baseHours>8</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+</Defs>

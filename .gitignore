@@ -1,14 +1,4 @@
-# RimWorld / Steam artifacts
-*/About/PublishedFileId.txt
-
-# Decompiler + scratch output
-/scratch/
-*.cs
-*.pdb
-
-# OS / editor
-Thumbs.db
-desktop.ini
-.DS_Store
-.vscode/
-tools/__pycache__/
+# Build intermediates. The shipped .dll under Assemblies/ IS committed, so the
+# other player can sync and play without a .NET SDK installed.
+Archinity.Altar/Source/obj/
+Archinity.Altar/Source/bin/

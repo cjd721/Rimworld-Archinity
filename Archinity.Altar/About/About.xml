@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ModMetaData>
+  <packageId>archinity.altar</packageId>
+  <name>Archinity - Altar</name>
+  <author>cjd721</author>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>The blood-powered altar at the centre of the Archinity campaign, and the archite gene draw table it reads from.
+
+This is the only mod in the Archinity suite that ships an assembly. Everything else is XML defs, which carry no simulation code and are inherently multiplayer-safe. Three things forced code here:
+
+- Granting a NAMED gene. Nothing in vanilla represents a specific gene as an item; Genepack rolls its contents when it is created, so even a hand-placed genepack is random.
+- Charging a machine with a life rather than an item. A refuelable comp accepts anything matching its filter, which would let hemogen packs stand in for a sacrifice.
+- Rebinding VRE-Archon's equipment gate, which is a hardcoded check against one gene.
+
+Pawn entry uses vanilla jobs throughout - EnterBuilding for a willing recipient, CarryToBuilding for an unwilling one - so the Multiplayer mod syncs it natively without needing its API.
+
+Requires Vanilla Quests Expanded - Ancients for the archite genes, the linkable lab facilities and the altar's artwork.</description>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+    <li>
+      <packageId>Ludeon.RimWorld.Biotech</packageId>
+      <displayName>Biotech</displayName>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+    <li>Ludeon.RimWorld.Biotech</li>
+    <li>vanillaquestsexpanded.ancients</li>
+    <li>vanillaracesexpanded.archon</li>
+    <li>vanillaexpanded.vfecore</li>
+  </loadAfter>
+</ModMetaData>

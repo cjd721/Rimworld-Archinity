@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+  <Archinity_AltarNotHumanlike>The altar has no interest in it.</Archinity_AltarNotHumanlike>
+  <Archinity_AltarOccupied>Something is already inside.</Archinity_AltarOccupied>
+  <Archinity_AltarFull>The altar will hold no more.</Archinity_AltarFull>
+  <Archinity_AltarNoVector>No archite vector has been loaded.</Archinity_AltarNoVector>
+  <Archinity_AltarRecipientUnworthy>Only carriers of {0} may receive this.</Archinity_AltarRecipientUnworthy>
+  <Archinity_AltarAlreadyHasGene>Already carries {0}.</Archinity_AltarAlreadyHasGene>
+  <Archinity_AltarNotEnoughCharge>Not enough blood: {0} of {1} required.</Archinity_AltarNotEnoughCharge>
+
+  <Archinity_AltarCharge>Blood held: {0} / {1}</Archinity_AltarCharge>
+  <Archinity_AltarVectorLoaded>Vector loaded: {0}</Archinity_AltarVectorLoaded>
+  <Archinity_AltarVectorEmpty>No vector loaded.</Archinity_AltarVectorEmpty>
+  <Archinity_AltarDraining>Drawing out: {0} remaining</Archinity_AltarDraining>
+  <Archinity_AltarRiteInProgress>Rite in progress: {0} remaining</Archinity_AltarRiteInProgress>
+
+  <Archinity_AltarDrained>{0} has been drawn out entirely. The altar is {1} fuller.</Archinity_AltarDrained>
+  <Archinity_AltarRiteSucceeded>{0} has been remade. They now carry {1}.</Archinity_AltarRiteSucceeded>
+  <Archinity_AltarRiteFailed>The rite would not take. {0} is unresponsive, and the blood is gone. The vector remains.</Archinity_AltarRiteFailed>
+
+  <Archinity_NeedsArchonAttunement>Requires {0}.</Archinity_NeedsArchonAttunement>
+
+</LanguageData>

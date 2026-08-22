@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Hauling a vector into a waiting altar. Entry of PAWNS uses vanilla jobs
+       (EnterBuilding and CarryToBuilding); only the vector needs a job of our
+       own, and it is a plain haul. -->
+  <JobDef>
+    <defName>Archinity_LoadAltar</defName>
+    <driverClass>Archinity.JobDriver_LoadAltar</driverClass>
+    <reportString>loading TargetB into TargetA.</reportString>
+  </JobDef>
+
+  <WorkGiverDef>
+    <defName>Archinity_LoadAltarWorkGiver</defName>
+    <label>load altar</label>
+    <giverClass>Archinity.WorkGiver_LoadAltar</giverClass>
+    <workType>Hauling</workType>
+    <verb>load</verb>
+    <gerund>loading</gerund>
+    <priorityInType>60</priorityInType>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+
+  <!-- Carrying an unwilling pawn to be drained. Warden work, like every other
+       thing you do to a prisoner. -->
+  <WorkGiverDef>
+    <defName>Archinity_CarryToAltarWorkGiver</defName>
+    <label>carry to altar</label>
+    <giverClass>Archinity.WorkGiver_CarryToAltar</giverClass>
+    <workType>Warden</workType>
+    <verb>carry</verb>
+    <gerund>carrying</gerund>
+    <priorityInType>70</priorityInType>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+
+  <!-- ====================================================================
+       When the rite goes wrong.
+
+       The recipient never dies - the price is always paid by the person in
+       the vat, not the one on the table. What a critical failure costs is the
+       blood, the time, and your best pawn being unavailable for days. The
+       vector itself survives, so a bad roll never destroys a quest reward.
+
+       That is what makes it safe to gamble: you can put your best colonist in
+       and try again immediately, knowing the downside is a lost week rather
+       than a lost character.
+       ==================================================================== -->
+  <HediffDef>
+    <defName>Archinity_RiteShock</defName>
+    <label>rite shock</label>
+    <description>This person was opened to something that did not take, and their body is still deciding whether to close again. They are unresponsive, and will be for some days.</description>
+    <hediffClass>HediffWithComps</hediffClass>
+    <defaultLabelColor>(0.7, 0.5, 0.9)</defaultLabelColor>
+    <isBad>true</isBad>
+    <makesSickThought>true</makesSickThought>
+    <initialSeverity>1.0</initialSeverity>
+    <comps>
+      <li Class="HediffCompProperties_Disappears">
+        <disappearsAfterTicks>180000~300000</disappearsAfterTicks>
+        <showRemainingTime>true</showRemainingTime>
+      </li>
+    </comps>
+    <stages>
+      <li>
+        <capMods>
+          <li>
+            <capacity>Consciousness</capacity>
+            <setMax>0.1</setMax>
+          </li>
+        </capMods>
+      </li>
+    </stages>
+  </HediffDef>
+
+  <!-- ====================================================================
+       Power gained at the altar is never paid for in hunger.
+
+       Stacking archite genes drives metabolism down and hunger up, which
+       would quietly punish the exact progression the campaign is built
+       around. This cancels it: the Archons feed you. The cost of becoming
+       something else is measured in other people, and nowhere else.
+       ==================================================================== -->
+  <HediffDef>
+    <defName>Archinity_ArchiteSustenance</defName>
+    <label>archite sustenance</label>
+    <description>Archite machinery in this person's blood renders the cost of their own alterations irrelevant. They do not hunger for what they have become.</description>
+    <hediffClass>HediffWithComps</hediffClass>
+    <defaultLabelColor>(0.6, 0.8, 1.0)</defaultLabelColor>
+    <isBad>false</isBad>
+    <maxSeverity>1.0</maxSeverity>
+    <initialSeverity>1.0</initialSeverity>
+    <scenarioCanAdd>false</scenarioCanAdd>
+    <everCurableByItem>false</everCurableByItem>
+    <stages>
+      <li>
+        <hungerRateFactor>0.5</hungerRateFactor>
+      </li>
+    </stages>
+  </HediffDef>
+
+</Defs>

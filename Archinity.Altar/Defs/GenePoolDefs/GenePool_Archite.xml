@@ -37,7 +37,7 @@
     <defName>Archinity_ArchitePool</defName>
     <entries>
 
-      <!-- ---------------------------------------------------------------
+      <!-- ===============================================================
            RESERVED: the founders' identity.
 
            Never in the pool, never a vector, never obtainable by anyone.
@@ -45,7 +45,7 @@
            alone do not make the founders unique - the Deathrest asymmetry
            does that. They are withheld anyway because the two originals
            should not be reachable by grinding the altar.
-           --------------------------------------------------------------- -->
+           =============================================================== -->
       <li>
         <gene>Deathless</gene>
         <tier>5</tier>
@@ -59,12 +59,12 @@
         <reserved>true</reserved>
       </li>
 
-      <!-- ---------------------------------------------------------------
+      <!-- ===============================================================
            RESERVED: chain milestones.
 
            Each of these is the payload of a specific quest beat, so letting
            the lottery hand one out early would defuse that beat.
-           --------------------------------------------------------------- -->
+           =============================================================== -->
       <li MayRequire="vanillaracesexpanded.archon">
         <gene>VRE_Transcendent</gene>
         <tier>5</tier>
@@ -108,13 +108,13 @@
         <reserved>true</reserved>
       </li>
 
-      <!-- ---------------------------------------------------------------
+      <!-- ===============================================================
            RESERVED: not a gift.
 
            Carries biostatArc > 0 and so would otherwise land in the pool,
            but it is a pure penalty. Kept listed rather than deleted so it is
            available later as a "Mark" curse on a bad outcome.
-           --------------------------------------------------------------- -->
+           =============================================================== -->
       <li MayRequire="vanillaracesexpanded.hussar">
         <gene>VREH_ChemicalDependency_Luciferium</gene>
         <tier>1</tier>
@@ -122,9 +122,9 @@
         <reserved>true</reserved>
       </li>
 
-      <!-- ---------------------------------------------------------------
+      <!-- ===============================================================
            TIER 5 - campaign-defining
-           --------------------------------------------------------------- -->
+           =============================================================== -->
       <li>
         <gene>Resurrect</gene>
         <tier>5</tier>
@@ -146,9 +146,9 @@
         <category>Mind</category>
       </li>
 
-      <!-- ---------------------------------------------------------------
+      <!-- ===============================================================
            TIER 4 - major
-           --------------------------------------------------------------- -->
+           =============================================================== -->
       <li MayRequire="vanillaquestsexpanded.ancients">
         <gene>VQEA_Woundless</gene>
         <tier>4</tier>
@@ -202,9 +202,9 @@
         <category>Survival</category>
       </li>
 
-      <!-- ---------------------------------------------------------------
+      <!-- ===============================================================
            TIER 3 - strong
-           --------------------------------------------------------------- -->
+           =============================================================== -->
       <li MayRequire="vanillaquestsexpanded.ancients">
         <gene>VQEA_Herculean</gene>
         <tier>3</tier>
@@ -271,14 +271,14 @@
         <category>Mind</category>
       </li>
 
-      <!-- ---------------------------------------------------------------
+      <!-- ===============================================================
            TIER 2 - solid, situational
 
            The Masterful line sits here as a block. Each one is a large boost
            to exactly one work type, which is excellent on the right pawn and
            dead weight on the wrong one - the definition of situational, and
            the reason the category-biasing facilities matter.
-           --------------------------------------------------------------- -->
+           =============================================================== -->
       <li MayRequire="vanillaquestsexpanded.ancients">
         <gene>VQEA_MasterfulCrafting</gene>
         <tier>2</tier>
@@ -345,13 +345,13 @@
         <category>Survival</category>
       </li>
 
-      <!-- ---------------------------------------------------------------
+      <!-- ===============================================================
            TIER 1 - marginal
 
            Real, permanent, and nice to have, but nobody sacrifices a person
            for one. These exist so a poor roll can still offer four genuine
            options rather than an empty window.
-           --------------------------------------------------------------- -->
+           =============================================================== -->
       <li MayRequire="vanillaquestsexpanded.ancients">
         <gene>VQEA_PerfectVision</gene>
         <tier>1</tier>
@@ -359,6 +359,41 @@
       </li>
 
     </entries>
+
+    <!-- ===============================================================
+         WHAT THE FOUNDERS KEEP
+
+         Vanilla sanguophages already get Deathless and Ageless, so those
+         alone do not make the two originals special - anyone bitten by a
+         wild sanguophage has them. Reserving them is still right, but it
+         is not the distinction.
+
+         The distinction is Deathrest, and it works by ABSENCE. The
+         founders do not carry it, so they never go into the ground. Every
+         vampire they make does. Nothing else in the game reads like that,
+         and it costs one gene.
+         =============================================================== -->
+    <founderOnlyGenes>
+      <li>Deathless</li>
+      <li>Ageless</li>
+    </founderOnlyGenes>
+
+    <conversionAddsGenes>
+      <li>Deathrest</li>
+    </conversionAddsGenes>
+
+    <!-- ===============================================================
+         The key to archon-tier weapons and armour.
+
+         VRE-Archon locks its archoblade and archoplate behind
+         VRE_Transcendent, which in this campaign is the very last thing
+         you ever receive - the gear would arrive with nothing left to
+         fight. Rebound to a gene handed out in the Ultra era, so the
+         equipment you have been finding since Spacer switches on while it
+         still matters.
+         =============================================================== -->
+    <archonEquipmentGene MayRequire="vanillaquestsexpanded.ancients">VQEA_Electromagnetized</archonEquipmentGene>
+
   </Archinity.GenePoolDef>
 
 </Defs>
