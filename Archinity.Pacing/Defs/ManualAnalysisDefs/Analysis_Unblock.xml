@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- ====================================================================
+       UNBLOCK RESEARCH THAT MRR AUTO-GENERATION MAKES IMPOSSIBLE
+
+       More Realistic Research auto-generates analysis requirements for any
+       project it does not list, and it picks the study subjects from the
+       things that project UNLOCKS. For Industrial and Spacer tiers those
+       subjects must be REVERSE-ENGINEERED, meaning you have to possess one.
+
+       Which you cannot, because the research is what lets you build it.
+
+       Usually this is survivable, because UnlockedDefs also contains recipe
+       products you can find, buy or loot, and analysis points pool per TYPE
+       so any one obtainable subject satisfies the whole requirement. It only
+       bites when EVERY unlocked thing is player-built-only.
+
+       MRR's author clearly knew: their 46 hand-authored entries are almost
+       exactly the vanilla projects that would otherwise dead-end
+       (WatermillGenerator, Xenogermination, GeothermalPower, MoisturePump,
+       GunTurrets, Biosculpting, GrowthVats, SterileMaterials...). This file
+       covers what their hand-curated list missed, which is one vanilla
+       project plus whatever our modded load order adds.
+
+       `python tools/audit_research.py` regenerates the candidate list.
+       ==================================================================== -->
+
+  <!-- MULTIANALYZER. The one that matters.
+
+       Its only study subjects are the multi-analyzer itself plus three
+       modded variants (GravDecreasePylon_GT, GravIncreasePylon_GT,
+       VGE_CompactMultiAnalyzer). Verified by hand: none appears in any
+       structure layout, prefab, scatterer or loot table; the ThingDef has no
+       tradeTags and no trader stocks the BuildingsMisc category; and the one
+       reward-table reference to "MultiAnalyzer" is a
+       ThingSetMaker_Conditional_ResearchFinished gating AIPersonaCore on
+       having already done the research. So there is no way to obtain one.
+
+       This is load-bearing for the whole run: USE_GE_ProjectBase lists
+       MultiAnalyzer as a requiredResearchFacility, so an unresearchable
+       multi-analyzer means the entire Ushanka glittertech tree is
+       unreachable no matter what Archinity.Glitterites does.
+
+       Experimental on the components it is actually built from, which is
+       what auto-generation would have used for its Experimental pool anyway.
+       Industrial components, not spacer: this is an Industrial project and
+       should not need spacer-tier goods to unlock. -->
+  <ResearchMakesSense.ManualAnalysisDef>
+    <defName>Archinity_Unblock_MultiAnalyzer</defName>
+    <researchProject>MultiAnalyzer</researchProject>
+    <experimentalMaterials>
+      <li>ComponentIndustrial</li>
+    </experimentalMaterials>
+    <experimentalPointsRequired>3</experimentalPointsRequired>
+  </ResearchMakesSense.ManualAnalysisDef>
+
+</Defs>

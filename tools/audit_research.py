@@ -317,6 +317,55 @@ def main():
         print("  %-16s %d" % (k, buckets[k]))
     print("  %-16s %d" % ("DEADLOCK RISK", len(deadlocks)))
 
+    if "--tiers" in sys.argv:
+        # TechBlock sets each TechLock's baseCost to a fraction of the
+        # PREVIOUS tier's total. The setting names are offset by one tier:
+        #   TB_SpacerTechLock  <- requiredPointsIndustrial x Industrial total
+        #   TB_UltraTechLock   <- requiredPointsSpacer     x Spacer total
+        #   TB_ArchoTechLock   <- requiredPointsUltra      x Ultra total
+        # Editing the setting that sounds right will move the wrong gate.
+        order = ["Neolithic", "Medieval", "Industrial", "Spacer", "Ultra", "Archotech"]
+        per = defaultdict(list)
+        for name, (fields, _) in projects.items():
+            if name.startswith("TB_"):
+                continue          # TechBlock's IsBlockTech() excludes these
+            tl = fields.get("techLevel")
+            v = tl.text.strip() if tl is not None and tl.text else "Undefined"
+            bc = fields.get("baseCost")
+            cost = float(bc.text) if bc is not None and bc.text else 0.0
+            per[v].append((cost, name))
+        print("\n" + "=" * 78)
+        print("RESEARCH BY TIER  (baseCost; TechBlock sums these per tier)")
+        print("=" * 78)
+        totals = {}
+        for tier in order:
+            rows2 = sorted(per.get(tier, []), reverse=True)
+            tot = sum(c for c, _ in rows2)
+            totals[tier] = tot
+            if not rows2:
+                continue
+            print("\n%s  -  %d projects, %s points total"
+                  % (tier.upper(), len(rows2), format(int(tot), ",")))
+            for cost, name in rows2:
+                print("     %8s  %s" % (format(int(cost), ","), name))
+        print("\n" + "=" * 78)
+        print("TECHBLOCK GATE COSTS  (cost = fraction x PREVIOUS tier total,")
+        print("                       reduced by in-tier research already done)")
+        print("=" * 78)
+        pairs = [("TB_MedievalTechLock", "Neolithic", "requiredPointsNeolithic"),
+                 ("TB_IndustrialTechLock", "Medieval", "requiredPointsMedieval"),
+                 ("TB_SpacerTechLock", "Industrial", "requiredPointsIndustrial"),
+                 ("TB_UltraTechLock", "Spacer", "requiredPointsSpacer"),
+                 ("TB_ArchoTechLock", "Ultra", "requiredPointsUltra")]
+        print("  %-24s %-12s %-26s %10s %10s %10s"
+              % ("gate", "sums tier", "setting to edit", "@0.75", "@0.65", "@0.60"))
+        for gate, tier, setting in pairs:
+            t = totals.get(tier, 0)
+            print("  %-24s %-12s %-26s %10s %10s %10s"
+                  % (gate, tier, setting,
+                     format(int(t * .75), ","), format(int(t * .65), ","),
+                     format(int(t * .60), ",")))
+
     if show_all:
         print("\n" + "=" * 78)
         print("ALL PROJECTS")

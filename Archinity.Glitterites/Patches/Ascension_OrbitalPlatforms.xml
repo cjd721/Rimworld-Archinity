@@ -40,16 +40,20 @@
       </li>
 
       <!-- Glitterworld debris on the abandoned platform.
-           0~1 per platform, so roughly half carry one. A chunk yields
-           3 glitterhearts on deconstruct (killedLeavings), and takes
-           20000 work to break down - so it is a real haul, not a pickup.
+           1~2 per platform. A chunk yields 3 glitterhearts on deconstruct
+           (killedLeavings) and takes 20000 work to break down, so a platform
+           is 3-6 hearts for real effort rather than a pickup.
+
+           Raised from 0~1 once loose hearts were pulled out of
+           Reward_GravshipUpgrade: with the quest-reward route closed, a
+           platform that rolled zero chunks would have been a wasted trip.
 
            MayRequire-guarded via the prefab def itself; if Glittertech
            Expansion is absent the prefab simply never loads. -->
       <li Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
         <xpath>/Defs/GenStepDef[defName="Opportunity_AbandonedPlatform"]/genStep/exteriorPrefabs</xpath>
         <value>
-          <Archinity_GlittershipDebris>0~1</Archinity_GlittershipDebris>
+          <Archinity_GlittershipDebris>1~2</Archinity_GlittershipDebris>
         </value>
       </li>
 

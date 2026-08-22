@@ -2,87 +2,56 @@
 <Patch>
 
   <!-- ====================================================================
-       LOOSE GLITTERHEARTS FROM ORBITAL QUESTS
+       GLITTERHEARTS STAY OUT OF THE GENERAL REWARD POOLS
 
-       Odyssey's Reward_GravshipUpgrade is a ThingSetMaker_RandomOption.
-       Two ORBITAL quests draw from it:
+       An earlier version of this file added glitterhearts to Odyssey's
+       Reward_GravshipUpgrade. That has been removed, for two reasons.
 
-           Script_OrbitalFugitive.xml:113   OrbitalFugitivePlatform
-           Script_Site.xml:177              orbital survey sites
+       1. IT LEAKED BACK ONTO EARTH. Reward_GravshipUpgrade is not used only
+          by the two orbital quests. It is also the <contents> of
+          AncientSealedContainer_GravshipUpgrade, which spawns in
+          LayoutRooms_AncientRuins.xml - SURFACE ancient ruins. So the patch
+          quietly undid what Ascension_NoEarthHearts had just done.
 
-       Adding an option is ADDITIVE. FuelOptimizer and GravshipShieldGenerator
-       are untouched, so Odyssey and Vanilla Gravship Expanded progression is
-       unaffected. We are not taking anyone's rewards, only adding a reason to
-       fly up.
+       2. IT WAS NOT ADDITIVE IN PRACTICE. Reward_GravshipUpgrade has four
+          vanilla options totalling weight 3.75 (FuelOptimizer 1,
+          GravshipShieldGenerator 1, PilotSubpersonaCore 1, Gravcore 0.75).
+          Adding weights 3+5+2 made glitterhearts 73% of the maker and pushed
+          Gravcore from 20% down to 5.5%. Gravcore is core Odyssey gravship
+          progression. Structurally additive, materially a 3.6x cut.
 
-       DROP SHAPE, per spec: roughly 30% one heart, 50% two, 20% three.
-       Weights 3 / 5 / 2 give exactly that, averaging 1.9 per pull.
+       Hearts now come from exactly two places, both of which require going
+       up and both of which are Glitterite-owned:
 
-       COMBINED WITH the 0~1 glittership chunk on platforms (3 hearts each,
-       ~50% of platforms), expected yield is roughly 3-4 hearts per orbital
-       raid. Against ~25 total demand that is about 7 raids for the full
-       gated tree - slightly generous versus the "closer to 10" target.
+         - Glitterite orbital settlements, via settlementLootMaker on their
+           FactionDef. 3~5 per base, guaranteed.
+         - Glittership chunks on orbital platforms and wrecks, via
+           Archinity_GlittershipDebris. 3 hearts each, 20000 work to break.
 
-       TO TUNE: lower the weight-2 and weight-3 options here first. That
-       moves the average without touching the chunk, which is the part that
-       makes a raid feel like a haul.
+       Odyssey's own reward tables are left exactly as shipped.
        ==================================================================== -->
 
-  <Operation Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
-    <xpath>/Defs/ThingSetMakerDef[defName="Reward_GravshipUpgrade"]/root/options</xpath>
-    <value>
-      <!-- ~30%: one heart -->
-      <li>
-        <weight>3</weight>
-        <thingSetMaker Class="ThingSetMaker_Count">
-          <fixedParams>
-            <filter>
-              <thingDefs>
-                <li>USH_Glitterheart</li>
-              </thingDefs>
-            </filter>
-            <countRange>1~1</countRange>
-          </fixedParams>
-        </thingSetMaker>
-      </li>
-      <!-- ~50%: two hearts -->
-      <li>
-        <weight>5</weight>
-        <thingSetMaker Class="ThingSetMaker_Count">
-          <fixedParams>
-            <filter>
-              <thingDefs>
-                <li>USH_Glitterheart</li>
-              </thingDefs>
-            </filter>
-            <countRange>2~2</countRange>
-          </fixedParams>
-        </thingSetMaker>
-      </li>
-      <!-- ~20%: three hearts, the good haul -->
-      <li>
-        <weight>2</weight>
-        <thingSetMaker Class="ThingSetMaker_Count">
-          <fixedParams>
-            <filter>
-              <thingDefs>
-                <li>USH_Glitterheart</li>
-              </thingDefs>
-            </filter>
-            <countRange>3~3</countRange>
-          </fixedParams>
-        </thingSetMaker>
-      </li>
-    </value>
-  </Operation>
-
-  <!-- Glitterite raids carry hearts too, so their orbital settlements are
-       worth assaulting directly rather than only waiting for a scan. -->
+  <!-- Glitterite raiders still carry them. This is the one surface-side
+       source, and it is deliberate: it requires beating an Ultra-tech raid
+       that cannot fire before day 400 and 3000 threat points. You took it
+       off their bodies, which is the same story as taking it off their base. -->
   <Operation Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
     <xpath>/Defs/ThingSetMakerDef[defName="Archinity_GlitteritesRaidLootMaker"]/root/fixedParams/filter/thingDefs</xpath>
     <value>
       <li>USH_Glitterheart</li>
     </value>
+  </Operation>
+
+  <!-- USH_Glitterheart ships with thingSetMakerTags RewardStandardLowFreq,
+       which enrols it in Reward_ItemsStandard - the generic quest reward
+       maker used by SURFACE quests. Removing the tag closes the last route
+       by which a heart could arrive without leaving the planet.
+
+       Removing the whole node rather than one <li>: RewardStandardLowFreq is
+       the only tag on the def, and an empty <thingSetMakerTags> list is not
+       the same as absent to ThingSetMakerUtility. -->
+  <Operation Class="PatchOperationRemove" MayRequire="Ushanka.GlittertechExpansion">
+    <xpath>/Defs/ThingDef[defName="USH_Glitterheart"]/thingSetMakerTags</xpath>
   </Operation>
 
 </Patch>

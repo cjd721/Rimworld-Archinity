@@ -128,6 +128,24 @@
     <orbitalTraderKinds />
 
     <raidLootMaker>Archinity_GlitteritesRaidLootMaker</raidLootMaker>
+
+    <!-- Why their settlements are worth storming.
+
+         GenStep_SettlementPawnsLoot picks its loot maker three ways:
+
+             lootThingSetMaker              (the genstep's own override)
+          ?? faction.def.settlementLootMaker (this field)
+          ?? MapGen_AbandonedColonyStockpile (generic fallback)
+
+         Nothing in the whole load order sets the middle one, so every orbital
+         faction currently falls through to the generic stockpile. That is the
+         only reason a Glitterite base drops no glitterhearts today.
+
+         Setting it here is faction-scoped: the Drifters, Traders Guild and
+         Salvagers keep the vanilla fallback, and no custom map generator is
+         needed. Their settlements share the SettlementPlatform genstep, so
+         anything done at the genstep level would have hit all of them. -->
+    <settlementLootMaker>Archinity_GlitteritesSettlementLootMaker</settlementLootMaker>
     <maxPawnCostPerTotalPointsCurve>
       <points>
         <li>(0,      60)</li>
@@ -198,6 +216,54 @@
       </li>
     </pawnGroupMakers>
   </FactionDef>
+
+  <!-- Storming an orbital Glitterite base is the reliable heart source.
+
+       ThingSetMaker_Sum runs every option and adds the results together, so
+       the heart branch is GUARANTEED rather than competing for a shared
+       market-value budget. 3~5 per base, against a whole-campaign demand of
+       roughly 12-20 for Ushanka's building costs plus one for the research
+       gate. That is three to five successful raids, which is the intended
+       shape: a small number of real operations, not a farm.
+
+       ThingSetMaker_Count (not _StackCount) so the count is a number of
+       hearts, not a stack size. USH_Glitterheart has stackLimit 3. -->
+  <ThingSetMakerDef>
+    <defName>Archinity_GlitteritesSettlementLootMaker</defName>
+    <root Class="ThingSetMaker_Sum">
+      <options>
+        <li>
+          <thingSetMaker Class="ThingSetMaker_Count" MayRequire="Ushanka.GlittertechExpansion">
+            <fixedParams>
+              <filter>
+                <thingDefs>
+                  <li>USH_Glitterheart</li>
+                </thingDefs>
+              </filter>
+              <countRange>3~5</countRange>
+            </fixedParams>
+          </thingSetMaker>
+        </li>
+        <li>
+          <thingSetMaker Class="ThingSetMaker_MarketValue">
+            <fixedParams>
+              <filter>
+                <thingDefs>
+                  <li>Silver</li>
+                  <li>Gold</li>
+                  <li>Plasteel</li>
+                  <li>Uranium</li>
+                  <li>ComponentSpacer</li>
+                  <li>MedicineUltratech</li>
+                </thingDefs>
+              </filter>
+              <totalMarketValueRange>800~1800</totalMarketValueRange>
+            </fixedParams>
+          </thingSetMaker>
+        </li>
+      </options>
+    </root>
+  </ThingSetMakerDef>
 
   <ThingSetMakerDef>
     <defName>Archinity_GlitteritesRaidLootMaker</defName>
