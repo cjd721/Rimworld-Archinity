@@ -22,6 +22,10 @@ The mechanical expression is the `VRE_Transcendent` gene. That is why it is
 blacklisted out of the random archite injection pool — earning it by accident
 from a routine injection would resolve the entire arc by coincidence.
 
+It arrives as the final **vector**: a named, deterministic item spent at the
+altar. Conrad executes the last step himself. The game never announces
+anything, because he'll know.
+
 ## The opening
 
 The Archons reached backwards through time and put some fraction of their DNA
@@ -55,6 +59,80 @@ strip-mine it, leave. You are allied with a faction or two and at war with
 others. Space is where you live.
 
 A RimWorld year is 60 days, so this whole arc fits under roughly 600 days.
+
+## The altar
+
+The centre of the campaign, and the thing everything else hangs off.
+
+**One machine, one philosophy.** There is exactly one way to become more than
+you are, and it runs on blood. No second path, no competing device. Conrad was
+explicit about this after an earlier design offered two: *"I don't have two
+machines and two philosophies. I don't really like that."*
+
+**It runs on lives, not power.** A prisoner or slave is carried inside and
+drawn out entirely; what is left is a corpse and a charge that never spoils.
+That is why the altar works from the first hour of the Neolithic and never
+becomes obsolete when electricity arrives. A windmill cannot make what it
+needs.
+
+**The price is always paid by somebody else.** The person in the vat dies. The
+person receiving the gene never does. That asymmetry is the horror of the
+thing and it is deliberate — it is also what makes the machine safe to gamble
+with, because a bad outcome costs a lost week rather than your best colonist.
+
+**The cost scales into atrocity.** One person early. Ten to twenty each for the
+late genes. Fifty, or several hundred animals, for transcendence. By the end
+you are raiding, abducting and buying people specifically to feed it.
+
+### What the altar means in each era
+
+The arc is that **it starts as religion and ends as industry, and the body
+count goes up, not down.** Efficiency never means mercy. It means scale.
+
+| Era | What it is to your people |
+|---|---|
+| Neolithic | An object that demands blood. You understand nothing. It refuses you and you never learn why. |
+| Medieval | A rite. Not science — priesthood. You learn by repetition what pleases it. |
+| Industrial | A machine. You discover electricity and evolution, work out what you have been doing for four hundred years, and do not stop. |
+| Spacer / Ultra | An instrument. You are engineering your own divinity. |
+| Archotech | A door. |
+
+The reskinned VQE Ancients facilities carry that progression — chorus stones
+and an exsanguination channel in the Medieval era, a galvanic substitution coil
+and the Descent Engine in the Industrial.
+
+### The hinge
+
+The **Descent Engine**, gated on `Xenogermination`, is the most important beat
+in the campaign. Before it, only the two founders can use the altar at all.
+After it, ordinary colonists can — and `XenogermReimplanter` comes back.
+
+That beat only exists because the gene was **taken away at the start**. For
+roughly four hundred days there is no way whatsoever to share what the founders
+are. Conrad's reasoning: two chosen ones who can mint copies of themselves at
+will are not chosen.
+
+### What keeps the founders singular
+
+Not `Deathless` and not `Ageless` — every vanilla sanguophage gets both, so
+they cannot be the distinction.
+
+**It is the absence of `Deathrest`.** The founders never go into the ground.
+Every vampire they make must. Differentiation by what you lack.
+
+> *I can make you like me. I cannot make you deathless. Only They can do that.*
+
+### On randomness
+
+Conrad will accept uncertainty about *how well* something goes. He will not
+accept uncertainty about *what he is getting*, and he will not accept losing a
+good pawn to a dice roll.
+
+So: named vectors are fully deterministic. The roll never decides whether you
+receive something — it decides which **tier band** four options are drawn from.
+A poor roll offers four weak genes, never an empty window. Reason, in his
+words: out of thirty or forty pawns you might find one worth keeping, and
+sacrificing two slaves to gamble that pawn away *"just feels bad."*
 
 ## The villain — the Glitterites
 
@@ -138,6 +216,22 @@ exotic is not.
 **Don't railroad it.** The timing should line up, but the playthrough is not a
 script.
 
+**One machine, one philosophy.** When a mechanic needs extending, extend the
+thing that already exists rather than adding a rival to it. This killed an
+early design where VQE's injector and our altar coexisted as two routes to the
+same goal.
+
+**Reskin before you rebuild.** VQE Ancients ships twelve lab facilities, a
+biobattery that dissolves people, hand-authored complex layouts and 33 of the
+50 archite genes. Almost nothing needs to be invented — it needs renaming and
+repointing. *"What exists is pretty cool, but it would need to change to fit
+our story, not the other way around."*
+
+**Power gains carry no hunger cost.** Stacking archite genes drives metabolism
+down, which would quietly punish the exact progression the campaign is built
+on. Cancelled deliberately. The cost is measured in other people and nowhere
+else.
+
 ---
 
 ## Explicitly rejected
@@ -156,16 +250,25 @@ script.
 
 Carry these forward; do not resolve them unilaterally.
 
-1. **Whether to strip the starting xenotype.** All 33 genes are currently on it,
-   13 of them archite. Splitting ~11 out and delivering them through the
-   Chronicle chain was proposed and not decided. Conrad's position: *"being
-   completely busted out of the gate is also fine"* — he leans toward keeping
-   the power, but liked the idea of earning it. Every archite gene is annotated
-   `<!-- [ARCHITE] -->` in the def, so the split is mechanical whenever he says.
-2. **Blood-fuelled Archogen Injector.** Would be the only C# in the project.
-   Optional, purely flavour, his call.
+1. **How much of the starting xenotype to strip.** DECIDED IN PART:
+   `Deathrest` and `XenogermReimplanter` are removed, and both removals are
+   load-bearing (see *The altar* above). The wider question — how many of the
+   remaining archite genes move into the quest chain — is still open. Conrad's
+   last word: *"I'm gonna give a few more upfront"* than the split proposed to
+   him, and he wants to settle it **after** the quest cadence is fixed, not
+   before. Every archite gene is annotated `<!-- [ARCHITE] -->` in the def, so
+   the split stays mechanical.
+2. ~~**Blood-fuelled Archogen Injector.**~~ RESOLVED — it became the altar, and
+   the project now ships one assembly deliberately.
 3. **Faction diplomacy and ideology across the world map.** He flagged it at
    world creation and it has not been touched.
+4. **Whether to buy Anomaly.** The asset inventory found no eldritch or
+   reality-warping content anywhere in the load order, and Anomaly's void
+   material fits "the universe is a simulation" better than anything else
+   available. It is a paid DLC, so it is his call. He has declined Vanilla
+   Psycasts Expanded — *"Psycasts always seemed lame to me"* — which leaves
+   VRE-Archon's `VREA_Transcendent` psycaster path permanently dormant. That is
+   accepted, not an oversight.
 
 ---
 

@@ -1,40 +1,63 @@
 # Handoff — read this first
 
-State of the Archinity project as of the end of session 1.
+State of the Archinity project at the end of session 3.
 
-## Read these two first, in this order
+## Reading order
 
 1. **[`VISION.md`](VISION.md)** — what this playthrough is *for*. The premise,
-   the arc, the villain, and the design principles that drove nearly every
+   the arc, the altar, and the design principles that drove nearly every
    decision. **This is the part that cannot be recovered from the code.** If
    you read nothing else, read this.
-2. **[`technical-findings.md`](technical-findings.md)** — every fact verified
-   against decompiled source. Re-deriving it is expensive and the wiki is
-   wrong about several of them.
+2. **[`../CLAUDE.md`](../CLAUDE.md)** — the failures that produce no error
+   message. Short, and every entry has already cost someone an evening.
+3. **[`technical-findings.md`](technical-findings.md)** — every fact verified
+   against decompiled source. Re-deriving it is expensive and the wiki is wrong
+   about several of them.
 
-This document is the third thing: build status and next actions.
-
-> **START HERE THIS SESSION:**
-> [`DECISION-medieval-route.md`](DECISION-medieval-route.md) — an open decision
-> Conrad has NOT made: enable Medieval Overhaul and strip it (Route A), or
-> hand-port selected content into our own module (Route B). The Medieval era is
-> 22 projects and 15,500 research points against an intended 180–240 day era,
-> and this is how we fix it. That doc carries the verified facts for both
-> routes, the gameplay walkthrough and obsolescence audit Conrad asked for, and
-> every other loose end from session 2.
+This document is build status and next actions.
 
 ---
 
-## What this is, in one paragraph
+## Two decisions waiting on Conrad
 
-A suite of RimWorld 1.6 mods for one long co-op playthrough. Neolithic start,
-slow climb through every tech era, endgame lived aboard a gravship in orbit,
-ending in transcendence via the `VRE_Transcendent` gene. Two players on the
-**Multiplayer** mod.
+Do not resolve either unilaterally.
 
-Everything is **XML defs only** — no C#, no Harmony. Deliberate: def-only mods
-carry no simulation code and are inherently multiplayer-safe. Do not break it
-without an explicit decision from Conrad.
+**1. The Medieval route.** See
+[`DECISION-medieval-route.md`](DECISION-medieval-route.md) — enable Medieval
+Overhaul and strip it (Route A), or hand-port selected content into our own
+module (Route B). The Medieval era is 22 projects and 15,500 research points
+against an intended 180–240 day era. That doc carries the verified facts for
+both routes, the gameplay walkthrough and the obsolescence audit.
+
+**2. Quest cadence, then the gene split.** Conrad wants the questline's rhythm
+settled *before* deciding how many archite genes leave the starting xenotype.
+His last word was that he'd keep "a few more upfront" than the split proposed
+to him. Fix the beats first; the gene list follows from them.
+
+---
+
+## What this is
+
+A suite of RimWorld 1.6 mods for one long co-op playthrough on the
+**Multiplayer** mod. Neolithic start, every tech era in order, endgame in orbit
+aboard a gravship, ending in transcendence.
+
+Almost everything is **XML defs only**, because def-only mods carry no
+simulation code and are inherently multiplayer-safe.
+
+**`Archinity.Altar` is the one deliberate exception** and ships a Harmony
+assembly. Three things forced it, each verified impossible in XML:
+
+- Granting a **named** gene. Nothing in vanilla represents a specific gene as an
+  item — `Genepack.PostMake()` unconditionally calls `GenerateGeneSet()`, so
+  even a hand-placed genepack has random contents.
+- Charging a machine with **a life** rather than an item. `CompRefuelable`
+  accepts anything matching its filter, which would let hemogen packs stand in
+  for a sacrifice.
+- Rebinding VRE-Archon's equipment gate, a hardcoded `HashSet<ThingDef>` checked
+  against `HasActiveGene(VRE_Transcendent)`.
+
+Do not start a second assembly without an explicit decision.
 
 ---
 
@@ -42,197 +65,363 @@ without an explicit decision from Conrad.
 
 | Mod | Status | Verified how |
 |---|---|---|
-| `Archinity.Origins` | Built | Loaded in game; scenario appears, 2 archonians + 2 baseliners confirmed on the pawn screen |
+| `Archinity.Origins` | Built | Loaded in game; scenario appears, 2 archonians + 2 baseliners confirmed |
 | `Archinity.Pacing` | Built | Loads clean; all four xpaths resolved |
 | `Archinity.Drifters` | Built | Loads clean. **Never been through worldgen.** |
 | `Archinity.Glitterites` | Built | Loads clean. **Never been through worldgen.** |
+| `Archinity.Altar` | Built | Compiles clean, all four checks pass. **Never loaded in game.** |
 | `Archinity.Chronicle` | **Not started** | — |
 
-### FIRST TASK: fresh-world verification
+### Verification backlog — nothing below has run in game
 
-Drifters and Glitterites have never been placed by worldgen. Generate a new
-world and confirm:
-
-1. Both factions appear at world creation
-2. Their settlements generate **in orbit**, not on the surface
-3. Names read correctly (`Longwake Drydock`, `Threshold-17 Overlook`)
-4. Orbit is visibly denser than vanilla (subdivisions were raised 5→6)
-5. Note worldgen duration — decides whether 6→7 is worth trying
-
-The view-orbit button only exists **in game**, not during world creation
-(`GetGizmos` bails on `ProgramState.Entry`). In colony → world map → hotkey
-**`B`**.
+1. **Fresh worldgen.** Drifters and Glitterites have never been placed. Confirm
+   both appear at world creation, that their settlements generate **in orbit**
+   not on the surface, that names read correctly (`Longwake Drydock`,
+   `Threshold-17 Overlook`), and that orbit is visibly denser (subdivisions were
+   raised 5→6). Note worldgen duration — it decides whether 6→7 is worth trying.
+   The view-orbit button only exists **in game**, not at world creation
+   (`GetGizmos` bails on `ProgramState.Entry`). In colony → world map → **`B`**.
+2. **A glitterheart actually drops.** Never confirmed.
+3. **The altar loads and works.** Specifically: does its texture resolve from VQE
+   Ancients' folder; do the twelve facilities link; does a prisoner get hauled in
+   and drained; does a vector grant its gene.
+4. **Does `VQEA_Electromagnetized` keep the archoplate's shield up through an
+   EMP?** This is an assumption, not a finding. The entire "archon gear becomes
+   usable in the Ultra era" reward rests on it.
 
 ---
 
-## What remains: Archinity.Chronicle
+## Archinity.Altar — what was built
 
-The quest chain. Everything it needs is verified as XML-expressible.
+Read *The altar* in `VISION.md` for why it is shaped this way. This is how it
+works.
 
-### The spine
+### The mechanism
 
-```
-sanguophage origin  →  archite injection loop  →  glitterheart hunt in orbit
-                                               →  Archon contact → transcendence
-```
+- **Charge is measured in lives.** A prisoner or slave hauled in is drained over
+  ~2 in-game hours and dies. Yield scales with `BodySize`, so an adult is worth
+  about 1 and an animal a fraction — which is what makes "fifty people, or
+  several hundred animals" a real shape rather than a number pulled from air.
+- **Charge lives in the building**, so it never spoils and never needs
+  refrigeration. That was the specific problem with storing blood as items.
+- **A free colonist who walks in willingly** spends charge plus a vector and
+  comes out changed. The recipient is never the one who dies.
+- **Fuel vs. recipient is read from the pawn's own status** —
+  `IsPrisonerOfColony || IsSlaveOfColony` is fuel, a free colonist is a
+  recipient. This is why the building needs **no mode toggle and no custom
+  gizmos**, which is the main reason it should be multiplayer-safe.
 
-### Verified mechanisms to build on
+### Why entry is safe in multiplayer
 
-| Need | Mechanism |
+Both entry paths are **vanilla jobs**. Willing entry uses `JobDefOf.EnterBuilding`
+via `Building_Enterable.SelectPawn`. Unwilling entry uses
+`JobDefOf.CarryToBuilding` via `WorkGiver_CarryToBuilding`, which
+`WorkGiver_CarryToAltar` subclasses in about four lines — reservation,
+reachability, the prisoner check and the job itself are all inherited. That is
+the same path the vanilla gene extractor and growth vat use, so Multiplayer syncs
+it natively and we never touch its API.
+
+The only job of our own is hauling a vector in, and it is a plain haul.
+
+### Gene vectors
+
+The primitive that forced the assembly. `GeneVectorExtension` on a ThingDef makes
+that item mean exactly one gene. Because it is an ordinary item, deterministic
+delivery stops being a quest-system problem — a vector works in a hand-authored
+ruin, a quest stash, a loot table or a trader's stock.
+
+Two worked examples ship (`Archinity_Vector_PerfectVision`,
+`Archinity_Vector_PlasteelSkin`). The rest get authored alongside the beats that
+deliver them, because cost and gate belong to the beat.
+
+Vectors are quest-only: no recipe, no trade tags, `thingSetMakerTags` cleared so
+nothing generates them as loot.
+
+### The draw table
+
+[`Archinity.Altar/Defs/GenePoolDefs/GenePool_Archite.xml`](../Archinity.Altar/Defs/GenePoolDefs/GenePool_Archite.xml)
+— all 50 archite genes, hand-tiered 1–5 and categorised.
+
+**Ranked by hand because the game's own numbers cannot separate them.**
+`biostatMet` is 0 for 49 of 50; `biostatCpx` is 3 for 35 of them. `Deathless`
+(cpx 7) and a cosmetic gene (cpx 3) are indistinguishable to any automatic rule.
+Distribution is in [`archite-gene-pool.md`](archite-gene-pool.md); regenerate
+with `python tools/survey_archite.py` after any mod change.
+
+Reserved out of the lottery entirely: `Deathless`, `Ageless`, `VRE_Transcendent`,
+`VQEA_Genius`, `VQEA_Serene`, `VQEA_Electromagnetized`, `VacuumResistance_Total`,
+`XenogermReimplanter`, and `VREH_ChemicalDependency_Luciferium` (kept listed
+because it is useful later as a curse).
+
+### Patches shipped
+
+- **Reimplant postfix** strips `Deathless`/`Ageless` from converts and *adds*
+  `Deathrest`. The endogene/xenogene trick does **not** work —
+  `ReimplantXenogerm` calls `SetXenotype` first, which copies the whole
+  XenotypeDef gene list onto the recipient, so stripping afterwards is the only
+  honest fix.
+- **Archon equipment gate** rebound off `VRE_Transcendent` onto whatever
+  `archonEquipmentGene` names (currently `VQEA_Electromagnetized`). Implemented
+  by reflecting on VRE-Archon's public static `blockedWeapons` HashSet, emptying
+  it, and re-gating in our own postfix. Wrapped in try/catch — it must never
+  become a hard dependency.
+- **Hunger offset.** `Archinity_ArchiteSustenance` cancels the metabolic cost of
+  implanted genes.
+
+### Starting xenotype changes
+
+`Deathrest` and `XenogermReimplanter` are both **removed**. Both removals are
+load-bearing and are explained in `VISION.md`. Do not restore either without
+reading that section first.
+
+---
+
+## Archinity.Chronicle — designed, not built
+
+### Gating: use research, not timers
+
+The key finding of session 3, and it replaces the earlier day-gate plan.
+
+`QuestChainExtension.requiredResearch` takes **any single `ResearchProjectDef`**,
+and VEF postfixes `ResearchManager.FinishProject` to reschedule — so a quest
+fires **the instant that research completes**. No reload lag.
+
+So pace beats on *research*, not clocks: beat 1 of an era on `TB_<Era>Theory`,
+later beats on specific mid- and late-tier projects. Pacing then tracks how fast
+Conrad actually plays, with no dead air either way. It also buys precision — the
+Descent Engine beat gates on `Xenogermination` itself, so the fiction and the
+mechanism become the same thing.
+
+Constraints, all verified in `GameComponent_QuestChains.TryScheduleQuest`:
+
+- `conditionSucceedQuests` and `conditionMinDaysSinceStart` are **mutually
+  exclusive** — the succeed branch returns early. You cannot say "after beat 4
+  *and* after day 200."
+- `requiredResearch` combines with everything, and is checked first.
+- `ticksSinceSucceed` measures from **completion**, not acceptance. There is no
+  "days since received" field. This is exactly the dead-time problem Conrad
+  raised, and gating on research sidesteps it entirely.
+- Chain quests call `CreateQuest()` directly, **bypassing the storyteller**, so
+  `rootMinPoints` and `rootMinProgressScore` do nothing on them.
+
+### The spine — ~16 beats over ~700 days
+
+Roughly one every 40 days, which is quiet by RimWorld standards. Most beats give
+a bundle: an augment plus a vector, or two small augments together.
+
+| Era | Beats | Gives |
+|---|---|---|
+| — | Scenario text | Simulation, gift, a path forward |
+| Neolithic | **You find the Altar** | The altar. Obviously important, obviously wants blood, nothing explains it. |
+| Neolithic | **First vector** | The dots connect. You go home and pay. |
+| Medieval | 4 beats | Chorus Stones, Recovery Shroud, Reliquary Sump, **Rendering Vat + Galvanic Coil together**, vectors |
+| Industrial | 4 beats | Rapid Infusion Pump, Rejection Buffer, **the Descent Engine**, vectors |
+| Spacer | 3 beats | Prism, `VacuumResistance_Total`, the Glitterites revealed as the gate |
+| Ultra | 2 beats | Attenuator, Redirector, Harmonizer, the archon-gear gene |
+| Archotech | 1 beat | Pathing Array, `VRE_Transcendent` |
+
+The vat and the coil **must arrive together**. Neither does anything alone — the
+vat makes charge, the coil makes charge go further. An earlier draft split them
+across eras and the vat did nothing for 200 days; Conrad caught it.
+
+The vat produces **altar charge, not electricity**. That was the fix to "the
+moment I get a windmill it's useless" — no generator can substitute for it.
+
+### Facility reskins
+
+VQE Ancients' twelve facilities get repointed by `AltarFacilityExtension`
+(charge discount, duration, outcome bonus, category bias, extra options) rather
+than rebuilt. The altar already declares all twelve as `linkableFacilities`.
+
+Several stack natively — 10 neurostabilizers, 6 recovery arrays, 9 pumps, 5
+buffer coils — so mid-era beats can award *more of the same building* and the
+effect escalates with no new defs. The single-copy ones are the real milestones.
+
+### Not built: the lottery
+
+Named vectors work end to end. The archite-capsule path — roll a tier band, offer
+four options — needs a **selection window**, and a custom UI is a player command
+Multiplayer has to sync. That is the one genuinely desync-prone part of this
+design, and it cannot be verified without running the game.
+
+Everything it needs already exists: tiers, categories, `biasCategory` /
+`biasStrength`, `extraOptions`, `outcomeBonus`.
+
+Design agreed with Conrad, for whoever builds it:
+
+| Result | What happens |
 |---|---|
-| Gate a quest chain on tech tier | `VEF.Storyteller.QuestChainExtension` → `requiredResearch` → TechBlock's `TB_<Era>Theory` defs |
-| Fixed, guaranteed rewards | `QuestNode_SetItemStashContents` (shipped precedent: `Royalty/Script_Intro_Deserter.xml:90-96`) |
-| Threats attached to the same site | `Util_Raid` node, see directly above that precedent |
-| Reserve a gene from the random pool | `InjectionBlacklistDef.blacklistedGenes` — already used for `VRE_Transcendent` |
+| Critical failure | Capsule returned, blood spent, **the pawn** is comatose for days. The altar is never what breaks. |
+| Poor | Four options, all weak — the best merely neutral |
+| Standard | Four options, mixed |
+| Strong | Four options, all worth having |
+| Perfect | Four excellent options |
 
-### Design decisions already made
+Vanilla `ArchiteCapsule` is the lottery ammo, **unchanged and unpatched** —
+Conrad explicitly ruled out new capsule types. Capsules work from day one on the
+founders, which is what stops them being useless for the first 400 days.
 
-- **Archons** appear only when a quest summons them. 1–2 encounters in a whole
-  playthrough. `permanentEnemy` stays true; "joining them" means acquiring
-  `VRE_Transcendent`, not an alliance.
-- **`VRE_Transcendent` is blacklisted** from random archite injection, so it can
-  only arrive through the Chronicle chain.
-- **Archite capsules and the crated Archogen Injector never decay** — the design
-  of finding them in the Neolithic and using them in the Industrial era works
-  with no special handling. Genepacks do NOT survive (20 days); never use them
-  as an early reward.
-- **Time:** a RimWorld year is **60 days**. The whole campaign fits under ~600
-  days. See the era table in technical-findings.
+---
 
-### Open questions
+## The archoplate
 
-See the **Undecided** section of [`VISION.md`](VISION.md). Do not resolve any of
-them unilaterally — the starting-xenotype split in particular is a taste call
-Conrad has deliberately left open.
+Its stat block is deceptive, and the obvious buff is impossible.
+
+`ArmorRatingBase` has `<maxValue>2</maxValue>`. Legendary quality is ×1.80, so
+legendary cataphract is 1.20 × 1.80 = 2.16 → **clamped to 2.00**. It already
+sits on the ceiling. Nothing can be 20% better on sharp.
+
+Current archoplate: Sharp 1.15, Blunt 0.60, Heat 0.86, Mass 10. Its real power is
+`CompProperties_ShieldField` — `activeAlways`, radius 2, 5.6 energy — which does
+not block the wearer shooting and covers nearby allies.
+
+Agreed plan, **not yet applied**: Sharp to 2.00, Blunt ~1.20, Heat ~1.50, and put
+the god-tier into the shield (energy 5.6 → ~20, roughly double recharge). Keep
+`disarmedByEmpForTicks` — the EMP weakness is the counterplay, and
+`VQEA_Electromagnetized` is the answer to it.
+
+`thingSetMakerTags: VREA_None` means it never generates as loot. It has to be
+placed deliberately.
 
 ---
 
 ## Deferred, not forgotten
 
-- **Diplomacy / ideology pass** across the whole faction map. Conrad flagged it
-  at world creation. Needs both new factions to exist first — do it after
-  fresh-world verification.
+- **Diplomacy / ideology pass** across the faction map. Needs both new factions to
+  exist first — do it after fresh worldgen.
 - **Orbit subdivisions 6 → 7** — only after worldgen time at 6 is known.
-- **Blood-fuelled Archogen Injector** — needs ~10 lines of Harmony. Would be the
-  only assembly in the project. Optional, deferred, Conrad's call. See
-  technical-findings for why XML cannot do it.
-- **More Realistic Research era curve** — general research pacing beyond the
-  glittertech gate. Wants real playtest data.
-- **Faction art** — both faction icons are generated placeholders
-  (`tools/make_faction_icons.py`). Fine to ship, nice to replace.
+- **More Realistic Research era curve.** Wants playtest data. Note
+  `audit_research.py` currently reports **36 deadlock risks**; these predate the
+  altar work and have not been investigated.
+- **Faction art** — both icons are generated placeholders.
+- **Archon ruin loot tables and set dressing.** ~230 candidates catalogued in
+  [`archon-asset-inventory.md`](archon-asset-inventory.md). Caveat: it was built
+  by scanning the workshop folder, not the load order, so anything from Medieval
+  Overhaul depends on decision 1 above.
+- **Lore readables.** Almost none exist in the load order. Cheapest fix is
+  authoring our own `Book`-parented defs.
 
-### Explicitly decided AGAINST
+## Explicitly decided against
 
-- Relocating Ushanka's glittertech sites to orbit. KCSG cannot floor a space
-  map — 34-100% of every layout tile is `.` (no terrain), and `GenStep_Space`
-  makes every unwritten cell impassable vacuum. Would need ~1700 hand-authored
-  cells plus a temperature fix. Solved differently — see below.
-- Patching Odyssey's `OpportunitySite_MechanoidPlatform` "Insect" check. It
-  looks like a bug but `Insect` has `requiredCountAtGameStart: 1`, so the check
-  always passes. Harmless leftover.
-- `naturalEnemy` for the Glitterites. `permanentEnemy` locks max goodwill at
-  −100 permanently; `naturalEnemy` only offsets by −130 and could soften.
+- **Two machines.** VQE's injector as a rival path to the altar. Killed — one
+  machine, one philosophy.
+- **New capsule types.** Vanilla `ArchiteCapsule` only.
+- **Vanilla Psycasts Expanded.** Conrad does not like psycasts. This leaves
+  VRE-Archon's `VREA_Transcendent` psycaster path dormant; that is accepted, not
+  an oversight.
+- **The recipient ever dying at the altar.** Non-negotiable.
+- Relocating Ushanka's glittertech sites to orbit — KCSG cannot floor a space map
+  (34–100% of layout tiles are `.`, and `GenStep_Space` makes unwritten cells
+  impassable vacuum).
+- Patching Odyssey's `OpportunitySite_MechanoidPlatform` "Insect" check — it looks
+  like a bug but `Insect` has `requiredCountAtGameStart: 1`, so it always passes.
+- `naturalEnemy` for the Glitterites — `permanentEnemy` locks goodwill at −100;
+  `naturalEnemy` only offsets by −130 and could soften.
 
 ---
 
-## How the orbital gate works (built this session)
+## How the orbital gate works
 
-The least obvious part of the design. Read before touching any of it.
+The least obvious part of the earlier work. Read before touching it.
 
-**The problem.** Ushanka's glittertech RESEARCH is gated only by craftable
-vanilla benches (`HiTechResearchBench` + `MultiAnalyzer`, plus
-`USH_ResearchProbe` at 100 steel / 10 plasteel / 1 spacer component). Ushanka
-does gate some BUILDING on `USH_Glitterheart` — three glitterpanels and the
-targeter, 1 each — but hearts came from SURFACE sites, so nothing required
-going to orbit.
+Ushanka's glittertech research is gated only by craftable vanilla benches, and it
+gates some *building* on `USH_Glitterheart` — but hearts came from surface sites,
+so nothing required going to orbit.
 
-**Do not reinvent the heart.** An earlier pass in this session created
-`Archinity_Glitterheart`, a duplicate of an item that already existed. It was
-deleted. `USH_Glitterheart` is the real item: uncraftable, `tradeability
-Sellable` (sell only, cannot buy), `stackLimit 3`, and already a crafting
-ingredient.
+**Do not reinvent the heart.** An earlier session created a duplicate and it was
+deleted. `USH_Glitterheart` is the real item: uncraftable, sell-only,
+`stackLimit 3`, already a crafting ingredient.
 
-**The fix**, all in `Archinity.Glitterites`:
+All in `Archinity.Glitterites`:
 
-1. **Research gate** — `Defs/ManualAnalysisDefs/`, 10 of 18 projects require
-   `USH_Glitterheart` to reverse-engineer. Fabrication 3, seven
-   production/deep projects 2, two entry projects 1. Telepad, teeth,
-   overclock, skin and the four skilltrainer lines are deliberately free.
-2. **Orbital garrisons** — `Patches/Ascension_OrbitalPlatforms.xml` repoints
-   `factionDef` on `Opportunity_AbandonedPlatform` and
-   `Opportunity_OrbitalWreck` to the Glitterites. One field each. **No new
-   locations, no new quests** — Odyssey's `OrbitalScanner` (research
-   `OrbitalTech`, must be unroofed) was already the discovery loop.
-3. **Chunks in orbit** — `Defs/PrefabDefs/` places a `USH_GlittershipChunk` on
-   those platforms. 2x2, 600 HP, 20000 work, killedLeavings include 3 hearts.
-   The richest single source, and it costs real time on a vacuum map.
-4. **Loose drops** — `Patches/Ascension_OrbitalLoot.xml` adds hearts to
-   Odyssey's `Reward_GravshipUpgrade` at weights 3/5/2, i.e. ~30/50/20 for
-   1/2/3 hearts. Additive: `FuelOptimizer` and `GravshipShieldGenerator` are
-   untouched, so Odyssey and VGE progression is unaffected.
-5. **Earth closed off** — `Patches/Ascension_NoEarthHearts.xml` sets the
-   glittercrate's heart roll to weight 0 and rewrites the single layout row
-   that placed a chunk on the surface so it places slag instead. Surface
-   glitter sites stay worth raiding for their other loot; they are no longer
-   a heart farm.
+1. **Research gate** — 10 of 18 projects require hearts to reverse-engineer.
+   Fabrication 3, seven production/deep 2, two entry 1. Telepad, teeth, overclock,
+   skin and the four skilltrainers are deliberately free.
+2. **Orbital garrisons** — repoints `factionDef` on `Opportunity_AbandonedPlatform`
+   and `Opportunity_OrbitalWreck` to the Glitterites. One field each. No new
+   locations, no new quests — Odyssey's `OrbitalScanner` was already the discovery
+   loop.
+3. **Chunks in orbit** — a `USH_GlittershipChunk` prefab on those platforms. 20000
+   work, 3 hearts on deconstruct. The richest single source.
+4. **Loose drops** — hearts added to `Reward_GravshipUpgrade` at weights 3/5/2
+   (~30/50/20 for 1/2/3). Additive; Odyssey and VGE progression untouched.
+5. **Earth closed off** — glittercrate heart roll set to weight 0, and the one
+   layout row placing a surface chunk rewritten to slag.
 
-**Economy.** ~19 hearts for the gated tree plus ~4-6 for Ushanka's building
-costs = **~25 total**. Expected yield is ~3-4 per orbital raid (1.9 loose
-average, plus a ~50% chance of a 3-heart chunk), so roughly **7 raids**. That
-is slightly generous against the "closer to 10" target — to tighten it, lower
-the weight-2 and weight-3 options in `Ascension_OrbitalLoot.xml` first, not
-the chunk. The chunk is what makes a raid feel like a haul.
+**Economy.** ~25 hearts total demand, ~3–4 per orbital raid, so roughly 7 raids —
+slightly generous against the "closer to 10" target. To tighten it, lower the
+weight-2 and weight-3 options in `Ascension_OrbitalLoot.xml` first, never the
+chunk. The chunk is what makes a raid feel like a haul.
 
-**Untested.** Nobody has confirmed a heart actually drops in game. Second
-verification task after worldgen.
+### Traps found the hard way here
 
-### Traps found the hard way in this area
+- `Opportunity_OrbitalWreck` uses `GenStep_OrbitalWreck` with `<prefabs>`
+  (weights). `Opportunity_AbandonedPlatform` uses `GenStep_OrbitalPlatform` with
+  `<exteriorPrefabs>` (count ranges). **Different classes, different field
+  names.** Do not assume symmetry.
+- `USH_GlittershipChunk_North` is not a def — KCSG generates rotation variants at
+  runtime, so only the base symbol is patchable.
 
-- `Opportunity_OrbitalWreck` uses `GenStep_OrbitalWreck` with a `<prefabs>`
-  list of weights. `Opportunity_AbandonedPlatform` uses `GenStep_OrbitalPlatform`
-  with `<exteriorPrefabs>` and count ranges. **They are different classes with
-  different field names.** Do not assume symmetry.
-- `USH_GlittershipChunk_North` is not a def. KCSG generates rotation variants at
-  runtime, so only the base symbol is patchable; the `_North` reference had to be
-  handled by rewriting the layout row that used it.
-- XML comments cannot contain a double hyphen. `<!-- ---- x ---- -->` is a parse
-  error, and RimWorld will silently drop the whole file.
+---
 
 ## Tooling
 
 ```bash
-python tools/check_refs.py        # validate every cross-mod defName before launch
-python tools/make_faction_icons.py # regenerate placeholder faction icons
-./setup.ps1 -SyncConfig            # junction mods into RimWorld + sync config
+python tools/check_refs.py          # parses all XML, then validates cross-mod defNames
+python tools/audit_research.py      # research gated on unobtainable items
+python tools/check_availability.py  # planned MRR materials have 2+ sources
+python tools/survey_archite.py      # regenerate the archite gene pool table
+python tools/make_faction_icons.py  # placeholder faction icons
+./setup.ps1 -SyncConfig             # junction mods into RimWorld + sync config
 ```
 
-`check_refs.py` harvests ~19,000 defNames from Core, all DLCs, all 68 workshop
-mods and the repo, then verifies every cross-mod name Archinity relies on. It
-has already caught three real bugs. **Run it before every launch.**
+`setup.ps1` auto-discovers every `Archinity.*` folder, so new mods need no
+registration.
 
-`ilspycmd` is installed for decompiling (`8.2.0.7535` — the latest is broken on
-.NET 8). Full decompiles live in the session scratch dir, not the repo.
+Building the assembly:
+
+```bash
+cd Archinity.Altar/Source && dotnet build
+```
+
+Output goes straight to `Archinity.Altar/Assemblies/`. The built `.dll` **is
+committed** so the other player can sync and play without a .NET SDK installed.
+Game and Harmony assemblies are referenced in place, never copied — shipping a
+stale duplicate of the game's own code is the classic way to break on an update.
+
+`check_refs.py` now parses every shipped XML **before** checking names. A file
+that fails to parse is dropped silently by RimWorld, and `check_refs` used to
+pass on it happily. `ilspycmd` is pinned to `8.2.0.7535`; the latest is broken on
+.NET 8.
 
 ### Multiplayer requirements
 
 Both players need identical mods, identical load order (`config/ModsConfig.xml`)
 **and identical mod settings** (`config/ModSettings/`). The third is the one
-people miss — Ignorance Is Bliss and TechBlock are entirely settings-driven with
-no defs of their own.
+people miss — TechBlock, Ignorance Is Bliss and Medieval Overhaul are all
+settings-driven.
 
 Conrad intends to set IIB to `NumTechsAhead = 0`, `NumTechsBehind = 1`. If he
-does, **re-snapshot the settings file into `config/ModSettings/`** — the current
-snapshot predates that change.
+does, **re-snapshot** into `config/ModSettings/` — the current snapshot predates
+that change.
+
+`ModsConfig.xml` lists `ludeon.rimworld.odyssey` twice. Harmless in practice, but
+worth cleaning up given configs must match byte-for-byte.
 
 ---
 
-## Working style that worked
+## Working style that works
 
-- Verify against decompiled source, never memory or the wiki. Several confident
-  assumptions turned out wrong: `Mech_Centipede` does not exist, RimWorld years
-  are 60 days, Ignorance Is Bliss gates exactly one quest by name.
-- Test xpaths with an lxml harness that merges the target mod's defs the way
-  RimWorld does, before shipping a patch. This caught an xpath that would have
-  rewritten `$siteFaction` from a variable reference into a literal.
-- Prefer additive patches. `PatchOperationAdd` onto an options list beats
+- **Verify against decompiled source, never memory or the wiki.** Session 3
+  killed four confident assumptions this way: that a gene could be granted by an
+  XML quest node, that an endogene/xenogene split would stop reimplantation from
+  copying genes, that `biostatMet` could rank archite genes, and that armour
+  could be pushed past legendary cataphract on sharp.
+- **Run all four checks before claiming def work is done.** `check_refs.py` alone
+  passes on files that do not parse and on fields that do not exist.
+- **Prefer additive patches.** `PatchOperationAdd` onto an options list beats
   `PatchOperationReplace` on someone else's reward.
+- **Conrad checks the work and finds real errors** by asking why something seems
+  too convenient or too neat. The duplicated glitterheart, the biobattery that
+  did nothing, and the capsule dead zone all surfaced that way. He would rather
+  have a correction than a confident answer.
