@@ -301,6 +301,45 @@ placed deliberately.
 - **Lore readables.** Almost none exist in the load order. Cheapest fix is
   authoring our own `Book`-parented defs.
 
+## Planned: the content and presentation pass
+
+**Conrad asked for this to be written down so it is not forgotten. It is
+explicitly a LATER review** — it should happen once the full content set is
+known and settled, not before. Nothing here blocks anything.
+
+He loaded a game and found the modded content is not curated: *"there's a lot
+of little odds and ends I can build randomly, and some things that show up in
+the architect menu (like disassemble chemfuel pipes and paste pipes) as
+standalones that clearly smell."*
+
+Four related jobs, all sweeping the whole modded content set:
+
+**1. Architect menu discipline.** Nothing should be visible before it is
+appropriate. The observed symptoms are orphaned or oddly-scoped entries —
+pipe-disassembly designators and similar appearing as top-level standalones
+rather than nested where they belong. The likely levers are `designationCategory`,
+`researchPrerequisites` and `menuHidden` on the offending `ThingDef`s, plus
+whichever mod is contributing the pipe designators (PipeSystem via VEF is the
+first place to look). **Diagnose before patching** — the specific defs behind
+those entries have not been identified yet.
+
+**2. Research placement.** Confirm every modded item unlocks at the tier we
+actually want, not wherever its author happened to put it. This overlaps the
+Medieval route decision and the More Realistic Research curve, and should
+probably wait until both have landed.
+
+**3. Art and model consistency.** Compare all Neolithic and Medieval mods
+against each other and overhaul textures where they clash. Conrad wants the
+models used for every item to be deliberate choices rather than defaults. This
+is the largest and least mechanical part of the job.
+
+**4. Cull the odds and ends.** Buildables that exist only because a mod happened
+to ship them, and which nobody will ever want, should not be in the menu at all.
+
+Sequencing note: do this **after** the Medieval route is chosen, because Route A
+(enable Medieval Overhaul and strip it) would change both the art baseline and
+the menu contents substantially. Doing the pass first would mean doing it twice.
+
 ## Explicitly decided against
 
 - **Two machines.** VQE's injector as a rival path to the altar. Killed — one
