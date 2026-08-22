@@ -1,0 +1,5 @@
+C:\Users\cjd72\Desktop\Personal\Mods\Rimworld\Archinity\Archinity.Altar\Assemblies\ArchinityAltar.dll
+C:\Users\cjd72\Desktop\Personal\Mods\Rimworld\Archinity\Archinity.Altar\Source\obj\Debug\Archinity.Altar.csproj.AssemblyReference.cache
+C:\Users\cjd72\Desktop\Personal\Mods\Rimworld\Archinity\Archinity.Altar\Source\obj\Debug\Archinity.Altar.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\cjd72\Desktop\Personal\Mods\Rimworld\Archinity\Archinity.Altar\Source\obj\Debug\Archinity.Altar.csproj.CoreCompileInputs.cache
+C:\Users\cjd72\Desktop\Personal\Mods\Rimworld\Archinity\Archinity.Altar\Source\obj\Debug\ArchinityAltar.dll

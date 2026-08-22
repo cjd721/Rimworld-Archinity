@@ -1,0 +1,77 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The only assembly in the whole Archinity project.
+
+    Everything else is XML defs, which are inherently multiplayer-safe because
+    they carry no simulation code. This one exists because three things are
+    genuinely impossible in XML:
+
+      1. Granting a NAMED gene to a pawn. No QuestNode, no CompUseEffect, and
+         no vanilla item represents a specific gene - Genepack rolls its
+         contents in PostMake().
+      2. Charging a building with a life rather than with an item. CompRefuelable
+         accepts any item matching its filter, which would let hemogen packs
+         substitute for a sacrifice.
+      3. Rebinding VRE-Archon's equipment gate, which is a hardcoded HashSet
+         checked against HasActiveGene(VRE_Transcendent).
+
+    Everything here is deterministic and reads only synced pawn/building state.
+    No Rand calls outside the tick loop, no custom command gizmos - the altar is
+    driven by jobs, like the vanilla gene extractor, so the Multiplayer mod
+    syncs it natively without needing its API.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>ArchinityAltar</AssemblyName>
+    <RootNamespace>Archinity</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Optimize>true</Optimize>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\Assemblies\</OutputPath>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <!-- Mods ship a bare .dll; NuGet metadata and deps.json are noise. -->
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblySearchPaths>{RawFileName};$(AssemblySearchPaths)</AssemblySearchPaths>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- Game and Harmony assemblies are referenced in place, never copied.
+       Copying them into the mod would ship a stale duplicate of the game's
+       own code, which is the classic way to break on a game update. -->
+  <PropertyGroup>
+    <RimWorldManaged>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed</RimWorldManaged>
+    <HarmonyDir>C:\Program Files (x86)\Steam\steamapps\workshop\content\294100\2009463077\Current\Assemblies</HarmonyDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldManaged)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(RimWorldManaged)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(RimWorldManaged)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(RimWorldManaged)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(RimWorldManaged)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

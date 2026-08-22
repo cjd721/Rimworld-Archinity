@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- ====================================================================
+       THE DRAW TABLE
+
+       Every archite gene in the active load order, hand-ranked. This is the
+       one file to edit when the altar feels wrong.
+
+       WHY BY HAND: the game's own numbers cannot separate these genes.
+       biostatMet is 0 for all 50 but one, and biostatCpx is 3 for 35 of them
+       - Deathless (cpx 7) and a cosmetic gene (cpx 3) look identical to any
+       automatic rule. See docs/archite-gene-pool.md for the distribution.
+
+       TIER - how much getting it changes the pawn:
+         1  marginal
+         2  solid, situational
+         3  strong
+         4  major
+         5  campaign-defining
+       The altar's outcome roll picks WHICH TIER BAND the four options are
+       drawn from. It never decides whether you get something - a poor roll
+       offers four weak genes, not nothing.
+
+       RESERVED - never offered by the lottery at any tier or any roll.
+       Reserved genes arrive only as named quest vectors, or never at all.
+
+       CATEGORY - what the gene is for. Facilities linked to the altar bias
+       the draw toward a category, which is what makes a war-altar draw
+       differently from an artisan-altar.
+
+       MayRequire guards every modded gene, so a removed mod drops that entry
+       instead of throwing a cross-reference error on load.
+       ==================================================================== -->
+
+  <Archinity.GenePoolDef>
+    <defName>Archinity_ArchitePool</defName>
+    <entries>
+
+      <!-- ---------------------------------------------------------------
+           RESERVED: the founders' identity.
+
+           Never in the pool, never a vector, never obtainable by anyone.
+           Normal sanguophages already get Deathless and Ageless, so these
+           alone do not make the founders unique - the Deathrest asymmetry
+           does that. They are withheld anyway because the two originals
+           should not be reachable by grinding the altar.
+           --------------------------------------------------------------- -->
+      <li>
+        <gene>Deathless</gene>
+        <tier>5</tier>
+        <category>Survival</category>
+        <reserved>true</reserved>
+      </li>
+      <li>
+        <gene>Ageless</gene>
+        <tier>4</tier>
+        <category>Survival</category>
+        <reserved>true</reserved>
+      </li>
+
+      <!-- ---------------------------------------------------------------
+           RESERVED: chain milestones.
+
+           Each of these is the payload of a specific quest beat, so letting
+           the lottery hand one out early would defuse that beat.
+           --------------------------------------------------------------- -->
+      <li MayRequire="vanillaracesexpanded.archon">
+        <gene>VRE_Transcendent</gene>
+        <tier>5</tier>
+        <category>Mind</category>
+        <reserved>true</reserved>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Genius</gene>
+        <tier>5</tier>
+        <category>Mind</category>
+        <reserved>true</reserved>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Serene</gene>
+        <tier>4</tier>
+        <category>Mind</category>
+        <reserved>true</reserved>
+      </li>
+      <!-- Full EMP immunity plus an offensive EMP burst. This is what keeps
+           the archoplate's shield up against mechanoids, so it is the late
+           reward that makes the armour usable in the fights it is for. -->
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Electromagnetized</gene>
+        <tier>4</tier>
+        <category>Survival</category>
+        <reserved>true</reserved>
+      </li>
+      <li MayRequire="ludeon.rimworld.odyssey">
+        <gene>VacuumResistance_Total</gene>
+        <tier>3</tier>
+        <category>Survival</category>
+        <reserved>true</reserved>
+      </li>
+      <!-- The Descent Engine quest returns this, gated on Xenogermination.
+           Stripped from the starting xenotype so that for ~400 days there is
+           no way at all to share what the founders are. -->
+      <li>
+        <gene>XenogermReimplanter</gene>
+        <tier>4</tier>
+        <category>Social</category>
+        <reserved>true</reserved>
+      </li>
+
+      <!-- ---------------------------------------------------------------
+           RESERVED: not a gift.
+
+           Carries biostatArc > 0 and so would otherwise land in the pool,
+           but it is a pure penalty. Kept listed rather than deleted so it is
+           available later as a "Mark" curse on a bad outcome.
+           --------------------------------------------------------------- -->
+      <li MayRequire="vanillaracesexpanded.hussar">
+        <gene>VREH_ChemicalDependency_Luciferium</gene>
+        <tier>1</tier>
+        <category>None</category>
+        <reserved>true</reserved>
+      </li>
+
+      <!-- ---------------------------------------------------------------
+           TIER 5 - campaign-defining
+           --------------------------------------------------------------- -->
+      <li>
+        <gene>Resurrect</gene>
+        <tier>5</tier>
+        <category>Survival</category>
+      </li>
+      <li MayRequire="vanillaracesexpanded.sanguophage">
+        <gene>VRE_Resurrect</gene>
+        <tier>5</tier>
+        <category>Survival</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MatterPhasing</gene>
+        <tier>5</tier>
+        <category>Survival</category>
+      </li>
+      <li MayRequire="vanillaracesexpanded.archon">
+        <gene>VRE_InnatePsylink</gene>
+        <tier>5</tier>
+        <category>Mind</category>
+      </li>
+
+      <!-- ---------------------------------------------------------------
+           TIER 4 - major
+           --------------------------------------------------------------- -->
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Woundless</gene>
+        <tier>4</tier>
+        <category>Survival</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_PlasteelSkin</gene>
+        <tier>4</tier>
+        <category>Body</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Invisibility</gene>
+        <tier>4</tier>
+        <category>Survival</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Levitation</gene>
+        <tier>4</tier>
+        <category>Body</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_HellsphereBlast</gene>
+        <tier>4</tier>
+        <category>Combat</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_InfernoSpew</gene>
+        <tier>4</tier>
+        <category>Combat</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_SubstanceImpervious</gene>
+        <tier>4</tier>
+        <category>Survival</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Prowess</gene>
+        <tier>4</tier>
+        <category>Combat</category>
+      </li>
+      <li MayRequire="vanillaracesexpanded.archon">
+        <gene>VRE_PsychicAbility_MoreExtreme</gene>
+        <tier>4</tier>
+        <category>Mind</category>
+      </li>
+      <!-- The only archite gene with positive metabolism. Offsets the hunger
+           cost of everything else stacked on the pawn. -->
+      <li>
+        <gene>ArchiteMetabolism</gene>
+        <tier>4</tier>
+        <category>Survival</category>
+      </li>
+
+      <!-- ---------------------------------------------------------------
+           TIER 3 - strong
+           --------------------------------------------------------------- -->
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Herculean</gene>
+        <tier>3</tier>
+        <category>Body</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_BlurRunner</gene>
+        <tier>3</tier>
+        <category>Body</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Bulwark</gene>
+        <tier>3</tier>
+        <category>Combat</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Enormous</gene>
+        <tier>3</tier>
+        <category>Body</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_SelfRepairingTissue</gene>
+        <tier>3</tier>
+        <category>Survival</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_Marksman</gene>
+        <tier>3</tier>
+        <category>Combat</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulMelee</gene>
+        <tier>3</tier>
+        <category>Combat</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulShooting</gene>
+        <tier>3</tier>
+        <category>Combat</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_PlasteelClaws</gene>
+        <tier>3</tier>
+        <category>Combat</category>
+      </li>
+      <li MayRequire="vanillaracesexpanded.archon">
+        <gene>VRE_LeapjumpLegs</gene>
+        <tier>3</tier>
+        <category>Body</category>
+      </li>
+      <li>
+        <gene>TotalHealing</gene>
+        <tier>3</tier>
+        <category>Survival</category>
+      </li>
+      <li>
+        <gene>PerfectImmunity</gene>
+        <tier>3</tier>
+        <category>Survival</category>
+      </li>
+      <li MayRequire="als.biotechgravship">
+        <gene>BfG_PsychicAbility_Space</gene>
+        <tier>3</tier>
+        <category>Mind</category>
+      </li>
+
+      <!-- ---------------------------------------------------------------
+           TIER 2 - solid, situational
+
+           The Masterful line sits here as a block. Each one is a large boost
+           to exactly one work type, which is excellent on the right pawn and
+           dead weight on the wrong one - the definition of situational, and
+           the reason the category-biasing facilities matter.
+           --------------------------------------------------------------- -->
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulCrafting</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulConstruction</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulCooking</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulMining</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulPlants</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulAnimals</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulArtistic</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulMedical</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulIntellectual</gene>
+        <tier>2</tier>
+        <category>Work</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_MasterfulSocial</gene>
+        <tier>2</tier>
+        <category>Social</category>
+      </li>
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_PassiveMeditation</gene>
+        <tier>2</tier>
+        <category>Mind</category>
+      </li>
+      <li MayRequire="als.biotechgravship">
+        <gene>BfG_MoveSpeed_SpaceArchite</gene>
+        <tier>2</tier>
+        <category>Body</category>
+      </li>
+      <li>
+        <gene>DiseaseFree</gene>
+        <tier>2</tier>
+        <category>Survival</category>
+      </li>
+
+      <!-- ---------------------------------------------------------------
+           TIER 1 - marginal
+
+           Real, permanent, and nice to have, but nobody sacrifices a person
+           for one. These exist so a poor roll can still offer four genuine
+           options rather than an empty window.
+           --------------------------------------------------------------- -->
+      <li MayRequire="vanillaquestsexpanded.ancients">
+        <gene>VQEA_PerfectVision</gene>
+        <tier>1</tier>
+        <category>Body</category>
+      </li>
+
+    </entries>
+  </Archinity.GenePoolDef>
+
+</Defs>
