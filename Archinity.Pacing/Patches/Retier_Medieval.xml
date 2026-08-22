@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- ====================================================================
+       MOVE THE ALCHEMY LINE INTO THE MEDIEVAL ERA
+
+       The Medieval tier is the thinnest in the whole load order: 22 projects
+       and 15,500 research points, against an intended 180 to 240 day era.
+       At a realistic Medieval research rate (about 505 points/day with two
+       pawns at Intellectual 12 on a simple bench) that is roughly 22 days of
+       content. Retiering is one of three levers we have; the others are
+       lifting content out of Medieval Overhaul and raising TechBlock's
+       requiredPointsMedieval.
+
+       WHY ONLY THIS CHAIN
+
+       Nearly every Industrial project descends from Electricity, Machining
+       or MicroelectronicsBasics. Retiering a project whose prerequisite
+       stays Industrial achieves nothing, because the prerequisite still
+       gates it. The drug line is the one substantial block that does not:
+       DrugProduction has NO prerequisites at all, and the other three
+       descend only from it.
+
+       Deliberately NOT touching Machining's Electricity prerequisite, which
+       would have unlocked another 5,500 points across Prosthetics,
+       Gunsmithing, Mortars and friends. Conrad's call: Electricity stays
+       where it is, and it remains the thing that ends the Medieval era.
+
+       FICTION: alchemy, herbalism and opiates. Sits beside VFEM2_Alchemy,
+       which is already Medieval. Nothing here needs power or machining.
+
+       EFFECT: Medieval 15,500 -> 18,000, Industrial 147,300 -> 144,800.
+       TechBlock's gate costs shift with the tier sums automatically, since
+       it recomputes them from DefDatabase at startup.
+
+       Still on the table, not done because only the drug line was approved:
+       HeavyBridges (800, no prerequisites) and Piano (2000, prerequisite
+       Harpsichord is already Medieval). Both are clean, zero-collateral
+       moves whenever you want them.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationReplace">
+    <xpath>/Defs/ResearchProjectDef[defName="DrugProduction"]/techLevel</xpath>
+    <value>
+      <techLevel>Medieval</techLevel>
+    </value>
+  </Operation>
+
+  <Operation Class="PatchOperationReplace">
+    <xpath>/Defs/ResearchProjectDef[defName="PsychiteRefining"]/techLevel</xpath>
+    <value>
+      <techLevel>Medieval</techLevel>
+    </value>
+  </Operation>
+
+  <Operation Class="PatchOperationReplace">
+    <xpath>/Defs/ResearchProjectDef[defName="WakeUpProduction"]/techLevel</xpath>
+    <value>
+      <techLevel>Medieval</techLevel>
+    </value>
+  </Operation>
+
+  <Operation Class="PatchOperationReplace">
+    <xpath>/Defs/ResearchProjectDef[defName="GoJuiceProduction"]/techLevel</xpath>
+    <value>
+      <techLevel>Medieval</techLevel>
+    </value>
+  </Operation>
+
+</Patch>
