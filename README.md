@@ -17,7 +17,9 @@ carry no simulation code, which makes them inherently multiplayer-safe.
 | `Archinity.Glitterites` | **built** | Ultra-tech permanent enemy, orbital holdings, mixed human/mech forces, glitterheart orbital gate |
 | `Archinity.Chronicle` | planned | Quest chain spine tying the arc together |
 
-New session? Read [docs/HANDOFF.md](docs/HANDOFF.md) first.
+New session? Read [docs/VISION.md](docs/VISION.md), then
+[docs/technical-findings.md](docs/technical-findings.md), then
+[docs/HANDOFF.md](docs/HANDOFF.md).
 
 ## Setup
 

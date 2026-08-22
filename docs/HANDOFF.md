@@ -2,22 +2,30 @@
 
 State of the Archinity project as of the end of session 1.
 
-**Read [`technical-findings.md`](technical-findings.md) before doing anything.**
-It holds every fact verified against decompiled source across ~600k tokens of
-research. Re-deriving it is expensive; trusting the wiki instead will be wrong.
+## Read these two first, in this order
+
+1. **[`VISION.md`](VISION.md)** — what this playthrough is *for*. The premise,
+   the arc, the villain, and the design principles that drove nearly every
+   decision. **This is the part that cannot be recovered from the code.** If
+   you read nothing else, read this.
+2. **[`technical-findings.md`](technical-findings.md)** — every fact verified
+   against decompiled source. Re-deriving it is expensive and the wiki is
+   wrong about several of them.
+
+This document is the third thing: build status and next actions.
 
 ---
 
-## What this is
+## What this is, in one paragraph
 
 A suite of RimWorld 1.6 mods for one long co-op playthrough. Neolithic start,
-slow climb through every tech era, endgame in orbit, ending in transcendence
-via the `VRE_Transcendent` gene.
+slow climb through every tech era, endgame lived aboard a gravship in orbit,
+ending in transcendence via the `VRE_Transcendent` gene. Two players on the
+**Multiplayer** mod.
 
-Two players (Conrad and a friend) on the **Multiplayer** mod. Everything is
-**XML defs only** — no C#, no Harmony. That is a deliberate constraint: def-only
-mods carry no simulation code and are inherently multiplayer-safe. Do not break
-it without an explicit decision.
+Everything is **XML defs only** — no C#, no Harmony. Deliberate: def-only mods
+carry no simulation code and are inherently multiplayer-safe. Do not break it
+without an explicit decision from Conrad.
 
 ---
 
@@ -82,13 +90,11 @@ sanguophage origin  →  archite injection loop  →  glitterheart hunt in orbit
 - **Time:** a RimWorld year is **60 days**. The whole campaign fits under ~600
   days. See the era table in technical-findings.
 
-### Open question for Conrad
+### Open questions
 
-Whether to strip the starting xenotype down. `Archinity_ArchonianSanguophage`
-currently has all 33 genes including 13 archite ones. Splitting ~11 out and
-delivering them through the Chronicle chain was proposed and **not decided**.
-Every archite gene is annotated `<!-- [ARCHITE] -->` in the def, so the split is
-mechanical if he says yes.
+See the **Undecided** section of [`VISION.md`](VISION.md). Do not resolve any of
+them unilaterally — the starting-xenotype split in particular is a taste call
+Conrad has deliberately left open.
 
 ---
 
