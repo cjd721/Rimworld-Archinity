@@ -11,3 +11,4 @@ Thumbs.db
 desktop.ini
 .DS_Store
 .vscode/
+tools/__pycache__/

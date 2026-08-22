@@ -113,7 +113,8 @@ def main():
                         "USH_TeethRes", "USH_OverclockRes", "USH_SkinRes",
                         "USH_CombatSkilltrainersRes", "USH_EngineeringSkilltrainersRes",
                         "USH_IntellectualSkilltrainersRes", "USH_SurvivalSkilltrainersRes",
-                        "USH_ResurrectorRes", "USH_ResearchProbe"],
+                        "USH_ResurrectorRes", "USH_ResearchProbe",
+                        "USH_Glitterheart", "USH_Glittercore"],
     }
 
     missing_total = 0
