@@ -51,10 +51,13 @@ Kept, most needing simplification. The pattern is **keep the surface, cut the ma
 | **Flour mill, cheese press** | Keep. These change what an ingredient *is*, which is legitimate, unlike a second oven that only holds recipes. |
 | **Silk** | Keep as a cloth upgrade, not a spun chain. Silk beds are fine — load-and-leave. |
 
-## The QoL item class — where quest gating lives
+## The QoL item class — the default home for hunt gating
 
 A small set of items that **massively improve quality of life without gating progression**.
 Scarecrow, mine shaft, crane, sprinkler, trough.
+
+This is where hunt-item requirements go *by default* — not exclusively. A major spine
+unlock can carry one too when it deserves the weight.
 
 These are the correct target for hard requirements: a specific item wired in via Research
 Mod's `reverseEngineeringMaterials` (the item is damaged, not consumed, so the player keeps
@@ -68,9 +71,12 @@ source in the acquisition ledger (`sys/05`); more than one is better.
 
 Two rules, both from the Ideology and both easy to violate:
 
-1. **Never gate spine progression this way.** Weapons, armour tiers and core benches take
-   resource costs and light item costs only. The doc walks back its own bellows example for
-   exactly this reason.
+1. **Spine progression is gated this way by exception, not by default.** Weapons, armour
+   tiers and core benches normally take resource costs and ordinary item requirements — the
+   Ideology walks back its own bellows example for exactly this reason. But some major
+   unlocks *should* carry a hunt, and "never" is too strong. The failure mode is a wall of
+   mandatory fetch quests between the player and the next era, not any single instance of
+   one. See `sys/02` for the ordinary-requirement vs hunt-item distinction.
 2. **TechBlock interacts here.** You must research most of an era to advance. So a QoL item
    can become *effectively* mandatory — "I need this research to tier up, so I must do this
    quest." That is a feature at low doses and a wall at high ones. Keep the count small.

@@ -20,14 +20,28 @@ Three ideas carry everything:
 2. **Tier the same capability rather than adding parallel ones.** Basic → intermediate →
    advanced agriculture, each widening the plant set. Not forty plants at once.
 3. **Two classes of research, gated differently.**
-   - **Spine** — the things you must have to play. Resource cost, light item cost. Never
-     behind a quest.
+   - **Spine** — the things you must have to play. Resource costs and ordinary item
+     requirements. Hunt items **by exception**, not by default.
    - **Quality-of-life** — the scarecrow, the mine shaft, the crane. Rare, high-value, does
-     *not* gate progression. **These are where the hard item requirements go.** You want it,
-     you go get something for it.
+     *not* gate progression. **The default home for hunt-item requirements.**
 
    The Ideology is explicit that gating core weaponry behind a questline is wrong, and that
-   the bellows-class augment is the right target. Preserve that split.
+   the bellows-class augment is the right target. But some *major* unlocks should sit behind
+   a hunt — just not most of them. Treat this as a ratio to tune, not a rule to enforce.
+
+### Vocabulary — keep these separate
+
+These get conflated and they are different asks:
+
+- **Ordinary item requirement** — a specific ThingDef you can farm, craft, trade for or
+  loot in normal play. Cheap to satisfy, mostly a pacing device. Fine anywhere, spine
+  research included.
+- **Hunt item** — hand-placed, not obtainable through ordinary play, you have to go get it.
+  Expensive in player time. Default home is QoL research; allowed on spine research when a
+  specific unlock deserves the weight.
+
+Both are authored with the same Research Mod fields. The difference is entirely in whether
+the item is reachable without going looking for it.
 
 ## The mechanics — all verified
 
