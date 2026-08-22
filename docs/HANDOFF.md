@@ -14,6 +14,15 @@ State of the Archinity project as of the end of session 1.
 
 This document is the third thing: build status and next actions.
 
+> **START HERE THIS SESSION:**
+> [`DECISION-medieval-route.md`](DECISION-medieval-route.md) — an open decision
+> Conrad has NOT made: enable Medieval Overhaul and strip it (Route A), or
+> hand-port selected content into our own module (Route B). The Medieval era is
+> 22 projects and 15,500 research points against an intended 180–240 day era,
+> and this is how we fix it. That doc carries the verified facts for both
+> routes, the gameplay walkthrough and obsolescence audit Conrad asked for, and
+> every other loose end from session 2.
+
 ---
 
 ## What this is, in one paragraph
