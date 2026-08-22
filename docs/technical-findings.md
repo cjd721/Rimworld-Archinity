@@ -189,15 +189,18 @@ quadrums. Any gate expressed in years must be multiplied by 60, not 365.
 
 Conrad's target era lengths, converted:
 
-| Era | Years | Days | Cumulative day |
+| Era | Years | Days | Era ends ~day |
 |---|---|---|---|
-| Neolithic | 1–1.5 | 60–90 | ~90 |
-| Medieval | 2–4 | 120–240 | ~330 |
-| Industrial | 1–2 | 60–120 | ~450 |
-| Spacer | 1–2 | 60–120 | ~570 |
+| Neolithic | 1–2 | 60–120 | 60–120 |
+| Medieval | 3–4 | 180–240 | 240–360 |
+| Industrial | 2–4 | 120–240 | 360–600 |
+| Spacer | 1–2 | 60–120 | 420–720 |
 
-So the whole planned arc through Spacer lands around **day 570**, not day
-3000. Day-based gates above ~600 are effectively "never" for this campaign.
+Day-based gates much above ~700 are effectively "never" for this campaign.
+
+**Gating principle:** set day gates to the EARLIEST plausible entry into the
+target era, and let `rootMinPoints` (which tracks colony strength) hold the
+line. An available quest can be ignored; an absent one cannot be summoned.
 
 ---
 

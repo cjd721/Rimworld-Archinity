@@ -13,15 +13,22 @@
        1000 threat points arrives long before you have any business fighting
        Ultra-tech custodians, and day 45 is absurd.
 
-       A RimWorld year is 60 DAYS (GenDate.DaysPerYear = 60), not 365. The
-       target is the 6-7 year mark, so day 360 and day 420 respectively.
-       Days are the primary lever here because the target was expressed in
-       years; rootMinPoints is a sanity floor so a weak colony cannot trip
-       into an Ultra-tech fight just because the calendar rolled over.
+       A RimWorld year is 60 DAYS (GenDate.DaysPerYear = 60), not 365.
 
-       These are the first numbers to revisit after real playtesting. If the
-       glitterheart hunt opens too late, lower rootMinPoints before touching
-       rootEarliestDay.
+       Projected era boundaries for this campaign:
+           Neolithic  1-2y  ->  ends ~day  60-120
+           Medieval   3-4y  ->  ends ~day 240-360
+           Industrial 2-4y  ->  ends ~day 360-600
+
+       The day gate is set to the EARLIEST plausible start of the industrial
+       era (240 / 300) rather than the middle of it. That is deliberate: an
+       available quest can be ignored, an absent one cannot be summoned.
+
+       rootMinPoints is what actually holds the line. Threat points track
+       colony strength, so if the calendar rolls over before you are capable
+       of fighting Ultra-tech custodians, the quest still will not fire. The
+       two levers together give "open the door early, but only for someone
+       who can walk through it".
 
        A harder tech gate is available if we want it: adding a VEF
        QuestChainExtension with requiredResearch = TB_IndustrialTheory would
@@ -41,7 +48,7 @@
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechOutpost"]/rootEarliestDay</xpath>
           <value>
-            <rootEarliestDay>360</rootEarliestDay>
+            <rootEarliestDay>240</rootEarliestDay>
           </value>
         </li>
         <li Class="PatchOperationReplace">
@@ -54,7 +61,7 @@
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechFacility"]/rootEarliestDay</xpath>
           <value>
-            <rootEarliestDay>420</rootEarliestDay>
+            <rootEarliestDay>300</rootEarliestDay>
           </value>
         </li>
         <li Class="PatchOperationReplace">
