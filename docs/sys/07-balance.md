@@ -42,18 +42,18 @@ buff it or cut it. A tier that exists only to be skipped should not exist.
 - Different foods give different **kinds** of benefit — satiety, work speed, defence, offence.
 - The **scale** of the buff rises with ingredient quality.
 - Early game tops out around **+10%**; late game around **+30%**.
-- Recipe complexity stays **linear** — each tier adds one *generic* ingredient class, never
+- Recipe complexity stays **linear** — each tier adds one _generic_ ingredient class, never
   a new processing chain.
 
 The ladder, as sketched:
 
-| Tier | Ingredients |
-|---|---|
-| 1 | one meat |
-| 2 | meat + 1 other |
-| 3 | any 2 vegetables + any meat |
-| 4 | + eggs (now you keep animals) |
-| 5 | + one processed input (flour, cheese) |
+| Tier | Ingredients                           |
+| ---- | ------------------------------------- |
+| 1    | one meat                              |
+| 2    | meat + 1 other                        |
+| 3    | any 2 vegetables + any meat           |
+| 4    | + eggs (now you keep animals)         |
+| 5    | + one processed input (flour, cheese) |
 
 **The load-bearing detail: ingredients are specified by class, not by named crop.** "Any two
 vegetables," never "corn and potatoes." The player should never be optimising which specific
@@ -64,8 +64,9 @@ plant to grow for which specific recipe — that is the exact failure the doc is
 - **A RimWorld year is 60 days.** Every duration estimate must use this.
 - Neolithic intro target: **~20–30 days** to clear the initial tribal research and unlock the
   base jobs and gizmos.
-- Medieval three-leap structure approved: Forge ~5,100 / Mail+Siege ~12,400 /
-  Plate+Powder ~13,400 points.
+- Late Neolithic enters Roman-era tech (without metal since bronze is a new resource we quickly outpace and leather/stone can tier up just as well) as a precusor to unlocking metalworking as the entrypoint to the medieval era.
+- Medieval three-leap structure template: Forge / Mail+Siege /
+  Plate+Powder.
 - `requiredPointsMedieval` **0.75 (~88 bench days) vs 1.0 (~117)** — undecided, see `sys/02`.
 - **Chronicle beat gaps are held as variables** pending this pass. `QUESTLINE.md` §9 is
   explicit: the prior ~45–50 day gaps were too long — a full year between beats means the
@@ -75,17 +76,18 @@ plant to grow for which specific recipe — that is the exact failure the doc is
 
 From `QUESTLINE.md` §9 — the balance reference, not a target:
 
-| Era | Failure chance | Listed cost | Effective cost |
-|---|---:|---:|---:|
-| Neolithic | 25% | 1 | 1 |
-| Medieval | ~19% → ~15% | 2–3 | ~1.5 |
-| Industrial | ~11% | 4 | ~2 |
-| Spacer | ~7% | 6–8 | ~3.5 |
-| Ultra | ~2% | 12–20 | ~6–9 |
-| Archotech | ~0% | 50 | ~23 |
+| Era        | Failure chance | Listed cost | Effective cost |
+| ---------- | -------------: | ----------: | -------------: |
+| Neolithic  |            25% |           1 |              1 |
+| Medieval   |    ~19% → ~15% |         2–3 |           ~1.5 |
+| Industrial |           ~11% |           4 |             ~2 |
+| Spacer     |            ~7% |         6–8 |           ~3.5 |
+| Ultra      |            ~2% |       12–20 |           ~6–9 |
+| Archotech  |            ~0% |          50 |            ~23 |
 
 **Risk falls monotonically while cost rises superlinearly.** Efficiency never means mercy;
 it means scale.
+**Note:** this information is outdated. Success/failure depends on the type of gene (vektor vs archite capsule) and the pawn involved. Still TDB.
 
 ## Work items
 

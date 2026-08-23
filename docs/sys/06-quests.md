@@ -3,7 +3,7 @@
 **Blocked by 05** (a quest that sends you to a faction needs the faction settled).
 
 **Read `QUESTLINE.md` alongside this brief.** It defines the beats, acts and vectors this
-document schedules; the two are not separable. Nothing here specifies beat *content* —
+document schedules; the two are not separable. Nothing here specifies beat _content_ —
 `QUESTLINE.md` does.
 
 ## What this system must do
@@ -66,12 +66,12 @@ Both verified against the decompile.
 
 Deterministic rewards are the backbone of "I need item X, this quest gives it."
 
-| Mechanism | Status |
-|---|---|
-| `QuestNode_SetItemStashContents` | **Verified, shipped** — Royalty `Script_Intro_Deserter.xml:90`. The safest option. |
+| Mechanism                                              | Status                                                                                                                                                                      |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `QuestNode_SetItemStashContents`                       | **Verified, shipped** — Royalty `Script_Intro_Deserter.xml:90`. The safest option.                                                                                          |
 | `QuestNode_GenerateThing` + `QuestNode_AddItemsReward` | Verified in code, **no shipped XML example**. Bypasses ThingSetMaker filters, budgets, techprint and `PlayerAcquirable` gates — the hard way to hand out out-of-tier items. |
-| `QuestNode_GiveRewards` | **Can never be made fixed.** Do not try. |
-| `ThingSetMaker_Count` / `_StackCount` | The only deterministic ThingSetMakers. There is no `ThingSetMaker_Fixed`. |
+| `QuestNode_GiveRewards`                                | **Can never be made fixed.** Do not try.                                                                                                                                    |
+| `ThingSetMaker_Count` / `_StackCount`                  | The only deterministic ThingSetMakers. There is no `ThingSetMaker_Fixed`.                                                                                                   |
 
 `QuestNode_GenerateThing` gotchas: must nest under a signal node or the item drops on
 accept; needs `slate["map"]`; `stackCount` is unclamped against `stackLimit`; non-stuffable
@@ -81,14 +81,14 @@ things only.
 
 Survives killing VQE's questline — only the scheduling extension is removed, not the content.
 
-| Layout set | Count | Shape | Use |
-|---|---:|---|---|
-| `VQEA_AncientOvergroundComplex_1..12` | 12 | Surface complex | Act openers and closers |
-| `VQEA_VaultLabModules` + `VQEA_SealedVault` | — | Underground, locked vault door + ramp | Medium beats |
-| `VQEA_SidequestLabModules_1..10` | 10 | One small lab room | Small beats |
+| Layout set                                  | Count | Shape                                 | Use                     |
+| ------------------------------------------- | ----: | ------------------------------------- | ----------------------- |
+| `VQEA_AncientOvergroundComplex_1..12`       |    12 | Surface complex                       | Act openers and closers |
+| `VQEA_VaultLabModules` + `VQEA_SealedVault` |     — | Underground, locked vault door + ramp | Medium beats            |
+| `VQEA_SidequestLabModules_1..10`            |    10 | One small lab room                    | Small beats             |
 
-Six `SitePartDef`s with difficulty flavour already written: *abandoned*, *dangerous*,
-*infested*, *reconnaissance*, *array*, *research vault*. Two map generators:
+Six `SitePartDef`s with difficulty flavour already written: _abandoned_, _dangerous_,
+_infested_, _reconnaissance_, _array_, _research vault_. Two map generators:
 `VQEA_AncientComplex` (overground), `VQEA_SealedVault`.
 
 ## Side quests — the QoL item delivery channel
@@ -105,7 +105,7 @@ it yields.
 
 **Not scheduled. Recorded so it is not lost.**
 
-The player hits a research node, sees it needs an item, and asks *"where do I find this?"*
+The player hits a research node, sees it needs an item, and asks _"where do I find this?"_
 Today the answer is guesswork. The idea: some form of **intel workbench**, or a thinking
 action performed against a specific research node, which either **spawns a quest** that
 yields the item or **tells the player where to get it**.
@@ -119,6 +119,8 @@ Cost, unassessed: quests are normally storyteller- or chain-driven. Player-initi
 generation almost certainly needs C#, which means a second assembly or an addition to
 `Archinity.Altar`. Do not scope this until the core acquisition ledger exists and we know
 whether the problem it solves is actually painful in play.
+
+**Addition** I just had another thought: should the Founders get the genius gene, and if so, when? It could be an amazing narrative point if used properly. You've struggled to understand the world up to this point, and then the gods bless you with super intelligence. Maybe we place it at the end of Medieval? let you finish out the last few research with it and then you progress to Industrial _because_ you're a genius? It could mean we keep research costs high, since they'll be so much better at it with the perk. Hmmm. Something to think about.
 
 ## Work items
 

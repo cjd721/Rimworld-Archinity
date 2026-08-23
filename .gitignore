@@ -2,3 +2,7 @@
 # other player can sync and play without a .NET SDK installed.
 Archinity.Altar/Source/obj/
 Archinity.Altar/Source/bin/
+
+# Python bytecode from tools/
+__pycache__/
+*.pyc

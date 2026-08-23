@@ -61,7 +61,7 @@ These are blocking. Nothing downstream is safe to build until they land.
 
 | ID | Decision | Why it blocks | Options |
 |---|---|---|---|
-| ~~D1~~ | ~~Is VFE Tribals in?~~ | — | **RESOLVED: in.** Its own tech-advancement ritual is disabled; TechBlock is the sole advancement lever. |
+| ~~D1~~ | ~~Is VFE Tribals in?~~ | — | **RESOLVED: in.** Its own tech-advancement ritual is disabled; TechBlock is the sole advancement lever. **Note: it is not actually enabled in the live `ModsConfig.xml` — see `INVENTORY.md`. Conrad reconfirmed 2026-08-22 that it should be; switching it on is an open action, not an open decision.** |
 | ~~D2~~ | ~~Is Medieval Overhaul in?~~ | — | **RESOLVED: in, and gutted.** Enabled for the assets; the systems in `sys/04`'s kill list get stripped. |
 | **D3** | **Founder access model** | Blocks the lottery, which blocks beat placement. | Two altars / one altar split by ammunition — `QUESTLINE.md` §3 |
 | **D4** | **Capsule timing** | Same. | Neolithic / Industrial — `QUESTLINE.md` §4 |
@@ -218,6 +218,9 @@ distinguish them inline. Two tiers:
 
 | File | What it is |
 |---|---|
+| `INVENTORY.md` | Every item and research project in the live mod set, bucketed keep / change / fence / cut. Built by `tools/inventory.py`. Also records three defects in this map's own claims. |
+| `PROGRESSION-MAP.md` | **The target design for the Neolithic and Medieval eras.** Narrative → capabilities → research nodes, across five milestones. Supersedes `RESEARCH-NEO-MED.md`. Read this before authoring anything in 02, 03, 04 or 07. |
+| `RESEARCH-NEO-MED.md` | **Superseded — do not act on it.** Built on a wrong premise (it moved VFE Classical up an era and cut to an arithmetic budget). Kept for its per-project cost and dependency data, which is accurate; its verdicts are not. See `PROGRESSION-MAP.md` §9. |
 | `QUESTLINE.md` | The Chronicle — beats, vectors, lottery, the 13 buildings. Current and good. |
 | `Player Progression Ideology.txt` | Conrad's design philosophy for Neolithic->Medieval. The source of truth for *intent* on progression. Verbose but load-bearing. |
 | `technical-findings.md` | Verified fact base. Append here. |

@@ -1,0 +1,294 @@
+order,mod,packageId,defName,label,techLevel,baseCost,techprints,tab,bench,facilities,prerequisites,file
+2,Core,ludeon.rimworld,PsychoidBrewing,psychoid brewing,Neolithic,500,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,TreeSowing,tree sowing,Neolithic,1000,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,Brewing,beer brewing,Neolithic,400,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,ComplexFurniture,complex furniture,Medieval,300,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,PassiveCooler,passive cooler,Neolithic,400,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,Stonecutting,stonecutting,Medieval,300,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,ComplexClothing,complex clothing,Medieval,600,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,DrugProduction,drug production,Industrial,500,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,Cocoa,cocoa,Neolithic,1000,0,Main,,,TreeSowing,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,Devilstrand,devilstrand,Neolithic,800,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,CarpetMaking,carpet-making,Medieval,800,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,Pemmican,pemmican,Neolithic,500,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,Smithing,smithing,Medieval,700,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,RecurveBow,recurve bow,Neolithic,400,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,PsychiteRefining,psychite refining,Industrial,400,0,Main,,,DrugProduction,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,WakeUpProduction,wake-up production,Industrial,600,0,Main,,,DrugProduction,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,GoJuiceProduction,go-juice production,Industrial,1000,0,Main,,,DrugProduction,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,PenoxycylineProduction,penoxycyline production,Industrial,500,0,Main,,,DrugProduction,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,LongBlades,long blades,Medieval,400,0,Main,,,Smithing,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,PlateArmor,plate armor,Medieval,600,0,Main,,,Smithing;ComplexClothing,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,Greatbow,greatbow,Medieval,600,0,Main,,,RecurveBow,Defs\ResearchProjectDefs\ResearchProjects_1.xml
+2,Core,ludeon.rimworld,Electricity,electricity,Industrial,1600,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,Batteries,battery,Industrial,400,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,BiofuelRefining,biofuel refining,Industrial,700,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,WatermillGenerator,watermill generator,Industrial,700,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,NutrientPaste,nutrient paste,Industrial,400,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,SolarPanels,solar panel,Industrial,600,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,AirConditioning,air conditioning,Industrial,500,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,Autodoors,autodoor,Industrial,600,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,Hydroponics,hydroponics,Industrial,700,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,TubeTelevision,tube television,Industrial,1000,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,PackagedSurvivalMeal,packaged survival meal,Industrial,500,0,Main,,,NutrientPaste,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,Firefoam,firefoam,Industrial,600,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,IEDs,IEDs,Industrial,500,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,GeothermalPower,geothermal power,Industrial,3200,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,SterileMaterials,sterile materials,Industrial,600,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,ColoredLights,advanced lights,Industrial,300,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,Machining,machining,Industrial,1000,0,Main,,,Electricity;Smithing,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,SmokepopBelt,smokepop packs,Industrial,300,0,Main,,,Machining,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,Prosthetics,prosthetics,Industrial,600,0,Main,,,Machining,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,Gunsmithing,gunsmithing,Industrial,500,0,Main,,,Machining,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,FlakArmor,flak armor,Industrial,1200,0,Main,,,Machining,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,Mortars,mortars,Industrial,2000,0,Main,,,Gunsmithing,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,BlowbackOperation,blowback operation,Industrial,500,0,Main,,,Gunsmithing,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,GasOperation,gas operation,Industrial,1000,0,Main,,,BlowbackOperation,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,GunTurrets,gun turrets,Industrial,500,0,Main,,,BlowbackOperation,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,FoamTurret,foam turret,Industrial,800,0,Main,,,GunTurrets,Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+2,Core,ludeon.rimworld,MicroelectronicsBasics,microelectronics,Industrial,3000,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,FlatscreenTelevision,flatscreen television,Industrial,2000,0,Main,HiTechResearchBench,,TubeTelevision;MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,MoisturePump,moisture pump,Industrial,1200,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,HospitalBed,hospital bed,Industrial,1200,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,DeepDrilling,deep drilling,Industrial,1000,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,GroundPenetratingScanner,ground-penetrating scanner,Industrial,1000,0,Main,HiTechResearchBench,,DeepDrilling,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,TransportPod,transport pod,Industrial,1000,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,MedicineProduction,medicine production,Industrial,1500,0,Main,HiTechResearchBench,,DrugProduction;MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,LongRangeMineralScanner,long-range mineral scanner,Industrial,2000,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,ShieldBelt,shields,Spacer,1000,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,PrecisionRifling,precision rifling,Industrial,1400,0,Main,HiTechResearchBench,,GasOperation;MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,HeavyTurrets,autocannon turret,Industrial,1600,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,MultibarrelWeapons,multibarrel weapons,Industrial,2600,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_3_Microelectronics.xml
+2,Core,ludeon.rimworld,MultiAnalyzer,multi-analyzer,Industrial,4000,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,VitalsMonitor,vitals monitor,Industrial,2500,0,Main,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer;HospitalBed,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,Fabrication,fabrication,Industrial,4000,0,Main,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,AdvancedFabrication,advanced fabrication,Industrial,4000,0,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,Cryptosleep,cryptosleep casket,Spacer,2000,0,Main,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,ReconArmor,recon armor,Spacer,6000,0,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,PoweredArmor,marine armor,Spacer,6000,0,Main,HiTechResearchBench,MultiAnalyzer,ReconArmor,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,ChargedShot,pulse-charged munitions,Spacer,3000,0,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,Bionics,bionic replacements,Spacer,2000,0,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,SniperTurret,uranium slug turret,Industrial,3000,0,Main,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer;HeavyTurrets,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,RocketswarmLauncher,rocketswarm launcher,Industrial,3000,0,Main,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer;HeavyTurrets,Defs\ResearchProjectDefs\ResearchProjects_4_MultiAnalyzer.xml
+2,Core,ludeon.rimworld,ShipBasics,starflight basics,Spacer,4000,0,Main,HiTechResearchBench,MultiAnalyzer,AdvancedFabrication,Defs\ResearchProjectDefs\ResearchProjects_5_Ship.xml
+2,Core,ludeon.rimworld,ShipCryptosleep,vacuum cryptosleep casket,Spacer,2800,0,Main,HiTechResearchBench,MultiAnalyzer,ShipBasics,Defs\ResearchProjectDefs\ResearchProjects_5_Ship.xml
+2,Core,ludeon.rimworld,ShipReactor,starship reactor,Spacer,6000,0,Main,HiTechResearchBench,MultiAnalyzer,ShipBasics,Defs\ResearchProjectDefs\ResearchProjects_5_Ship.xml
+2,Core,ludeon.rimworld,ShipEngine,Johnson-Tanaka drive,Spacer,6000,0,Main,HiTechResearchBench,MultiAnalyzer,ShipBasics,Defs\ResearchProjectDefs\ResearchProjects_5_Ship.xml
+2,Core,ludeon.rimworld,ShipComputerCore,machine persuasion,Spacer,3000,0,Main,HiTechResearchBench,MultiAnalyzer,ShipBasics,Defs\ResearchProjectDefs\ResearchProjects_5_Ship.xml
+2,Core,ludeon.rimworld,ShipSensorCluster,starflight sensors,Spacer,4000,0,Main,HiTechResearchBench,MultiAnalyzer,ShipBasics,Defs\ResearchProjectDefs\ResearchProjects_5_Ship.xml
+3,Royalty,ludeon.rimworld.royalty,NobleApparel,noble apparel,Medieval,400,0,Main,,,ComplexClothing,Defs\ResearchProjectDefs\ResearchProjects_Apparel.xml
+3,Royalty,ludeon.rimworld.royalty,RoyalApparel,royal apparel,Medieval,400,0,Main,,,NobleApparel,Defs\ResearchProjectDefs\ResearchProjects_Apparel.xml
+3,Royalty,ludeon.rimworld.royalty,CataphractArmor,cataphract armor,Spacer,6000,2,Main,HiTechResearchBench,MultiAnalyzer,PoweredArmor,Defs\ResearchProjectDefs\ResearchProjects_Apparel.xml
+3,Royalty,ludeon.rimworld.royalty,JumpPack,jump packs,Industrial,2000,1,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Apparel.xml
+3,Royalty,ludeon.rimworld.royalty,Gunlink,gunlink,Industrial,2000,0,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Apparel.xml
+3,Royalty,ludeon.rimworld.royalty,BrainWiring,brain wiring,Spacer,2000,1,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,SpecializedLimbs,specialized limbs,Spacer,2000,1,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,CompactWeaponry,compact weaponry,Spacer,2000,1,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,VenomSynthesis,poison synthesis,Spacer,2000,1,Main,HiTechResearchBench,,CompactWeaponry,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,ArtificialMetabolism,artificial metabolism,Ultra,2000,1,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,NeuralComputation,neural computation,Ultra,2000,1,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,SkinHardening,skin hardening,Ultra,2000,1,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,HealingFactors,healing factors,Ultra,2000,1,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,FleshShaping,flesh shaping,Ultra,2000,1,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,MolecularAnalysis,molecular analysis,Ultra,2000,1,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,CircadianInfluence,circadian influence,Ultra,2000,1,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Implants.xml
+3,Royalty,ludeon.rimworld.royalty,Harp,harp,Medieval,500,0,Main,,,ComplexFurniture,Defs\ResearchProjectDefs\ResearchProjects_MusicalInstruments.xml
+3,Royalty,ludeon.rimworld.royalty,Harpsichord,harpsichord,Medieval,500,0,Main,,,Harp;Smithing,Defs\ResearchProjectDefs\ResearchProjects_MusicalInstruments.xml
+3,Royalty,ludeon.rimworld.royalty,Piano,piano,Industrial,2000,0,Main,,,Harpsichord,Defs\ResearchProjectDefs\ResearchProjects_MusicalInstruments.xml
+4,Ideology,ludeon.rimworld.ideology,Biosculpting,biosculpting,Industrial,1500,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+4,Ideology,ludeon.rimworld.ideology,Bioregeneration,bioregeneration,Industrial,4000,0,Main,HiTechResearchBench,MultiAnalyzer,Biosculpting;MultiAnalyzer,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+4,Ideology,ludeon.rimworld.ideology,NeuralSupercharger,neural supercharger,Industrial,1500,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,BasicMechtech,basic mechtech,Industrial,200,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+5,Biotech,ludeon.rimworld.biotech,StandardMechtech,standard mechtech,Industrial,1000,0,Main,,,BasicMechtech,Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+5,Biotech,ludeon.rimworld.biotech,HighMechtech,high mechtech,Industrial,3000,0,Main,HiTechResearchBench,MultiAnalyzer,StandardMechtech;MultiAnalyzer,Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+5,Biotech,ludeon.rimworld.biotech,UltraMechtech,ultra mechtech,Ultra,5000,0,Main,,MultiAnalyzer,Fabrication;HighMechtech,Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+5,Biotech,ludeon.rimworld.biotech,WastepackAtomizer,wastepack atomizer,Industrial,8000,0,Main,HiTechResearchBench,MultiAnalyzer,AdvancedFabrication,Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+5,Biotech,ludeon.rimworld.biotech,ToxifierGenerator,toxifier generator,Industrial,500,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,Xenogermination,xenogenetics,Industrial,1000,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,GeneProcessor,gene processor,Industrial,1500,0,Main,HiTechResearchBench,,Xenogermination;MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,Archogenetics,archogenetics,Industrial,2500,0,Main,HiTechResearchBench,MultiAnalyzer,Fabrication;GeneProcessor,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,Deathrest,deathrest,Industrial,1000,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,FertilityProcedures,fertility procedures,Industrial,1000,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,ToxGas,tox gas,Industrial,600,0,Main,,,Machining,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,ToxFiltration,toxin filtration,Spacer,2000,0,Main,HiTechResearchBench,MultiAnalyzer,Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+5,Biotech,ludeon.rimworld.biotech,GrowthVats,growth vats,Spacer,500,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,Fishing,fishing,Neolithic,600,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,BasicGravtech,basic gravtech,Industrial,300,0,Main,,,Electricity,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,StandardGravtech,standard gravtech,Industrial,1200,0,Main,HiTechResearchBench,,BasicGravtech;MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,AdvancedGravtech,advanced gravtech,Spacer,2000,0,Main,HiTechResearchBench,MultiAnalyzer,StandardGravtech;Fabrication,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,OrbitalTech,orbital tech,Industrial,1000,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,HeavyBridges,heavy bridges,Industrial,800,0,Main,,,,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,BeamWeapons,beam weapons,Spacer,4000,0,Main,HiTechResearchBench,MultiAnalyzer,AdvancedFabrication;ChargedShot,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,Shuttles,shuttle,Spacer,2500,0,Main,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer;TransportPod,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+6,Odyssey,ludeon.rimworld.odyssey,HunterDrones,hunter drone,Industrial,1600,0,Main,HiTechResearchBench,,MicroelectronicsBasics,Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+13,Vanilla Furniture Expanded,vanillaexpanded.vfecore,MF_BasicFurniture,basic furniture,Neolithic,300,0,VanillaExpanded,,,,1.6\Defs\ResearchDefs\ResearchProjects.xml
+13,Vanilla Furniture Expanded,vanillaexpanded.vfecore,MF_RoyalFurniture,artisan furniture,Medieval,800,0,VanillaExpanded,,,ComplexFurniture,1.6\Defs\ResearchDefs\ResearchProjects.xml
+13,Vanilla Furniture Expanded,vanillaexpanded.vfecore,MF_ModernFurniture,modern furniture,Industrial,800,0,VanillaExpanded,,,ComplexFurniture,1.6\Defs\ResearchDefs\ResearchProjects.xml
+13,Vanilla Furniture Expanded,vanillaexpanded.vfecore,MF_WasteDisposal,waste disposal,Industrial,1200,0,VanillaExpanded,,,MF_ModernFurniture,1.6\Defs\ResearchDefs\ResearchProjects.xml
+14,Vanilla Furniture Expanded - Farming,vanillaexpanded.vfefarming,VFE_Res_AdvancedHydroponics,artificial ecosystems,Spacer,2000,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer;Hydroponics,1.6\Defs\ResearchProjectDefs\ResearchProjects_VFE.xml
+14,Vanilla Furniture Expanded - Farming,vanillaexpanded.vfefarming,VFE_Res_Sprinkler,sprinklers,Industrial,500,0,VanillaExpanded,,,Machining,1.6\Defs\ResearchProjectDefs\ResearchProjects_VFE.xml
+14,Vanilla Furniture Expanded - Farming,vanillaexpanded.vfefarming,VFE_Res_FarmingTechniques,farming techniques,Medieval,300,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_VFE.xml
+16,Vanilla Furniture Expanded - Security,vanillaexpanded.vfesecurity,VFES_SiegeEquipment,siege equipment,Medieval,900,0,VanillaExpanded,,,Smithing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+16,Vanilla Furniture Expanded - Security,vanillaexpanded.vfesecurity,VWE_TrenchWarfare,trench warfare,Industrial,700,0,VanillaExpanded,,,Mortars,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+16,Vanilla Furniture Expanded - Security,vanillaexpanded.vfesecurity,VFES_ConcealedDefenses,concealed defenses,Industrial,1100,0,VanillaExpanded,HiTechResearchBench,,GunTurrets,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+16,Vanilla Furniture Expanded - Security,vanillaexpanded.vfesecurity,VFES_Railgun,railgun,Spacer,2400,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,ChargedShot;SniperTurret,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+16,Vanilla Furniture Expanded - Security,vanillaexpanded.vfesecurity,VFES_EMPCannon,electromagnetic pulse,Spacer,1600,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,HeavyTurrets;ChargedShot,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+16,Vanilla Furniture Expanded - Security,vanillaexpanded.vfesecurity,VFES_RepulsorTechnology,repulsor technology,Ultra,6000,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,AdvancedFabrication;ShieldBelt,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+17,Vanilla Furniture Expanded - Production,vanillaexpanded.vfeproduction,VFE_Manufacturing,Manufacturing,Industrial,6000,0,VanillaExpanded,,,Fabrication,1.6\Defs\ResearchProjects_Various.xml
+26,Vanilla Furniture Expanded - Power,vanillaexpanded.vfepower,VFE_IndustrialGenerators,industrial generators,Industrial,1800,0,VanillaExpanded,,,Electricity,1.6\Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+26,Vanilla Furniture Expanded - Power,vanillaexpanded.vfepower,VFE_AdvancedBatteries,advanced battery,Spacer,2000,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,Batteries,1.6\Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+26,Vanilla Furniture Expanded - Power,vanillaexpanded.vfepower,VFE_AdvancedPowerSources,advanced power sources,Spacer,2500,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,MicroelectronicsBasics,1.6\Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+26,Vanilla Furniture Expanded - Power,vanillaexpanded.vfepower,VFE_NuclearPower,nuclear power,Spacer,3500,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,MicroelectronicsBasics,1.6\Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+26,Vanilla Furniture Expanded - Power,vanillaexpanded.vfepower,VFE_TidalPower,tidal power,Industrial,3200,0,VanillaExpanded,,,Electricity,1.6\Defs\ResearchProjectDefs\ResearchProjects_2_Electricity.xml
+30,Vanilla Factions Expanded - Pirates,oskarpotocki.vfe.pirates,VFEP_Warcaskets,warcaskets,Industrial,3000,0,VanillaExpanded,,,Machining,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+30,Vanilla Factions Expanded - Pirates,oskarpotocki.vfe.pirates,VFEP_AdvancedWarcaskets,advanced warcaskets,Industrial,4000,0,VanillaExpanded,HiTechResearchBench,,VFEP_Warcaskets,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+30,Vanilla Factions Expanded - Pirates,oskarpotocki.vfe.pirates,VFEP_SpecialisedWarcaskets,specialised warcaskets,Industrial,5000,0,VanillaExpanded,HiTechResearchBench,,VFEP_AdvancedWarcaskets,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+30,Vanilla Factions Expanded - Pirates,oskarpotocki.vfe.pirates,VFEP_SpacerWarcaskets,spacer warcaskets,Spacer,6000,0,VanillaExpanded,HiTechResearchBench,,VFEP_SpecialisedWarcaskets,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+30,Vanilla Factions Expanded - Pirates,oskarpotocki.vfe.pirates,VFEP_WarcasketRemoval,warcasket removal,Industrial,6000,0,VanillaExpanded,HiTechResearchBench,,VFEP_SpecialisedWarcaskets,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+30,Vanilla Factions Expanded - Pirates,oskarpotocki.vfe.pirates,VFEP_WarcasketWeaponry,warcasket weaponry,Industrial,2000,0,VanillaExpanded,HiTechResearchBench,,MultibarrelWeapons,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+30,Vanilla Factions Expanded - Pirates,oskarpotocki.vfe.pirates,VFEP_SpacerWarcasketWeaponry,spacer warcasket weaponry,Spacer,3000,0,VanillaExpanded,HiTechResearchBench,,VFEP_WarcasketWeaponry,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+30,Vanilla Factions Expanded - Pirates,oskarpotocki.vfe.pirates,VFEP_SweatFermentation,sweat fermentation,Industrial,1000,0,VanillaExpanded,,,DrugProduction;NutrientPaste,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+33,Vanilla Vehicles Expanded,oskarpotocki.vanillavehiclesexpanded,VVE_BasicVehicles,basic vehicles,Industrial,1000,0,Vehicles,,,BiofuelRefining,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+33,Vanilla Vehicles Expanded,oskarpotocki.vanillavehiclesexpanded,VVE_ComplexVehicles,complex vehicles,Industrial,1500,0,Vehicles,,,VVE_BasicVehicles;Fabrication,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+33,Vanilla Vehicles Expanded,oskarpotocki.vanillavehiclesexpanded,VVE_AerialVehicles,aerial vehicles,Industrial,1500,0,Vehicles,,,VVE_BasicVehicles;Fabrication,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+33,Vanilla Vehicles Expanded,oskarpotocki.vanillavehiclesexpanded,VVE_CombatVehicles,combat vehicles,Industrial,1500,0,Vehicles,,,VVE_BasicVehicles;Fabrication,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+34,Vanilla Weapons Expanded - Non-Lethal,vanillaexpanded.vwenl,VWE_NonLethal,non-lethal weapons,Industrial,1400,0,VanillaExpanded,,,Gunsmithing,1.6\Defs\ResearchProjectDefs\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_GlittertechFabrication,Glittertech fabrication,Ultra,4000,0,USH_GlittertechExpansion,HiTechResearchBench,MultiAnalyzer,AdvancedFabrication,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_LightGlitterpanelsRes,Light glitterpanels,Ultra,2500,0,USH_GlittertechExpansion,HiTechResearchBench,MultiAnalyzer,USH_GlittertechFabrication,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_GlittertechUtilitiesRes,Glittertech utilities,Ultra,4000,0,USH_GlittertechExpansion,HiTechResearchBench,MultiAnalyzer,USH_GlittertechFabrication,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_DarkGlitterpanelsRes,Dark glitterpanels,Ultra,3500,0,USH_GlittertechExpansion,HiTechResearchBench,MultiAnalyzer,USH_GlittertechFabrication,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_TelepadRes,Ways of translocation,Ultra,3000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_GlittertechUtilitiesRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_MolecularDisassemblerRes,Nanotech precision,Ultra,4000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_GlittertechUtilitiesRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_HeavyGlittertechRes,Heavy glittertech,Ultra,8000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_TelepadRes;USH_MolecularDisassemblerRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_GlittertechAlchemyRes,Glitterworld alchemy,Ultra,2500,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_GlittertechUtilitiesRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_NeuromodifiersBasicsRes,Neuromodifiers basics,Ultra,3000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_GlittertechUtilitiesRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_DeepMindScanningRes,Deep mind scanning,Ultra,6000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_GlittertechAlchemyRes;USH_NeuromodifiersBasicsRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_TeethRes,Teeth replacements,Ultra,2500,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,Bionics;USH_NeuromodifiersBasicsRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_OverclockRes,Firearms overclocking,Ultra,5000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_NeuromodifiersBasicsRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_SkinRes,Glitterworld ascension,Ultra,7000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_TeethRes;USH_OverclockRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_CombatSkilltrainersRes,Combat skilltrainers,Ultra,4500,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_DeepMindScanningRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_EngineeringSkilltrainersRes,Engineering skilltrainers,Ultra,4000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_DeepMindScanningRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_IntellectualSkilltrainersRes,Intellectual skilltrainers,Ultra,4000,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_DeepMindScanningRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_SurvivalSkilltrainersRes,Survival skilltrainers,Ultra,3500,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_DeepMindScanningRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+40,Ushankas Glittertech Expansion,ushanka.glittertechexpansion,USH_ResurrectorRes,glitterworld rebirth protocol,Ultra,12500,0,USH_GlittertechExpansion,HiTechResearchBench,USH_ResearchProbe,USH_CombatSkilltrainersRes;USH_EngineeringSkilltrainersRes;USH_IntellectualSkilltrainersRes;USH_SurvivalSkilltrainersRes,1.6\Defs\ResearchProjects\ResearchProjects.xml
+41,TechBlock,fridgebaron.techblock,TB_NeolithicTechLock,Animal Understanding,Animal,10000,0,TB_Levels,,,,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_NeolithicTheory,Neolithic Theory,Neolithic,10000,0,TB_Levels,,,TB_NeolithicTechLock,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_MedievalTechLock,Neolithic Understanding,Neolithic,10000,0,TB_Levels,,,TB_NeolithicTheory,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_MedievalTheory,Medieval Theory,Medieval,10000,0,TB_Levels,,,TB_MedievalTechLock,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_IndustrialTechLock,Medieval Understanding,Medieval,100000,0,TB_Levels,,,TB_MedievalTheory,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_IndustrialTheory,Industrial Theory,Industrial,100000,0,TB_Levels,,,TB_IndustrialTechLock,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_SpacerTechLock,Industrial Understanding,Industrial,100000,0,TB_Levels,HiTechResearchBench,MultiAnalyzer,TB_IndustrialTheory,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_SpacerTheory,Spacer Theory,Spacer,100000,0,TB_Levels,HiTechResearchBench,MultiAnalyzer,TB_SpacerTechLock,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_UltraTechLock,Spacer Understanding,Spacer,100000,0,TB_Levels,HiTechResearchBench,MultiAnalyzer,TB_SpacerTheory,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_UltraTheory,Ultra Theory,Ultra,100000,0,TB_Levels,HiTechResearchBench,MultiAnalyzer,TB_UltraTechLock,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_ArchoTechLock,Ultra Understanding,Ultra,100000,0,TB_Levels,HiTechResearchBench,MultiAnalyzer,TB_UltraTheory,1.6\Defs\ResearchProjectDef\TechLocks.xml
+41,TechBlock,fridgebaron.techblock,TB_ArchoTheory,Archotech Theory,Archotech,100000,0,TB_Levels,HiTechResearchBench,MultiAnalyzer,TB_ArchoTechLock,1.6\Defs\ResearchProjectDef\TechLocks.xml
+45,Vanilla Gravship Expanded - Chapter 1,vanillaexpanded.gravship,VGE_GravshipWeaponry,gravship weaponry,Spacer,400,0,VGE_Gravtech,,,StandardGravtech,1.6\Defs\ResearchProjectDefs\ResearchProjects.xml
+45,Vanilla Gravship Expanded - Chapter 1,vanillaexpanded.gravship,VGE_CompactWorkspaces,compact workspaces,Spacer,400,0,VGE_Gravtech,,,StandardGravtech,1.6\Defs\ResearchProjectDefs\ResearchProjects.xml
+45,Vanilla Gravship Expanded - Chapter 1,vanillaexpanded.gravship,VGE_OxygenNetwork,oxygen network,Spacer,100,0,VGE_Gravtech,,,BasicGravtech,1.6\Defs\ResearchProjectDefs\ResearchProjects.xml
+45,Vanilla Gravship Expanded - Chapter 1,vanillaexpanded.gravship,VGE_AstrofuelRefining,astrofuel refining,Spacer,400,0,VGE_Gravtech,,,StandardGravtech,1.6\Defs\ResearchProjectDefs\ResearchProjects.xml
+45,Vanilla Gravship Expanded - Chapter 1,vanillaexpanded.gravship,VGE_GravshipPower,gravship power,Spacer,100,0,VGE_Gravtech,,,BasicGravtech,1.6\Defs\ResearchProjectDefs\ResearchProjects.xml
+45,Vanilla Gravship Expanded - Chapter 1,vanillaexpanded.gravship,VGE_HeatDissipation,heat dissipation,Spacer,400,0,VGE_Gravtech,,,StandardGravtech,1.6\Defs\ResearchProjectDefs\ResearchProjects.xml
+45,Vanilla Gravship Expanded - Chapter 1,vanillaexpanded.gravship,VGE_GravshipLiving,gravship living,Spacer,100,0,VGE_Gravtech,,,BasicGravtech,1.6\Defs\ResearchProjectDefs\ResearchProjects.xml
+46,GravTech,als.gravtech,GravEngineBuild,grav engine technologies,Spacer,3000,1,Main,HiTechResearchBench,MultiAnalyzer,AdvancedGravtech;ShipBasics,1.6\Defs\Research_GT.xml
+46,GravTech,als.gravtech,GravForge,grav forge,Ultra,4000,1,Main,HiTechResearchBench,MultiAnalyzer,AdvancedGravtech;AdvancedFabrication,1.6\Defs\Research_GT.xml
+46,GravTech,als.gravtech,GravWeapon,grav weapon,Ultra,3500,0,Main,HiTechResearchBench,MultiAnalyzer,GravForge;ChargedShot,1.6\Defs\Research_GT.xml
+46,GravTech,als.gravtech,GravTuning,precise grav tuning,Ultra,4000,0,Main,HiTechResearchBench,MultiAnalyzer,GravForge,1.6\Defs\Research_GT.xml
+46,GravTech,als.gravtech,AdvShipParts,advanced ship parts,Ultra,3500,0,Main,HiTechResearchBench,MultiAnalyzer,ShipComputerCore;GravEngineBuild,1.6\Defs\Research_GT.xml
+46,GravTech,als.gravtech,GravBionics,grav bionics,Ultra,3000,0,Main,HiTechResearchBench,MultiAnalyzer,GravTuning;Bionics,1.6\Defs\Research_GT.xml
+46,GravTech,als.gravtech,BlackHole_GT,taming a Black Hole,Ultra,6000,3,Main,HiTechResearchBench,MultiAnalyzer,GravTuning;ShipReactor,1.6\Defs\Research_GT.xml
+47,Alpha Mechs,sarg.alphamechs,AM_WorkerStandardMechtech,light alpha mechs,Industrial,100,0,AM_AlphaMechs,,,BasicMechtech,1.6\Mods\Biotech\Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+47,Alpha Mechs,sarg.alphamechs,AM_StandardMechtech,standard alpha mechs,Industrial,500,0,AM_AlphaMechs,,,StandardMechtech;AM_WorkerStandardMechtech,1.6\Mods\Biotech\Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+47,Alpha Mechs,sarg.alphamechs,AM_HeavyMechtech,heavy alpha mechs,Industrial,1000,0,AM_AlphaMechs,,,HighMechtech;AM_StandardMechtech,1.6\Mods\Biotech\Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+47,Alpha Mechs,sarg.alphamechs,AM_UltraHeavyMechtech,ultra-heavy alpha mechs,Ultra,2500,0,AM_AlphaMechs,,,UltraMechtech;AM_HeavyMechtech,1.6\Mods\Biotech\Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+47,Alpha Mechs,sarg.alphamechs,AM_MechanoidBeamcasting,mechanoid beamcasting,Ultra,500,0,AM_AlphaMechs,,,UltraMechtech,1.6\Mods\Biotech\Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+47,Alpha Mechs,sarg.alphamechs,AM_VoidLinkConnectivity,voidlink connectivity,Ultra,500,0,AM_AlphaMechs,,,AM_MechanoidBeamcasting,1.6\Mods\Biotech\Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+47,Alpha Mechs,sarg.alphamechs,AM_QuantumPulseMessaging,quantum pulse messaging,Ultra,500,0,AM_AlphaMechs,,,AM_VoidLinkConnectivity,1.6\Mods\Biotech\Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+47,Alpha Mechs,sarg.alphamechs,AM_Cryptoharmonization,crypto-harmonization,Ultra,500,0,AM_AlphaMechs,,,AM_QuantumPulseMessaging,1.6\Mods\Biotech\Defs\ResearchProjectDefs\ResearchProjects_Mechanitor.xml
+48,Vanilla Furniture Expanded - Spacer Module,vanillaexpanded.vfespacer,SpacerFurniture,spacer furniture,Spacer,1500,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer;MF_ModernFurniture,1.6\Defs\ResearchDefs\ResearchProjects.xml
+48,Vanilla Furniture Expanded - Spacer Module,vanillaexpanded.vfespacer,SpacerElectronics,spacer electronics,Spacer,2000,0,VanillaExpanded,HiTechResearchBench,MultiAnalyzer,MultiAnalyzer;FlatscreenTelevision,1.6\Defs\ResearchDefs\ResearchProjects.xml
+50,Biotech for Gravship,als.biotechgravship,GravBiotech,cosmic biotech,Spacer,2500,0,Main,HiTechResearchBench,,StandardGravtech,1.6\Defs\Research_BfG.xml
+50,Biotech for Gravship,als.biotechgravship,GravDeathrest,cosmic deathrest,Spacer,1200,0,Main,HiTechResearchBench,,StandardGravtech;Deathrest,1.6\Defs\Research_BfG.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_Togas,togas,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_CentralRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_TemperatureControl,temperature control,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_CentralRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_MeatDrying,meat drying,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_CentralRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_Mosaics,mosaics,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_CentralRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_Thermaebath,thermaebath,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_CentralRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_DramaAndComedy,drama and comedy,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_CentralRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_BronzeWorking,bronze working,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_EasternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_CraftingBench,crafting bench,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_EasternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_CementMaking,cement making,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_EasternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_WoodfiredCrematorium,wood-fired crematorium,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_EasternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_TyrianProduction,tyrian production,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_EasternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_RoadBuilding,road building,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_EasternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_HeavyShieldMaking,heavy shield making,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_WesternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_LegionaryArmaments,legionary armaments,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_WesternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_LegionnaireArmor,legionary armor,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_WesternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_CenturionArmor,centurion armor,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_WesternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_Scorpion,scorpion,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_WesternRepublic.xml
+52,Vanilla Factions Expanded - Classical,oskarpotocki.vfe.classical,VFEC_Beacons,beacons,Neolithic,1200,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_WesternRepublic.xml
+53,Vanilla Factions Expanded - Medieval 2,oskarpotocki.vfe.medieval2,VFEM2_Beekeeping,beekeeping,Medieval,500,0,VanillaExpanded,,,Pemmican,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+53,Vanilla Factions Expanded - Medieval 2,oskarpotocki.vfe.medieval2,VFEM2_Wine,wine,Medieval,600,0,VanillaExpanded,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+53,Vanilla Factions Expanded - Medieval 2,oskarpotocki.vfe.medieval2,VFEM2_Alchemy,alchemy,Medieval,1500,0,VanillaExpanded,,,PsychoidBrewing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+53,Vanilla Factions Expanded - Medieval 2,oskarpotocki.vfe.medieval2,VFEM2_MedievalArchitecture,medieval architecture,Medieval,1200,0,VanillaExpanded,,,Stonecutting,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+53,Vanilla Factions Expanded - Medieval 2,oskarpotocki.vfe.medieval2,VFEM2_ComplexWorkshops,complex workshops,Medieval,1800,0,VanillaExpanded,,,ComplexFurniture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+53,Vanilla Factions Expanded - Medieval 2,oskarpotocki.vfe.medieval2,VFEM2_Matchlocks,matchlocks,Medieval,600,0,VanillaExpanded,,,Smithing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+53,Vanilla Factions Expanded - Medieval 2,oskarpotocki.vfe.medieval2,VFEM2_Heraldry,heraldry,Medieval,1200,0,VanillaExpanded,,,VFEM2_MedievalArchitecture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Various.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Lumber,Basic woodworking,Neolithic,200,0,DankPyon_MedievalResearchTab,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_RusticFurniture,Rustic furniture,Medieval,300,0,DankPyon_MedievalResearchTab,,,DankPyon_Lumber,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_RoyalRusticFurniture,Royal architecture,Medieval,900,0,DankPyon_MedievalResearchTab,,,ComplexFurniture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_RusticStorage,Rustic storage,Medieval,400,0,DankPyon_MedievalResearchTab,,,DankPyon_RusticFurniture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Presser,presser,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_RusticFurniture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_CarrierBirds,carrier birds,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_RusticFurniture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Exploration,exploration,Medieval,1800,0,DankPyon_MedievalResearchTab,,,DankPyon_CarrierBirds;Stonecutting,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_LeatherTanning,leather tanning,Neolithic,600,0,DankPyon_MedievalResearchTab,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_TextileSpinning,textile spinning,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_RusticFurniture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Silk,silk,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_TextileSpinning,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_CandleMaking,candle making,Neolithic,300,0,DankPyon_MedievalResearchTab,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Jewelry,jewelry,Medieval,600,0,DankPyon_MedievalResearchTab,,,Smithing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Engineering,engineering,Medieval,1000,0,DankPyon_MedievalResearchTab,,,Smithing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Mining,mining,Medieval,1000,0,DankPyon_MedievalResearchTab,DankPyon_AdvancedResearchBench,,DankPyon_Engineering,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Windmill,windmill,Medieval,400,0,DankPyon_MedievalResearchTab,DankPyon_AdvancedResearchBench,,DankPyon_Engineering,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Watermill,watermill,Medieval,400,0,DankPyon_MedievalResearchTab,DankPyon_AdvancedResearchBench,,DankPyon_Engineering,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Crossbow,crossbow,Medieval,400,0,DankPyon_MedievalResearchTab,,,Smithing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_HeavyCrossbow,arbalest,Medieval,700,0,DankPyon_MedievalResearchTab,,,DankPyon_Crossbow,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Ballista,ballista,Medieval,1000,0,DankPyon_MedievalResearchTab,DankPyon_AdvancedResearchBench,,DankPyon_Crossbow;DankPyon_Engineering,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Trebuchet,trebuchet,Medieval,1000,0,DankPyon_MedievalResearchTab,DankPyon_AdvancedResearchBench,,DankPyon_Engineering,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_RepeaterBallista,ballista repeater,Medieval,2500,0,DankPyon_MedievalResearchTab,DankPyon_AdvancedResearchBench,,DankPyon_Ballista,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Alchemy,alchemy,Medieval,1000,0,DankPyon_MedievalResearchTab,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Steel,Steel,Medieval,2000,0,DankPyon_MedievalResearchTab,,,DankPyon_Alchemy,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Plasteel,Mithril,Medieval,4000,0,DankPyon_MedievalResearchTab,DankPyon_AdvancedResearchBench,,DankPyon_Engineering;DankPyon_Steel,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Tar,tar,Medieval,400,0,DankPyon_MedievalResearchTab,,,DankPyon_Alchemy,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Gunpowder,gunpowder,Medieval,1000,0,DankPyon_MedievalResearchTab,,,DankPyon_Alchemy,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_ProtectiveClothing,protective clothing,Medieval,1000,0,DankPyon_MedievalResearchTab,,,ComplexClothing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_ChainArmor,chain armor,Medieval,1500,0,DankPyon_MedievalResearchTab,,,DankPyon_ProtectiveClothing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_HuntingBow,hunting bow,Medieval,500,0,DankPyon_MedievalResearchTab,,,RecurveBow,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_WarBow,war bow,Medieval,700,0,DankPyon_MedievalResearchTab,,,Greatbow,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_BasicPolearms,basic polearms,Medieval,300,0,DankPyon_MedievalResearchTab,,,Smithing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_MilitaryPolearms,military polearms,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicPolearms,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_NoblePolearms,noble polearms,Medieval,1000,0,DankPyon_MedievalResearchTab,,,DankPyon_MilitaryPolearms,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_BasicMaces,basic maces,Medieval,300,0,DankPyon_MedievalResearchTab,,,Smithing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_MilitaryMaces,military maces,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicMaces,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_NobleMaces,noble maces,Medieval,1000,0,DankPyon_MedievalResearchTab,,,DankPyon_MilitaryMaces,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_BasicBlades,basic blades,Medieval,300,0,DankPyon_MedievalResearchTab,,,Smithing,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_MilitaryBlades,military blades,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicBlades,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_BasicAgriculture,basic agriculture,Neolithic,300,0,DankPyon_MedievalResearchTab,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_IntermediateAgriculture,intermediate agriculture,Medieval,400,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicAgriculture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_AdvancedAgriculture,advanced agriculture,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_IntermediateAgriculture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_TreeGriffonBerry,griffon berry,Medieval,900,0,DankPyon_MedievalResearchTab,,,Cocoa;DankPyon_AdvancedAgriculture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_PlowedSoil,plowed soil,Neolithic,300,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicAgriculture,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_BasicCooking,basic cooking,Neolithic,400,0,DankPyon_MedievalResearchTab,,,,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_IntermediateCooking,intermediate cooking,Medieval,400,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicCooking,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_AdvancedCooking,advanced cooking,Medieval,800,0,DankPyon_MedievalResearchTab,,,DankPyon_IntermediateCooking,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Smoker,smoker,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicCooking,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Grill,grill,Medieval,200,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicCooking,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_StewPot,stews,Medieval,300,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicCooking,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_Oven,baking,Medieval,600,0,DankPyon_MedievalResearchTab,,,DankPyon_BasicCooking,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+66,Medieval Overhaul,dankpyon.medieval.overhaul,DankPyon_AdornedArmor,Adorned armor,Medieval,1500,0,DankPyon_MedievalResearchTab,,,NobleApparel,1.6\Defs\ResearchProjectDefs\ResearchProjects_Misc.xml
+68,Vanilla Cooking Expanded,vanillaexpanded.vcooke,VCE_CondimentsResearch,food condiments,Neolithic,500,0,VCE_Cooking,,,,1.6\Defs\ResearchProjectDefs\Research.xml
+68,Vanilla Cooking Expanded,vanillaexpanded.vcooke,VCE_SoupCooking,soup cooking,Industrial,400,0,VCE_Cooking,,,Electricity,1.6\Defs\ResearchProjectDefs\Research.xml
+68,Vanilla Cooking Expanded,vanillaexpanded.vcooke,VCE_Grilling,grilling,Medieval,400,0,VCE_Cooking,,,Smithing,1.6\Defs\ResearchProjectDefs\Research.xml
+68,Vanilla Cooking Expanded,vanillaexpanded.vcooke,VCE_DeepFrying,deep frying,Industrial,600,0,VCE_Cooking,,,Electricity,1.6\Defs\ResearchProjectDefs\Research.xml
+68,Vanilla Cooking Expanded,vanillaexpanded.vcooke,VCE_Canning,canning,Industrial,600,0,VCE_Cooking,,,Electricity,1.6\Defs\ResearchProjectDefs\Research.xml
+68,Vanilla Cooking Expanded,vanillaexpanded.vcooke,VCE_CheeseMaking,cheese making,Medieval,750,0,VCE_Cooking,,,,1.6\Defs\ResearchProjectDefs\Research.xml
+69,Vanilla Cooking Expanded - Stews,vanillaexpanded.vcookestews,VCE_StewCooking,stew cooking,Medieval,300,0,VCE_Cooking,,,,1.6\Defs\ResearchProjectDefs\Research.xml
