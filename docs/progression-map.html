@@ -382,6 +382,161 @@ footer{
   text-transform:uppercase; color:var(--ink-3);
 }
 
+/* ============================================================
+   Research tree (05) and the bench (06)
+   ============================================================ */
+
+/* whole tree at a glance */
+.rail{
+  display:grid; gap:1px; background:var(--rule);
+  border:1px solid var(--rule); border-radius:4px; overflow:hidden;
+  grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); margin-bottom:2.25rem;
+}
+.rail-col{ background:var(--surface); padding:.95rem 1rem 1.1rem; display:flex; flex-direction:column; gap:.55rem; }
+.rail-col .hd{
+  font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--era); font-weight:600;
+  border-bottom:2px solid var(--era); padding-bottom:.45rem;
+}
+.rail-col ol{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.26rem; }
+.rail-col li{ font-size:.755rem; line-height:1.35; color:var(--ink-3); padding-left:.85rem; position:relative; }
+.rail-col li::before{
+  content:""; position:absolute; left:0; top:.48em; width:5px; height:5px; border-radius:1px;
+  background:var(--rule-strong);
+}
+.rail-col li.s{ color:var(--ink-2); }
+.rail-col li.s::before{ background:var(--era); }
+.rail-col li.qh::before{ background:var(--accent); border-radius:50%; }
+.rail-col li.m{ color:var(--ink); font-weight:700; }
+.rail-col li.m::before{ background:var(--ink); border-radius:0; transform:rotate(45deg); }
+.rail-col .count{
+  margin-top:auto; padding-top:.7rem; font-family:"IBM Plex Mono",monospace;
+  font-size:.64rem; letter-spacing:.08em; color:var(--ink-3);
+}
+
+/* legend */
+.legend{
+  display:flex; flex-wrap:wrap; gap:.55rem 1.6rem; padding:.9rem 1.1rem;
+  background:var(--sunken); border-radius:4px; margin-bottom:2rem;
+  font-size:var(--step--1); color:var(--ink-2);
+}
+.legend span{ display:inline-flex; align-items:center; gap:.5rem; }
+.legend i{ width:9px; height:9px; background:var(--rule-strong); flex:none; border-radius:1px; }
+.legend i.k-spine{ background:var(--accent); }
+.legend i.k-qol{ background:var(--accent); border-radius:50%; }
+.legend i.k-mom{ background:var(--ink); transform:rotate(45deg); }
+.legend b{ color:var(--ink); font-weight:600; }
+
+/* per leap: tree on the left, bench on the right */
+.treeleap{ padding-top:clamp(2.5rem,6vw,4rem); }
+.treeleap .th{
+  border-top:3px solid var(--era); padding-top:1rem; margin-bottom:1.5rem;
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:.35rem 1rem;
+}
+.treeleap .th h3{ font-size:var(--step-2); line-height:1.15; }
+.treeleap .th .code{
+  font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:.72rem;
+  letter-spacing:.14em; color:var(--era); flex-basis:100%;
+}
+.treeleap .th .sub{ color:var(--ink-3); font-size:var(--step--1); }
+
+.tb{ display:grid; gap:1.75rem; grid-template-columns:1fr; align-items:start; }
+@media (min-width:1080px){ .tb{ grid-template-columns:minmax(0,2.15fr) minmax(268px,1fr); gap:2rem; } }
+
+.band-hd{
+  font-family:"IBM Plex Mono",monospace; font-size:.67rem; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--era); font-weight:600;
+  margin:1.5rem 0 .75rem; display:flex; align-items:center; gap:.75rem;
+}
+.band-hd::after{ content:""; flex:1; height:1px; background:var(--rule); }
+.band-hd:first-child{ margin-top:0; }
+.band{ display:grid; gap:.8rem; grid-template-columns:1fr; }
+@media (min-width:620px){ .band{ grid-template-columns:repeat(auto-fill,minmax(272px,1fr)); } }
+
+.node{
+  background:var(--surface); border:1px solid var(--rule);
+  border-left:3px solid var(--rule-strong); border-radius:0 4px 4px 0;
+  padding:.85rem .95rem .9rem; display:flex; flex-direction:column; gap:.5rem;
+}
+.node.spine{ border-left-color:var(--era); }
+.node.qol{ border-left-color:var(--accent); background:var(--accent-soft); }
+.node.opt{ background:var(--sunken); border-left-style:dashed; }
+.node.mom{ border-left-color:var(--ink); border-color:var(--ink-3); }
+.node h4{ font-size:1.02rem; font-weight:700; line-height:1.2; font-family:"IBM Plex Sans",sans-serif; }
+.node .chips{ display:flex; flex-wrap:wrap; gap:.32rem; }
+.node .chip{
+  font-family:"IBM Plex Mono",monospace; font-size:.585rem; letter-spacing:.1em;
+  text-transform:uppercase; font-weight:600; padding:.16rem .42rem; border-radius:2px;
+  background:var(--sunken); color:var(--ink-3); border:1px solid var(--rule); white-space:nowrap;
+}
+.node .chip.c-spine{ color:var(--era); border-color:var(--era); }
+.node .chip.c-qol{ color:var(--accent); border-color:var(--accent); }
+.node .chip.c-new{ color:var(--era-3); border-color:var(--era-3); }
+.node .chip.c-mom{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.node .pre{ font-family:"IBM Plex Mono",monospace; font-size:.68rem; color:var(--ink-3); letter-spacing:.03em; }
+.node ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.3rem; }
+.node ul li{ font-size:.8rem; line-height:1.4; color:var(--ink); padding-left:.85rem; position:relative; }
+.node ul li::before{ content:"+"; position:absolute; left:0; top:-.02em; color:var(--ink-3); font-weight:600; }
+.node ul li em{ font-style:normal; color:var(--ink-3); }
+.node ul li b{ font-weight:600; }
+.node .trade{
+  font-size:.765rem; line-height:1.45; color:var(--ink-2);
+  border-top:1px dashed var(--rule-strong); padding-top:.5rem;
+}
+.node .trade b{ color:var(--ink); font-weight:600; }
+.node .src{
+  font-family:"IBM Plex Mono",monospace; font-size:.625rem; letter-spacing:.03em;
+  color:var(--ink-3); margin-top:auto; line-height:1.5;
+}
+
+/* the bench — what is sitting out at this stage */
+.bench{
+  background:var(--sunken); border:1px dashed var(--rule-strong); border-radius:4px;
+  padding:1rem 1.05rem 1.15rem; display:flex; flex-direction:column; gap:.7rem;
+}
+@media (min-width:1080px){
+  .bench{ position:sticky; top:.75rem; max-height:calc(100vh - 1.5rem); overflow-y:auto; }
+}
+.bench .bh{
+  font-family:"IBM Plex Mono",monospace; font-size:.67rem; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:600;
+  padding-bottom:.55rem; border-bottom:1px solid var(--rule-strong);
+}
+.bench .intro{ font-size:.765rem; color:var(--ink-2); line-height:1.45; }
+.bi{ border-top:1px solid var(--rule); padding-top:.62rem; display:flex; flex-direction:column; gap:.22rem; }
+.bi .n{ font-size:.83rem; font-weight:600; color:var(--ink-2); line-height:1.3; }
+.bi .n .why{
+  font-family:"IBM Plex Mono",monospace; font-size:.585rem; letter-spacing:.06em;
+  color:var(--era-3); border:1px solid var(--era-3); border-radius:2px;
+  padding:.06rem .3rem; margin-left:.35rem; white-space:nowrap; vertical-align:.08em;
+}
+.bi.move .n .why{ color:var(--era-4); border-color:var(--era-4); }
+.bi.fence .n .why{ color:var(--era-5); border-color:var(--era-5); }
+.bi .w{ font-size:.745rem; line-height:1.42; color:var(--ink-3); }
+.bi .w b{ color:var(--ink-2); font-weight:600; }
+
+/* reason codes + the full ledger */
+.codes{
+  display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule);
+  border-radius:4px; overflow:hidden;
+  grid-template-columns:repeat(auto-fit,minmax(228px,1fr)); margin-bottom:1.9rem;
+}
+.code-item{ background:var(--surface); padding:.85rem .95rem; display:flex; flex-direction:column; gap:.25rem; }
+.code-item .k{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; font-weight:600;
+  color:var(--era-3); letter-spacing:.06em;
+}
+.code-item p{ font-size:.765rem; color:var(--ink-2); line-height:1.4; }
+table.ledger{ min-width:840px; }
+table.ledger tbody th{ white-space:normal; min-width:10.5rem; }
+table.ledger td.rc{ font-family:"IBM Plex Mono",monospace; font-size:.68rem; color:var(--era-3); white-space:nowrap; }
+table.ledger td.sz{ font-family:"IBM Plex Mono",monospace; font-size:.69rem; color:var(--ink-3); white-space:nowrap; }
+table.ledger tr.grp th{
+  font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-3); background:var(--sunken); padding-top:.85rem;
+}
+table.ledger tr.grp td{ background:var(--sunken); }
+
 @media (prefers-reduced-motion:no-preference){
   .leap-card,.pass{ transition:transform .18s ease, box-shadow .18s ease; }
   .leap-card:hover,.pass:hover{ transform:translateY(-2px); }
@@ -402,7 +557,7 @@ footer{
     </div>
     <p class="eyebrow">Archinity · Progression map · Neolithic &amp; Medieval</p>
     <h1>Five leaps from a fire<br>to a <em>throne room</em></h1>
-    <p class="deck">Narrative first. Then capability. Then research. What the player is doing, wearing, eating, building and fighting with at each point in the story — and what he researches to get there.</p>
+    <p class="deck">Narrative first. Then capability. Then research. What the player is doing, wearing, eating, building and fighting with at each point in the story — and what he researches to get there. <a href="#tree">The research tree</a> reads the same five leaps as 84 nodes, each with what it unlocks; <a href="#unused">the bench</a> is everything in the loaded mod set this design leaves out, and what pulling it back would cost.</p>
     <div class="premise">
       <p>This is a design target, not an inventory. It assumes nothing about what any mod currently does, what anything costs, or how long anything takes. <strong>Every asset in the loaded set is raw material</strong> — renameable, restattable, rebuildable, discardable.</p>
       <p>Balance, pacing and tech-gating are a later pass and are deliberately absent. Sourcing is the pass after this one. Supersedes <strong>RESEARCH-NEO-MED.md</strong>.</p>
@@ -975,10 +1130,1572 @@ footer{
     </div>
   </section>
 
+  <!-- ===== RESEARCH TREE ===== -->
+  <section id="tree">
+    <div class="sec-head">
+      <p class="eyebrow">05 · The research tree</p>
+      <h2>Every node, in order, and exactly what each one hands you.</h2>
+      <p>The same five leaps read as a tech tree. <b>84 nodes</b> across the two eras. Each card names its prerequisite, everything it unlocks, and — where the node is doing real design work — the dependency it trades. Sources are the live database: <code>defName</code> and raw <code>baseCost</code>, so this doubles as the sourcing worksheet for Pass&nbsp;A.</p>
+      <p>Beside each leap sits <b>the bench</b> — what exists in the loaded mod set at that stage and is <em>not</em> being used, with the reason and what pulling it back in would cost. Read them together.</p>
+    </div>
+
+    <div class="legend">
+      <span><i class="k-spine"></i><b>Spine</b> — you must have it to play. Ordinary costs, never behind a hunt.</span>
+      <span><i class="k-qol"></i><b>QoL hunt</b> — gates nothing. Cost is the going and getting.</span>
+      <span><i></i><b>Optional</b> — flavour. Skip it and lose no capability.</span>
+      <span><i class="k-mom"></i><b>A moment</b> — one of the four named beats.</span>
+    </div>
+
+    <div class="rail">
+      <div class="rail-col" style="--era:var(--era-1)">
+        <p class="hd">N1 · Primitive</p>
+        <ol>
+          <li class="s">Fire</li><li class="s">Growing</li><li class="s">Cultivation</li><li class="s">Herblore</li>
+          <li class="s">Beast-Handling</li><li class="s">Stoneworking</li><li class="s">Shelter</li><li class="s">Furnishing</li>
+          <li class="s">Hidewear</li><li class="s">Hunting</li><li class="s">Weapon-Making</li><li class="s">The Bow</li>
+          <li class="m">Culture · First Thought</li>
+          <li class="s">Primitive Shelter</li><li class="s">Primitive Cookery</li><li class="s">Basic Agriculture</li>
+          <li class="s">Knapping</li><li class="s">Firecraft &amp; Preserving</li><li class="s">Butchery</li>
+          <li class="s">Hidework</li><li class="s">Herbcraft</li><li class="s">Slings &amp; Clubs</li>
+          <li class="s">Candlemaking</li><li class="qh">Pens &amp; Troughs</li><li class="s">Primitive Artistry</li>
+        </ol>
+        <p class="count">25 nodes · 13 ritual, 12 bench · 1 hunt</p>
+      </div>
+      <div class="rail-col" style="--era:var(--era-2)">
+        <p class="hd">N2 · Settled</p>
+        <ol>
+          <li class="m">Earthworks · First Wall</li>
+          <li class="s">Intermediate Agriculture</li><li class="s">Cured Leather</li>
+          <li class="s">Stewcraft</li><li class="s">Milling &amp; Baking</li><li class="s">Smoking &amp; Curing</li>
+          <li class="s">Masonry</li><li class="s">Cement &amp; Structures</li><li class="s">Boiled Leather</li>
+          <li class="s">Palisades &amp; Gates</li><li class="s">The Long Bow</li><li class="s">Skirmishers</li>
+          <li class="s">Hardened Leather</li><li class="s">Laminated Armour</li>
+          <li class="qh">Siege Engines</li><li class="qh">Carrier Birds</li>
+          <li>Incendiaries</li><li>Baths &amp; Stage</li><li>Dyes &amp; Ceremonial Dress</li><li>Brewing</li>
+        </ol>
+        <p class="count">20 nodes · 14 spine · 2 hunts · 4 optional</p>
+      </div>
+      <div class="rail-col" style="--era:var(--era-3)">
+        <p class="hd">M1 · Forge</p>
+        <ol>
+          <li class="m">Smelting · First Ingot</li>
+          <li class="s">The Smithy</li><li class="s">Metal Toolcraft</li><li class="s">The Anvil</li>
+          <li class="qh">The Bellows</li><li class="s">Basic Arms</li><li class="s">Scale &amp; Lamellar</li>
+          <li class="s">Padded Underlayer</li><li class="s">Tailoring</li><li class="s">Fine Cloth</li>
+          <li class="s">Complex Furniture</li><li class="s">Reinforced Works</li>
+          <li class="s">Intermediate Cookery</li><li class="s">Apothecary</li><li class="qh">Deep Mining</li>
+        </ol>
+        <p class="count">15 nodes · 13 spine · 2 hunts · <b>~330 defs</b></p>
+      </div>
+      <div class="rail-col" style="--era:var(--era-4)">
+        <p class="hd">M2 · Mail</p>
+        <ol>
+          <li class="s">Advanced Smithing</li><li class="s">Military Arms</li><li class="s">Mail</li>
+          <li class="s">The Crossbow</li><li class="s">Siege Engines II</li><li class="s">Castle Architecture</li>
+          <li class="s">Loom &amp; Spindle</li><li class="s">Chisel &amp; Clamp</li><li class="s">Advanced Agriculture</li>
+          <li class="s">Millworks</li><li class="s">Advanced Cookery</li><li class="s">Alchemy</li>
+          <li class="s">Scriptorium</li><li class="s">Gemwork</li><li class="qh">The Crane</li>
+        </ol>
+        <p class="count">15 nodes · 14 spine · 1 hunt</p>
+      </div>
+      <div class="rail-col" style="--era:var(--era-5)">
+        <p class="hd">M3 · Plate</p>
+        <ol>
+          <li class="s">Plate Harness I</li><li class="s">Noble Arms</li><li class="s">Plate Harness II</li>
+          <li class="s">Master Masonry</li><li class="s">Master Tailoring</li><li class="s">Heraldry</li>
+          <li class="s">Royal Furnishing</li>
+          <li class="m">Gunpowder</li>
+          <li class="s">Grand Cookery</li><li>Courtly Music</li>
+        </ol>
+        <p class="count">10 nodes · 9 spine · 0 hunts · 1 optional</p>
+      </div>
+    </div>
+
+    <p class="weight"><b>One thing the node count exposes.</b> The map calls M1 “the single largest leap in the project.” Counted in <em>clicks</em> it is not — M1 is 15 nodes against N2’s 20. Counted in <em>what arrives</em> it is not close: M1 pulls <code>Smithing</code> (34 defs), <code>ComplexClothing</code> (79), <code>ComplexFurniture</code> (99), <code>DankPyon_RusticFurniture</code> (103) and <code>DankPyon_ProtectiveClothing</code> (12) — roughly <b>330 ThingDefs in one leap</b>, against maybe 40 in all of N2. M1 is the largest leap by volume per node, not by node count. That is worth knowing before balancing: the pacing lever in M1 is <em>splitting</em> those five giant nodes, not adding more of them.</p>
+
+    <!-- ===== N1 tree ===== -->
+    <div class="treeleap" style="--era:var(--era-1);--era-wash:var(--era-1-wash)">
+      <div class="th">
+        <p class="code">N1 · The Primitive Baseline</p>
+        <h3>The Awakening, then the Primitive Tier</h3>
+        <p class="sub">25 nodes · ~760 pts ritual + ~3,500 pts bench</p>
+      </div>
+      <div class="tb">
+        <div>
+          <p class="band-hd">The Awakening · gathering ritual, no bench</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Fire</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">root</span></div>
+              <p class="pre">no prerequisite</p>
+              <ul>
+                <li><b>Firefighting</b> work type</li>
+                <li>Campfire, torch</li>
+                <li>Cooking over flame at all</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> the map stops being an enemy after dark, and you start depending on fuel forever.</p>
+              <p class="src">VFET_Fire · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Growing</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Fire</p>
+              <ul>
+                <li><b>Growing</b> work type</li>
+                <li>The grow-zone designator <em>— the tool to mark a field does not exist before this</em></li>
+                <li>Staple crop</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> you stop depending on what the map happens to grow and start depending on soil, season and a pawn who will stand in it.</p>
+              <p class="src">VFET_Agriculture · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Cultivation</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Growing</p>
+              <ul>
+                <li>Tier-1 crop set opens: a root, a fibre, a medicinal</li>
+                <li>Smokeleaf / psychoid growing</li>
+              </ul>
+              <p class="src">VFET_Cultivation · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Herblore</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Cultivation</p>
+              <ul>
+                <li>Herbal medicine as a treatable resource</li>
+                <li>Tend and treat</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> injuries become survivable and infection becomes a clock you can beat. Gates Culture, so it is the real spine of the ritual phase.</p>
+              <p class="src">VFET_Medicine · 70</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Beast-Handling</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Fire</p>
+              <ul>
+                <li><b>Handling</b> work type</li>
+                <li>Tame and slaughter designators</li>
+              </ul>
+              <p class="src">VFET_AnimalHandling · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Stoneworking</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Fire</p>
+              <ul>
+                <li><b>Mining</b> work type</li>
+                <li>Mine and smooth designators</li>
+              </ul>
+              <p class="src">VFET_Mining · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Shelter</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Stoneworking</p>
+              <ul>
+                <li><b>Construction</b> work type</li>
+                <li>Walls, doors, roofs, floor tools</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> weather stops being fate. Everything you build from here raises the raid floor.</p>
+              <p class="src">VFET_Construction · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Furnishing</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Shelter</p>
+              <ul>
+                <li>Sleeping spot → bedroll</li>
+                <li>Slab seat, sitting spot, primitive table</li>
+              </ul>
+              <p class="src">VFET_Furniture · 70</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Hidewear</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Fire</p>
+              <ul>
+                <li>Tribalwear, light and heavy</li>
+                <li>Hide hood, fur coat, fur hat</li>
+              </ul>
+              <p class="src">VFET_Tribalwear · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Hunting</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Fire</p>
+              <ul>
+                <li><b>Hunting</b> work type + hunt designator</li>
+                <li>Throwspikes</li>
+              </ul>
+              <p class="src">VFET_Hunting · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Weapon-Making</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Hunting</p>
+              <ul>
+                <li>Club, knife</li>
+                <li>The idea that a tool can be built to hurt someone</li>
+              </ul>
+              <p class="src">VFET_Weapons · 50</p>
+            </article>
+
+            <article class="node spine">
+              <h4>The Bow</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Weapon-Making</p>
+              <ul>
+                <li>Short bow</li>
+                <li>Recurve bow <em>— retiered in from Core</em></li>
+              </ul>
+              <p class="trade"><b>Trade —</b> the first time you can hurt something you are not standing next to.</p>
+              <p class="src">VFET_Bow · 70 · + Core RecurveBow 400</p>
+            </article>
+
+            <article class="node mom">
+              <h4>Culture</h4>
+              <div class="chips"><span class="chip c-mom">The First Thought</span><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Herblore · ends the ritual phase</p>
+              <ul>
+                <li><b>Intellectual</b> work type</li>
+                <li><b>The primitive research bench</b></li>
+                <li>Ideological development</li>
+              </ul>
+              <p class="trade"><b>The moment.</b> A pawn thinks abstractly for the first time. The circle retires. Everything after this is bench research. This should arrive as a letter, not a filled bar.</p>
+              <p class="src">VFET_Culture · 100</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Opening · first week off the circle</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Primitive Shelter</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Culture</p>
+              <ul>
+                <li>Simple bed, simple double bed, bench</li>
+                <li>Wicker bed, straw bed, double variants <em>— rehomed off the cut wood chain</em></li>
+                <li>Primitive door</li>
+              </ul>
+              <p class="src">VFurE MF_BasicFurniture · 300 · + 4 defs salvaged from DankPyon_Lumber</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Primitive Cookery</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">core bench</span></div>
+              <p class="pre">after Culture</p>
+              <ul>
+                <li><b>The stove</b> — the hearth, and the first core bench</li>
+                <li>Food tier 1–2: dried meat, then meat plus one thing</li>
+              </ul>
+              <p class="trade"><b>The bench that never gets replaced.</b> Everything from grill to great oven is an upgrade or an augment on this object, all the way to the gravship.</p>
+              <p class="src">MO DankPyon_BasicCooking · 400</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Basic Agriculture</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Culture</p>
+              <ul>
+                <li>Gardening box</li>
+                <li>Tier-1 plant set proper</li>
+                <li><em>Strip the millstone</em> — it belongs to N2 Milling &amp; Baking</li>
+              </ul>
+              <p class="src">MO DankPyon_BasicAgriculture · 300</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Middle · build the worst version of everything</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Knapping</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">core bench</span><span class="chip c-new">to author</span></div>
+              <p class="pre">after Primitive Shelter</p>
+              <ul>
+                <li><b>The knapping slab</b> — the stoneyard, in its worst form</li>
+                <li>Shiv, shard, throwing shards, stone axe</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> stone stops being wall material and becomes tool material.</p>
+              <p class="src">no existing node · authored, drawing weapons from Core and MO</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Firecraft &amp; Preserving</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Primitive Cookery</p>
+              <ul>
+                <li>Drying rack (1×2, 2×2)</li>
+                <li>Pemmican / travel rations</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> food stops being a race against rot and becomes a stockpile. This is the node that makes caravans thinkable.</p>
+              <p class="src">Core Pemmican · 500 · VFEC_MeatDrying rack is a duplicate, see bench</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Butchery</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">core bench</span></div>
+              <p class="pre">after Beast-Handling</p>
+              <ul>
+                <li>Butcher table</li>
+                <li>Leather and meat as separate yields</li>
+              </ul>
+              <p class="src">Core butcher table · currently ungated, needs a gate</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Hidework</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">core bench</span></div>
+              <p class="pre">after Butchery · after Hidewear</p>
+              <ul>
+                <li><b>The hide-working slab</b> — the loom, in its worst form</li>
+                <li>Tier-1 apparel production: tribalwear, hide hood, fur coat and hat</li>
+                <li>Desert robe and wrap</li>
+              </ul>
+              <p class="trade"><b>Rung 1 of seven.</b> Hide → cured → boiled → hardened → scale → mail → plate starts here.</p>
+              <p class="src">authored on the hide slab · MO tanning rack is N2</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Herbcraft</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Herblore</p>
+              <ul>
+                <li><b>Herb table</b> — pulled down out of MO’s Alchemy node</li>
+                <li>Herbal medicine <em>production</em>, not just gathering</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> medicine stops depending on what grows wild and starts depending on a field and a pawn’s time.</p>
+              <p class="src">herb table split out of MO DankPyon_Alchemy 1000</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Slings &amp; Clubs</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Knapping</p>
+              <ul>
+                <li>Sling, sling-staff</li>
+                <li>Light club, heavy club</li>
+                <li>Spear</li>
+              </ul>
+              <p class="src">Core + MO · assembled, no single existing node</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Closing · comfort and craft</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Candlemaking</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Primitive Cookery</p>
+              <ul>
+                <li>Candle ×2, candles ×2, candlebra, candle stand</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> light stops being tied to a fire you have to feed and place. Rung 1 of the light ladder that ends in a chandelier.</p>
+              <p class="src">MO DankPyon_CandleMaking · 300 · 6 defs</p>
+            </article>
+
+            <article class="node qol">
+              <h4>Pens &amp; Troughs</h4>
+              <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">gates nothing</span></div>
+              <p class="pre">after Beast-Handling</p>
+              <ul>
+                <li>Fence, fence gate, pen marker</li>
+                <li><b>The trough</b> — animals feed themselves</li>
+              </ul>
+              <p class="trade"><b>The first QoL item in the game, and the model for the class.</b> Resource cost near zero; the cost is the going and getting. It gates nothing — a player who never finds one is slower, not stuck.</p>
+              <p class="src">Core pen marker + MO trough · hunt requirement to author</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Primitive Artistry</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Furnishing</p>
+              <ul>
+                <li>Art bench</li>
+                <li>Styling station <em>— pulled down out of ComplexFurniture</em></li>
+                <li>Floor paintings, crude sculpture</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> the first thing you build that does nothing but make people feel better about being here.</p>
+              <p class="src">Core art bench · styling station split from ComplexFurniture 300</p>
+            </article>
+
+          </div>
+        </div>
+
+        <aside class="bench">
+          <p class="bh">The bench · N1</p>
+          <p class="intro">Available in the loaded set at this point and deliberately not used. Reason code, then what it would cost to pull back in.</p>
+
+          <div class="bi"><p class="n">VFE Classical — all 18 <span class="why">MOVED</span></p>
+            <p class="w">1,200 pts each, <b>21,600 — 72% of the whole Neolithic budget</b> on a flat line with no curve. Not cut: the Roman content lands in <b>N2</b> where the fantasy actually is. Only bronze and roads die.</p></div>
+
+          <div class="bi move"><p class="n">Brewing <span class="why">MOVED</span></p>
+            <p class="w">Brewery, fermenting barrel, ale, cider, mead, wine, 4 fruit wines. 11 defs for 400. Held to <b>N2 optional</b> — a camp that is still eating raw meat has no business fermenting anything.</p></div>
+
+          <div class="bi move"><p class="n">PassiveCooler · VFEC_TemperatureControl <span class="why">MOVED</span></p>
+            <p class="w">Passive cooler, large passive cooler, heat stones. Held to <b>N2</b>. Temperature control is the reward for taking root, not for surviving week one.</p></div>
+
+          <div class="bi move"><p class="n">TreeSowing <span class="why">MOVED</span></p>
+            <p class="w">1,000 pts for the tree-sowing designator and a bonsai pot. Held to <b>N2 Intermediate Agriculture</b> — planting a forest you will not harvest for a year is a settled-tribe act.</p></div>
+
+          <div class="bi"><p class="n">Cocoa <span class="why">§2.4</span></p>
+            <p class="w">1,000 pts, one plant, feeds only the griffonberry node. A resource whose use case dies before the Industrial era. <b>Pull it back</b> only if you want a chocolate line in Grand Cookery.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_PlowedSoil <span class="why">§2.4</span></p>
+            <p class="w">300 pts, zero ThingDefs, buggy in play. Scarecrow and sprinkler already own the yield lever.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_Lumber <span class="why">§2.2</span></p>
+            <p class="w">The wood chain — raw wood piles, timber 1×1/1×2/2×2, trestle. <b>Wood is wood; there is no plank step.</b> Salvage the 4 wicker/straw beds and the round shield first — it also parents RusticFurniture, and cutting it blind frees ~220 buildings with no research at all.</p></div>
+
+          <div class="bi"><p class="n">VCE_CondimentsResearch <span class="why">§2.4</span></p>
+            <p class="w">Condiment prep table plus salt and saffron. The canonical dilution failure — trade stock noise forever. Cut MO’s 3 condiment items with it.</p></div>
+
+          <div class="bi"><p class="n">VFEC_CraftingBench <span class="why">§2.1</span></p>
+            <p class="w">A second general crafting bench. One core bench per domain; the hide slab and knapping slab already cover it.</p></div>
+
+          <div class="bi"><p class="n">VFEC_MeatDrying <span class="why">DUP</span></p>
+            <p class="w">Meat drying rack — a second copy of Core’s drying rack, at 1,200 pts against 500. <b>Swap freely</b> if you prefer the Classical art.</p></div>
+
+          <div class="bi fence"><p class="n">Fishing <span class="why">FENCE</span></p>
+            <p class="w">Odyssey, 600 pts. Appears nowhere in the progression map. A genuine primitive food source with its own failure mode — <b>the strongest single candidate on this bench for pulling into N1.</b></p></div>
+
+          <div class="bi fence"><p class="n">Devilstrand <span class="why">FENCE</span></p>
+            <p class="w">800 pts. Also a recorded deadlock — Research Mod auto-generates a material gate that cannot be satisfied at Neolithic. Needs an empty <code>ManualAnalysisDef</code> whenever it lands. Held to <b>M1 Fine Cloth</b>.</p></div>
+
+          <div class="bi"><p class="n">MO’s empty vessels <span class="why">DILUTE</span></p>
+            <p class="w">~24 defs — empty bottle, plate, cooking pot, cup, ruined book, inert vials. Scenery costs nothing, but these enter the <em>item pool</em>. Keep the props, cut the vessels.</p></div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ===== N2 tree ===== -->
+    <div class="treeleap" style="--era:var(--era-2);--era-wash:var(--era-2-wash)">
+      <div class="th">
+        <p class="code">N2 · The Settled Tribe</p>
+        <h3>Rome without the metal</h3>
+        <p class="sub">20 nodes · 14 spine, 2 hunts, 4 optional</p>
+      </div>
+      <div class="tb">
+        <div>
+          <p class="band-hd">Opening · the cheapest things first</p>
+          <div class="band">
+
+            <article class="node mom">
+              <h4>Earthworks</h4>
+              <div class="chips"><span class="chip c-mom">The First Wall</span><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Primitive Shelter</p>
+              <ul>
+                <li>Trench, spiked line, stake wall</li>
+                <li>Cavalry spikes</li>
+              </ul>
+              <p class="trade"><b>The moment begins here.</b> A ditch is the first thing you build that is meant to outlast the people digging it. Cheapest defence in the game, so it opens the leap — the palisade three nodes later completes the beat.</p>
+              <p class="src">cavalry spikes from VFES_SiegeEquipment 900 · trench line authored</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Intermediate Agriculture</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Basic Agriculture</p>
+              <ul>
+                <li>Tier-2 plant set</li>
+                <li>Post, field markers</li>
+                <li><b>Scarecrow</b> — yield without a pawn standing in the field</li>
+                <li>Tree sowing <em>— retiered in from Core</em></li>
+              </ul>
+              <p class="src">MO DankPyon_IntermediateAgriculture 400 · VFurE VFE_Res_FarmingTechniques 300 · Core TreeSowing 1000</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Cured Leather</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 2</span></div>
+              <p class="pre">after Hidework</p>
+              <ul>
+                <li><b>Tanning rack</b></li>
+                <li>Cured-leather stat tier on every existing leather piece</li>
+              </ul>
+              <p class="trade"><b>Rung 2 of seven,</b> and the shape of the whole ladder: no new items, a better version of the ones you own. §2.3 — if it is not measurably better on armour stats it should not exist.</p>
+              <p class="src">MO DankPyon_LeatherTanning · 600</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Middle · the tribe becomes a place</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Stewcraft</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after Primitive Cookery</p>
+              <ul>
+                <li>Grill and stew pot as <b>augments bolted to the stove</b></li>
+                <li>Food tier 3: any two vegetables plus any meat</li>
+              </ul>
+              <p class="trade"><b>The augment model, first time out.</b> Two MO nodes merged (Grill 200 + StewPot 300); the buildings become facilities on the hearth rather than two more bench icons. VCE’s duplicates die here.</p>
+              <p class="src">MO DankPyon_Grill 200 + DankPyon_StewPot 300, merged</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Milling &amp; Baking</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after Stewcraft</p>
+              <ul>
+                <li><b>Millstone</b> — retiered out of Basic Agriculture</li>
+                <li>Rustic oven, large oven</li>
+                <li>Flour, bread</li>
+              </ul>
+              <p class="trade"><b>Flour is the one exception to §2.2</b> and it is deliberate — it is a food <em>tier</em>, not a construction material. Nothing you build ever asks for it.</p>
+              <p class="src">MO DankPyon_Oven 600 + millstone from DankPyon_BasicAgriculture</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Smoking &amp; Curing</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after Firecraft &amp; Preserving</p>
+              <ul>
+                <li>Smoker — load and leave</li>
+                <li>Meat that keeps through winter</li>
+              </ul>
+              <p class="trade"><b>Survives delegation.</b> A process building you set once and walk away from is native to the core verb; a bench you must stand at is not.</p>
+              <p class="src">MO DankPyon_Smoker · 600</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Masonry</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">core bench</span></div>
+              <p class="pre">after Earthworks</p>
+              <ul>
+                <li><b>Stonecutter’s table</b> — the knapping slab upgraded</li>
+                <li>Bricks 1×1 / 1×2 / 2×2, stonecutting tools, kiln</li>
+                <li>Brick and stone walls, ice cellar</li>
+                <li><em>Strip castle wall + embrasures</em> — they belong to M2</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> your walls stop burning. Fire stops being a colony-ending event and becomes an inconvenience.</p>
+              <p class="src">Core Stonecutting · 300 · 15 defs, 2 stripped forward</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Cement &amp; Structures</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Masonry</p>
+              <ul>
+                <li>Cement press</li>
+                <li>Mosaic and worked-stone floors</li>
+                <li>Wood-fired crematorium</li>
+              </ul>
+              <p class="src">VFEC_CementMaking 1200 · VFEC_Mosaics 1200 · VFEC_WoodfiredCrematorium 1200</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Boiled Leather</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 3</span></div>
+              <p class="pre">after Cured Leather</p>
+              <ul>
+                <li><b>Leather boilpot</b></li>
+                <li>Boiled-leather stat tier</li>
+              </ul>
+              <p class="trade"><b>Rung 3 of seven.</b> The boilpot def already exists inside <code>ComplexClothing</code> — it needs pulling down two eras and giving its own node.</p>
+              <p class="src">leather boilpot split out of Core ComplexClothing 600</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Palisades &amp; Gates</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Earthworks · after Masonry</p>
+              <ul>
+                <li>Palisade, palisade embrasure</li>
+                <li>Log wall, log gate, reinforced gate</li>
+              </ul>
+              <p class="trade"><b>The First Wall completes here.</b> You stop surviving raids and start choosing where they happen — which is the first time the colony gets to make a defensive <em>decision</em> rather than a defensive reaction.</p>
+              <p class="src">authored · MO and VFEM2 palisade art available</p>
+            </article>
+
+            <article class="node spine">
+              <h4>The Long Bow</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after The Bow</p>
+              <ul>
+                <li>Hunting bow</li>
+                <li>Greatbow / longbow</li>
+                <li><em>Strip arbalest and wall-mounted arbalest</em> — metal, they belong to M2</li>
+              </ul>
+              <p class="src">Core Greatbow 600 (5 defs, 2 stripped forward) · MO DankPyon_HuntingBow 500</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Skirmishers</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Slings &amp; Clubs</p>
+              <ul>
+                <li>Javelin, pila, throwing axe</li>
+                <li>Long spear</li>
+                <li><b>Heavy shield</b> — the scutum, wood and hide</li>
+                <li>Tent</li>
+                <li><em>Strip spatha and dagger</em> — both are iron, they belong to M1</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> a fighting line stops being a mob. This is the node that makes “disciplined” true rather than decorative.</p>
+              <p class="src">VFEC_LegionaryArmaments 1200 · VFEC_HeavyShieldMaking 1200</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Closing · the best a tribe can do</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Hardened Leather</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 4</span></div>
+              <p class="pre">after Boiled Leather</p>
+              <ul>
+                <li>Hardened-leather stat tier — top of the pre-metal ladder</li>
+              </ul>
+              <p class="trade"><b>Rung 4 of seven, and no new defs at all.</b> This node is pure stat authoring on apparel you have owned for fifty days. If it does not measurably move armour rating and sharp/blunt, it is a §2.3 bug.</p>
+              <p class="src">authored · StuffDef tier, no ThingDefs</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Laminated Armour</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">restat</span></div>
+              <p class="pre">after Hardened Leather</p>
+              <ul>
+                <li>Lorica — laminated plate-of-leather torso armour</li>
+                <li>Legionnaire helmet and armour, centurion helmet and armour</li>
+              </ul>
+              <p class="trade"><b>The best armour a tribe can make.</b> The Classical defs are authored as iron segmentata — they need restatting as leather lamination. Same art, different material story, and it keeps the pre-metal promise intact.</p>
+              <p class="src">VFEC_LegionnaireArmor 1200 · VFEC_CenturionArmor 1200 · restat required</p>
+            </article>
+
+            <article class="node qol">
+              <h4>Siege Engines</h4>
+              <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">gates nothing</span></div>
+              <p class="pre">after Palisades &amp; Gates</p>
+              <ul>
+                <li><b>The catapult</b></li>
+              </ul>
+              <p class="trade"><b>“We can hit them now.”</b> The single best beat in a leap otherwise entirely about defence, and genuinely pre-metal technology. It gates nothing — it is the one thing in N2 that is pure want.</p>
+              <p class="src">VFES_SiegeEquipment 900 · catapult only, ballista stripped to M2</p>
+            </article>
+
+            <article class="node qol">
+              <h4>Carrier Birds</h4>
+              <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">gates nothing</span></div>
+              <p class="pre">after Beast-Handling · own birds</p>
+              <ul>
+                <li><b>Bird post</b> — the world map opens</li>
+                <li>Signal beacon, line-of-sight</li>
+                <li><em>Strip the messenger table</em> — the paper chain is cut</li>
+              </ul>
+              <p class="trade"><b>Activation, not capability.</b> Nothing new is built; the world map stops being a menu nobody opens. Highest value per byte in the whole era — research it, build it, own birds, done. No paper, no cartography.</p>
+              <p class="src">MO DankPyon_CarrierBirds 600 · VFEC_Beacons 1200</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Optional · gates nothing, skip and lose nothing</p>
+          <div class="band">
+
+            <article class="node opt">
+              <h4>Incendiaries</h4>
+              <div class="chips"><span class="chip">optional</span><span class="chip c-new">renamed</span></div>
+              <p class="pre">after Herbcraft</p>
+              <ul>
+                <li>Fire pots, flash pot, smoke pot, acid flask</li>
+                <li>The four matching belts</li>
+                <li>Fire bow, fire arrows</li>
+              </ul>
+              <p class="trade"><b>This resolves P3.</b> MO ships these under a node called “Gunpowder.” They are pitch and naphtha, not powder — rename the node, drop it into N2, and M3’s Gunpowder becomes the matchlocks, which is the beat the map actually wants.</p>
+              <p class="src">MO DankPyon_Gunpowder 1000 · relocated and renamed</p>
+            </article>
+
+            <article class="node opt">
+              <h4>Baths &amp; Stage</h4>
+              <div class="chips"><span class="chip">optional</span><span class="chip">P1</span></div>
+              <p class="pre">after Cement &amp; Structures</p>
+              <ul>
+                <li>Thermae bath house</li>
+                <li>Theatre stage</li>
+                <li>Passive cooler, large passive cooler, heat stones</li>
+              </ul>
+              <p class="trade"><b>P1’s answer in node form.</b> A player who wants the austere version never researches this and loses no capability — but temperature control rides along with it, which is a real cost. Consider splitting the cooler out to spine.</p>
+              <p class="src">VFEC_Thermaebath · VFEC_DramaAndComedy · VFEC_TemperatureControl · Core PassiveCooler</p>
+            </article>
+
+            <article class="node opt">
+              <h4>Dyes &amp; Ceremonial Dress</h4>
+              <div class="chips"><span class="chip">optional</span><span class="chip">P1</span></div>
+              <p class="pre">after Hidework</p>
+              <ul>
+                <li>Tyrian farm, dye production</li>
+                <li>Toga, wreath</li>
+              </ul>
+              <p class="src">VFEC_TyrianProduction 1200 · VFEC_Togas 1200</p>
+            </article>
+
+            <article class="node opt">
+              <h4>Brewing</h4>
+              <div class="chips"><span class="chip">optional</span></div>
+              <p class="pre">after Milling &amp; Baking</p>
+              <ul>
+                <li>Brewery, fermenting barrel, mixing barrel</li>
+                <li>Ale, cider, mead, wine</li>
+              </ul>
+              <p class="trade"><b>Bidirectional, which earns it a slot.</b> Beer is a mood lever and an addiction risk in the same object — it can go wrong in a way that produces a story.</p>
+              <p class="src">Core Brewing 400 · 11 defs · retiered in from N1</p>
+            </article>
+
+          </div>
+        </div>
+
+        <aside class="bench">
+          <p class="bh">The bench · N2</p>
+          <p class="intro">The Roman block mostly lands here rather than being cut. What stays off is metal, paper and second copies.</p>
+
+          <div class="bi"><p class="n">VFEC_BronzeWorking <span class="why">§2.4</span></p>
+            <p class="w">1,200 pts, <b>one recipe, zero ThingDefs.</b> A metal tier between hardened leather and iron scale that stops mattering the instant the smithy lights. Pulling it in means authoring a whole bronze armour rung to justify it.</p></div>
+
+          <div class="bi"><p class="n">VFEC_RoadBuilding <span class="why">EMPTY</span></p>
+            <p class="w">1,200 pts and it unlocks <b>nothing</b> — no ThingDef anywhere in the mod references it except a faction. The cleanest cut in the database.</p></div>
+
+          <div class="bi move"><p class="n">VFEC_Scorpion <span class="why">MOVED</span></p>
+            <p class="w">Scorpion turret — a torsion bolt-thrower, which is metal. Held as the <b>M2 alternative to the ballista</b>. If you prefer its art, swap it for <code>DankPyon_Ballista</code> there.</p></div>
+
+          <div class="bi"><p class="n">VCE_Grilling · VCE_StewCooking <span class="why">DUP</span></p>
+            <p class="w">400 + 300 pts for a second grill and a second stew pot, both already in Stewcraft from MO at half the price. Straight duplicates.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_Exploration <span class="why">§2.2</span></p>
+            <p class="w">1,800 pts. Explorer’s workbench, tome of knowledge, paper, cartography, maps. The whole paper chain — an intermediate material with a processing step. Carrier Birds gives you the world map without it. Zero dependants, clean cut today.</p></div>
+
+          <div class="bi"><p class="n">Messenger table <span class="why">§2.2</span></p>
+            <p class="w">Strip from <code>DankPyon_CarrierBirds</code> before keeping it. It is the paper chain’s hook into a node we want.</p></div>
+
+          <div class="bi"><p class="n">Paper press <span class="why">§2.2</span></p>
+            <p class="w">Same — strip from <code>DankPyon_Presser</code> before that node ships in M2.</p></div>
+
+          <div class="bi fence"><p class="n">DankPyon_TreeGriffonBerry <span class="why">FENCE</span></p>
+            <p class="w">900 pts behind Cocoa and advanced agriculture, for <b>one plant</b>. Exactly the “one more plant” dilution — but it is also the only exotic fruit line, and Grand Cookery in M3 needs something to be exotic <em>about</em>. Genuinely open.</p></div>
+
+          <div class="bi fence"><p class="n">VFEM2_Beekeeping · VFEM2_Wine <span class="why">FENCE</span></p>
+            <p class="w">Apiary at 500, wine at 600. Opt-in roleplay, close to right out of the box — but <b>resolve the two-grape collision first</b> (<code>DankPyon_Plant_Grape</code> vs <code>VFEM2_Plant_Grape</code>, no compat patch exists anywhere).</p></div>
+
+          <div class="bi"><p class="n">Ballista, from VFES <span class="why">MOVED</span></p>
+            <p class="w"><code>VFES_SiegeEquipment</code> bundles cavalry spikes, catapult and ballista in one 900-pt node. Split it three ways: spikes to Earthworks, catapult here, <b>ballista to M2</b>.</p></div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ===== M1 tree ===== -->
+    <div class="treeleap" style="--era:var(--era-3);--era-wash:var(--era-3-wash)">
+      <div class="th">
+        <p class="code">M1 · The Forge</p>
+        <h3>Metal touches every domain at once</h3>
+        <p class="sub">15 nodes · ~330 ThingDefs — the heaviest leap by volume</p>
+      </div>
+      <div class="tb">
+        <div>
+          <p class="band-hd">Opening · the ingot</p>
+          <div class="band">
+
+            <article class="node mom">
+              <h4>Smelting</h4>
+              <div class="chips"><span class="chip c-mom">The First Ingot</span><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Masonry · after Stoneworking</p>
+              <ul>
+                <li><b>Fueled smelter</b></li>
+                <li>Ore becomes metal</li>
+              </ul>
+              <p class="trade"><b>The most consequential discovery in a hundred days of play, and it should be presented like one.</b> This must not arrive as a progress bar quietly filling — letter, ritual, Chronicle beat. Everything downstream in the project depends on this node.</p>
+              <p class="src">fueled smelter split out of Core Smithing 700</p>
+            </article>
+
+            <article class="node spine">
+              <h4>The Smithy</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">core bench</span></div>
+              <p class="pre">after Smelting</p>
+              <ul>
+                <li><b>Fueled smithy</b> — the defining object of the era, and the fourth core bench</li>
+                <li>Tool rack, smithing cabinet, textile rack, meat hook, metal strongbox</li>
+              </ul>
+              <p class="trade"><b>Deliberately bad at first.</b> You build it, you are immediately poor at it, and the next two nodes are the fix. That sequence is the leap’s whole emotional shape.</p>
+              <p class="src">Core Smithing 700 · 34 defs, split across this node and the next three</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Metal Toolcraft</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after The Smithy</p>
+              <ul>
+                <li>Mining tools, pickaxe, felling axe, tomahawk</li>
+                <li>Scythe, butcher’s cleaver, embedded cleaver, hatchet, woodcutter’s axe</li>
+                <li>Blacksmith’s hammer, mason’s tools, bonesaw</li>
+              </ul>
+              <p class="trade"><b>Every job in the colony gets faster — nothing new becomes possible.</b> The purest example of lateral tech in the project. Note MO buries three of these tools inside <code>DankPyon_MilitaryMaces</code> and four more inside <code>DankPyon_BasicBlades</code>; they are tools mis-shelved as weapons and need extracting.</p>
+              <p class="src">Core Smithing · MO BasicBlades 300 · MO MilitaryMaces 600 · VFEM2 surgical tools</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Middle · every domain remade</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>The Anvil</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after The Smithy</p>
+              <ul>
+                <li><b>Smithing anvil</b> — bolts to the smithy</li>
+                <li>Quenching bucket, grinding wheel</li>
+                <li>Opens the arms line</li>
+              </ul>
+              <p class="trade"><b>Two anvils exist</b> — one in Core <code>Smithing</code>, one in <code>VFEM2_ComplexWorkshops</code>. Pick one owner before either ships.</p>
+              <p class="src">Core Smithing · VFEM2_ComplexWorkshops 1800</p>
+            </article>
+
+            <article class="node qol">
+              <h4>The Bellows</h4>
+              <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">gates nothing</span></div>
+              <p class="pre">after The Anvil</p>
+              <ul>
+                <li><b>Forge bellows</b> — smithing speed and quality</li>
+              </ul>
+              <p class="trade"><b>The right shape for a hunt.</b> Near-zero resource cost, real ongoing value, and a colony that never finds one is slower at smithing rather than locked out of metal. Same duplication problem as the anvil — Core and VFEM2 both ship one.</p>
+              <p class="src">Core Smithing · VFEM2_ComplexWorkshops · hunt requirement to author</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Basic Arms</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">3 nodes merged</span></div>
+              <p class="pre">after The Anvil</p>
+              <ul>
+                <li><b>Blades</b> — shortsword, gladius, falchion, spatha, dagger</li>
+                <li><b>Maces</b> — mace, heavy mace, bludgeon, goedendag, two-handed mace, two-handed mallet, flail</li>
+                <li><b>Polearms</b> — militia spear, warfork, pitchfork, hooked blade</li>
+                <li>Throwing axe, ikwa, breach axe</li>
+              </ul>
+              <p class="trade"><b>MO ships this as three nodes saying the same thing three times</b> (BasicBlades / BasicMaces / BasicPolearms, 300 each). One node, ~600 pts. Saves four clicks of nothing and makes the rung legible as a rung.</p>
+              <p class="src">MO ×3 merged · + spatha and dagger relocated from VFEC_LegionaryArmaments</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Scale &amp; Lamellar</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 5</span></div>
+              <p class="pre">after The Anvil · after Hardened Leather</p>
+              <ul>
+                <li>Light lamellar, scale armour</li>
+                <li>Simple helmet, leather helmet, coif, arming cap</li>
+                <li>Round shield</li>
+              </ul>
+              <p class="trade"><b>P4’s answer, and the best structural decision in the map.</b> Metal scales riveted onto the hardened leather you spent a whole era perfecting — your Neolithic mastery becomes the <em>substrate</em> for your first metal rather than being thrown away. Rung 5 of seven.</p>
+              <p class="src">MO DankPyon_ProtectiveClothing 1000 (partial) · Core Smithing · round shield salvaged from DankPyon_Lumber</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Padded Underlayer</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Scale &amp; Lamellar</p>
+              <ul>
+                <li>Gambeson / padded armour, padded chausses</li>
+                <li>Boots, gloves</li>
+                <li>Padded nasal helm, padded kettle, padded flat-top</li>
+              </ul>
+              <p class="trade"><b>Fills a live hole.</b> VFEM2’s padded armour currently has <b>no research gate at all</b>, and MO’s three padded helms are ungated too. This node is where they get attached.</p>
+              <p class="src">MO DankPyon_ProtectiveClothing (partial) · + 4 currently ungated defs</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Tailoring</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">core bench</span></div>
+              <p class="pre">after Hidework</p>
+              <ul>
+                <li><b>Hand tailor bench</b> — the hide slab upgraded</li>
+                <li>Shirt, trousers, duster, jacket, hood, hat, parka, robe, vest, sash, bandana</li>
+                <li>Cloth rugs, patched leather rugs, tailoring tools</li>
+                <li>Kid clothing</li>
+                <li><em>Strip</em> leather boilpot → N2 · king’s robes, dame dress, jester set → M3</li>
+              </ul>
+              <p class="trade"><b>Clothes rather than hides, for the first time.</b> 79 defs behind one node — the single biggest unlock in the project, and the first place to look when M1 needs pacing.</p>
+              <p class="src">Core ComplexClothing · 600 · 79 defs</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Fine Cloth</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">added</span></div>
+              <p class="pre">after Tailoring</p>
+              <ul>
+                <li>Silk as a straight cloth upgrade</li>
+                <li>Devilstrand</li>
+                <li>Silk bed</li>
+              </ul>
+              <p class="trade"><b>No spinning chain.</b> Silk enters as a better stuff, not as a processing step — §2.2. <code>DankPyon_Silk</code> must be <b>re-parented off <code>DankPyon_TextileSpinning</code></b> before that node is cut, or it becomes free. Devilstrand needs an empty <code>ManualAnalysisDef</code> or Research Mod deadlocks it.</p>
+              <p class="src">MO DankPyon_Silk 600 re-parented · Core Devilstrand 800</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Complex Furniture</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">research seat</span></div>
+              <p class="pre">after Furnishing</p>
+              <ul>
+                <li><b>The simple research bench</b> — the seat upgrade that ends the tribal phase</li>
+                <li>Bed, double bed, dresser, wardrobe, shelf, bookcase, end table, dining set, counter</li>
+                <li>Brazier, weapon rack, tool cabinet, operating table</li>
+                <li>Chess table, poker table, billiards, darts, punching bag</li>
+                <li>MO rustic dressing — 103 props, signs, fountains, dividers, wall torches</li>
+              </ul>
+              <p class="trade"><b>202 defs across two nodes.</b> <code>DankPyon_RusticFurniture</code> must be <b>re-parented off <code>DankPyon_Lumber</code> first</b> — it gates 107 things directly and parents RusticStorage, Presser, CarrierBirds and TextileSpinning. Cut Lumber blind and ~220 buildings go free with no research.</p>
+              <p class="src">Core ComplexFurniture 300 (99 defs) · MO DankPyon_RusticFurniture 300 (103 defs)</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Reinforced Works</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">added</span></div>
+              <p class="pre">after Masonry · after The Smithy</p>
+              <ul>
+                <li>Brick and tudor walling</li>
+                <li>Reinforced trench</li>
+                <li>Tank trap, metal-faced gate</li>
+              </ul>
+              <p class="trade"><b>Not in the map’s research list</b> but its M1 capability table names the whole set. Added so the capability has a node to sit on.</p>
+              <p class="src">Core Stonecutting (tudor wall, reinforced trench) · Core Smithing (tank trap)</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Closing · the place is popping</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Intermediate Cookery</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Milling &amp; Baking</p>
+              <ul>
+                <li>Food tier 4 — <b>eggs enter</b></li>
+                <li>Cold storage, ice cellar</li>
+              </ul>
+              <p class="trade"><b>Trade —</b> the animal pen stops being a novelty and becomes an input to the kitchen. Husbandry and cooking connect for the first time.</p>
+              <p class="src">MO DankPyon_IntermediateCooking 400 · recipes only, no ThingDefs</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Apothecary</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">node split</span></div>
+              <p class="pre">after Herbcraft</p>
+              <ul>
+                <li><b>Alembic</b>, vials table</li>
+                <li>Tinctures — apothecary’s miracle, paregoric</li>
+                <li>Medicine you would hand to someone you liked</li>
+              </ul>
+              <p class="trade"><b>MO’s Alchemy node splits in two.</b> The herb table already went down to N1 Herbcraft; the alembic and tinctures land here; the cauldron, battle elixirs and stardust wait for M2 Alchemy. One 1,000-pt node becomes three rungs across three leaps.</p>
+              <p class="src">MO DankPyon_Alchemy 1000 · partial, 27 defs split three ways</p>
+            </article>
+
+            <article class="node qol">
+              <h4>Deep Mining</h4>
+              <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">gates nothing</span></div>
+              <p class="pre">after The Smithy</p>
+              <ul>
+                <li><b>Mine shaft</b> — place it, forget it, mine slowly forever</li>
+              </ul>
+              <p class="trade"><b>The model citizen of the QoL class.</b> Survives delegation completely, gates nothing, and scales to the end of the game. If only one thing in the project gets a hunt requirement, it is this.</p>
+              <p class="src">MO DankPyon_Mining 1000 · mine shaft only, crane stripped to M2</p>
+            </article>
+
+          </div>
+        </div>
+
+        <aside class="bench">
+          <p class="bh">The bench · M1</p>
+          <p class="intro">Two supermetals, an intermediate-material chain and a second copy of everything the forge already does.</p>
+
+          <div class="bi"><p class="n">DankPyon_Steel <span class="why">§2.4</span></p>
+            <p class="w">2,000 pts. Alchemy → steel, unlocking one smelter. A medieval supermetal that is superseded by the actual Industrial steel two eras later. <b>Verify first</b> — <code>metalChain</code> is off as a setting and this may already be inert, in which case cutting it is tidying, not balance.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_Plasteel, labelled “Mithril” <span class="why">EMPTY</span></p>
+            <p class="w"><b>4,000 pts, zero ThingDefs, zero dependants.</b> The single most expensive nothing in the database. Safe to cut today.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_TextileSpinning <span class="why">§2.2</span></p>
+            <p class="w">600 pts for a spinning wheel and linen — a raw material converted into an intermediate material in order to be usable. <b>Re-parent <code>DankPyon_Silk</code> onto Tailoring first</b> or silk becomes free.</p></div>
+
+          <div class="bi"><p class="n">Linen <span class="why">§2.4</span></p>
+            <p class="w">Named in the design law by name, alongside salt, as a resource that stops mattering. Cloth is cloth.</p></div>
+
+          <div class="bi"><p class="n">VFEC_CraftingBench <span class="why">§2.1</span></p>
+            <p class="w">Still on the bench. The smithy and the tailor bench own this domain now; a general crafting bench is a fifth icon for work that already has a home.</p></div>
+
+          <div class="bi fence"><p class="n">CarpetMaking <span class="why">FENCE</span></p>
+            <p class="w">800 pts, <b>zero ThingDefs</b> — it unlocks terrain only. Cheap flavour with no item-pool cost, which makes it hard to argue against; it is only on the bench because 800 pts buys a lot elsewhere in M1.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_RusticStorage <span class="why">DILUTE</span></p>
+            <p class="w"><b>113 buildings</b> — a barrel for every ore, a crate in every size, filled shelves. We already run three storage mods (Neat Storage 27, Fridge 7, Gravship 8). Keep the medieval look, cut the variant count hard. Deferred to M2 either way.</p></div>
+
+          <div class="bi"><p class="n">MO weapon triplicates <span class="why">§2.3</span></p>
+            <p class="w">BasicBlades / BasicMaces / BasicPolearms as three separate 300-pt nodes. Merged into Basic Arms. Not content lost — <b>clicks lost.</b> Nine MO weapon projects across M1 and M2 become two rungs.</p></div>
+
+          <div class="bi move"><p class="n">Arbalest, wall-mounted arbalest <span class="why">MOVED</span></p>
+            <p class="w">Bundled into Core <code>Greatbow</code> at 600, which is otherwise an N2 node. Split them forward to <b>M2 The Crossbow</b> — they are steel-prod weapons and have no business in a longbow project.</p></div>
+
+          <div class="bi"><p class="n">VFEM2_ComplexWorkshops, as one node <span class="why">§2.1</span></p>
+            <p class="w">1,800 pts for 13 augments spanning four different benches — anvil, bellows, loom, mannequin, chisel rack, stone clamp, cleaver rack, carving board, polisher, art stand, notes, research board, surgical tools. <b>Highest-value project in the era and the worst-shaped.</b> Split across The Anvil, The Bellows, Loom &amp; Spindle, Chisel &amp; Clamp, Master Masonry and Scriptorium.</p></div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ===== M2 tree ===== -->
+    <div class="treeleap" style="--era:var(--era-4);--era-wash:var(--era-4-wash)">
+      <div class="th">
+        <p class="code">M2 · Mail &amp; Siege</p>
+        <h3>You stop being new at metal</h3>
+        <p class="sub">15 nodes · 14 spine, 1 hunt</p>
+      </div>
+      <div class="tb">
+        <div>
+          <p class="band-hd">Opening · the war kit</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Advanced Smithing</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after The Anvil</p>
+              <ul>
+                <li><b>Furnace</b> — bolts to the smithy</li>
+                <li>Quenching trough</li>
+                <li>Higher-quality metal work</li>
+              </ul>
+              <p class="src">Core Smithing furnace · VFEM2_ComplexWorkshops</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Military Arms</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">4 nodes merged</span></div>
+              <p class="pre">after Basic Arms</p>
+              <ul>
+                <li><b>Blades</b> — longsword, arming sword, bardiche, longaxe, handaxe</li>
+                <li><b>Polearms</b> — pike, billhook, boar spear, spetum, swordlance</li>
+                <li><b>Maces</b> — morning star, polehammer, winged mace, nomad mace, two-handed hammer, war pick</li>
+                <li>Spear</li>
+              </ul>
+              <p class="trade"><b>Replaces the basic set entirely</b> — which makes it a §2.3 test: if a militia spear is still competitive with a pike, one of the two rungs is wrong. <code>LongBlades</code> and <code>DankPyon_MilitaryBlades</code> both unlock a longsword; pick one owner.</p>
+              <p class="src">MO MilitaryBlades/Maces/Polearms 600 each + Core LongBlades 400, merged · ~1,200</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Mail</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 6</span></div>
+              <p class="pre">after Scale &amp; Lamellar · after Padded Underlayer</p>
+              <ul>
+                <li>Hauberk, heavy hauberk</li>
+                <li>Chain coif, full chain coif, closed chain coif</li>
+                <li>Chain nasal helm, kettle helm, flat-top, chainveil, bascinet, heavy barbute</li>
+                <li>Splinted boots, gloves, chausses</li>
+              </ul>
+              <p class="trade"><b>Raids stop being frightening and start being work.</b> Rung 6 of seven. 19 defs plus 6 currently ungated MO pieces that need attaching — the four heraldic hauberks go to M3 Heraldry instead.</p>
+              <p class="src">MO DankPyon_ChainArmor · 1500 · 19 defs + 6 ungated</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Middle · the castle</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>The Crossbow</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after The Long Bow · after Advanced Smithing</p>
+              <ul>
+                <li>Crossbow</li>
+                <li>Arbalest, wall-mounted arbalest <em>— relocated out of Greatbow</em></li>
+                <li>War bow</li>
+              </ul>
+              <p class="trade"><b>Verify before trusting.</b> Crossbow and heavy crossbow are recorded as requiring <code>DankPyon_IronIngot</code> and therefore <b>dead under no-new-metals</b>. If so, <code>DankPyon_Ballista</code>’s prerequisite has to move before anything here ships.</p>
+              <p class="src">MO DankPyon_Crossbow 400 · DankPyon_WarBow 700 · absorbs DankPyon_HeavyCrossbow 700</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Siege Engines II</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Siege Engines · after Advanced Smithing</p>
+              <ul>
+                <li><b>Ballista</b> and ballista bolts</li>
+                <li>Scorpio bolts</li>
+                <li>Wall-mounted heavy weapons</li>
+              </ul>
+              <p class="trade"><b>Rung 2 of a three-rung siege ladder</b> — catapult in N2, ballista here, cannon in M3. Three separate siege systems exist in the database and only one line survives.</p>
+              <p class="src">MO DankPyon_Ballista 1000 · VFES ballista · re-parent off DankPyon_Crossbow</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Castle Architecture</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Palisades &amp; Gates · after Reinforced Works</p>
+              <ul>
+                <li>Castle wall, low castle wall, castle wall embrasures</li>
+                <li>Castle door — medium, large, grand</li>
+                <li>Castle gate — medium, large, grand</li>
+                <li>Timbered wall, cloth wall</li>
+              </ul>
+              <p class="trade"><b>Two castle walls exist</b> — one in Core <code>Stonecutting</code>, one in <code>VFEM2_MedievalArchitecture</code>. One of the 62 label collisions, and one of the most visible.</p>
+              <p class="src">VFEM2_MedievalArchitecture 1200 · 10 defs · + castle wall/embrasures from Stonecutting</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Loom &amp; Spindle</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after Tailoring</p>
+              <ul>
+                <li>Tailoring loom, mannequin stand — augments on the tailor bench</li>
+              </ul>
+              <p class="trade"><b>The augment, not the chain.</b> The loom speeds the bench; it does not introduce a thread step. That distinction is what separates this node from the cut <code>TextileSpinning</code>.</p>
+              <p class="src">VFEM2_ComplexWorkshops · partial</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Chisel &amp; Clamp</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after Masonry</p>
+              <ul>
+                <li>Chisel rack, stone clamp, carving board, cleaver rack</li>
+              </ul>
+              <p class="src">VFEM2_ComplexWorkshops · partial</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Advanced Agriculture</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Intermediate Agriculture</p>
+              <ul>
+                <li>Tier-3 plant set — the final tier</li>
+                <li>Fields to the horizon</li>
+              </ul>
+              <p class="src">MO DankPyon_AdvancedAgriculture 600 · plants, no ThingDefs</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Millworks</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">2 nodes merged</span></div>
+              <p class="pre">after Milling &amp; Baking · after Reinforced Works</p>
+              <ul>
+                <li><b>Windmill</b></li>
+                <li><b>Watermill</b></li>
+              </ul>
+              <p class="trade"><b>Production that happens while everyone is asleep.</b> The first true automation in the project and the strongest single argument for the whole M2 leap — it survives delegation absolutely.</p>
+              <p class="src">MO DankPyon_Windmill 400 + DankPyon_Watermill 400, merged</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Closing · the workshop row</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Advanced Cookery</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after Intermediate Cookery</p>
+              <ul>
+                <li><b>Cheese press</b> — augment on the hearth</li>
+                <li>Cheese, goat cheese, sheep cheese, apple juice</li>
+                <li>Food tier 5 — flour and cheese, top of the ingredient ladder</li>
+                <li><em>Strip the paper press</em></li>
+              </ul>
+              <p class="trade"><b>Food stops being fuel and becomes a stat buff</b> worth planning agriculture around. This is the node that makes the whole farming ladder pay.</p>
+              <p class="src">MO DankPyon_AdvancedCooking 800 · DankPyon_Presser 600</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Alchemy</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Apothecary</p>
+              <ul>
+                <li><b>Alchemy workbench, cauldron</b></li>
+                <li>Battle elixir, vigor pill, happy powder, potion of knowledge, luhix, stardust</li>
+                <li>Tar</li>
+              </ul>
+              <p class="trade"><b>Bidirectional and therefore earns its slot</b> — a combat buff with an addiction and overdose failure mode is a tension, not a capability. An alchemist in the corner making things that are frankly a bit suspicious.</p>
+              <p class="src">MO DankPyon_Alchemy 1000 (remainder) · DankPyon_Tar 400</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Scriptorium</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">research seat</span></div>
+              <p class="pre">after Complex Furniture</p>
+              <ul>
+                <li><b>Advanced research bench</b> — the third and final pre-electric seat</li>
+                <li>Research board, notes stack</li>
+                <li>Well, surgical tools</li>
+              </ul>
+              <p class="trade"><b>Same object, third upgrade.</b> Ritual circle → primitive bench → simple bench → scriptorium, and the augments carry across every step.</p>
+              <p class="src">MO DankPyon_Engineering 1000 · VFEM2_ComplexWorkshops partial</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Gemwork</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Advanced Smithing</p>
+              <ul>
+                <li><b>Jewelry bench</b></li>
+                <li>7 necklaces, 7 rings — citrine, jade, amber, onyx, emerald, sapphire, ruby</li>
+                <li><em>Flag:</em> ring of holding, haste, tending, research, stun immunity</li>
+              </ul>
+              <p class="trade"><b>Pure trade value, zero dilution risk — it is supposed to be sold.</b> But the five “ring of X” are stat items, not trade goods, and want a separate verdict: they are pawn improvement off a repeatable bench, which is the one thing §7 says to price carefully.</p>
+              <p class="src">MO DankPyon_Jewelry 600 · 20 defs</p>
+            </article>
+
+            <article class="node qol">
+              <h4>The Crane</h4>
+              <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">gates nothing</span></div>
+              <p class="pre">after Deep Mining · after Millworks</p>
+              <ul>
+                <li><b>Medieval crane</b> — mining and hauling speed</li>
+              </ul>
+              <p class="trade"><b>Scales all the way to the end of the game</b>, which is exactly what §2.4 asks of a resource. The best QoL item in the project and the one worth the longest hunt.</p>
+              <p class="src">MO DankPyon_Mining 1000 · crane only</p>
+            </article>
+
+          </div>
+        </div>
+
+        <aside class="bench">
+          <p class="bh">The bench · M2</p>
+          <p class="intro">Two more siege engines, a second alchemy system, and 113 storage variants.</p>
+
+          <div class="bi fence"><p class="n">DankPyon_Trebuchet <span class="why">FENCE</span></p>
+            <p class="w">1,000 pts, one building. Cut only because <b>one siege line is enough</b> — not because it is bad. If the trebuchet is the silhouette you want on the wall, <b>swap it for the ballista</b> and cut <code>DankPyon_Ballista</code> instead. This is a straight taste call.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_RepeaterBallista <span class="why">§2.3</span></p>
+            <p class="w"><b>2,500 pts for a third ballista rung.</b> The most expensive single node in the medieval era, for one building that does what the ballista already does, faster.</p></div>
+
+          <div class="bi"><p class="n">VFEC_Scorpion <span class="why">DUP</span></p>
+            <p class="w">The third siege system. Held from N2 to here, and still loses — but it is the only <em>turret</em>-shaped one, which is a different verb from a manned engine. Worth a look before it goes.</p></div>
+
+          <div class="bi"><p class="n">VFEM2_Alchemy <span class="why">DUP</span></p>
+            <p class="w">1,500 pts, 17 draughts, a fueled draught lab — and <b>nothing depends on it.</b> MO’s alchemy gates 28 things and feeds Tar and the powder line. Cut the one with no dependants. <b>Pull back</b> only if you want the draught list over the potion list; they do not merge cleanly.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_HeavyCrossbow <span class="why">DUP</span></p>
+            <p class="w">700 pts for an arbalest that Core <code>Greatbow</code> already ships. Absorbed into The Crossbow.</p></div>
+
+          <div class="bi"><p class="n">VCE_CheeseMaking <span class="why">DUP</span></p>
+            <p class="w">750 pts for a second cheese press. <code>DankPyon_Presser</code> gives the same building plus three cheeses and apple juice for 600.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_RusticStorage <span class="why">DILUTE</span></p>
+            <p class="w">400 pts, <b>113 buildings.</b> Keep the node and the look; cut the variants to a handful. Three storage mods already ship.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_NoblePolearms · NobleMaces <span class="why">§2.3</span></p>
+            <p class="w">1,000 pts each for <b>two weapons apiece</b> — fighting spear, halberd, warhammer, flanged mace. Core <code>LongBlades</code> already ships a halberd and Royalty ships a warhammer. Merged into M3 Noble Arms instead.</p></div>
+
+          <div class="bi move"><p class="n">Piano <span class="why">MOVED</span></p>
+            <p class="w">Currently Industrial. Retier <b>down to M3 Courtly Music</b> — a piano is not an electrical device and the pre-electric era should own it.</p></div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ===== M3 tree ===== -->
+    <div class="treeleap" style="--era:var(--era-5);--era-wash:var(--era-5-wash)">
+      <div class="th">
+        <p class="code">M3 · Plate &amp; Powder</p>
+        <h3>Finishing rather than expanding</h3>
+        <p class="sub">10 nodes · the smallest leap, and the most ornamental</p>
+      </div>
+      <div class="tb">
+        <div>
+          <p class="band-hd">Opening · harness and arms</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Plate Harness I</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 7a</span></div>
+              <p class="pre">after Mail</p>
+              <ul>
+                <li>Breastplate, brigandine</li>
+                <li>Plate boots, plate gloves, plate chausses</li>
+                <li>Bascinet, klappviser bascinet, klappviser barbute, sallet ×3</li>
+                <li>Heater shield, kite shield</li>
+              </ul>
+              <p class="trade"><b>The split is mandatory.</b> Core ships <code>PlateArmor</code> as one 600-pt node holding <b>28 defs</b> — a breastplate and a gilded full harness in the same click. That throws away the entire top of the armour ladder at the most visible point in the game. §2.3, at its sharpest.</p>
+              <p class="src">Core PlateArmor 600 · rung 1 of 2 · MO ProtectiveClothing shields</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Noble Arms</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">3 nodes merged</span></div>
+              <p class="pre">after Military Arms</p>
+              <ul>
+                <li>Greatsword, claymore, zweihander, fencing sword, noble sword</li>
+                <li>Dane axe, greataxe, halberd, fighting spear</li>
+                <li>Warhammer, two-handed flanged mace</li>
+                <li><em>Flag:</em> 9 “named” MO weapons that currently have <b>no research gate at all</b></li>
+              </ul>
+              <p class="trade"><b>Carried by people who have been fighting for two hundred days and are finally good at it.</b> The nine named weapons are a separate decision — attach them here, or make them loot and quest rewards only, which is the better story.</p>
+              <p class="src">Core LongBlades remainder · MO NoblePolearms 1000 + NobleMaces 1000, merged</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Middle · the hall</p>
+          <div class="band">
+
+            <article class="node spine">
+              <h4>Plate Harness II</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 7b</span></div>
+              <p class="pre">after Plate Harness I</p>
+              <ul>
+                <li>Full plate, gilded full plate, heavy plate armour</li>
+                <li>Armet, gilded armet, great helm, hounskull, heavy plate helmet</li>
+                <li>Zweihander’s cuirass ×2, wolf-ribs bascinet</li>
+                <li>Lindwurm scale armour and helmet — the exotic tier</li>
+                <li><em>Attach:</em> the 7 currently ungated “(adorned)” variants</li>
+              </ul>
+              <p class="trade"><b>The end of the ladder that started with a hide fifty hours ago.</b> Rung 7 of seven. <code>DankPyon_AdornedArmor</code> is a 1,500-pt node with <b>zero ThingDefs</b> — cut the node, attach its orphaned apparel here.</p>
+              <p class="src">Core PlateArmor rung 2 · + 7 ungated MO adorned variants</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Master Masonry</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after Chisel &amp; Clamp</p>
+              <ul>
+                <li><b>Stone polisher, art tool stand</b> — augments on the stoneyard</li>
+                <li>Marble columns, polished floors</li>
+                <li>Large stele, grand stele, morbid and viking slabs</li>
+                <li>Master sculpture</li>
+              </ul>
+              <p class="trade"><b>Your masons stop making walls and start making cathedrals.</b> The furniture made here is the archaeological record of the playthrough — you will still own it in orbit because you never tore it down.</p>
+              <p class="src">VFEM2_ComplexWorkshops partial · Core Stonecutting · ComplexFurniture steles</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Master Tailoring</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+              <p class="pre">after Loom &amp; Spindle</p>
+              <ul>
+                <li>Mannequin, master work bench augment</li>
+                <li>Court dress — formal shirt, corset, formal vest, great dress</li>
+                <li>Prestige robe, coronet, crown, king’s robes, dame dress</li>
+                <li>Top hat, ladies hat, beret, chaperon, jester set, plague mask</li>
+              </ul>
+              <p class="src">Royalty NobleApparel 400 + RoyalApparel 400 · Core ComplexClothing remainder</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Heraldry</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Castle Architecture</p>
+              <ul>
+                <li><b>Your colony gets a coat of arms</b></li>
+                <li>Tabard, heraldic standard, standing banner</li>
+                <li>Heraldic rugs — narrow, broad, grand</li>
+                <li><em>Attach:</em> 4 heraldic great helms and 4 heraldic hauberks, currently <b>ungated</b></li>
+              </ul>
+              <p class="trade"><b>Leaves residue in the world.</b> A coat of arms is the cheapest thing in the project that makes a colony a <em>polity</em> — it is the hook every faction and standing system later hangs off.</p>
+              <p class="src">VFEM2_Heraldry 1200 · + 8 ungated MO heraldic defs</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Royal Furnishing</h4>
+              <div class="chips"><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Complex Furniture · after Master Masonry</p>
+              <ul>
+                <li><b>Grand throne</b> — the throne room you will still own in orbit</li>
+                <li>Royal poster bed, tudor bed, dresser, wardrobe, closet, bookshelf</li>
+                <li>Royal armchair, tables at five sizes, end tables, standing lamp</li>
+                <li>Display cabinets, royal rugs</li>
+              </ul>
+              <p class="trade"><b>Two royal furniture sets exist</b> and they collide on four labels — <code>MF_RoyalFurniture</code> (12 defs) and <code>DankPyon_RoyalRusticFurniture</code> (13 defs). Pick one owner, or split them by silhouette: VFurE for the fine pieces, MO for the tudor ones.</p>
+              <p class="src">VFurE MF_RoyalFurniture 800 · MO DankPyon_RoyalRusticFurniture 900</p>
+            </article>
+
+          </div>
+
+          <p class="band-hd">Closing · the first crack of gunpowder</p>
+          <div class="band">
+
+            <article class="node mom">
+              <h4>Gunpowder</h4>
+              <div class="chips"><span class="chip c-mom">the beat</span><span class="chip c-spine">spine</span></div>
+              <p class="pre">after Alchemy · after Advanced Smithing</p>
+              <ul>
+                <li>Arquebus, musket, flintlock, hand cannon</li>
+                <li>Wall-mounted arquebus</li>
+                <li><b>Cannon</b></li>
+              </ul>
+              <p class="trade"><b>P3, resolved by relocation rather than by cutting.</b> MO’s node called “Gunpowder” is thrown fire pots and went to N2 as Incendiaries; VFEM2’s matchlocks are the actual powder beat. Both survive, in the right eras, and the era ends on a bang instead of a pot of pitch.</p>
+              <p class="src">VFEM2_Matchlocks 600 · + cannon from Core Smithing</p>
+            </article>
+
+            <article class="node spine">
+              <h4>Grand Cookery</h4>
+              <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-new">to author</span></div>
+              <p class="pre">after Advanced Cookery</p>
+              <ul>
+                <li><b>Great oven</b> — the final hearth upgrade</li>
+                <li>Exotic tier, top buff band</li>
+                <li>The most valuable meal in the pre-electric game</li>
+              </ul>
+              <p class="trade"><b>A cook making something out of berries that costs more than a suit of mail.</b> No existing node carries this — it is authoring, and it is what makes the whole three-tier agriculture ladder pay off at the top.</p>
+              <p class="src">authored · needs an exotic ingredient, see the griffonberry question</p>
+            </article>
+
+            <article class="node opt">
+              <h4>Courtly Music</h4>
+              <div class="chips"><span class="chip">optional</span></div>
+              <p class="pre">after Royal Furnishing</p>
+              <ul>
+                <li>Harp, harpsichord</li>
+                <li>Piano <em>— retiered down from Industrial</em></li>
+              </ul>
+              <p class="trade"><b>Cheap flavour, and the last thing in the era.</b> A harpsichord beside the throne is the image the whole leap is aiming at.</p>
+              <p class="src">Royalty Harp 500 + Harpsichord 500 · Core Piano retiered</p>
+            </article>
+
+          </div>
+
+          <p class="callout"><b>Then the era ends.</b> You have no electricity and you will not miss it for very much longer. <b>The First Spark</b> is the boundary out of everything this document covers — and the throne room, the banners and the master sculpture you made here do not get torn down. They get bolted to the deck of a ship.</p>
+        </div>
+
+        <aside class="bench">
+          <p class="bh">The bench · M3</p>
+          <p class="intro">Almost nothing is cut here — M3 is where the leftovers get attached rather than dropped.</p>
+
+          <div class="bi"><p class="n">DankPyon_AdornedArmor <span class="why">EMPTY</span></p>
+            <p class="w">1,500 pts, <b>zero ThingDefs, zero dependants.</b> Its seven “(adorned)” apparel pieces are ungated separately and simply need attaching to Plate Harness II. Cut the node, keep the armour.</p></div>
+
+          <div class="bi"><p class="n">DankPyon_Gunpowder, as a firearms node <span class="why">MOVED</span></p>
+            <p class="w">Not cut — <b>relocated to N2 Incendiaries and renamed.</b> Fire pots, flash pots, smoke pots and acid flasks are pre-powder chemistry and read as N2 content. Nothing is lost; a mislabel is corrected.</p></div>
+
+          <div class="bi"><p class="n">The 9 “named” MO weapons <span class="why">FENCE</span></p>
+            <p class="w">Named greatswords ×3, named halberds ×2, named two-handed hammers ×2, named greataxe, named flanged mace — all with <b>no research gate at all</b> today. Attaching them to Noble Arms is the safe move; making them loot-and-quest-only is the better one.</p></div>
+
+          <div class="bi"><p class="n">Second royal furniture set <span class="why">DUP</span></p>
+            <p class="w">Four labels collide between VFurE and MO. Not a cut so much as a pick — and one of 62 collisions across the whole database.</p></div>
+
+          <div class="bi fence"><p class="n">The 5 “ring of X” <span class="why">FENCE</span></p>
+            <p class="w">Ring of holding, haste, tending, research, stun immunity — from Gemwork in M2. <b>Pawn improvement off a repeatable bench</b>, which is the exact price test §7 names. Cheap and repeatable is the failure mode; expensive and singular is fine.</p></div>
+
+          <div class="bi"><p class="n">Dark Ages: Medieval Tools <span class="why">DUP</span></p>
+            <p class="w">11 things, <b>zero research</b>, one ungated weapon. Metal Toolcraft already owns this ground. Recommend dropping the mod from the load order entirely.</p></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== THE BENCH LEDGER ===== -->
+  <section id="unused">
+    <div class="sec-head">
+      <p class="eyebrow">06 · The bench, in full</p>
+      <h2>Everything in the loaded set that this design does not use — and what it would cost to pull each one back.</h2>
+      <p>Sizes are read from the live database. Every verdict cites a rule; <b>a cut with no citation is a cut made on arithmetic</b>, which is the mistake that produced the last pass. Nothing on this list is decided — it is here so a swap can be made in one line.</p>
+    </div>
+
+    <div class="codes">
+      <div class="code-item"><p class="k">§2.1</p><p>A second bench for a domain that already has one.</p></div>
+      <div class="code-item"><p class="k">§2.2</p><p>An intermediate-material or processing chain. Wood is wood.</p></div>
+      <div class="code-item"><p class="k">§2.3</p><p>A rung that costs more and is not better.</p></div>
+      <div class="code-item"><p class="k">§2.4</p><p>A resource whose use case dies before the endgame.</p></div>
+      <div class="code-item"><p class="k">DUP</p><p>A second copy of something already kept.</p></div>
+      <div class="code-item"><p class="k">EMPTY</p><p>Costs points, unlocks nothing.</p></div>
+      <div class="code-item"><p class="k">DILUTE</p><p>Enters the item pool and costs attention forever.</p></div>
+      <div class="code-item"><p class="k">MOVED</p><p>Not cut. Lands in a different era than it ships in.</p></div>
+      <div class="code-item"><p class="k">FENCE</p><p>Genuinely open. Conrad’s call.</p></div>
+    </div>
+
+    <div class="scroller">
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th class="dom" scope="col">Not used</th>
+            <th scope="col">Source</th>
+            <th scope="col">Size</th>
+            <th scope="col">Why</th>
+            <th scope="col">What pulling it back costs — and where it would land</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="grp"><th scope="row" colspan="5">Costs points, unlocks nothing — the free cuts</th></tr>
+          <tr><th scope="row">DankPyon_Plasteel <em>“Mithril”</em></th><td>Medieval Overhaul</td><td class="sz">4,000 pts · 0 defs</td><td class="rc">EMPTY</td><td>Nothing. Zero dependants, zero things. The single most expensive nothing in the database.</td></tr>
+          <tr><th scope="row">VFEC_RoadBuilding</th><td>VFE Classical</td><td class="sz">1,200 pts · 0 defs</td><td class="rc">EMPTY</td><td>Nothing. Referenced only by a faction def.</td></tr>
+          <tr><th scope="row">DankPyon_AdornedArmor</th><td>Medieval Overhaul</td><td class="sz">1,500 pts · 0 defs</td><td class="rc">EMPTY</td><td>Its 7 orphaned “(adorned)” apparel pieces attach to Plate Harness II regardless. Keeping the node buys a 1,500-pt wall in front of them.</td></tr>
+          <tr><th scope="row">DankPyon_PlowedSoil</th><td>Medieval Overhaul</td><td class="sz">300 pts · 0 defs</td><td class="rc">EMPTY</td><td>Buggy in play. Scarecrow and sprinkler already own the yield lever.</td></tr>
+
+          <tr class="grp"><th scope="row" colspan="5">Second copies — pick one, hide the other</th></tr>
+          <tr><th scope="row">VCE_Grilling</th><td>VCE</td><td class="sz">400 pts · 1 def</td><td class="rc">DUP</td><td>Free swap. Same grill as <code>DankPyon_Grill</code> at double the cost.</td></tr>
+          <tr><th scope="row">VCE_StewCooking</th><td>VCE</td><td class="sz">300 pts · 1 def</td><td class="rc">DUP</td><td>Free swap against <code>DankPyon_StewPot</code>.</td></tr>
+          <tr><th scope="row">VCE_CheeseMaking</th><td>VCE</td><td class="sz">750 pts · 1 def</td><td class="rc">DUP</td><td>Free swap, but <code>DankPyon_Presser</code> also brings 3 cheeses and apple juice for less.</td></tr>
+          <tr><th scope="row">VFEM2_Alchemy</th><td>VFE Medieval 2</td><td class="sz">1,500 pts · 17 defs</td><td class="rc">DUP</td><td>17 draughts vs MO’s 27-def potion set. Does not merge cleanly — it is one system or the other. MO’s wins because Tar and the powder line hang off it.</td></tr>
+          <tr><th scope="row">DankPyon_HeavyCrossbow</th><td>Medieval Overhaul</td><td class="sz">700 pts · 1 def</td><td class="rc">DUP</td><td>Absorbed into M2 The Crossbow. Its arbalest already ships inside Core <code>Greatbow</code>.</td></tr>
+          <tr><th scope="row">VFEC_MeatDrying</th><td>VFE Classical</td><td class="sz">1,200 pts · 1 def</td><td class="rc">DUP</td><td>Free swap for Core’s drying rack if the Classical art is preferred — at 1,200 against 500.</td></tr>
+          <tr><th scope="row">VFEC_CraftingBench</th><td>VFE Classical</td><td class="sz">1,200 pts · 1 def</td><td class="rc">§2.1</td><td>A fifth bench icon for work the hide slab, knapping slab and smithy already own.</td></tr>
+          <tr><th scope="row">Second royal furniture set</th><td>VFurE × MO</td><td class="sz">4 labels</td><td class="rc">DUP</td><td>A pick, not a cut. One of 62 label collisions across the database.</td></tr>
+          <tr><th scope="row">Dark Ages: Medieval Tools</th><td>whole mod</td><td class="sz">11 defs · 0 research</td><td class="rc">DUP</td><td>Drop from the load order. Metal Toolcraft covers it.</td></tr>
+
+          <tr class="grp"><th scope="row" colspan="5">Chains and materials — §2.2 and §2.4</th></tr>
+          <tr><th scope="row">DankPyon_Lumber</th><td>Medieval Overhaul</td><td class="sz">200 pts · 13 defs</td><td class="rc">§2.2</td><td><b>Not a clean cut.</b> Re-parent <code>DankPyon_RusticFurniture</code> first — it gates 107 things and parents RusticStorage (113 more), Presser, CarrierBirds and TextileSpinning. Salvage 4 beds and the round shield.</td></tr>
+          <tr><th scope="row">DankPyon_TextileSpinning</th><td>Medieval Overhaul</td><td class="sz">600 pts · 1 def</td><td class="rc">§2.2</td><td><b>Not a clean cut.</b> Re-parent <code>DankPyon_Silk</code> onto Tailoring first or silk becomes free.</td></tr>
+          <tr><th scope="row">DankPyon_Exploration</th><td>Medieval Overhaul</td><td class="sz">1,800 pts · 2 defs</td><td class="rc">§2.2</td><td>Clean cut today. Paper, cartography, maps. Carrier Birds opens the world map without any of it.</td></tr>
+          <tr><th scope="row">Paper press · messenger table</th><td>Medieval Overhaul</td><td class="sz">2 defs</td><td class="rc">§2.2</td><td>Strip from <code>DankPyon_Presser</code> and <code>DankPyon_CarrierBirds</code> before those nodes ship. They are the paper chain’s hooks into kept nodes.</td></tr>
+          <tr><th scope="row">VFEC_BronzeWorking</th><td>VFE Classical</td><td class="sz">1,200 pts · 1 recipe</td><td class="rc">§2.4</td><td>A whole bronze armour rung would need authoring between hardened leather and scale to justify it. Real work for a tier that dies at the first ingot.</td></tr>
+          <tr><th scope="row">DankPyon_Steel</th><td>Medieval Overhaul</td><td class="sz">2,000 pts · 1 def</td><td class="rc">§2.4</td><td><b>Verify before spending a patch.</b> <code>metalChain</code> is off as a setting and this may already be inert. A medieval supermetal superseded by real steel two eras on.</td></tr>
+          <tr><th scope="row">Linen</th><td>Medieval Overhaul</td><td class="sz">stuff</td><td class="rc">§2.4</td><td>Named in the design law alongside salt. Cloth is cloth.</td></tr>
+          <tr><th scope="row">VCE_CondimentsResearch</th><td>VCE</td><td class="sz">500 pts · 1 def</td><td class="rc">§2.4</td><td>Salt and saffron — the canonical dilution failure. Cut MO’s 3 condiment items with it.</td></tr>
+          <tr><th scope="row">Cocoa</th><td>Core</td><td class="sz">1,000 pts · 0 defs</td><td class="rc">§2.4</td><td>Pull back only if Grand Cookery wants a chocolate line. It also gates griffonberry.</td></tr>
+
+          <tr class="grp"><th scope="row" colspan="5">Rungs that are not rungs — §2.3</th></tr>
+          <tr><th scope="row">DankPyon_RepeaterBallista</th><td>Medieval Overhaul</td><td class="sz">2,500 pts · 1 def</td><td class="rc">§2.3</td><td>A third ballista rung, and the most expensive node in the medieval era. Does what the ballista does, faster.</td></tr>
+          <tr><th scope="row">DankPyon_NoblePolearms</th><td>Medieval Overhaul</td><td class="sz">1,000 pts · 2 defs</td><td class="rc">§2.3</td><td>Merged into M3 Noble Arms. Core <code>LongBlades</code> already ships a halberd.</td></tr>
+          <tr><th scope="row">DankPyon_NobleMaces</th><td>Medieval Overhaul</td><td class="sz">1,000 pts · 2 defs</td><td class="rc">§2.3</td><td>Merged into M3 Noble Arms. Royalty already ships a warhammer.</td></tr>
+          <tr><th scope="row">Basic weapon triplicates ×3</th><td>Medieval Overhaul</td><td class="sz">900 pts · 12 defs</td><td class="rc">§2.3</td><td>Merged into M1 Basic Arms. <b>No content lost — four clicks of nothing lost.</b></td></tr>
+          <tr><th scope="row">Military weapon triplicates ×3</th><td>Medieval Overhaul</td><td class="sz">1,800 pts · 22 defs</td><td class="rc">§2.3</td><td>Merged into M2 Military Arms, together with Core <code>LongBlades</code>. Resolve the duplicated longsword while merging.</td></tr>
+          <tr><th scope="row">PlateArmor as one node</th><td>Core</td><td class="sz">600 pts · 28 defs</td><td class="rc">§2.3</td><td><b>Split, not cut.</b> Two rungs. A breastplate and a gilded full harness are not the same achievement, and this is the most visible point in the game to get that wrong.</td></tr>
+
+          <tr class="grp"><th scope="row" colspan="5">Item-pool dilution — keep the look, cut the count</th></tr>
+          <tr><th scope="row">DankPyon_RusticStorage variants</th><td>Medieval Overhaul</td><td class="sz">113 buildings</td><td class="rc">DILUTE</td><td>Keep the node and the medieval silhouette; cut to a handful. Neat Storage (27), Fridge (7) and Gravship Storage (8) already ship.</td></tr>
+          <tr><th scope="row">MO empty vessels</th><td>Medieval Overhaul</td><td class="sz">~24 defs</td><td class="rc">DILUTE</td><td>Empty bottle, plate, cooking pot, cup, inert vials, ruined book. Scenery is free; <em>items</em> are not. Keep the props, cut the vessels.</td></tr>
+          <tr><th scope="row">Alchemy ingredient bloat</th><td>MO + VCE</td><td class="sz">19 + 44 defs</td><td class="rc">DILUTE</td><td>Curate to a target number first, then cut to it. Currently unbounded.</td></tr>
+          <tr><th scope="row">Added plants</th><td>MO 29 · VCE 3</td><td class="sz">~35 defs</td><td class="rc">DILUTE</td><td>Keep vanilla plus a curated few, tiered across basic / intermediate / advanced agriculture. §2.2 — never a named crop in a recipe.</td></tr>
+
+          <tr class="grp"><th scope="row" colspan="5">Relocated, not cut</th></tr>
+          <tr><th scope="row">VFE Classical — 16 of 18</th><td>VFE Classical</td><td class="sz">19,200 pts</td><td class="rc">MOVED</td><td><b>Stays Neolithic, lands in N2.</b> Thermae, stage, cement, mosaics, crematorium, togas, tyrian, beacons, meat drying, temperature control, lorica ×2, heavy shield, legionary arms, scorpion. The previous pass moved these <em>up</em> an era; that was backwards. Only bronze and roads die. Recost off the flat 1,200 line.</td></tr>
+          <tr><th scope="row">DankPyon_Gunpowder</th><td>Medieval Overhaul</td><td class="sz">1,000 pts · 4 defs</td><td class="rc">MOVED</td><td>Fire pots, flash pot, smoke pot, acid flask → <b>N2 Incendiaries</b>, renamed. It is pitch, not powder. Resolves P3 without cutting anything.</td></tr>
+          <tr><th scope="row">Brewing · PassiveCooler · TreeSowing</th><td>Core</td><td class="sz">1,800 pts</td><td class="rc">MOVED</td><td>Neolithic-tagged, but all three are settled-tribe acts. → <b>N2</b>.</td></tr>
+          <tr><th scope="row">Grill · StewPot · HuntingBow · RusticFurniture · Oven · BasicBlades</th><td>Medieval Overhaul</td><td class="sz">2,200 pts</td><td class="rc">MOVED</td><td>Medieval-tagged, primitive in character. Grill, stew pot and oven → <b>N1/N2 hearth</b>; hunting bow → <b>N2</b>; BasicBlades’ three tools → <b>M1 Metal Toolcraft</b>; RusticFurniture → <b>M1</b> after re-parenting.</td></tr>
+          <tr><th scope="row">Piano</th><td>Core</td><td class="sz">Industrial</td><td class="rc">MOVED</td><td>Retier <b>down</b> to M3 Courtly Music. Not an electrical device.</td></tr>
+          <tr><th scope="row">Arbalest · wall-mounted arbalest</th><td>Core Greatbow</td><td class="sz">2 defs</td><td class="rc">MOVED</td><td>Split forward out of an N2 node into <b>M2 The Crossbow</b>. Steel prods do not belong in a longbow project.</td></tr>
+          <tr><th scope="row">Spatha · dagger</th><td>VFE Classical</td><td class="sz">2 defs</td><td class="rc">MOVED</td><td>Split forward out of N2 Skirmishers into <b>M1 Basic Arms</b>. Both are iron; N2 is pre-metal by construction.</td></tr>
+          <tr><th scope="row">Herb table · alembic · cauldron</th><td>MO Alchemy</td><td class="sz">27 defs</td><td class="rc">MOVED</td><td>One 1,000-pt node becomes three rungs across three leaps: herb table → <b>N1</b>, alembic and tinctures → <b>M1</b>, cauldron and elixirs → <b>M2</b>.</td></tr>
+          <tr><th scope="row">Leather boilpot · styling station · millstone</th><td>Core · MO</td><td class="sz">3 defs</td><td class="rc">MOVED</td><td>Each is buried in a node an era or two above where its capability line sits. Boilpot → <b>N2</b>, styling station → <b>N1</b>, millstone → <b>N2</b>.</td></tr>
+
+          <tr class="grp"><th scope="row" colspan="5">Genuinely open — these need Conrad</th></tr>
+          <tr><th scope="row">Fishing</th><td>Odyssey</td><td class="sz">600 pts</td><td class="rc">FENCE</td><td><b>The strongest pull-back candidate on the whole bench.</b> A primitive food source with a real failure mode, and it appears nowhere in the progression map. Would land in N1 middle.</td></tr>
+          <tr><th scope="row">DankPyon_Trebuchet</th><td>Medieval Overhaul</td><td class="sz">1,000 pts · 1 def</td><td class="rc">FENCE</td><td>Straight taste call against the ballista. Swap it in and cut <code>DankPyon_Ballista</code>; both are M2 Siege Engines II.</td></tr>
+          <tr><th scope="row">VFEC_Scorpion</th><td>VFE Classical</td><td class="sz">1,200 pts · 1 def</td><td class="rc">FENCE</td><td>The only <em>turret</em>-shaped siege engine — a different verb from a manned one. Third in a field of three, but on a different axis.</td></tr>
+          <tr><th scope="row">DankPyon_TreeGriffonBerry</th><td>Medieval Overhaul</td><td class="sz">900 pts · 1 plant</td><td class="rc">FENCE</td><td>“One more plant” dilution — but M3’s Grand Cookery needs something to be exotic <em>about</em>. Cut this and that node needs another ingredient authored.</td></tr>
+          <tr><th scope="row">VFEM2_Beekeeping · VFEM2_Wine</th><td>VFE Medieval 2</td><td class="sz">1,100 pts</td><td class="rc">FENCE</td><td>Opt-in roleplay, near-right out of the box. <b>Resolve the two-grape collision first</b> — <code>DankPyon_Plant_Grape</code> vs <code>VFEM2_Plant_Grape</code>, no compat patch exists.</td></tr>
+          <tr><th scope="row">CarpetMaking</th><td>Core</td><td class="sz">800 pts · 0 defs</td><td class="rc">FENCE</td><td>Terrain only, so zero item-pool cost — hard to argue against on any rule. On the bench purely because 800 pts buys a lot in M1.</td></tr>
+          <tr><th scope="row">The 5 “ring of X”</th><td>MO Jewelry</td><td class="sz">5 defs</td><td class="rc">FENCE</td><td>Holding, haste, tending, research, stun immunity. Pawn improvement off a repeatable bench — the price test, not the outcome test. Expensive and singular is fine; cheap and repeatable is the failure.</td></tr>
+          <tr><th scope="row">The 9 “named” MO weapons</th><td>Medieval Overhaul</td><td class="sz">9 defs · 0 research</td><td class="rc">FENCE</td><td>Ungated today. Attach to M3 Noble Arms, or make them loot-and-quest-only — which is the better story and leaves residue in the world.</td></tr>
+          <tr><th scope="row">Devilstrand</th><td>Core</td><td class="sz">800 pts</td><td class="rc">FENCE</td><td>Held to M1 Fine Cloth. Wherever it lands it needs an explicit empty <code>ManualAnalysisDef</code> or Research Mod auto-generates a gate that cannot be satisfied.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="ladder-note"><b>Order of operations is not optional.</b> Deleting a <code>ResearchProjectDef</code> <em>strips the prerequisite off everything that required it</em>, leaving those things buildable with no research at all — the opposite of the intent, with no error message. Re-parent RusticFurniture and Silk, strip the paper press and messenger table, split the bundled nodes — <b>then</b> cut, research last, retier after that.</p>
+  </section>
+
   <!-- ===== ERRORS ===== -->
   <section id="errors">
     <div class="sec-head">
-      <p class="eyebrow">05 · What the previous pass got wrong</p>
+      <p class="eyebrow">07 · What the previous pass got wrong</p>
       <h2>Recorded so it is not repeated.</h2>
     </div>
     <ul class="errors">
@@ -992,7 +2709,7 @@ footer{
   <!-- ===== QUESTIONS ===== -->
   <section id="questions">
     <div class="sec-head">
-      <p class="eyebrow">06 · Open questions</p>
+      <p class="eyebrow">08 · Open questions</p>
       <h2>Narrative and taste only. Nothing here is a mechanics question.</h2>
     </div>
     <div class="qs">
@@ -1057,7 +2774,7 @@ footer{
   <!-- ===== NEXT ===== -->
   <section id="next">
     <div class="sec-head">
-      <p class="eyebrow">07 · What happens next</p>
+      <p class="eyebrow">09 · What happens next</p>
       <h2>Two passes, in order. Balance comes after both.</h2>
     </div>
     <div class="next">
@@ -1076,6 +2793,7 @@ footer{
 
   <footer>
     <span>Archinity · docs/PROGRESSION-MAP.md</span>
+    <span>84 nodes · 5 leaps · sizes from the live database</span>
     <span>Narrative → capability → research</span>
   </footer>
 
