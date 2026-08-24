@@ -1,0 +1,2295 @@
+<title>The Hundred Nodes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap">
+
+<style>
+/* ============================================================
+   Inherits the Archinity progression-map token system.
+   Era hues encode a material sequence: stone, leather, hot iron,
+   cold steel, gilt. One token is new — --want, for a capability
+   this design asks for that no def in the load order supplies.
+   It is plum on purpose: it must not read as any era.
+   ============================================================ */
+:root{
+  --paper:#EDEEEA;
+  --surface:#F6F7F4;
+  --sunken:#E3E5DF;
+  --ink:#1C211E;
+  --ink-2:#454F49;
+  --ink-3:#6C766F;
+  --rule:#D2D6CD;
+  --rule-strong:#B6BCB2;
+  --accent:#2C6A5C;
+  --accent-soft:#E0EAE5;
+  --want:#77468A;
+  --want-soft:#EFE6F2;
+
+  --era-1:#6E7A63;
+  --era-2:#8C6A4A;
+  --era-3:#A3542C;
+  --era-4:#4A6376;
+  --era-5:#8A7638;
+
+  --era-1-wash:#E7EAE3;
+  --era-2-wash:#EFE6DC;
+  --era-3-wash:#F4E4DA;
+  --era-4-wash:#E2E8ED;
+  --era-5-wash:#EFEADA;
+
+  --shadow:0 1px 2px rgba(28,33,30,.05), 0 8px 24px -16px rgba(28,33,30,.28);
+
+  --measure:64ch;
+  --step--2:.72rem;
+  --step--1:.815rem;
+  --step-0:1.0rem;
+  --step-1:1.19rem;
+  --step-2:1.48rem;
+  --step-3:1.95rem;
+  --step-4:2.6rem;
+  --step-5:3.5rem;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15181A; --surface:#1C2023; --sunken:#101315;
+    --ink:#E6E9E4; --ink-2:#B2BAB4; --ink-3:#828C86;
+    --rule:#2C3235; --rule-strong:#3E464A;
+    --accent:#6DB8A4; --accent-soft:#1D2E2A;
+    --want:#C79BD8; --want-soft:#251A2B;
+    --era-1:#9BAA8C; --era-2:#C0966E; --era-3:#D97F4E; --era-4:#7EA0BB; --era-5:#C4AA5E;
+    --era-1-wash:#1E241F; --era-2-wash:#26201A; --era-3-wash:#2A1D16;
+    --era-4-wash:#1A2229; --era-5-wash:#252012;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15181A; --surface:#1C2023; --sunken:#101315;
+  --ink:#E6E9E4; --ink-2:#B2BAB4; --ink-3:#828C86;
+  --rule:#2C3235; --rule-strong:#3E464A;
+  --accent:#6DB8A4; --accent-soft:#1D2E2A;
+  --want:#C79BD8; --want-soft:#251A2B;
+  --era-1:#9BAA8C; --era-2:#C0966E; --era-3:#D97F4E; --era-4:#7EA0BB; --era-5:#C4AA5E;
+  --era-1-wash:#1E241F; --era-2-wash:#26201A; --era-3-wash:#2A1D16;
+  --era-4-wash:#1A2229; --era-5-wash:#252012;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 28px -18px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  font-size:var(--step-0); font-weight:400; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.shell{ max-width:1180px; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.75rem) 6rem; }
+h1,h2,h3,h4{ font-family:Alegreya,Georgia,serif; text-wrap:balance; margin:0; font-weight:500; }
+p{ margin:0; }
+a{ color:var(--accent); }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:2px; }
+code{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.9em; }
+
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:var(--step--1);
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); font-weight:500;
+}
+
+/* ---------- masthead ---------- */
+.masthead{ padding:clamp(3.5rem,9vw,6rem) 0 clamp(2rem,5vw,3rem); display:flex; flex-direction:column; gap:1.4rem; }
+.masthead h1{ font-size:clamp(2.6rem,7vw,var(--step-5)); line-height:.98; letter-spacing:-.02em; font-weight:500; }
+.masthead h1 em{ font-style:italic; color:var(--accent); }
+.deck{ max-width:62ch; color:var(--ink-2); font-size:var(--step-1); line-height:1.55; }
+.stratabar{ display:flex; height:7px; border-radius:3px; overflow:hidden; max-width:520px; }
+.stratabar span{ flex:1; }
+.premise{
+  border-left:2px solid var(--accent); padding:.25rem 0 .25rem 1.15rem; max-width:64ch;
+  color:var(--ink-2); display:flex; flex-direction:column; gap:.6rem;
+}
+.premise strong{ color:var(--ink); font-weight:600; }
+
+section{ padding-top:clamp(3rem,7vw,5rem); }
+.sec-head{ display:flex; flex-direction:column; gap:.5rem; padding-bottom:1.6rem; }
+.sec-head h2{ font-size:clamp(1.7rem,4vw,var(--step-3)); letter-spacing:-.01em; }
+.sec-head p{ color:var(--ink-2); max-width:var(--measure); }
+.sec-head p.wide{ max-width:78ch; }
+hr.rule{ border:0; border-top:1px solid var(--rule); margin:0; }
+
+/* ---------- correction ---------- */
+.corr{ display:grid; gap:1px; background:var(--rule); border-block:1px solid var(--rule); }
+.corr-item{ background:var(--paper); padding:1.4rem 0; display:grid; gap:0 1.5rem; grid-template-columns:1fr; }
+@media (min-width:820px){ .corr-item{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+.corr .was, .corr .now{ display:flex; flex-direction:column; gap:.4rem; }
+.corr .lbl{
+  font-family:"IBM Plex Mono",monospace; font-size:var(--step--2); letter-spacing:.16em;
+  text-transform:uppercase; font-weight:600;
+}
+.corr .was .lbl{ color:var(--era-3); }
+.corr .now .lbl{ color:var(--accent); }
+.corr h3{ font-size:var(--step-1); font-weight:700; line-height:1.25; }
+.corr p{ color:var(--ink-2); font-size:var(--step--1); line-height:1.55; }
+.corr b{ color:var(--ink); font-weight:600; }
+
+/* ---------- law ---------- */
+.law{ display:grid; gap:1px; background:var(--rule); border-block:1px solid var(--rule); }
+.law-item{ background:var(--paper); padding:1.4rem 0; display:grid; grid-template-columns:1fr; gap:.5rem; }
+@media (min-width:720px){ .law-item{ grid-template-columns:3.5rem 1fr; gap:0 1.5rem; align-items:start; } }
+.law-item .n{
+  font-family:"IBM Plex Mono",monospace; font-size:var(--step--1); color:var(--accent);
+  font-weight:600; letter-spacing:.06em; padding-top:.32rem;
+}
+.law-item.fresh .n{ color:var(--want); }
+.law-item h3{ font-size:var(--step-1); margin-bottom:.5rem; font-weight:700; }
+.law-item .body{ color:var(--ink-2); max-width:var(--measure); display:flex; flex-direction:column; gap:.55rem; }
+.law-item .body strong{ color:var(--ink); font-weight:600; }
+.law-item .tagnew{
+  font-family:"IBM Plex Mono",monospace; font-size:var(--step--2); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--want); border:1px solid var(--want);
+  border-radius:2px; padding:.06rem .34rem; margin-left:.5rem; vertical-align:.16em; font-weight:600;
+}
+
+/* ---------- tables ---------- */
+.scroller{ overflow-x:auto; border:1px solid var(--rule); border-radius:4px; background:var(--surface); }
+table{ border-collapse:collapse; width:100%; min-width:900px; font-size:var(--step--1); }
+thead th{
+  text-align:left; padding:.8rem .9rem; vertical-align:bottom;
+  border-bottom:1px solid var(--rule-strong);
+  font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:var(--step--2);
+  letter-spacing:.1em; text-transform:uppercase;
+  background:var(--surface); position:sticky; top:0; z-index:1;
+}
+thead th span{ display:block; font-family:"IBM Plex Sans",sans-serif; text-transform:none;
+  letter-spacing:0; font-size:.86rem; font-weight:500; color:var(--ink); margin-top:.2rem; }
+th.dom{ color:var(--ink-3); }
+th.e1{ color:var(--era-1); border-bottom-color:var(--era-1); }
+th.e2{ color:var(--era-2); border-bottom-color:var(--era-2); }
+th.e3{ color:var(--era-3); border-bottom-color:var(--era-3); }
+th.e4{ color:var(--era-4); border-bottom-color:var(--era-4); }
+th.e5{ color:var(--era-5); border-bottom-color:var(--era-5); }
+tbody th{
+  text-align:left; padding:.6rem .9rem; font-weight:600; white-space:nowrap;
+  color:var(--ink); border-bottom:1px solid var(--rule); font-family:"IBM Plex Sans",sans-serif;
+}
+tbody td{ padding:.6rem .9rem; border-bottom:1px solid var(--rule); color:var(--ink-2); vertical-align:top; }
+tbody td.c1{ background:var(--era-1-wash); }
+tbody td.c2{ background:var(--era-2-wash); }
+tbody td.c3{ background:var(--era-3-wash); }
+tbody td.c4{ background:var(--era-4-wash); }
+tbody td.c5{ background:var(--era-5-wash); }
+tbody tr.spine th{ color:var(--accent); }
+tbody tr.spine td{ font-weight:600; color:var(--ink); }
+td em{ font-style:normal; color:var(--ink-3); }
+td .w{ color:var(--want); font-style:normal; }
+.tnote{ margin-top:1rem; color:var(--ink-2); max-width:78ch; font-size:var(--step--1); }
+.tnote b{ color:var(--ink); }
+
+table.bench th.core{ color:var(--accent); border-bottom-color:var(--accent); }
+table.bench td.rungs{ color:var(--ink); }
+table.bench td.rungs b{ font-weight:600; }
+table.bench td.aug{ color:var(--ink-2); }
+
+/* ---------- legend ---------- */
+.legend{
+  display:flex; flex-wrap:wrap; gap:.55rem 1.6rem; padding:.9rem 1.1rem;
+  background:var(--sunken); border-radius:4px; margin-bottom:2rem;
+  font-size:var(--step--1); color:var(--ink-2);
+}
+.legend span{ display:inline-flex; align-items:center; gap:.5rem; }
+.legend i{ width:9px; height:9px; background:var(--rule-strong); flex:none; border-radius:1px; }
+.legend i.k-spine{ background:var(--accent); }
+.legend i.k-qol{ background:var(--accent); border-radius:50%; }
+.legend i.k-mom{ background:var(--ink); transform:rotate(45deg); }
+.legend i.k-want{ background:var(--want); }
+.legend b{ color:var(--ink); font-weight:600; }
+
+/* ---------- leap sections ---------- */
+.leap{ padding-top:clamp(2.75rem,6vw,4.5rem); }
+.leap-head{
+  border-top:3px solid var(--era); padding-top:1.15rem; margin-bottom:1.5rem;
+  display:flex; flex-direction:column; gap:.5rem;
+}
+.leap-head .code{ font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:var(--step--1);
+  letter-spacing:.16em; color:var(--era); }
+.leap-head h3{ font-size:clamp(1.7rem,4.5vw,var(--step-3)); letter-spacing:-.015em; line-height:1.05; }
+.leap-head .tag{ color:var(--ink-2); max-width:70ch; }
+.leap-head .tally{
+  font-family:"IBM Plex Mono",monospace; font-size:var(--step--2); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3);
+}
+
+.band-hd{
+  font-family:"IBM Plex Mono",monospace; font-size:var(--step--2); letter-spacing:.16em;
+  text-transform:uppercase; color:var(--era); font-weight:600;
+  margin:1.9rem 0 .85rem; display:flex; align-items:center; gap:.75rem;
+}
+.band-hd::after{ content:""; flex:1; height:1px; background:var(--rule); }
+.band-hd span{ color:var(--ink-3); letter-spacing:.06em; text-transform:none; font-weight:400; }
+.band{ display:grid; gap:.85rem; grid-template-columns:1fr; align-items:start; }
+@media (min-width:640px){ .band{ grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); } }
+
+/* ---------- the node card ---------- */
+.node{
+  background:var(--surface); border:1px solid var(--rule);
+  border-left:3px solid var(--rule-strong); border-radius:0 4px 4px 0;
+  padding:.9rem 1rem 1rem; display:flex; flex-direction:column; gap:.55rem;
+}
+.node.spine{ border-left-color:var(--era); }
+.node.qol{ border-left-color:var(--accent); background:var(--accent-soft); }
+.node.opt{ background:var(--sunken); border-left-style:dashed; }
+.node.mom{ border-left-color:var(--ink); border-color:var(--ink-3); }
+.node h4{ font-size:1.06rem; font-weight:700; line-height:1.2; font-family:"IBM Plex Sans",sans-serif; }
+.node .chips{ display:flex; flex-wrap:wrap; gap:.32rem; }
+.node .chip{
+  font-family:"IBM Plex Mono",monospace; font-size:.585rem; letter-spacing:.1em;
+  text-transform:uppercase; font-weight:600; padding:.16rem .42rem; border-radius:2px;
+  background:var(--sunken); color:var(--ink-3); border:1px solid var(--rule); white-space:nowrap;
+}
+.node.qol .chip{ background:transparent; }
+.node .chip.c-spine{ color:var(--era); border-color:var(--era); }
+.node .chip.c-qol{ color:var(--accent); border-color:var(--accent); }
+.node .chip.c-want{ color:var(--want); border-color:var(--want); }
+.node .chip.c-mom{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.node .pre{ font-family:"IBM Plex Mono",monospace; font-size:.68rem; color:var(--ink-3); letter-spacing:.03em; }
+
+.node ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.34rem; }
+.node ul li{ display:block; position:relative; padding-left:3.9rem; font-size:.805rem; line-height:1.42; color:var(--ink); }
+.node ul li .c{
+  position:absolute; left:0; top:.3em; width:3.3rem; text-align:right;
+  font-family:"IBM Plex Mono",monospace; font-size:.555rem; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:600; line-height:1.4;
+}
+.node ul li em{ font-style:normal; color:var(--ink-3); }
+.node ul li b{ font-weight:600; }
+.node ul li.want{ color:var(--want); }
+.node ul li.want .c{ color:var(--want); }
+.node ul li.want em{ color:var(--want); opacity:.85; }
+.node ul li.no{ color:var(--ink-3); }
+.node ul li.no .c{ color:var(--ink-3); }
+
+.node .trade{
+  font-size:.775rem; line-height:1.45; color:var(--ink-2);
+  border-top:1px dashed var(--rule-strong); padding-top:.5rem;
+}
+.node .trade b{ color:var(--ink); font-weight:600; }
+.node .why{
+  font-family:Alegreya,Georgia,serif; font-size:.985rem; line-height:1.42; color:var(--ink-2);
+  border-left:2px solid var(--era); padding-left:.7rem; margin-top:auto;
+}
+.node.qol .why{ border-left-color:var(--accent); }
+.node.mom .why{ border-left-color:var(--ink); }
+.node.opt .why{ border-left-color:var(--rule-strong); }
+.node .why b{ color:var(--ink); font-weight:500; }
+
+.callout{
+  margin-top:1.4rem; padding:1.05rem 1.2rem;
+  border:1px solid var(--era); border-radius:4px; background:var(--era-wash);
+  font-size:var(--step--1); line-height:1.55; max-width:80ch;
+}
+.callout b{ color:var(--ink); }
+
+/* ---------- want list ---------- */
+.wants{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:4px; overflow:hidden; }
+@media (min-width:760px){ .wants{ grid-template-columns:repeat(2,1fr); } }
+.wt{ background:var(--surface); padding:1rem 1.1rem 1.1rem; display:flex; flex-direction:column; gap:.42rem; }
+.wt .hd{ display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem; }
+.wt h3{ font-size:var(--step-1); font-weight:700; font-family:"IBM Plex Sans",sans-serif; }
+.wt .kind{
+  font-family:"IBM Plex Mono",monospace; font-size:.585rem; letter-spacing:.1em; text-transform:uppercase;
+  font-weight:600; padding:.12rem .4rem; border-radius:2px; white-space:nowrap;
+}
+.wt .kind.author{ color:var(--want); border:1px solid var(--want); background:var(--want-soft); }
+.wt .kind.source{ color:var(--accent); border:1px solid var(--accent); }
+.wt .kind.restat{ color:var(--era-4); border:1px solid var(--era-4); }
+.wt p{ font-size:var(--step--1); color:var(--ink-2); line-height:1.5; }
+.wt p b{ color:var(--ink); font-weight:600; }
+.wt .where{ font-family:"IBM Plex Mono",monospace; font-size:.66rem; color:var(--ink-3); margin-top:auto; padding-top:.4rem; }
+
+/* ---------- calls ---------- */
+.calls{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:4px; overflow:hidden; }
+.call{ background:var(--surface); padding:1.2rem 1.25rem; display:grid; gap:.7rem; }
+@media (min-width:860px){ .call{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.75rem; } }
+.call .ask{ display:flex; flex-direction:column; gap:.42rem; }
+.call .id{ font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em; color:var(--ink-3); font-weight:600; }
+.call h3{ font-size:var(--step-1); font-weight:700; line-height:1.25; font-family:"IBM Plex Sans",sans-serif; }
+.call .ask p{ color:var(--ink-2); font-size:var(--step--1); }
+.call .rec{ border-left:2px solid var(--accent); padding-left:1rem; display:flex; flex-direction:column; gap:.4rem; }
+.call .rec .lbl{ font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--accent); font-weight:600; }
+.call .rec p{ font-size:var(--step--1); color:var(--ink-2); }
+.call .rec b{ color:var(--ink); }
+
+footer{
+  margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--rule);
+  display:flex; flex-wrap:wrap; gap:.75rem 2rem; justify-content:space-between;
+  font-family:"IBM Plex Mono",monospace; font-size:var(--step--2); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3);
+}
+</style>
+
+<div class="shell">
+
+  <header class="masthead">
+    <div class="stratabar" aria-hidden="true">
+      <span style="background:var(--era-1)"></span>
+      <span style="background:var(--era-2)"></span>
+      <span style="background:var(--era-3)"></span>
+      <span style="background:var(--era-4)"></span>
+      <span style="background:var(--era-5)"></span>
+    </div>
+    <p class="eyebrow">Archinity · Progression map v2 · Neolithic &amp; Medieval</p>
+    <h1>A hundred and one nodes,<br>each one <em>designed</em></h1>
+    <p class="deck">The research tree for the Neolithic and Medieval eras, built from nothing. Every node names what it hands the player, what dependency it trades, and why it exists at that point in the story. Nothing here is derived from how any mod currently bundles its research.</p>
+    <div class="premise">
+      <p><strong>The mods are a parts bin, not a blueprint.</strong> Every model, texture, stat block and def in the load order is raw material to be renamed, restatted, re-parented, split, merged or thrown out. Where the design wants something the bin does not contain, it is <span style="color:var(--want);font-weight:600">named anyway</span> and marked for authoring.</p>
+      <p><strong>Pacing and balance are deliberately absent.</strong> No point costs, no day counts, no research amounts. Prerequisites are shown as ordering intent — the exact edge list is a balance-pass artefact, not a design one.</p>
+      <p>Companion to <strong>progression-map.html</strong>, which holds the narrative for the five leaps and stays as written. This document replaces only its research tree.</p>
+    </div>
+  </header>
+
+  <hr class="rule">
+
+  <!-- ===== 01 THE CORRECTION ===== -->
+  <section id="correction">
+    <div class="sec-head">
+      <p class="eyebrow">01 · The correction</p>
+      <h2>The last pass designed a patch. This one designs a tree.</h2>
+      <p class="wide">Version one's tree section is a good audit and a bad design. It took the shipped research projects as the units of work and asked what each one currently gives, where the collisions are, and what is missing. That question produces a to-do list against Medieval Overhaul. It cannot produce a progression, because the bundles were never authored for this playthrough and no amount of correcting them will make them fit it.</p>
+    </div>
+    <div class="corr">
+      <div class="corr-item">
+        <div class="was">
+          <p class="lbl">v1 · the false premise</p>
+          <h3>Growing hands over twenty-four plants</h3>
+          <p>Because <code>VFET_Agriculture</code> patches <code>sowResearchPrerequisites</code> across Core and Vanilla Cooking Expanded, and every one of those plants resolves at once. The node was described by reading what the patch does.</p>
+        </div>
+        <div class="now">
+          <p class="lbl">v2 · the design</p>
+          <p><b>Growing hands over four plants: a grain, a root, a fibre, a fodder.</b> One per role. The player can hold the whole crop list in their head on day three, and every later agriculture node adds a <i>role</i> — a crop that is an input, a crop that is a material — never a synonym for one they already grow. The other twenty are not cut for arithmetic; they are cut because a second root vegetable is not a discovery.</p>
+        </div>
+      </div>
+      <div class="corr-item">
+        <div class="was">
+          <p class="lbl">v1 · the false premise</p>
+          <h3>Butchery has nothing left to unlock</h3>
+          <p>Because the butcher table already arrived with <code>VFET_Construction</code> and the butcher spot with <code>VFET_Hunting</code>. The finding was real. The framing — <i>this node is now empty, should it be deleted?</i> — was not a design question.</p>
+        </div>
+        <div class="now">
+          <p class="lbl">v2 · the design</p>
+          <p><b>Construction unlocks walls, doors and roofs, and nothing else.</b> Not the stove, not the butcher table, not the palisade, not the cavalry spikes. Every one of those belongs to the node whose beat it is. The collision does not need resolving, because in a tree that was designed rather than inherited it never occurs.</p>
+        </div>
+      </div>
+      <div class="corr-item">
+        <div class="was">
+          <p class="lbl">v1 · the false premise</p>
+          <h3>Sixteen projects unlock zero ThingDefs</h3>
+          <p>Presented as a defect found in the database. It is a defect — but it is a defect in somebody else's tree, and correcting it is bookkeeping on a structure this project has no reason to keep.</p>
+        </div>
+        <div class="now">
+          <p class="lbl">v2 · the design</p>
+          <p><b>A node does not have to unlock a building to be worth researching.</b> Several of the best nodes below unlock a verb, a recipe class, or a relationship with the world and nothing placeable at all. What a node must never be is a toll — something every player pays and no player wants for itself.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 02 THE LAW ===== -->
+  <section id="law">
+    <div class="sec-head">
+      <p class="eyebrow">02 · The design law</p>
+      <h2>Eight rules. Five carried from v1, three added by this pass.</h2>
+      <p>A node that violates one is wrong regardless of how good it sounds. The three new rules are the ones that were doing the work implicitly and needed saying out loud.</p>
+    </div>
+    <div class="law">
+      <div class="law-item">
+        <p class="n">L1</p>
+        <div>
+          <h3>One core bench per domain, upgraded forever. Augments persist.</h3>
+          <div class="body">
+            <p>The hearth cooked on in the Neolithic is the same hearth, upgraded, on the gravship. Every augment bolted to it carries across every upgrade. The player never manages five buildings for one domain and never hunts five bill tabs for one recipe.</p>
+            <p><strong>Big unlocks are bench upgrades. Small unlocks are augments.</strong> That is the whole shape of production progression, and §03 lays out every ladder in one table.</p>
+          </div>
+        </div>
+      </div>
+      <div class="law-item">
+        <p class="n">L2</p>
+        <div>
+          <h3>The surface grows. The complexity stays linear.</h3>
+          <div class="body">
+            <p>Each food tier adds exactly <strong>one generic ingredient class</strong> — never a named crop. “Any two vegetables,” never “corn and potatoes.” Wood is wood, cloth is cloth, metal is metal. No plank step, no board step, no ingot step, no spinning step.</p>
+            <p>Two exceptions are granted and no more: <strong>flour</strong> and <strong>cheese</strong>. Both earn it by being genuinely different from their input, and both are made by a <i>place</i> the player builds once rather than a bill they operate. Anything still demanding busywork in the Spacer era does not ship.</p>
+          </div>
+        </div>
+      </div>
+      <div class="law-item">
+        <p class="n">L3</p>
+        <div>
+          <h3>Every rung is a real improvement.</h3>
+          <div class="body">
+            <p>Hide → cured → boiled → hardened → scale → mail → plate. Seven rungs, each better on the stats that decide a fight. A rung that costs more, needs more research and is not better should not exist. <strong>A tier whose only function is to be skipped is a bug.</strong></p>
+          </div>
+        </div>
+      </div>
+      <div class="law-item">
+        <p class="n">L4</p>
+        <div>
+          <h3>A resource must evolve with the player or it does not exist.</h3>
+          <div class="body">
+            <p>Does this thing's use case still matter three eras from now, or does it become permanent noise in trade stock and quest rewards? A resource that stops mattering is worse than one that never existed, because it keeps costing attention forever. Salt fails. Linen fails. A medieval-only supermetal fails.</p>
+          </div>
+        </div>
+      </div>
+      <div class="law-item">
+        <p class="n">L5</p>
+        <div>
+          <h3>Two classes of research, gated differently.</h3>
+          <div class="body">
+            <p><strong>Spine</strong> — you must have it to play. Ordinary resource and item requirements, never a fetch quest.</p>
+            <p><strong>Quality-of-life</strong> — the trough, the scarecrow, the catapult, the mine shaft, the crane. Rare, high-value, and it <strong>gates nothing</strong>. The resource cost can be near zero; the going and getting is the cost. Two or three per era.</p>
+          </div>
+        </div>
+      </div>
+      <div class="law-item fresh">
+        <p class="n">L6</p>
+        <div>
+          <h3>A tier is a research plus an augment, never a new material.<span class="tagnew">new</span></h3>
+          <div class="body">
+            <p>This is the rule that keeps the seven-rung armour ladder from becoming the wood chain. <strong>Hardened leather is a recipe you unlock, not a resource you convert.</strong> The cuirass costs plain leather and requires the boilpot to be standing; there is no rawhide bill, no hardleather stack, no intermediate item in the stockpile.</p>
+            <p>The same rule kills the iron ingot. Ore smelts to <strong>steel</strong> and steel is what a sword costs. It also permits materials that arrive as a straight substitution — silk is cloth that is better, usable anywhere cloth is usable, with nothing to relearn.</p>
+          </div>
+        </div>
+      </div>
+      <div class="law-item fresh">
+        <p class="n">L7</p>
+        <div>
+          <h3>Every node answers: what does the colony stop depending on?<span class="tagnew">new</span></h3>
+          <div class="body">
+            <p>RimWorld tech is lateral. Hydroponics does not make you stronger — it swaps a dependency on soil and weather for a dependency on power. That is why an open tech tree does not break the game: nothing in it is a reward, it is all reconfiguration.</p>
+            <p><strong>If the answer to “what does this trade” is “nothing, it is just better,” the node is a ladder rung and does not ship.</strong> Every card below carries its trade on a separate line so the rule is checkable at a glance rather than assumed.</p>
+          </div>
+        </div>
+      </div>
+      <div class="law-item fresh">
+        <p class="n">L8</p>
+        <div>
+          <h3>Some nodes exist to create demand, not capability.<span class="tagnew">new</span></h3>
+          <div class="body">
+            <p>Capability is abundant and demand is scarce. The mid-game sags because the world stops asking new <i>kinds</i> of question, not because the player runs out of things to build.</p>
+            <p>So a handful of nodes here produce no capability at all — they produce <strong>other people's problems</strong>. Carrier birds let factions ask you for things. Siege engines make the world map somewhere you can go. Standing &amp; Embassy makes helping one neighbour into refusing another. Heraldry converts a colony into a name that other colonies have opinions about. <strong>These are the highest-value nodes in the project and they should be protected in any cut.</strong></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 03 THE BENCH SYSTEM ===== -->
+  <section id="benches">
+    <div class="sec-head">
+      <p class="eyebrow">03 · The bench system</p>
+      <h2>Seven domains. Seven benches. Everything else bolts on.</h2>
+      <p class="wide">This table is the structural spine of the tree and the thing v1 never wrote down. Read a row left to right and you have that domain's entire two-era arc: the bench the player builds in the first week, the two or three times it is replaced by a better version of itself, and the augments that survive every replacement. <b>A node in §05 is almost always one cell of this table.</b></p>
+    </div>
+    <div class="scroller">
+      <table class="bench">
+        <thead>
+          <tr>
+            <th class="dom">Domain</th>
+            <th class="core">Core bench — rungs<span>upgraded in place; augments carry over</span></th>
+            <th>Augments<span>each is its own node; each is permanent</span></th>
+            <th>Deliberately off-bench<span>passive places, not bills</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Research</th>
+            <td class="rungs">ritual circle → <b>research spot</b> → primitive bench → simple bench → <b>scriptorium</b></td>
+            <td class="aug">notes stack · research board · research shelf · scribe table · lectern</td>
+            <td><em>—</em></td>
+          </tr>
+          <tr>
+            <th>Hearth</th>
+            <td class="rungs">campfire → <b>clay hearth</b> → stone hearth &amp; oven → <b>great oven</b></td>
+            <td class="aug">drying rack · stew pot · smoker · grill · fondue &amp; ragout pots</td>
+            <td>millstone · cheese press · cellar</td>
+          </tr>
+          <tr>
+            <th>Loom</th>
+            <td class="rungs"><span class="w">hide slab</span> → tanning rack → <b>hand tailor bench</b> → master's loom</td>
+            <td class="aug">boilpot · spinning wheel · <span class="w">dye vat</span> · tailoring loom · mannequin stand</td>
+            <td>silk bed · <span class="w">beehive wax</span></td>
+          </tr>
+          <tr>
+            <th>Stoneyard</th>
+            <td class="rungs"><span class="w">knapping slab</span> → stonecutter's block → <b>mason's table</b></td>
+            <td class="aug">chisel rack · stone clamp · carving board · stone polisher · sculptor's studio</td>
+            <td>cement press · kiln</td>
+          </tr>
+          <tr class="spine">
+            <th>Forge</th>
+            <td class="rungs"><em>none until M1</em> → <span class="w">field smithy</span> → <b>fueled smithy</b> → master forge</td>
+            <td class="aug">anvil · bellows · furnace · grinding wheel · quenching trough · tool rack · mending bench</td>
+            <td>bloomery · mine shaft</td>
+          </tr>
+          <tr>
+            <th>Apothecary</th>
+            <td class="rungs">herb spot → <b>herb table</b> → apothecary → alchemy bench</td>
+            <td class="aug">alembic · vials table · surgical tools · cauldron</td>
+            <td>fermenting barrel · wine barrel</td>
+          </tr>
+          <tr>
+            <th>Art</th>
+            <td class="rungs">crafting spot → <b>art bench</b> → sculptor's studio</td>
+            <td class="aug">art tool stand · jewelry bench · styling station</td>
+            <td><em>—</em></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote"><b>Read the Forge row.</b> It is the only domain that is empty for an entire era, and that emptiness is doing more work than any object in the table. Everything the player builds for a hundred days is stone, wood, hide and rope — so when the smithy finally goes down, it is not a new bench, it is a <i>new physics</i>. Nothing else in the two eras can be presented as an event by simply existing.</p>
+    <p class="tnote"><b>Read the off-bench column.</b> Five objects in two eras: the millstone, the cheese press, the cellar, the fermenting barrel, the mine shaft. Each is a <i>place</i> the player builds once and then ignores — no bill queue, no priority, no tab. That is the entire permitted budget for standalone production buildings. Every other candidate — the smoker, the grill, the stew pot, the boilpot, the bellows — is an augment on a bench that already exists.</p>
+  </section>
+
+  <!-- ===== 04 THE LADDERS ===== -->
+  <section id="ladders">
+    <div class="sec-head">
+      <p class="eyebrow">04 · The ladders</p>
+      <h2>The same design read sideways — every domain, every leap.</h2>
+      <p>If a row is flat or has a hole, that is a design fault, not a sourcing one. <span style="color:var(--want)">Plum</span> marks a rung this design wants that the load order does not currently supply.</p>
+    </div>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th class="dom">Domain</th>
+            <th class="e1">N1<span>Primitive Baseline</span></th>
+            <th class="e2">N2<span>Settled Tribe</span></th>
+            <th class="e3">M1<span>The Forge</span></th>
+            <th class="e4">M2<span>Mail &amp; Siege</span></th>
+            <th class="e5">M3<span>Plate &amp; Powder</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="spine">
+            <th>Armour</th>
+            <td class="c1">hides, tribalwear → <b>cured leather</b></td>
+            <td class="c2"><b>boiled</b> → <b>hardened</b> leather, lorica</td>
+            <td class="c3"><b>scale &amp; lamellar</b> on the leather substrate</td>
+            <td class="c4"><b>mail</b> — hauberk, coif, splints</td>
+            <td class="c5"><b>plate</b> — breastplate, then full harness</td>
+          </tr>
+          <tr>
+            <th>Melee</th>
+            <td class="c1"><span class="w">club, shiv, shard, hand axe</span></td>
+            <td class="c2">spear, javelin, shortblade, throwing axe</td>
+            <td class="c3">basic arms — blades, then hafted</td>
+            <td class="c4">military arms, polearms</td>
+            <td class="c5">noble arms, heirloom weapons</td>
+          </tr>
+          <tr>
+            <th>Ranged</th>
+            <td class="c1">thrown rock → <span class="w">sling</span> → short bow</td>
+            <td class="c2">hunting bow, longbow, war bow</td>
+            <td class="c3"><em>no rung — deliberate</em></td>
+            <td class="c4">crossbow, arbalest</td>
+            <td class="c5">arquebus, musket, hand cannon</td>
+          </tr>
+          <tr>
+            <th>Siege</th>
+            <td class="c1"><em>none</em></td>
+            <td class="c2"><b>catapult</b></td>
+            <td class="c3"><em>no rung — deliberate</em></td>
+            <td class="c4"><b>ballista</b>, scorpio, wall-mounted</td>
+            <td class="c5"><b>cannon</b>, trebuchet</td>
+          </tr>
+          <tr>
+            <th>Fortification</th>
+            <td class="c1">stakes, spikes, wood wall</td>
+            <td class="c2">trench, palisade, embrasure, log gate</td>
+            <td class="c3">brick wall, reinforced trench, banded gate</td>
+            <td class="c4">castle wall, gatehouse, murder holes</td>
+            <td class="c5">heraldic bastion, cannon platform</td>
+          </tr>
+          <tr>
+            <th>Food ingredients</th>
+            <td class="c1">meat → meat + 1</td>
+            <td class="c2">+ any two vegetables</td>
+            <td class="c3">+ eggs</td>
+            <td class="c4">+ flour, + cheese</td>
+            <td class="c5">+ one exotic — berry, wine, spice</td>
+          </tr>
+          <tr>
+            <th>Food effect</th>
+            <td class="c1">satiety only</td>
+            <td class="c2">work-speed band</td>
+            <td class="c3">work-speed band, higher</td>
+            <td class="c4">combat bands enter</td>
+            <td class="c5">top band, banquet-only</td>
+          </tr>
+          <tr>
+            <th>Agriculture</th>
+            <td class="c1">4 crops, garden box</td>
+            <td class="c2">tier 2 + wheat, <b>scarecrow</b></td>
+            <td class="c3">field scale, cold storage</td>
+            <td class="c4">tier 3 + grapes, devilstrand</td>
+            <td class="c5">exotics, orchards</td>
+          </tr>
+          <tr>
+            <th>Medicine</th>
+            <td class="c1">gather herbs → herb table</td>
+            <td class="c2">bandages, field tending</td>
+            <td class="c3">apothecary, real surgery</td>
+            <td class="c4">alchemy, draughts, elixirs</td>
+            <td class="c5">master apothecary</td>
+          </tr>
+          <tr>
+            <th>Light</th>
+            <td class="c1">campfire, torch, <b>candle</b></td>
+            <td class="c2">candelabra, brazier</td>
+            <td class="c3">oil lamp, lamp post</td>
+            <td class="c4">wall lamp, hall lighting</td>
+            <td class="c5">chandelier, darklight</td>
+          </tr>
+          <tr>
+            <th>Comfort</th>
+            <td class="c1">mat → bedroll → simple bed</td>
+            <td class="c2">fur bed, bath house, stage</td>
+            <td class="c3">rustic bed, dresser, joinery</td>
+            <td class="c4">fine furniture, tapestry</td>
+            <td class="c5">royal furniture, throne, instruments</td>
+          </tr>
+          <tr class="spine">
+            <th>World reach</th>
+            <td class="c1"><b>none — deliberate</b></td>
+            <td class="c2"><b>carrier birds</b> — the world exists</td>
+            <td class="c3">caravanry, trade goods</td>
+            <td class="c4"><b>standing &amp; embassy</b> — demands</td>
+            <td class="c5"><b>heraldry</b> — renown</td>
+          </tr>
+          <tr>
+            <th>QoL hunts</th>
+            <td class="c1"><span class="w">the trough</span></td>
+            <td class="c2">scarecrow · catapult · carrier birds</td>
+            <td class="c3">grinding wheel · mine shaft</td>
+            <td class="c4">watermill &amp; windmill · <b>the crane</b></td>
+            <td class="c5"><em>none — the era is finishing, not expanding</em></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote"><b>Two rows have a deliberate hole in M1 and they are the point of the leap.</b> Ranged and Siege get nothing when metal arrives, because M1's whole job is to remake what the colony already has in a new material. If the forge also handed over a new bow and a new engine, the leap would read as “more things” rather than “everything you own, again, better.” The bow the player carries into M1 is the bow they carry out of it, and it is still good.</p>
+    <p class="tnote"><b>The World reach row is the answer to the mid-game sag.</b> It is the only row where each rung changes what the player <i>wants</i> rather than what they can make, and it is the one row that has no items in it at all.</p>
+  </section>
+
+  <!-- ===== 05 THE TREE ===== -->
+  <section id="tree">
+    <div class="sec-head">
+      <p class="eyebrow">05 · The tree</p>
+      <h2>A hundred and one nodes, in order.</h2>
+      <p class="wide">Each card: what it hands over, the dependency it trades, and why it sits where it sits. Prerequisites are ordering intent. Some “why” lines are arguments and some are simply <i>this follows from that</i> — both are legitimate reasons for a node to exist, and pretending otherwise produces a tree where every node is straining to be a moment.</p>
+    </div>
+
+    <div class="legend">
+      <span><i class="k-spine"></i><b>Spine</b> — you must have it to play.</span>
+      <span><i class="k-qol"></i><b>QoL hunt</b> — gates nothing. The going and getting is the cost.</span>
+      <span><i></i><b>Optional</b> — skip it, lose no capability.</span>
+      <span><i class="k-mom"></i><b>Moment</b> — one of the four named beats.</span>
+      <span><i class="k-want"></i><b>Want</b> — the design asks for it; nothing in the load order supplies it.</span>
+    </div>
+
+    <!-- ================= N1 ================= -->
+    <div class="leap" style="--era:var(--era-1);--era-wash:var(--era-1-wash)">
+      <div class="leap-head">
+        <p class="code">N1</p>
+        <h3>The Primitive Baseline</h3>
+        <p class="tag">Cavemen work out how the world functions, then build the worst version of everything. Fourteen ritual nodes hand over the verbs; thirteen bench nodes hand over the objects, and all of the objects are bad.</p>
+        <p class="tally">27 nodes · 1 hunt · 1 moment</p>
+      </div>
+
+      <p class="band-hd">The Awakening <span>— gathering ritual, no bench. One node, one verb.</span></p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>Fire</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">root</span></div>
+          <p class="pre">no prerequisite</p>
+          <ul>
+            <li><span class="c">verb</span>Firefighting work type and tag</li>
+            <li><span class="c">build</span>campfire · torch · wall torch</li>
+            <li><span class="c">cook</span>roast raw meat over a fire</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — the map after dark stops being an enemy; the colony acquires a permanent dependency on fuel.</p>
+          <p class="why">The only node in the tree with no prerequisite, so the first thing the tribe ever discovers is fire. It is also the only place a player will ever see a research project that <b>makes the game brighter</b>, and that is worth spending the root on.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Foraging</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Fire</p>
+          <ul>
+            <li><span class="c">verb</span>gather designator — wild berries, herbs, fungus</li>
+            <li><span class="c">build</span>butcher spot</li>
+            <li><span class="c">cook</span>butchery: meat and hide as separate yields</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — nothing yet; this is the node that gives the colony a food supply it did not have.</p>
+          <p class="why">Rung zero of the food ladder. It exists so there is something to eat before there is something to farm, and so that <b>hide enters the economy on the same day meat does</b> — which is what makes the loom's first rung possible.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Growing</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">4 crops</span></div>
+          <p class="pre">after Fire</p>
+          <ul>
+            <li><span class="c">verb</span>Growing work type · the grow-zone designator</li>
+            <li><span class="c">crop</span>rice <em>— the grain</em></li>
+            <li><span class="c">crop</span>potato <em>— the root</em></li>
+            <li><span class="c">crop</span>cotton <em>— the fibre</em></li>
+            <li><span class="c">crop</span>haygrass <em>— the fodder</em></li>
+            <li><span class="c">build</span>plant pot</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — you stop depending on what the map happens to grow and start depending on soil, season, and a pawn who will stand in a field.</p>
+          <p class="why">The largest dependency trade in the era, and <b>four plants, one per role</b>. The tool to mark a field does not exist before this node, which is the pattern the whole Awakening runs on: research hands over a verb, not a recipe.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Herblore</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Growing</p>
+          <ul>
+            <li><span class="c">verb</span>identify and gather wild medicinals</li>
+            <li><span class="c">crop</span>healroot, sowable</li>
+            <li><span class="c">no</span><em>you cannot yet make anything from it</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a bleeding pawn stops being a coin flip and starts being a field you planted two seasons ago.</p>
+          <p class="why">Deliberately split from Herbcraft. <b>Finding medicine and making medicine are two discoveries</b>, and the gap between them is where the player learns that knowing what a plant does is not the same as owning a supply of it.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Beast-Handling</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Fire</p>
+          <ul>
+            <li><span class="c">verb</span>Handling work type</li>
+            <li><span class="c">verb</span>tame · train · slaughter designators</li>
+            <li><span class="c">build</span>animal sleeping spot · hitching post</li>
+            <li><span class="c">no</span><em>no fences, no pen, no egg box — that is Pens &amp; Husbandry</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — animals convert grass into meat and hauling, at the cost of a handler's hours and a food supply competing with yours.</p>
+          <p class="why">Taming is a verb, not a building set. Splitting the verb from the infrastructure keeps the pen node with something to give, and makes <b>the first successful tame an event</b> rather than a line item on a construction unlock.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Stoneworking</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Fire</p>
+          <ul>
+            <li><span class="c">verb</span>Mining work type</li>
+            <li><span class="c">verb</span>mine · smooth-surface designators</li>
+            <li><span class="c">mat</span>stone chunks become a usable material</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — the hills become a resource, and the shape of the map starts constraining the shape of the colony.</p>
+          <p class="why">A verb, not a bench. The first time the terrain the player was dropped onto becomes something they have an opinion about — <b>and the first decision in the game that cannot be undone</b>, because you cannot put a mountain back.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Construction</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Stoneworking</p>
+          <ul>
+            <li><span class="c">verb</span>Construction work type</li>
+            <li><span class="c">verb</span>build-roof · floor · remove-floor designators</li>
+            <li><span class="c">build</span>wood and stone wall · door · column</li>
+            <li><span class="c">no</span><em>not the stove, not the butcher table, not the palisade, not the spikes</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — you stop depending on the weather and start depending on a builder's hours and a roof that can fall in.</p>
+          <p class="why">The node v1 found handing over four capability lines a hundred days early. Here it grants exactly <b>the ability to enclose a space</b>. Everything put inside that space belongs to the node whose beat it is.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Shelter</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Construction</p>
+          <ul>
+            <li><span class="c">build</span>sleeping spot → bedroll · double bedroll</li>
+            <li><span class="c">build</span>stone slab bed · sitting spot</li>
+            <li><span class="c">build</span>gathering spot <em>— the ritual circle research runs on</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — sleep quality for wood and a builder's hours; the first time a build order buys a mood outcome rather than a survival one.</p>
+          <p class="why">The gathering spot is the important unlock and it is quietly recursive — <b>the tribe's first deliberate act of construction is the place where they do their thinking</b>. Every ritual node after this one is researched standing in a building.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Hidewear</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-want">wants a bench</span></div>
+          <p class="pre">after Foraging</p>
+          <ul>
+            <li class="want"><span class="c">bench</span><b>the hide slab</b> — loom rung 1 <em>· nothing in the load order is this</em></li>
+            <li><span class="c">gear</span>tribalwear · light and heavy tribalwear</li>
+            <li><span class="c">gear</span>hide hood · war mask · tribal headdress</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — hides stop being butchery waste and become the colony's only textile, which puts food and clothing in competition for the same animal.</p>
+          <p class="why">Rung one of a ladder that ends in gilded plate, and the first bench that is a bench. It is a flat rock and a bone needle, and it should look like one — <b>the player must be able to see the whole ladder from the bottom of it</b>.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Hunting</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Fire</p>
+          <ul>
+            <li><span class="c">verb</span>Hunting work type · hunt designator</li>
+            <li><span class="c">arms</span>throwing rocks</li>
+            <li><span class="c">build</span>animal trap · spike trap</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — meat becomes reliable, and the map's predators start taking an interest in you.</p>
+          <p class="why">Throwing rocks are here because <b>a hunting verb with no weapon is not a verb</b>. They are also the worst ranged weapon the game will ever contain, which is the correct floor for a ladder that ends in a musket.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Toolmaking</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Hunting</p>
+          <ul>
+            <li><span class="c">build</span>the crafting spot</li>
+            <li><span class="c">arms</span>stone knife · wooden club</li>
+            <li><span class="c">build</span>stake</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a pawn's hours for objects that make other objects possible; the first labour in the colony that produces nothing edible.</p>
+          <p class="why">The moment the tribe makes something whose only purpose is to make other things. All three items are bad, correctly. <b>Being newly capable is a different feeling from being good</b>, and N1 is where that feeling lives.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Sling</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-want">nothing on the shelf</span></div>
+          <p class="pre">after Toolmaking</p>
+          <ul>
+            <li class="want"><span class="c">arms</span>sling · sling-staff · throwing shards <em>· none exist in the load order</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — range for accuracy. A sling is cheap, awful, and does not require the tribe to understand tension.</p>
+          <p class="why">One rung between the thrown rock and the bow, so that <b>the pre-bow period has an answer to things you cannot walk up to</b>. Without it the bow is the first ranged weapon and the early raids have exactly one shape.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Bow</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after The Sling</p>
+          <ul>
+            <li><span class="c">arms</span>short bow</li>
+            <li><span class="c">gear</span>quiver</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a slower, more expensive weapon for the ability to make distance into a plan instead of a retreat.</p>
+          <p class="why">The node that makes hunting survivable, which is why it closes the Awakening rather than opening it. <b>The tribe should spend its first week feeding itself badly and dangerously.</b></p>
+        </article>
+
+        <article class="node mom">
+          <h4>Culture</h4>
+          <div class="chips"><span class="chip c-mom">The First Thought</span><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Herblore · after Toolmaking · ends the ritual phase</p>
+          <ul>
+            <li><span class="c">verb</span><b>Intellectual work type</b> — research becomes possible at all</li>
+            <li><span class="c">build</span>the research spot</li>
+            <li><span class="c">system</span>the gathering ritual retires permanently</li>
+            <li><span class="c">no</span><em>no sculpting table, no styling station, no altar, no drums</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a ritual every colonist attends for a bench one colonist sits at. The tribe gains a specialist and loses a shared act.</p>
+          <p class="why">The moment the game becomes RimWorld, and it unlocks <b>nothing else on purpose</b>. Anything a bench node could give it, a bench node should give it. This node's entire job is to be a threshold, and a threshold with a furniture list is a corridor.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">The Primitive Tier <span>— bench research. Build the worst version of everything.</span></p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>Primitive Cookery</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 1</span></div>
+          <p class="pre">after Culture</p>
+          <ul>
+            <li class="want"><span class="c">bench</span><b>the clay hearth</b> — hearth rung 1 <em>· pick one of the two colliding hearth defs and make it this</em></li>
+            <li><span class="c">cook</span>food tier 2 — one meat plus one thing</li>
+            <li><span class="c">system</span>the satiety-only buff band</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a pawn's hours and a fuel supply for nutrition efficiency and the first non-negative meal thought.</p>
+          <p class="why">The first core bench the player builds knowing it will still be standing in orbit. Everything bolted to it from here to the Spacer era stays bolted to it. <b>This is where the bench-and-augment promise is made</b>, and M1's hearth upgrade is where it is kept.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Preserving</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+          <p class="pre">after Primitive Cookery</p>
+          <ul>
+            <li><span class="c">augment</span>drying rack</li>
+            <li><span class="c">cook</span>dried meat · travel rations</li>
+            <li><span class="c">mat</span>tallow and wax as butchery by-products</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — fuel and drying time for food that survives past the week you made it.</p>
+          <p class="why">Food stops being a race against rot and becomes a stockpile, which is the first time the colony can <b>bank a surplus instead of spending it</b>. Every long-horizon project the player ever undertakes starts with that ability. It also makes caravans thinkable, which N2 needs.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Knapping</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-want">nothing on the shelf</span></div>
+          <p class="pre">after Culture</p>
+          <ul>
+            <li class="want"><span class="c">bench</span><b>the knapping slab</b> — stoneyard rung 1</li>
+            <li class="want"><span class="c">arms</span>shiv · stone shard · hand axe · throwing shards</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — stone weapons are worse than the club at everything except that they cut, so wounds start bleeding.</p>
+          <p class="why">The stoneyard's first rung and the tribe's first real armoury. A club knocks a raider down; <b>a shard makes him leave and die somewhere else</b>, which is a different tactical proposition and the first one the player gets to choose between.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Pens &amp; Husbandry</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Beast-Handling</p>
+          <ul>
+            <li><span class="c">build</span>fence · fence gate · pen marker · animal flap</li>
+            <li><span class="c">build</span>animal sleeping box · animal bed · egg box</li>
+            <li><span class="c">verb</span>the pen-management interface</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — fodder crop and fence-building for animals that stay where you put them.</p>
+          <p class="why">Beast-Handling gave the verb; this gives the place. Penned animals stop wandering into raids and start eating your haygrass on purpose, which is <b>the first genuine supply-chain decision in the game</b> — the pen competes with the kitchen for the same field.</p>
+        </article>
+
+        <article class="node qol">
+          <h4>The Trough</h4>
+          <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip c-want">does not exist</span></div>
+          <p class="pre">after Pens &amp; Husbandry</p>
+          <ul>
+            <li class="want"><span class="c">build</span><b>the trough</b> — penned animals eat noticeably less and feed themselves from it</li>
+            <li><span class="c">system</span>hunt requirement, near-zero resource cost</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — nothing. It gates nothing and blocks nothing. That is the definition of the class.</p>
+          <p class="why">The template for every hunt in the project and the first one the player meets, so it has to <b>teach the class rather than test it</b> — trivially findable, obviously worth having, and completely optional. If the trough is hard, the player learns that hunts are a tax. It does not exist anywhere in the load order and must be authored.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Hidework</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 2</span></div>
+          <p class="pre">after Hidewear · after Foraging</p>
+          <ul>
+            <li><span class="c">augment</span>tanning rack</li>
+            <li><span class="c">gear</span>cured leather coat · leather hood · fur cloak · fur hat</li>
+            <li><span class="c">gear</span>wolf and bear hoods · pelt wraps · additional fur padding</li>
+            <li><span class="c">system</span>cold protection becomes buildable rather than found</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — tanning time and a rack for hide that stops rotting and starts stopping arrows.</p>
+          <p class="why">Armour rung two, and the first application of <b>L6</b>: the recipe still costs plain leather, and the rung is the research plus the rack. There is no cured-leather item in the stockpile and never will be. Thirteen fur and hide pieces that currently float ungated get their home here.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Herbcraft</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 1</span></div>
+          <p class="pre">after Herblore</p>
+          <ul>
+            <li><span class="c">bench</span><b>the herb table</b> — apothecary rung 1</li>
+            <li><span class="c">cook</span>herbal medicine in quantity</li>
+            <li><span class="c">gear</span>bandages · poultices</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a field and a pawn's hours for a medicine supply that does not depend on what grows wild.</p>
+          <p class="why">The first bench whose entire output is insurance — <b>you build it for the raid you have not had yet</b>. That is a genuinely different kind of decision from every other N1 node, all of which answer a problem the player already has.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Primitive Shelter</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Culture</p>
+          <ul>
+            <li><span class="c">build</span>simple bed · simple double bed</li>
+            <li><span class="c">build</span>straw and wicker beds</li>
+            <li><span class="c">build</span>stool · bench · trestle table · wooden door</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — wood and hours for rest quality and the first dining room.</p>
+          <p class="why">The first furniture that is furniture. None of it is good and all of it beats the floor. The trestle table matters more than the beds — <b>a colony that eats together has a different mood curve from one that eats on the ground</b>, and that is the cheapest lesson the game teaches.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Basic Agriculture</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Growing · after Culture</p>
+          <ul>
+            <li><span class="c">build</span>gardening box — grow on gravel, sand, ruined soil</li>
+            <li><span class="c">crop</span>corn · cultivated berry bush</li>
+            <li><span class="c">verb</span>cut-plants and harvest priority tools</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — wood and a fixed footprint for independence from the soil you happened to land on.</p>
+          <p class="why">The first agriculture upgrade is <b>not more plants, it is soil independence</b>. That is the correct shape for every agriculture node in the tree: a dependency removed first, a crop or two as the visible reward second. A colony on gravel should not be a colony that cannot farm.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Digging In</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Construction</p>
+          <ul>
+            <li><span class="c">build</span>stakes · cavalry spikes · wooden barricade</li>
+            <li><span class="c">build</span>dugout · earth-and-hide sandbag</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — wood and digging time for cover, and nothing else. You can slow people down; you cannot stop them.</p>
+          <p class="why">N1's entire defensive answer, and it is deliberately inadequate. <b>The player should feel undefended every single time a raid lands in this leap</b> — that feeling is the whole reason The First Wall reads as a moment fifty days later. A leap that is comfortable cannot hand over a beat.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Candlemaking</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">light rung 2</span></div>
+          <p class="pre">after Preserving</p>
+          <ul>
+            <li><span class="c">build</span>candle · candles · candle stand · candelabra</li>
+            <li><span class="c">mat</span>wax from tallow — later also from beekeeping</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — tallow that could have been eaten, for light you can put in a room instead of light you have to feed and fear.</p>
+          <p class="why">A torch is a fire with a location problem. A candle is the first object in the game built purely for how a room <i>looks</i>, which is where the whole furniture and beauty ladder actually starts. It is also <b>the reason a fat animal is worth more than a lean one</b>, which is a small piece of causality worth having.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Primitive Artistry</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 1</span></div>
+          <p class="pre">after Shelter · after Culture</p>
+          <ul>
+            <li><span class="c">bench</span>the art bench — art rung 1</li>
+            <li><span class="c">build</span>small · large · grand sculpture</li>
+            <li><span class="c">build</span>styling station · floor paintings</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a skilled pawn's hours, permanently, for beauty and a mood floor.</p>
+          <p class="why">The first thing built that does nothing but make people feel better about being here. Mechanically a mood lever; narratively <b>the moment the colony has enough slack to waste some</b>. Both readings matter and the node should be presented as the second one.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>Rite &amp; Idol</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Culture</p>
+          <ul>
+            <li><span class="c">build</span>ideogram · altar tiers · lectern · ritual seat · drums</li>
+            <li><span class="c">build</span>pyre · gibbet cage · skullspike</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — build cost and ritual time for ideology precepts the colony has already committed to.</p>
+          <p class="why">Optional, gates nothing. It exists because <b>the campaign's own altar arrives from a quest rather than from research</b>, and the tribe that finds it needs somewhere to put the religion it is about to build around a machine it does not understand.</p>
+        </article>
+
+      </div>
+
+      <p class="callout"><b>Why N1 is the largest node count in the project.</b> It is the only leap that hands over the game itself — every work type, every designator, every core bench in its first form. That work cannot be compressed into fewer nodes without bundling, and bundling is precisely the failure this document exists to undo. What keeps N1 from feeling long is that <b>fourteen of the twenty-seven are ritual nodes that resolve in a sitting</b>, and every one of them changes what the player is allowed to do.</p>
+    </div>
+
+    <!-- ================= N2 ================= -->
+    <div class="leap" style="--era:var(--era-2);--era-wash:var(--era-2-wash)">
+      <div class="leap-head">
+        <p class="code">N2</p>
+        <h3>The Settled Tribe</h3>
+        <p class="tag">Rome without the metal. The leather ladder is perfected, the camp becomes a place, a rock the size of a person goes over somebody else's wall — and for the first time the world outside the map exists.</p>
+        <p class="tally">23 nodes · 3 hunts · 1 moment · 6 optional</p>
+      </div>
+
+      <p class="band-hd">Taking root</p>
+      <div class="band">
+
+        <article class="node mom">
+          <h4>Earthworks</h4>
+          <div class="chips"><span class="chip c-mom">The First Wall</span><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Digging In</p>
+          <ul>
+            <li><span class="c">verb</span>the dig-trench designator</li>
+            <li><span class="c">build</span>trench · spiked line · earthen rampart</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a great deal of digging, once, for a defence that costs nothing to maintain and cannot be burned.</p>
+          <p class="why">The moment, and it is deliberately the cheapest node in the leap. <b>The first thing the colony builds that is meant to outlast the people who built it is a hole and some sharpened wood</b> — no bench, no material, just labour and a decision about where the edge of the world is.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Masonry</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 2</span></div>
+          <p class="pre">after Stoneworking · after Culture</p>
+          <ul>
+            <li><span class="c">bench</span>stonecutter's block — stoneyard rung 2</li>
+            <li><span class="c">mat</span>stone blocks from chunks</li>
+            <li><span class="c">build</span>stone and brick walls · stone doors · kiln</li>
+            <li><span class="c">build</span>flagstone · cobblestone floors</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — slow work and immovable material for walls that do not burn.</p>
+          <p class="why">The largest single quality-of-life jump in the Neolithic, and the point at which <b>the colony's footprint becomes permanent</b>. Stone cannot be hauled far, so choosing where to build in stone is choosing where you live for the next two hundred days. That is a real decision and the game has not asked for one before.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Mortar &amp; Cement</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+          <p class="pre">after Masonry</p>
+          <ul>
+            <li><span class="c">augment</span>cement press</li>
+            <li><span class="c">mat</span>concrete blocks</li>
+            <li><span class="c">build</span>mosaic and tiled floors · smoothed stone · the well</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — an extra material and a press for structures that hold their own weight rather than lean on it.</p>
+          <p class="why">The difference between stacked stone and built stone. It buys beauty and structural strength, but the reason it is spine rather than optional is the well: <b>a settlement that can put water where it wants it can be built where it wants</b>.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Deep Storage</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">off-bench</span></div>
+          <p class="pre">after Masonry</p>
+          <ul>
+            <li><span class="c">build</span><b>the cellar</b> — cool, unpowered food storage</li>
+            <li><span class="c">build</span>granary · barrels · crates · racks · shelving</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a dug, fixed, slow-to-build room for the ability to hold a surplus through a season.</p>
+          <p class="why">The Neolithic answer to refrigeration and the reason a settled colony can be settled at all. It also <b>commits the colony to a footprint a second time</b> — the cellar goes where the cellar goes, and everything logistical arranges itself around it for the rest of the game.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Record-Keeping</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 2</span></div>
+          <p class="pre">after Culture · after Primitive Shelter</p>
+          <ul>
+            <li><span class="c">bench</span>the primitive research bench — research rung 2</li>
+            <li><span class="c">augment</span>tally board · the first bookcase</li>
+            <li><span class="c">no</span><em>no paper, no quill, no press, no cartography — ever</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a literate specialist's hours for knowledge that survives the person who had it.</p>
+          <p class="why">The tribe starts remembering things nobody present witnessed. The <b>no-paper clause is load-bearing and permanent</b>: a bookcase is an augment that makes research faster, not the end of a manufacturing chain. Nothing in this project ever asks the player to produce a sheet of anything.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">The leather ladder <span>— two rungs, and the ceiling of what a tribe can make</span></p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>Boiled Leather</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 3</span></div>
+          <p class="pre">after Hidework</p>
+          <ul>
+            <li><span class="c">augment</span>the boilpot</li>
+            <li><span class="c">gear</span>boiled cuirass · greaves · bracers · leather helm</li>
+            <li><span class="c">gear</span>round shield</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — <b>mobility</b>. Boiled leather is rigid, hot and heavy; it protects far better and slows the wearer down.</p>
+          <p class="why">Armour rung three and the first piece of gear with a real cost attached. Encumbrance is what forces the colony's first genuine role split: <b>a pawn in a cuirass is a soldier and is no longer a good farmer</b>. Before this every colonist was fungible, and after it none of them are.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Hardened Leather</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 4</span></div>
+          <p class="pre">after Boiled Leather</p>
+          <ul>
+            <li><span class="c">gear</span>hardened leather harness · laminated torso plate <em>— the lorica rung</em></li>
+            <li><span class="c">gear</span>tall shield · fur-lined cold variants</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — considerably more leather and work per suit for the best armour that exists without a forge.</p>
+          <p class="why">The ceiling of pre-metal, and it has to be genuinely good. <b>The player should be well-equipped before metal arrives, not rescued by it</b> — otherwise M1 reads as relief rather than as a leap, and the whole leather arc reads as filler the game made them sit through.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">Feeding a settlement</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>Intermediate Agriculture</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">tier 2</span></div>
+          <p class="pre">after Basic Agriculture</p>
+          <ul>
+            <li><span class="c">crop</span><b>wheat</b> <em>— the first crop that is an input, not a food</em></li>
+            <li><span class="c">crop</span>cabbage · carrot · onion <em>— so “any two vegetables” is a real choice</em></li>
+            <li><span class="c">crop</span>hops <em>— gates nothing but brewing</em></li>
+            <li><span class="c">verb</span>the tree-sowing designator</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — field area and rotation planning for a kitchen that can do more than one thing.</p>
+          <p class="why">Wheat is the whole node. It is the first plant the player grows that they cannot eat, which is a small conceptual step and a large one in practice — <b>the field stops being the pantry and becomes a supply line</b>. The three vegetables exist so that the stew recipe is a choice rather than a formality.</p>
+        </article>
+
+        <article class="node qol">
+          <h4>The Scarecrow</h4>
+          <div class="chips"><span class="chip c-qol">QoL hunt</span></div>
+          <p class="pre">after Intermediate Agriculture</p>
+          <ul>
+            <li><span class="c">build</span>scarecrow — radius bonus to yield and growth; no more raiding birds</li>
+            <li><span class="c">system</span>replaces plowed soil entirely</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a tile of field, and nothing else.</p>
+          <p class="why">The QoL class at its purest: it gates nothing, and every player who has one immediately wants a second. It is also <b>the answer to plowed soil</b> — soil is improved by placing an object, not by adding a recurring work chain the colony will still be running in the Spacer era.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Stewcraft</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span><span class="chip">food tier 3</span></div>
+          <p class="pre">after Primitive Cookery · after Intermediate Agriculture</p>
+          <ul>
+            <li><span class="c">augment</span>the stew pot</li>
+            <li><span class="c">cook</span><b>any two vegetables plus any meat</b></li>
+            <li><span class="c">system</span>the work-speed buff band opens</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — cooking time and a mixed field for meals that make the colony measurably faster.</p>
+          <p class="why">The rung where food becomes a system rather than a requirement. It takes <b>classes of ingredient, never named crops</b>, so the player grows a mixed field and the kitchen sorts it out — and the buff band is where food stops being fuel and becomes something you plan a week around.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Milling</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">off-bench</span></div>
+          <p class="pre">after Intermediate Agriculture</p>
+          <ul>
+            <li><span class="c">build</span><b>the millstone</b> — hand-cranked, standalone</li>
+            <li><span class="c">mat</span>flour</li>
+            <li><span class="c">cook</span>bread</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a pawn standing at a stone for an ingredient that unlocks the top half of the food ladder.</p>
+          <p class="why">One of exactly two processing steps this project accepts, and it earns the exception on both counts of <b>L2</b>: flour is genuinely a different thing from wheat, and the mill is a <i>place</i> rather than a bill the player operates. M2 then takes the pawn out of it entirely, which is the reward for having tolerated the step.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Smoking &amp; Salting</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+          <p class="pre">after Preserving</p>
+          <ul>
+            <li><span class="c">augment</span>the smoker</li>
+            <li><span class="c">cook</span>smoked meat and fish · winter stores</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — fuel and a long wait for food that survives a season instead of a week.</p>
+          <p class="why">The node that makes a bad harvest survivable, which is <b>the first time the player can prepare for a disaster rather than react to one</b>. That is a different verb from everything the Neolithic has taught so far, and it is the beginning of the anticipatory half of the RimWorld mindset.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">Holding ground, and reaching past it</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>Palisades &amp; Gates</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Earthworks · after Masonry</p>
+          <ul>
+            <li><span class="c">build</span>palisade · <b>palisade embrasure</b></li>
+            <li><span class="c">build</span>log wall · log gate · reinforced gate</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a great deal of wood and a fixed perimeter for a defence you can fight from rather than hide behind.</p>
+          <p class="why">The embrasure is the unlock that matters. It is <b>the first fortification that lets you shoot out without being shot</b>, which turns raid defence from “hold the door” into “hold a line” — a change in kind, not degree, and the exact thing a leap boundary should deliver.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Long Bow</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">ranged rung 2</span></div>
+          <p class="pre">after The Bow</p>
+          <ul>
+            <li><span class="c">arms</span>hunting bow · longbow · war bow</li>
+            <li><span class="c">gear</span>bracer and arm guard</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — rate of fire and ease of use for range and damage. A longbow needs a trained arm.</p>
+          <p class="why">The first weapon that rewards a <i>position</i> rather than a pawn, and the first that rewards a pawn who has been doing it for a hundred days. <b>A good archer becomes a person the colony protects</b>, which is the cheapest way this game has of turning a stat block into a character.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Skirmishers</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Toolmaking · after Hidework</p>
+          <ul>
+            <li><span class="c">arms</span>javelin · pila · throwing axe</li>
+            <li><span class="c">arms</span>long spear · shortblade</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — dedicated weapon-making labour for an armed population rather than an armed few.</p>
+          <p class="why">Every weapon here is one a farmer can carry and use badly, which is exactly what N2's militia is. It is also what makes the shield wall possible — <b>the first time the colony fights as a shape instead of as five people</b>.</p>
+        </article>
+
+        <article class="node qol">
+          <h4>Siege Engines</h4>
+          <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">demand</span></div>
+          <p class="pre">after Masonry · after Skirmishers</p>
+          <ul>
+            <li><span class="c">build</span><b>the catapult</b> · stone shot</li>
+            <li><span class="c">system</span>the bombard order on the world map</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — an enormous immobile object and a crew, for the first offensive option the colony has ever had.</p>
+          <p class="why">The best beat available in a leap that is otherwise entirely about not dying, and <b>the first node that converts the world map from a menu into somewhere you can go</b>. Activating dormant content is worth more per byte than any new content, and a rock-throwing engine is genuinely pre-metal technology, so it belongs here rather than in M2.</p>
+        </article>
+
+        <article class="node qol">
+          <h4>Carrier Birds</h4>
+          <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">demand</span></div>
+          <p class="pre">after Beast-Handling · after Palisades &amp; Gates</p>
+          <ul>
+            <li><span class="c">build</span><b>the bird post</b> — requires tamed birds of any kind on the map</li>
+            <li><span class="c">system</span>faction comms · requests · caravan hailing</li>
+            <li><span class="c">no</span><em>no paper, no cartography, no messenger table</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a handler, a coop and a few birds, for the existence of everybody else.</p>
+          <p class="why">The single most important node in the Neolithic and the clearest instance of <b>L8</b>. Before it, the world is whoever walks up to you. After it, factions can <i>ask you for things</i> — and demand is the scarce resource in this game, not capability. Research it, build it, own birds, done: the surface without the complexity.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">Optional <span>— gates nothing. A player who skips all six loses no capability.</span></p>
+      <div class="band">
+
+        <article class="node opt">
+          <h4>The Bath House</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Mortar &amp; Cement</p>
+          <ul>
+            <li><span class="c">build</span>thermae bath · heat stones · passive cooler</li>
+            <li><span class="c">build</span>wood-fired crematorium</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — fuel and floor space for the colony's first temperature control.</p>
+          <p class="why">Optional, and it hides a real capability inside a flavour node. A player who skips it is <b>choosing austerity and paying for it in summer</b>, which is the correct shape for an optional node — a decision with a consequence, not a cosmetic toggle.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>The Stage</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Primitive Artistry</p>
+          <ul>
+            <li><span class="c">build</span>theatre stage · drums · ritual seating</li>
+            <li><span class="c">gear</span>ceremonial dress · dyes and tinctoria</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a large building and recurring performance time for recreation and ritual at scale.</p>
+          <p class="why">This is where the Roman question gets answered. <b>A player who wants the austere read of N2 simply never researches it</b>, and loses nothing but a mood buffer. Keeping Rome optional is what lets the leap be Rome without committing the campaign to it.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>Brewing</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Milling</p>
+          <ul>
+            <li><span class="c">build</span>brewery · fermenting barrel</li>
+            <li><span class="c">cook</span>ale · cider · mead</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — hops, barrels and time for a mood lever that creates addicts.</p>
+          <p class="why">Opt-in roleplay and genuinely bidirectional — the same system that fixes a bad week produces the colonist who cannot stop. <b>A mod that only adds capability flattens the curve; one that adds a tension with its own failure mode multiplies</b>, and beer is the cheapest such tension available.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>Beekeeping</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Intermediate Agriculture</p>
+          <ul>
+            <li><span class="c">build</span>apiary — passive, no bills</li>
+            <li><span class="c">mat</span>honey · wax · honeycomb</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a hive and a small crop yield penalty near it, for two materials that already have homes.</p>
+          <p class="why">The test an optional system has to pass is whether it <b>plugs into what already exists or stands alone</b>. Beekeeping feeds wax to the light ladder and honey to the kitchen, and adds no bench and no bill. That is the model; a system that requires its own parallel economy is not.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>Incendiaries</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Preserving · after Herbcraft</p>
+          <ul>
+            <li><span class="c">arms</span>fire arrows · fire bow · firebomb</li>
+            <li><span class="c">arms</span>smoke pot · flash pot</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — control. Fire is the most effective weapon in the leap and it does not care whose wall it is on.</p>
+          <p class="why">The most bidirectional line in the era, and the one that most reliably produces a story. <b>A player who takes it is accepting that some of their own colony will burn</b>, which is a real decision made once and regretted later — exactly the shape this game is best at.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>Fishing</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Foraging</p>
+          <ul>
+            <li><span class="c">verb</span>the fishing zone designator</li>
+            <li><span class="c">build</span>fishing spot · water gathering spot</li>
+            <li><span class="c">cook</span>dried and smoked fish</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — dependence on soil and season for dependence on the map having water.</p>
+          <p class="why">A second food source that is a <b>genuinely different bet</b> rather than a parallel one — it fails in different weather and succeeds in different biomes. Optional because a landlocked colony must not be missing a spine node through no fault of its own.</p>
+        </article>
+
+      </div>
+
+      <p class="callout"><b>Three hunts in one leap, and that is one more than the dose.</b> The Neolithic carries four in total — the trough, the scarecrow, the catapult and the birds — because it is two leaps, not one. The resolution is that <b>the trough is the tutorial</b>: findable in the first thing the player is sent to do, effectively free, and there to teach the class. The real dose is the three in N2, and none of them gates anything.</p>
+    </div>
+
+    <!-- ================= M1 ================= -->
+    <div class="leap" style="--era:var(--era-3);--era-wash:var(--era-3-wash)">
+      <div class="leap-head">
+        <p class="code">M1</p>
+        <h3>The Forge</h3>
+        <p class="tag">Metal arrives and every system the colony owns gets remade in it. The widest leap in the project — many rungs, each of them shallow, because metal touches every domain at once and each one needs its own step.</p>
+        <p class="tally">19 nodes · 2 hunts · 1 moment · 1 optional</p>
+      </div>
+
+      <p class="band-hd">The new physics</p>
+      <div class="band">
+
+        <article class="node mom">
+          <h4>Smelting</h4>
+          <div class="chips"><span class="chip c-mom">The First Ingot</span><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Masonry · after Deep Storage</p>
+          <ul>
+            <li><span class="c">build</span>the bloomery — a fuelled stone furnace</li>
+            <li><span class="c">mat</span>ore and slag chunks → <b>steel</b></li>
+            <li><span class="c">verb</span>the deep-vein mining designator</li>
+            <li><span class="c">no</span><em>no iron ingot, no bronze, no intermediate metal. Ever.</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — an enormous and permanent fuel and mining commitment, for a material that is better than everything the colony owns at everything.</p>
+          <p class="why">The most consequential discovery in a hundred days of play, and it must not arrive as a progress bar quietly filling — it wants a letter and a Chronicle beat. The <b>one-step rule is set here and holds for the rest of the game</b>: ore smelts to steel, steel is what a sword costs, and no player ever manages a stack of ingots.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Smithy</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-want">wants a crude rung</span></div>
+          <p class="pre">after Smelting</p>
+          <ul>
+            <li class="want"><span class="c">bench</span><b>the field smithy</b> — forge rung 1 <em>· a crude rung below the fueled smithy needs restatting or authoring</em></li>
+            <li><span class="c">mat</span>nails and fittings — metal-reinforced construction</li>
+            <li><span class="c">arms</span>the first metal knife and axe, and both are poor</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — steel and a smith's full attention for tools that are, for now, barely better than the stone ones.</p>
+          <p class="why">The bench, and it is deliberately bad. Everything made on it for the next several nodes is crude, because <b>the only place in the game where “newly capable and not yet good” is available is right here</b>, and skipping it wastes the single best texture the leap has.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Anvil</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+          <p class="pre">after The Smithy</p>
+          <ul>
+            <li><span class="c">augment</span>the anvil</li>
+            <li><span class="c">arms</span><b>basic arms — blades</b>: shortsword · gladius · falchion · arming sword</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a second heavy object beside the forge for the ability to shape rather than only cast and grind.</p>
+          <p class="why">Splitting the armoury across three augments is what turns “we have a forge now” into <b>a hundred days of getting better at having a forge</b>. A single Smithing node that hands over forty weapons is the exact bundling this document exists to undo.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Bellows</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+          <p class="pre">after The Anvil</p>
+          <ul>
+            <li><span class="c">augment</span>the bellows</li>
+            <li><span class="c">arms</span><b>basic arms — hafted</b>: mace · heavy mace · hatchet · handaxe · war pick</li>
+            <li><span class="c">arms</span>militia spear · warfork · billhook · flail</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a pawn or a mechanism working the bellows, for a fire hot enough to weld a head to a haft.</p>
+          <p class="why">Hotter fire means heavier heads and sounder welds, which is why the hafted family comes second rather than first. <b>The bellows is spine, not a hunt</b> — a hunt must never sit in front of the armoury, and this is the correction to the one place the Ideology document talked itself into a corner.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Metal Toolcraft</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after The Smithy</p>
+          <ul>
+            <li><span class="c">augment</span>tool rack · mending bench</li>
+            <li><span class="c">gear</span>pickaxe · felling axe · building hammer · scythe</li>
+            <li><span class="c">gear</span>cleaver · bonesaw · mason's tools · mining tools · repair tools</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a standing steel budget spent on things that are not weapons, for every job in the colony getting faster at once.</p>
+          <p class="why">The quietest node in the leap and possibly the most valuable. It also proves the forge is not a weapons bench — <b>a player who reads it that way will underbuild it</b> and spend the whole era wondering why the era feels thin. The mending bench belongs here too: repairing gear instead of remaking it is the same idea.</p>
+        </article>
+
+        <article class="node qol">
+          <h4>The Grinding Wheel</h4>
+          <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">augment</span></div>
+          <p class="pre">after The Anvil</p>
+          <ul>
+            <li><span class="c">augment</span>the grinding wheel — a quality and edge bonus on everything the forge makes</li>
+            <li><span class="c">verb</span>weapon sharpening as a standing job</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — nothing. It gates nothing and replaces nothing.</p>
+          <p class="why">Gates nothing, improves everything, and <b>keeps improving things until the gravship</b>. That last clause is the actual test of the class: a hunt reward whose value expires is a resource that fails <b>L4</b> wearing a building's costume, and the player will resent having gone.</p>
+        </article>
+
+        <article class="node qol">
+          <h4>Deep Mining</h4>
+          <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">off-bench</span></div>
+          <p class="pre">after Smelting · after Metal Toolcraft</p>
+          <ul>
+            <li><span class="c">build</span><b>the mine shaft</b> — produces ore slowly, forever, with no pawn assigned</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — build cost and a permanent footprint for ore that arrives while everyone is asleep.</p>
+          <p class="why">The model citizen of the class, and the clearest statement of the game's core verb in the whole project: <b>you do not swing the pick, you write the rule that makes the pick swing unattended</b>. It gates nothing, it never becomes obsolete, and every colony wants a second one.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">Everything you own, again, in metal</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>Scale &amp; Lamellar</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 5</span></div>
+          <p class="pre">after The Smithy · after Hardened Leather</p>
+          <ul>
+            <li><span class="c">gear</span>scale hauberk · lamellar cuirass · light lamellar</li>
+            <li><span class="c">gear</span>simple helm · coif · arming cap</li>
+            <li><span class="c">gear</span>heater shield</li>
+            <li><span class="c">system</span>every armour rung from here needs <b>both</b> the forge and the loom</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — steel, and two benches instead of one, for armour that turns a blade rather than absorbing it.</p>
+          <p class="why">The best idea in the design. Metal scales are riveted onto the hardened leather the player spent an entire era perfecting, so <b>the Neolithic mastery becomes the substrate for the first metal instead of being thrown away</b>. Going straight to mail would be a better armour and a worse story.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Tailoring</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 3</span></div>
+          <p class="pre">after Hidework · after Culture</p>
+          <ul>
+            <li><span class="c">bench</span><b>the hand tailor bench</b> — loom rung 3</li>
+            <li><span class="c">gear</span>shirt · trousers · hose · braies · jacket · duster</li>
+            <li><span class="c">gear</span>hood · hat · vest · boots · gloves</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — leather's protection for cloth's comfort, warmth and weight. The first material choice that is genuinely a choice.</p>
+          <p class="why">The first time the colony makes <i>clothes</i> rather than hides, and the point at which cotton stops being a curiosity and becomes a crop planned around. It is also the node that <b>makes the loom's whole Neolithic arc pay off</b> — the hide slab was always heading here.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Padded Underlayer</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Tailoring · after Scale &amp; Lamellar</p>
+          <ul>
+            <li><span class="c">gear</span>gambeson · arming doublet · padded chausses · padded surcoat</li>
+            <li><span class="c">system</span>a second armour layer under everything metal</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a second slot's worth of cloth and heat, for armour that can be worn all day rather than put on when the letter arrives.</p>
+          <p class="why">The node that turns armour from equipment into a uniform. Mechanically a second slot; narratively <b>the first time the colony is dressing soldiers rather than arming them</b>, which is a quieter and more permanent change than any weapon in the leap.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Fine Cloth</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+          <p class="pre">after Tailoring</p>
+          <ul>
+            <li><span class="c">augment</span>the spinning wheel</li>
+            <li><span class="c">mat</span><b>silk</b> — a straight upgrade usable anywhere cloth is usable</li>
+            <li><span class="c">build</span>the silk bed — passive silkworms, no bills</li>
+            <li><span class="c">no</span><em>no linen, no thread, no spinning bill, no textile chain</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a slow passive production building for a better material with nothing to relearn.</p>
+          <p class="why">The model for how a new material should enter this project: it slots into every recipe that already takes cloth and is simply better. <b>The wheel is an augment that makes better cloth exist, not a chain the player operates</b> — and that single distinction is the difference between silk shipping and linen not.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>The Dye Vat</h4>
+          <div class="chips"><span class="chip">optional</span><span class="chip c-want">wants a building</span></div>
+          <p class="pre">after Tailoring · after The Stage</p>
+          <ul>
+            <li class="want"><span class="c">augment</span>the dye vat <em>· dye exists as an item; no vat does</em></li>
+            <li><span class="c">gear</span>dyed apparel · colour selection</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a crop tile of tinctoria and a build, for nothing mechanical whatsoever.</p>
+          <p class="why">Optional and purely visual, and worth having anyway because it is <b>the seed of the colony's identity</b> — the first step toward a colour scheme the player will still be flying in orbit three hundred days later. It also feeds Heraldry in M3, which is where the visual choice becomes a political one.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Joinery</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">furniture rung 2</span></div>
+          <p class="pre">after Primitive Shelter · after Metal Toolcraft</p>
+          <ul>
+            <li><span class="c">build</span>rustic bed and double bed · dresser · end table · chest · closet</li>
+            <li><span class="c">build</span>dining chairs and tables · shelving · rustic doors</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — steel tools and skilled hours for furniture that will not be replaced again this era.</p>
+          <p class="why">Metal tools are what make joined furniture possible, which is a small piece of correct causality most games skip. This is also <b>the first furniture the player keeps</b> — the beginning of the archaeological record that ends up bolted to a gravship deck.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Reinforced Works</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Smelting · after Palisades &amp; Gates</p>
+          <ul>
+            <li><span class="c">build</span>reinforced trench · tank traps · iron-banded gate</li>
+            <li><span class="c">build</span>metal-cored door · brick and tudor walling</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — steel spent on walls instead of swords, for a perimeter that has to be broken rather than burned.</p>
+          <p class="why">The wall gets metal in it, and the consequence is a change in what shows up: <b>raiders start bringing tools instead of torches</b>. That is the first qualitative shift in threat shape the player will see, and it arrives as a direct consequence of their own build orders.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">The colony gets comfortable</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>The Hearth</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench upgrade</span></div>
+          <p class="pre">after Primitive Cookery · after Masonry</p>
+          <ul>
+            <li><span class="c">bench</span><b>the stone hearth and rustic oven</b> — hearth rung 2</li>
+            <li><span class="c">system</span><b>every augment on the clay hearth carries over unchanged</b></li>
+            <li><span class="c">build</span>the great hearth as a room heater</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — stone, a rebuild and a day's downtime, for speed, capacity and quality on everything the kitchen already does.</p>
+          <p class="why">The first bench <i>upgrade</i> in the game, and therefore the node where the player learns the system's central promise: <b>you keep the augments</b>. The drying rack and the stew pot bolted on in the Neolithic still work on the stone one, and will still work on the electric one. Nothing teaches that except doing it once.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Intermediate Cookery</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span><span class="chip">food tier 4</span></div>
+          <p class="pre">after The Hearth · after Pens &amp; Husbandry</p>
+          <ul>
+            <li><span class="c">augment</span>the grill</li>
+            <li><span class="c">cook</span><b>eggs enter</b> — skewers · omelette · fried eggs</li>
+            <li><span class="c">system</span>the second work-speed buff band</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a laying flock that eats fodder and needs a pen, for the second-tier buff band.</p>
+          <p class="why">The rung where the animal pen stops being a novelty and becomes an input to the kitchen. <b>One new ingredient class, exactly as L2 requires — and it makes a whole existing system load-bearing</b> rather than adding a new one, which is the cheapest and best way to deepen a game.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Apothecary</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 2</span></div>
+          <p class="pre">after Herbcraft · after Smelting</p>
+          <ul>
+            <li><span class="c">bench</span><b>the apothecary</b> — medicine rung 2</li>
+            <li><span class="c">augment</span>alembic · vials table · surgical tools</li>
+            <li><span class="c">cook</span>medicine proper · tinctures</li>
+            <li><span class="c">verb</span>real surgery — amputation, prosthetics, organ work</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — steel instruments, a clean room and a doctor who does nothing else, for the ability to survive being wrong.</p>
+          <p class="why">The node that changes what losing a fight costs. Before it a lost limb is a lost pawn; after it, a lost limb is a project. <b>That is the difference between a colony that fears combat and one that can afford it</b> — and it has to arrive before mail, or the player will never take the fights that make mail worth having.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Simple Bench</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench upgrade</span></div>
+          <p class="pre">after Record-Keeping · after Joinery</p>
+          <ul>
+            <li><span class="c">bench</span><b>the simple research bench</b> — research rung 3</li>
+            <li><span class="c">augment</span>notes stack · research board · research shelf</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — steel, joinery and a dedicated room, for research that stops being the colony's bottleneck.</p>
+          <p class="why">Research seat rung three, and it arrives late on purpose. <b>The primitive bench being slow for a whole era is what makes this one feel like relief</b> — and it is the only lever in the tree that changes the pace of everything else, so handing it over early would flatten both Neolithic leaps at once.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Caravanry</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">demand</span></div>
+          <p class="pre">after Carrier Birds · after Metal Toolcraft</p>
+          <ul>
+            <li><span class="c">gear</span>pack saddles · panniers · caravan kit</li>
+            <li><span class="c">build</span>trade counter · market stalls · hitching row</li>
+            <li><span class="c">system</span>settlement visits, escort contracts, standing trade routes</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — pawns and pack animals absent from the colony for weeks at a time, for everything the world has that you do not.</p>
+          <p class="why">The birds made the world audible; this makes it <b>reachable</b>. Sending three colonists and a muffalo over the horizon is the first time the player deliberately weakens the colony to gain something, and the raid that lands while they are away is the best story the leap can produce.</p>
+        </article>
+
+      </div>
+
+      <p class="callout"><b>Nineteen nodes and not one of them is a new bow.</b> M1 is the widest leap in the project and it adds no ranged weapon and no siege engine at all. That restraint is what makes it read as <i>everything you own, again, better</i> rather than as a content dump — and it leaves M2 with somewhere to go.</p>
+    </div>
+
+    <!-- ================= M2 ================= -->
+    <div class="leap" style="--era:var(--era-4);--era-wash:var(--era-4-wash)">
+      <div class="leap-head">
+        <p class="code">M2</p>
+        <h3>Mail &amp; Siege</h3>
+        <p class="tag">You stop being new at metal and start being good at it. Mail, military arms, castle walls, engines on the towers, mills that turn while everyone is asleep — and a diplomatic situation that will not resolve itself.</p>
+        <p class="tally">19 nodes · 2 hunts · 2 optional</p>
+      </div>
+
+      <p class="band-hd">Getting good at metal</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>The Furnace</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench upgrade</span></div>
+          <p class="pre">after The Bellows</p>
+          <ul>
+            <li><span class="c">bench</span><b>the fueled smithy</b> — forge rung 2; all augments carry</li>
+            <li><span class="c">augment</span>the furnace · the quenching trough</li>
+            <li><span class="c">system</span>the quality ceiling rises across every forge recipe</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a much larger standing fuel demand for sustained heat rather than intermittent heat.</p>
+          <p class="why">Sustained high heat is what makes drawn wire possible, which is what makes mail possible. <b>The entire leap hangs off this one object</b>, and it is the second time the player upgrades a bench and keeps every augment — by now that should feel like a rule rather than a surprise.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Mail</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 6</span></div>
+          <p class="pre">after The Furnace · after Fine Cloth</p>
+          <ul>
+            <li><span class="c">gear</span>hauberk · heavy hauberk · chain coif · chainveil</li>
+            <li><span class="c">gear</span>kettle helm · nasal helm · flat-top · bascinet</li>
+            <li><span class="c">gear</span>splinted chausses · gloves · boots</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — an enormous amount of steel and smith-hours per suit, for a fighter who mostly does not die.</p>
+          <p class="why">The leap's headline and the point at which <b>raids stop being frightening and start being work</b>. The cost is what keeps that from being a problem: a mailed fighter is a colony asset, so losing one is a budget event as well as a funeral, and the player feels both.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Military Arms</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after The Furnace</p>
+          <ul>
+            <li><span class="c">arms</span>longsword · bardiche · longaxe · fighting axe</li>
+            <li><span class="c">arms</span><b>pike · boar spear · spetum · billhook · swordlance</b></li>
+            <li><span class="c">arms</span>morning star · polehammer · winged mace · goedendag · two-handed mace</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a full re-equip of every fighter, for weapons that only work if the fighters stand together.</p>
+          <p class="why">The basic arms are <b>replaced, not supplemented</b> — that is the correct shape for a weapons tier. The polearms are the important half: they are the first weapons that fail when used alone, which pushes the player toward fielding a unit rather than five individuals with opinions.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Crossbow</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">ranged rung 3</span></div>
+          <p class="pre">after The Furnace · after The Long Bow</p>
+          <ul>
+            <li><span class="c">arms</span>crossbow · heavy crossbow · arbalest · bolts</li>
+            <li><span class="c">build</span>wall-mounted arbalest</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — rate of fire and a great deal of steel, for a ranged weapon an untrained pawn can use well.</p>
+          <p class="why">The most interesting trade on the whole ladder. A crossbow is worse than a longbow in every respect except the one that matters to a colony with churn: <b>it arms the people you recruited last week</b>. It is the first weapon whose value is a fact about your colony rather than a fact about the weapon.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Siege Engines II</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Siege Engines · after The Furnace</p>
+          <ul>
+            <li><span class="c">build</span><b>ballista</b> · repeating ballista · scorpio · bolts</li>
+            <li><span class="c">build</span>tower and wall mounts for heavy weapons</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a crew and a fixed emplacement for the ability to break a formation before it arrives.</p>
+          <p class="why">The wall-mount is the real change: defence stops being a corridor with a killzone at the end and becomes <b>a fortification with fields of fire</b>. That is a rebuild rather than a bigger version, which is the only kind of escalation this project treats as legitimate.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Castle Architecture</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Reinforced Works · after Mortar &amp; Cement</p>
+          <ul>
+            <li><span class="c">build</span>castle wall · low castle wall · embrasures · murder holes</li>
+            <li><span class="c">build</span>castle door and gate at three sizes · the gatehouse</li>
+            <li><span class="c">build</span>timbered walling · hoardings</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a truly enormous stone and labour commitment, once, for a perimeter that does not need rethinking again this era.</p>
+          <p class="why">The colony becomes a castle, and the reason that is worth a node of its own is silhouette. <b>The player will keep this shape for the rest of the game</b> — it is the outline they see every time they load the save, and it should be the outline of an achievement rather than of a box.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">The workshop row</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>The Mason's Table</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench upgrade</span></div>
+          <p class="pre">after Masonry · after Metal Toolcraft</p>
+          <ul>
+            <li><span class="c">bench</span><b>the mason's table</b> — stoneyard rung 3</li>
+            <li><span class="c">augment</span>chisel rack · stone clamp · carving board</li>
+            <li><span class="c">build</span>columns · busts · fine stonework · inlay</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — steel tools and a skilled mason's permanent attention for stonework that is worth looking at.</p>
+          <p class="why">Chisels are steel, so this node could not have existed before the forge — <b>the dependency is real rather than decorative</b>, which is what separates a tech tree from a checklist. It is also the beginning of the ornamental line that finishes the era in M3.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Loom</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench upgrade</span></div>
+          <p class="pre">after Fine Cloth</p>
+          <ul>
+            <li><span class="c">bench</span><b>the master's loom</b> — loom rung 4</li>
+            <li><span class="c">augment</span>tailoring loom · <b>mannequin stand</b></li>
+            <li><span class="c">system</span>the apparel quality ceiling rises</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a large fixed bench and a specialist, for apparel quality the colony could not previously reach.</p>
+          <p class="why">The mannequin is the augment that matters: it is a display object that also <b>keeps a set of armour standing ready</b>. That makes it the first piece of furniture in the game which is simultaneously decoration and logistics, and it is exactly the kind of double-duty object this project should be hunting for.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Advanced Agriculture</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">tier 3</span></div>
+          <p class="pre">after Intermediate Agriculture</p>
+          <ul>
+            <li><span class="c">crop</span>grapes · mulberry <em>— the wine line</em></li>
+            <li><span class="c">crop</span>pumpkin · tomato <em>— the top of the vegetable pool</em></li>
+            <li><span class="c">crop</span><b>devilstrand</b> <em>— a crop that pays in armour</em></li>
+            <li><span class="c">verb</span>the orchard designator · crop rotation</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a whole season of field time on a crop you cannot eat, for a material and a trade good.</p>
+          <p class="why">Devilstrand is the node. <b>It is the longest-horizon decision the player has made so far</b> — a field committed for a season against a payoff in armour cloth — and it is the first time agriculture and the armoury are the same conversation.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Dairy</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">off-bench</span></div>
+          <p class="pre">after Pens &amp; Husbandry · after Advanced Agriculture</p>
+          <ul>
+            <li><span class="c">build</span><b>the cheese press</b> — passive, no bills</li>
+            <li><span class="c">verb</span>the milking job</li>
+            <li><span class="c">mat</span>milk · cheese</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a milking herd that must be kept alive rather than eaten, for the last ingredient class in the game.</p>
+          <p class="why">The second and final processing step, granted on the same terms as the mill. It also <b>closes the ingredient ladder</b>: flour and cheese are the top of it, and nothing after this node adds a chain — M3's exotic tier is one more ingredient, not one more process.</p>
+        </article>
+
+        <article class="node qol">
+          <h4>Millworks</h4>
+          <div class="chips"><span class="chip c-qol">QoL hunt</span><span class="chip">off-bench</span></div>
+          <p class="pre">after Milling · after Castle Architecture</p>
+          <ul>
+            <li><span class="c">build</span><b>the watermill</b> · <b>the windmill</b> — the millstone's work, unattended</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a large build, tied to terrain, for a job nobody has to do again.</p>
+          <p class="why">The purest expression of the game's core verb anywhere in the project: <b>a building that does a job the player used to stand there and do</b>. It gates nothing — the hand mill still works — which is exactly what makes it worth going on a hunt for rather than resenting.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Advanced Cookery</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench upgrade</span><span class="chip">food tier 5</span></div>
+          <p class="pre">after Intermediate Cookery · after Millworks · after Dairy</p>
+          <ul>
+            <li><span class="c">bench</span><b>the great oven</b> — hearth rung 3; augments carry</li>
+            <li><span class="c">augment</span>fondue pot · ragout pot</li>
+            <li><span class="c">cook</span><b>flour and cheese enter</b> — pies, quiche, fondue, ragout</li>
+            <li><span class="c">system</span><b>the combat buff bands open</b></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a mill, a herd and a much more complicated kitchen, for meals that change the outcome of fights.</p>
+          <p class="why">Where food stops being fuel and becomes a stat worth planning agriculture around. <b>The ingredients you happen to have determine which buff you can field</b>, and the buff is worth planning a campaign around — that is the whole reason the food ladder was built as a ladder rather than a list.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Alchemy</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 3</span></div>
+          <p class="pre">after Apothecary · after Advanced Agriculture</p>
+          <ul>
+            <li><span class="c">bench</span>the alchemy bench — medicine rung 3</li>
+            <li><span class="c">augment</span>the cauldron</li>
+            <li><span class="c">cook</span><b>draughts</b> — healing · stoneskin · strength · focus · painkiller · antitox</li>
+            <li><span class="c">cook</span>battle elixirs · tar</li>
+            <li><span class="c">no</span><em>brewed from herbs and crops already grown — not from nineteen bespoke ingredients</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — herb acreage and a specialist, for temporary advantages that all have a cost on the other side.</p>
+          <p class="why">The most bidirectional system in the era. Every draught has a comedown, an addiction risk or a poison twin, and <b>the same bench makes both</b>. A lever that can go badly wrong is worth more than any lever that cannot, and this is the only one M2 offers.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Scriptorium</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench upgrade</span></div>
+          <p class="pre">after The Simple Bench · after The Mason's Table</p>
+          <ul>
+            <li><span class="c">bench</span><b>the scriptorium</b> — research rung 4</li>
+            <li><span class="c">augment</span>scribe table · lectern · large research shelf</li>
+            <li><span class="c">craft</span><b>treatises</b> — a consumable book that trains one skill</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a scholar who does nothing else, for research speed and the ability to train a skill deliberately.</p>
+          <p class="why">Treatises are the important unlock and the most carefully priced thing in the tree. They are <b>the first mechanism that improves a pawn rather than a colony</b>, and they are deliberately slow, consumable and single-skill so they never become a factory for good pawns. The test is price, not outcome.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Training Yard</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Military Arms</p>
+          <ul>
+            <li><span class="c">build</span>training dummy · archery target · pell</li>
+            <li><span class="c">verb</span>the drill order — a standing assignment, not a click</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a soldier's working hours. A colony that wants fighters has to stop getting labour out of them.</p>
+          <p class="why">The one place this project deliberately accepts a pawn-improvement mechanic, and the price is the point: <b>drilling is time not spent farming</b>. It also survives delegation — you set the assignment and walk away — which is the test any mechanic has to pass to belong in this game at all.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">The world starts asking</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>Standing &amp; Embassy</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">demand</span><span class="chip c-want">wants a system</span></div>
+          <p class="pre">after Carrier Birds · after Castle Architecture</p>
+          <ul>
+            <li><span class="c">build</span>the audience hall · envoy quarters</li>
+            <li class="want"><span class="c">system</span><b>factions make demands with deadlines and telegraphed consequences</b></li>
+            <li class="want"><span class="c">system</span>hostage-guest · pawn loan · right-of-way · exclusivity agreements</li>
+            <li><span class="c">system</span>refusal is always viable and always costs something</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — the ability to be neutral. After this node, helping one neighbour <i>is</i> refusing another.</p>
+          <p class="why">The node that pays off <b>L8</b> and the answer to the mid-game sag. Its entire output is other people's problems: a demand with a deadline is a project the player did not invent, aimed at capability they could build but have not. <b>The dread of a countdown you chose to ignore does more work than any raid.</b> Nothing in the load order implements this; it is the largest piece of authoring the design asks for and the one most worth doing.</p>
+        </article>
+
+        <article class="node qol">
+          <h4>The Crane</h4>
+          <div class="chips"><span class="chip c-qol">QoL hunt</span></div>
+          <p class="pre">after Castle Architecture · after Deep Mining</p>
+          <ul>
+            <li><span class="c">build</span>the crane — construction and hauling speed in a radius</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a large permanent structure in the middle of the work area, and nothing else.</p>
+          <p class="why">The QoL item with the longest tail in the project: <b>still useful when the colony is assembling a gravship</b>. That is the entire argument for the class stated in one object — an item worth hunting for is one whose value does not expire, and this one outlives four tech eras.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>Gemwork</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after The Mason's Table</p>
+          <ul>
+            <li><span class="c">bench</span>the jewelry bench — art augment</li>
+            <li><span class="c">craft</span>rings · necklaces · chalices · cut stone</li>
+            <li><span class="c">gear</span>utility rings — haste, holding, tending, research</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a skilled crafter's hours and gemstones, for trade value and a handful of small permanent bonuses.</p>
+          <p class="why">Optional, and the one item class that <b>cannot dilute the pool because it is supposed to be sold</b> — L4 passes trivially. The utility rings are the only place in the era where a small permanent bonus can be bought rather than found, which makes silver briefly interesting again.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>Winemaking</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Advanced Agriculture · after Brewing</p>
+          <ul>
+            <li><span class="c">build</span>the wine barrel — passive</li>
+            <li><span class="c">cook</span>wine · mulberry wine · ice wine</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a vineyard's worth of field and a long wait, for the highest-value thing a crop can become.</p>
+          <p class="why">Optional and entirely passive. Wine quietly <b>turns a field into a mint</b>, which is the kind of second-order payoff that makes an opt-in system feel like a discovery the player made rather than a chore the mod assigned.</p>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- ================= M3 ================= -->
+    <div class="leap" style="--era:var(--era-5);--era-wash:var(--era-5-wash)">
+      <div class="leap-head">
+        <p class="code">M3</p>
+        <h3>Plate &amp; Powder</h3>
+        <p class="tag">The top of the pre-electric world, and it should look like it. The smallest of the three medieval leaps and the most ornamental — by now the player is reaching for the next era, so this leap is about finishing rather than expanding.</p>
+        <p class="tally">13 nodes · 0 hunts · 1 moment · 1 optional</p>
+      </div>
+
+      <p class="band-hd">Mastery</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>The Master Forge</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench upgrade</span></div>
+          <p class="pre">after The Furnace · after The Mason's Table</p>
+          <ul>
+            <li><span class="c">bench</span><b>the master forge</b> — forge rung 3, the last before electricity</li>
+            <li><span class="c">augment</span>the master's tool rack</li>
+            <li><span class="c">system</span>the legendary quality ceiling</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a purpose-built forge hall and a master smith, for the last quality tier the era has.</p>
+          <p class="why">Forge rung three and the end of the line. Everything after this in the forge domain is an augment or a recipe — <b>the bench itself is finished</b>, and that is correct: some production buildings genuinely stop improving, and pretending otherwise is how a tech tree turns into a treadmill.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Plate Harness I</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 7a</span></div>
+          <p class="pre">after Mail · after The Master Forge</p>
+          <ul>
+            <li><span class="c">gear</span>breastplate · brigandine</li>
+            <li><span class="c">gear</span>plate chausses · gloves · boots</li>
+            <li><span class="c">gear</span>bascinet · sallet · klappviser · heater shield</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — so much steel and time per suit that the colony can outfit only a handful.</p>
+          <p class="why">The first armour that <b>deflects rather than absorbs</b>, and the point at which one well-equipped fighter can hold a gate alone. The cost is the design: only a few can be made, so those few become characters rather than units, which is what the campaign has wanted since the founders arrived.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Plate Harness II</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">armour rung 7b</span></div>
+          <p class="pre">after Plate Harness I</p>
+          <ul>
+            <li><span class="c">gear</span>full harness · heavy plate</li>
+            <li><span class="c">gear</span>armet · great helm · hounskull</li>
+            <li><span class="c">gear</span>gilded and adorned variants · zweihander's cuirass</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — mobility almost entirely, and a second full re-equip, for the best armour the pre-electric world contains.</p>
+          <p class="why">It must be its own rung. <b>A breastplate and a gilded full harness are not the same achievement</b>, and collapsing them throws away the top of a seven-rung ladder in a single click at the most visible point in the entire game — a direct violation of L3 at the worst possible moment.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Noble Arms</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Military Arms · after The Master Forge</p>
+          <ul>
+            <li><span class="c">arms</span>greatsword · claymore · zweihander · dane axe · greataxe</li>
+            <li><span class="c">arms</span>halberd · warhammer · flanged mace · fencing sword · noble sword</li>
+            <li><span class="c">craft</span><b>heirloom variants</b> — named, single-instance, carrying a history</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a master smith's entire output for a season, per weapon.</p>
+          <p class="why">The top of the melee ladder and the first weapons worth <i>naming</i>. Heirlooms are the mechanism: <b>a weapon that carries a history is a narrative payload</b>, and the project should end the era owning four or five of them, not fifty. Scarcity is what makes a name mean anything.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Gunpowder</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip c-spine">the crack</span></div>
+          <p class="pre">after Alchemy · after The Master Forge</p>
+          <ul>
+            <li><span class="c">mat</span>gunpowder</li>
+            <li><span class="c">build</span>the powder mill</li>
+            <li><span class="c">arms</span>arquebus · musket · flintlock · hand cannon · handgonne</li>
+            <li><span class="c">build</span>wall-mounted arquebus</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — accuracy, rate of fire and safety, for something that goes through plate.</p>
+          <p class="why">The beat the leap is named for, and the best structural joke in the design: firearms here are <b>worse than a crossbow in every measurable way except that they make the armour ladder obsolete</b>. The player's own research invalidates the investment they just finished — regime change delivered by their own tech tree rather than by a difficulty spike, which is the only honest way to deliver it.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>The Cannon</h4>
+          <div class="chips"><span class="chip c-spine">spine</span></div>
+          <p class="pre">after Gunpowder · after Siege Engines II</p>
+          <ul>
+            <li><span class="c">build</span><b>the cannon</b> · the trebuchet · siege shot</li>
+            <li><span class="c">system</span>bombardment as a world-map action at scale</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — the largest build the colony has ever undertaken, and a crew, for the ability to end a settlement.</p>
+          <p class="why">The trebuchet is here rather than in M2 because <b>it is a construction problem, not a metal one</b> — it is the biggest thing the colony has ever built and it should arrive when they can build big. Together they close the pre-electric military line and make the world map a place with consequences.</p>
+        </article>
+
+      </div>
+
+      <p class="band-hd">Finishing the era</p>
+      <div class="band">
+
+        <article class="node spine">
+          <h4>Master Masonry</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">augment</span></div>
+          <p class="pre">after The Mason's Table</p>
+          <ul>
+            <li><span class="c">augment</span>the stone polisher · the sculptor's studio</li>
+            <li><span class="c">build</span>marble columns · polished floors · mosaic and inlay</li>
+            <li><span class="c">build</span>grand sculpture · vaulted ceilings</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a master mason permanently occupied, for rooms that are worth walking through.</p>
+          <p class="why">The masons stop making walls and start making cathedrals. This node produces <b>the throne room the player will still own in orbit</b> — nobody tears down a marble hall to save weight — which makes it the single most durable thing anyone builds in two eras.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Royal Furnishing</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">furniture rung 3</span></div>
+          <p class="pre">after Joinery · after Master Masonry</p>
+          <ul>
+            <li><span class="c">build</span>royal bed · tudor bed · royal table · armchair · chest · dresser</li>
+            <li><span class="c">build</span><b>the grand throne</b> · display cabinets · tapestry</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — gold, marble and a master crafter's hours, bought entirely with beauty and status rather than function.</p>
+          <p class="why">Furniture rung three and the last that is not electric. Everything here is bought with beauty rather than utility, which is the correct top of a furniture ladder — and <b>none of it will ever be torn down</b>, so it is the era's signature on the save file.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Master Tailoring</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">bench rung 5</span></div>
+          <p class="pre">after The Loom · after Plate Harness I</p>
+          <ul>
+            <li><span class="c">gear</span>court dress · noble and royal apparel · gowns · chaperons · mantles</li>
+            <li><span class="c">gear</span>the fitted arming doublet plate requires</li>
+            <li><span class="c">system</span>the superior quality ceiling on apparel</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — silk and a master tailor's hours, for status, mood and the layer plate cannot be worn without.</p>
+          <p class="why">Loom rung five, and it dresses the throne room. The arming doublet is what keeps it honest: <b>the tailoring line stays load-bearing to the very end of the era</b> instead of decaying into cosmetics, because the best armour in the game does not function without it.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Heraldry</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">demand</span><span class="chip c-want">wants a system</span></div>
+          <p class="pre">after Standing &amp; Embassy · after The Dye Vat</p>
+          <ul>
+            <li class="want"><span class="c">system</span><b>the colony coat of arms</b> — chosen once, applied everywhere</li>
+            <li><span class="c">gear</span>tabards · surcoats · heraldic shields</li>
+            <li><span class="c">build</span>standards · standing banners · heraldic rugs · wall banners</li>
+            <li class="want"><span class="c">system</span><b>renown</b> — standing that buys tech transfer, pawn loans, marriage pacts, granted sites</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — anonymity. A named house is a house other houses have opinions about, and some of those opinions arrive armed.</p>
+          <p class="why">The colony stops being a place and becomes a <i>name</i>. The mechanical half is the point: <b>goodwill should unlock relationships, not discounts</b> — a marriage pact, a granted site, a loaned surgeon. Silver is fungible and therefore boring, and this is the node that replaces it with things silver cannot buy.</p>
+        </article>
+
+        <article class="node spine">
+          <h4>Grand Cookery</h4>
+          <div class="chips"><span class="chip c-spine">spine</span><span class="chip">food tier 6</span></div>
+          <p class="pre">after Advanced Cookery · after Winemaking</p>
+          <ul>
+            <li><span class="c">crop</span>the exotic tier — griffon berry · spices · orchard fruit</li>
+            <li><span class="c">cook</span>wine as an ingredient · the banquet</li>
+            <li><span class="c">system</span>the top buff band, in every category</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — ingredients worth more than a suit of mail, for the best meal in the pre-electric game.</p>
+          <p class="why">The top of the food ladder should be <b>a thing you make for an occasion, not a thing you stock</b>. One more ingredient class and no new process — the ladder ends the way L2 promised it would, with the surface at its widest and the complexity exactly as linear as it was on day one.</p>
+        </article>
+
+        <article class="node opt">
+          <h4>Courtly Music</h4>
+          <div class="chips"><span class="chip">optional</span></div>
+          <p class="pre">after Royal Furnishing</p>
+          <ul>
+            <li><span class="c">build</span>harp · harpsichord · piano</li>
+            <li><span class="c">system</span>the performance ritual · instrument crafting</li>
+          </ul>
+          <p class="trade"><b>Trades</b> — a very expensive object and a pawn's practice time, for mood and nothing else.</p>
+          <p class="why">Optional, gates nothing, and the last purely ornamental node in two eras. It exists because <b>a colony that has just finished a cathedral should have something to do inside it</b> — and because the harpsichord standing next to a throne in orbit is a better ending image than any statistic.</p>
+        </article>
+
+        <article class="node mom">
+          <h4>The First Spark</h4>
+          <div class="chips"><span class="chip c-mom">The First Spark</span><span class="chip">era gate</span></div>
+          <p class="pre">after Gunpowder · after The Scriptorium</p>
+          <ul>
+            <li><span class="c">system</span>the era advance to Industrial · the cornerstone</li>
+            <li><span class="c">no</span><em>unlocks nothing buildable — it is a threshold, like Culture was</em></li>
+          </ul>
+          <p class="trade"><b>Trades</b> — the whole pre-electric world, which the colony will now spend three hundred days quietly dismantling.</p>
+          <p class="why">The bookend to The First Thought, and the same shape: a node that hands over no object and changes everything. It should arrive as a letter and a Chronicle beat, and it is <b>the point at which the altar stops being a rite and starts becoming a machine</b> — the campaign's own hinge, sitting exactly where the tech tree ends.</p>
+        </article>
+
+      </div>
+
+      <p class="callout"><b>No hunts in M3, on purpose.</b> Every other leap carries two or three. This one carries none, because by M3 the player is already looking at the Industrial era and a fetch quest at that moment competes with the thing the whole campaign has been building toward. The era finishes; it does not expand.</p>
+    </div>
+  </section>
+
+  <!-- ===== 06 THE WANTED LIST ===== -->
+  <section id="wanted">
+    <div class="sec-head">
+      <p class="eyebrow">06 · The wanted list</p>
+      <h2>What the design asks for that the parts bin does not contain.</h2>
+      <p class="wide">Every item below is named in a node above. <b>Author</b> means nothing close enough exists. <b>Restat</b> means the asset exists but is wearing the wrong numbers or the wrong era. <b>Source</b> means it exists somewhere reachable and is not currently in the load order. Nothing here was cut for being hard.</p>
+    </div>
+    <div class="wants">
+
+      <div class="wt">
+        <div class="hd"><h3>The trough</h3><span class="kind author">author</span></div>
+        <p>Penned animals eat measurably less and feed themselves from it. <b>No object anywhere in the load order does this</b> — <code>INVENTORY.md</code> lists it on the QoL keep list and the database does not contain it. It is the first QoL hunt the player meets, so it teaches the class; it cannot be quietly dropped.</p>
+        <p class="where">N1 · The Trough</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>The stone-age armoury</h3><span class="kind source">source</span></div>
+        <p>Shiv, stone shard, hand axe, throwing shards, sling, sling-staff, light and heavy club. <b>None of the nine exist</b>; the whole primitive armoury in the loaded set is Core's knife, club and a stake. Vanilla Weapons Expanded supplies the entire set and is not in the load order — adding it fixes Toolmaking, The Sling and Knapping in one move.</p>
+        <p class="where">N1 · Toolmaking · The Sling · Knapping</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>The hide slab</h3><span class="kind author">author</span></div>
+        <p>The loom's rung one — a flat rock and a bone needle. MO's tanning rack is rung two and reads far too competent for the first week. Without a rung one the tailoring ladder starts at the hand tailor bench, two eras late, and the leather arc has no bench of its own to sit on.</p>
+        <p class="where">N1 · Hidewear</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>The knapping slab</h3><span class="kind author">author</span></div>
+        <p>Stoneyard rung one. Nothing in the database is a pre-masonry stone bench. This is the same authoring job as the hide slab and should be done in the same pass — two crude benches, same visual language, both replaced within an era.</p>
+        <p class="where">N1 · Knapping</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>The field smithy</h3><span class="kind restat">restat</span></div>
+        <p>Forge rung one, and it must be visibly worse than the fueled smithy. Core's fueled smithy is rung two. A crude rung below it — a stone hearth, a rock anvil, bad quality caps — is what makes “newly capable and not yet good” available at all, and it is a restat of an existing model rather than new art.</p>
+        <p class="where">M1 · The Smithy</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>The clay hearth</h3><span class="kind restat">restat</span></div>
+        <p>Two hearth defs collide — Medieval Overhaul's and VFE Medieval 2's. One of them becomes the Neolithic core bench and the other is hidden. Which one is a look decision, not a mechanics one; what matters is that <b>exactly one hearth exists</b> and it is the object every kitchen augment attaches to for the rest of the game.</p>
+        <p class="where">N1 · Primitive Cookery</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>The dye vat</h3><span class="kind author">author</span></div>
+        <p>Dye exists as a Core item; no vat, no colouring bench, no apparel-recolouring recipe. Small job, entirely cosmetic, and it feeds Heraldry — the colony's colours should be chosen by the player in M1 and flown as a coat of arms in M3.</p>
+        <p class="where">M1 · The Dye Vat</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>The food buff bands</h3><span class="kind author">author</span></div>
+        <p>Six ingredient tiers mapping to three effect families — satiety, work speed, then combat — with the magnitude scaling by tier. VCE's meals carry some of this and none of it scales as a designed band. <b>This is the system that makes the whole food ladder worth building</b>; without it the ladder is six recipes that all fill the same bar.</p>
+        <p class="where">N1 → M3 · the entire hearth line</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>Demands, deadlines, consequences</h3><span class="kind author">author</span></div>
+        <p>Factions asking the colony for specific inconvenient things by a date, with a telegraphed cost for refusing and no way to be neutral. Nothing in the load order does this. It is <b>the largest authoring job the design names and the highest-value one</b> — it is the mechanism that answers the mid-game sag, and Carrier Birds and Heraldry are both bets on it existing.</p>
+        <p class="where">N2 · Carrier Birds → M2 · Standing &amp; Embassy → M3 · Heraldry</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>Renown and the coat of arms</h3><span class="kind author">author</span></div>
+        <p>A colony identity chosen once and applied to banners, tabards and shields, plus a standing track that buys non-material things — tech transfer, a loaned surgeon, a marriage pact, a granted site. MO ships eleven fixed faction banners as art; none of them is the player's.</p>
+        <p class="where">M3 · Heraldry</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>The crane</h3><span class="kind source">source</span></div>
+        <p>It exists — as a single item in <b>Dark Ages: Medieval Tools</b>, a mod <code>INVENTORY.md</code> currently recommends dropping for having eleven things and zero research. Either keep the mod for the crane and the tool set, or lift the asset. It is the longest-tailed QoL reward in the project and it should not be lost to a load-order tidy.</p>
+        <p class="where">M2 · The Crane</p>
+      </div>
+
+      <div class="wt">
+        <div class="hd"><h3>Encumbrance that means something</h3><span class="kind restat">restat</span></div>
+        <p>Boiled leather, mail and plate each have to cost real mobility, or the armour ladder is seven rungs of strictly-better and the whole thing collapses into <b>L7</b>. This is a stat pass across roughly forty apparel defs, not new content — but the design above leans on it three separate times.</p>
+        <p class="where">N2 · Boiled Leather · M2 · Mail · M3 · Plate Harness II</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== 07 CALLS ===== -->
+  <section id="calls">
+    <div class="sec-head">
+      <p class="eyebrow">07 · Calls made in this pass</p>
+      <h2>Six decisions taken on taste. Each is reversible; none is arbitrary.</h2>
+      <p>Recorded here rather than buried in a node, because these are the places where a different answer would produce a materially different tree.</p>
+    </div>
+    <div class="calls">
+
+      <div class="call">
+        <div class="ask">
+          <p class="id">C1</p>
+          <h3>Four crops in Growing, not twenty-four.</h3>
+          <p>The full loaded plant pool across Core, Medieval Overhaul and Vanilla Cooking Expanded is roughly ninety. This design uses about eighteen across four agriculture nodes.</p>
+        </div>
+        <div class="rec">
+          <p class="lbl">the reasoning</p>
+          <p>A plant earns its slot by <b>filling a role no other plant fills</b> — a grain, a fibre, an input, a material — never by being a second vegetable. The test is whether the player would ever choose between two of them for a reason. If not, the second one is a longer sowing menu and nothing else.</p>
+        </div>
+      </div>
+
+      <div class="call">
+        <div class="ask">
+          <p class="id">C2</p>
+          <h3>Flour and cheese are the only processing chains.</h3>
+          <p>Everything else — wood, cloth, leather, metal, silk — goes from raw to used in one step, and the tier is carried by research plus an augment rather than by an intermediate item.</p>
+        </div>
+        <div class="rec">
+          <p class="lbl">the reasoning</p>
+          <p>Both survive the Spacer test: a mill and a cheese press are still coherent objects on a gravship, and a plank bench is not. Both are also <b>places rather than bills</b> — built once, ignored afterwards. Any future candidate has to clear both bars, and almost nothing does.</p>
+        </div>
+      </div>
+
+      <div class="call">
+        <div class="ask">
+          <p class="id">C3</p>
+          <h3>M1 gets no new bow and no new siege engine.</h3>
+          <p>The widest leap in the project adds nineteen nodes and leaves two whole domains untouched.</p>
+        </div>
+        <div class="rec">
+          <p class="lbl">the reasoning</p>
+          <p>M1's job is <i>everything you own, again, in metal</i>. Adding new domains alongside that dilutes the one idea the leap has. It also leaves M2 with a headline — the crossbow — that would otherwise have to compete with mail. <b>A leap with a spare rung is healthier than a leap with a crowded one.</b></p>
+        </div>
+      </div>
+
+      <div class="call">
+        <div class="ask">
+          <p class="id">C4</p>
+          <h3>The bellows is spine. The grinding wheel is the hunt.</h3>
+          <p>The Ideology document floats gating the bellows behind a quest and then talks itself out of it in the same paragraph.</p>
+        </div>
+        <div class="rec">
+          <p class="lbl">the reasoning</p>
+          <p>The bellows gates half the armoury, so gating it behind a hunt makes the hunt a tax. The grinding wheel improves everything and gates nothing, which is <b>exactly the shape L5 asks for</b> — and it keeps paying until the end of the campaign. Same augment slot, same forge, opposite gating class.</p>
+        </div>
+      </div>
+
+      <div class="call">
+        <div class="ask">
+          <p class="id">C5</p>
+          <h3>Firearms are worse than crossbows.</h3>
+          <p>Gunpowder is the M3 beat and the weapons it unlocks are slower, less accurate and more dangerous to their owner than the M2 ranged line.</p>
+        </div>
+        <div class="rec">
+          <p class="lbl">the reasoning</p>
+          <p>They punch through plate, and that is the entire point. <b>The player's own research invalidates the armour investment they just completed</b> — a qualitative shift that forces a rethink rather than a rebuild, arriving from inside the tech tree instead of from a difficulty curve. It is the cleanest piece of regime change the two eras can produce.</p>
+        </div>
+      </div>
+
+      <div class="call">
+        <div class="ask">
+          <p class="id">C6</p>
+          <h3>Rome is optional; the Roman <i>engineering</i> is not.</h3>
+          <p>Bath house, stage and ceremonial dress are optional nodes. Masonry, cement, earthworks, the shield wall and the catapult are spine.</p>
+        </div>
+        <div class="rec">
+          <p class="lbl">the reasoning</p>
+          <p>A stone-and-leather civilisation with discipline and siege <i>is</i> the late Neolithic — that is the N2 fantasy and it cannot be optional. What can be optional is the <b>visible Roman-ness</b>: the marble baths and the togas. A player who wants the austere read skips three nodes and loses a mood buffer, not a capability.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <span>Archinity · docs/progression-map-v2.html</span>
+    <span>101 nodes · 8 hunts · 4 moments · 12 wants</span>
+    <span>Design target. No pacing, no balance.</span>
+  </footer>
+
+</div>
