@@ -1,0 +1,17 @@
+{
+  "name": "archinity-tooling",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Host-side dev tooling for the Archinity RimWorld mod suite. Not shipped with the mods.",
+  "type": "module",
+  "scripts": {
+    "sandcastle": "tsx .sandcastle/main.ts"
+  },
+  "devDependencies": {
+    "@ai-hero/sandcastle": "^0.12.0",
+    "tsx": "^4.23.12"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

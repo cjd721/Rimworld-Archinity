@@ -6,3 +6,11 @@ Archinity.Altar/Source/bin/
 # Python bytecode from tools/
 __pycache__/
 *.pyc
+
+# Host-side dev tooling (Sandcastle). Not part of the shipped mods.
+# .sandcastle/ has its own .gitignore for .env, logs/ and worktrees/.
+node_modules/
+
+# Per-machine Claude Code permissions. The skills under .claude/skills/ ARE
+# committed — the agent sandbox is a git worktree, so it only sees committed files.
+.claude/settings.local.json
