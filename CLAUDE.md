@@ -3,25 +3,33 @@
 A suite of RimWorld 1.6 mods for one long two-player co-op playthrough on the
 **Multiplayer** mod. Neolithic start, every tech era in order, endgame in orbit.
 
-Read `docs/VISION.md` first — it holds the intent that cannot be recovered from
-the code. Then `docs/technical-findings.md` for facts already verified against
-decompiled source. Check `docs/HANDOFF.md` for open decisions before starting
-anything.
+## How we work
 
-**Verify against decompiled source, not memory and not the wiki.** Several
-confident assumptions have turned out wrong here: a RimWorld year is 60 days
-not 365, `Mech_Centipede` does not exist, `rootMinProgressScore` ignores
-research entirely. `ilspycmd` is installed for decompiling.
+You may be writing code, checking diffs, testing integrations, or you may be theory crafting, writing narrative, and figuring out what fun looks like in gameplay.
 
-## XML defs by default
+Be flexible to the task at hand. Do not bring technical jargon into the realm of imagination. When it is time to implement, carefully engineer the simplest solution.
 
-Def-only mods carry no simulation code, so they are inherently multiplayer-safe.
-That is why almost everything here is pure XML.
+## The constraint is desync, not C#
 
-`Archinity.Altar` is the one exception and ships a Harmony assembly. Anything
-added to it must be deterministic across clients — every `Rand` call has to sit
-inside an already-synced job or tick that both clients execute identically, or
-the session desyncs. Do not start a second assembly without an explicit decision.
+Def-only mods carry no simulation code, so they are inherently multiplayer-safe,
+and that is why most of this project is pure XML. But XML is the usual answer,
+not the rule. **Write the simplest, most elegant thing that achieves the goal
+without violating a constraint.** The constraints are:
+
+- **Desync.** Unsynced `Rand` calls and per-client cached state. Every `Rand` has
+  to sit inside an already-synced job or tick that both clients execute
+  identically, or the session desyncs.
+- **Save integrity.** Two people play one save across months of real time. A
+  broken save is worse than a missing feature, so small code that fails loudly
+  beats clever code that fails quietly.
+- **One assembly.** `Archinity.Altar` ships the Harmony assembly. Do not start a
+  second one without an explicit decision.
+
+Working test before proposing anything: **does this need a random number or a
+client-local cache?** If no, code is cheap — GameComponents, stat parts, ITabs,
+inspect strings, letters and synced designators all cost nothing. If yes, think
+hard or push it into XML. The expensive thing was never writing the code, it was
+debugging a desync in a live co-op session.
 
 ## Silent failures — these do not error, they just do not work
 
@@ -32,7 +40,7 @@ the session desyncs. Do not start a second assembly without an explicit decision
   A predicate on a field declared only on an Abstract parent matches the parent,
   not its children. Match on `@ParentName` instead.
 - **Unresolvable cross-references are omitted, not set to null.** Deleting a
-  ResearchProjectDef therefore *strips the prerequisite* off everything that
+  ResearchProjectDef therefore _strips the prerequisite_ off everything that
   required it, leaving those things buildable with no research at all — the
   opposite of the intent. Neuter referencing defs first, delete the research last.
 - **Patch xpaths apply to the whole merged def database**, not to one mod's
@@ -60,6 +68,23 @@ Both players need identical mods, identical load order (`config/ModsConfig.xml`)
 people miss — TechBlock, Ignorance Is Bliss and Medieval Overhaul are all
 settings-driven, and a mismatch means divergent defs and an immediate desync.
 Re-snapshot after any settings change.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as GitHub issues on `cjd721/Rimworld-Archinity`, driven by the `gh`
+CLI. `scratch/` is recon prose, not the tracker. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, used verbatim as label strings. See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root, both created
+lazily. See `docs/agents/domain.md`.
 
 ## What earns a slot in this file
 
