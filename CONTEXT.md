@@ -25,8 +25,9 @@ lines it is misfiled.
 ### The mod set
 
 **The parts bin**:
-The 108 installed third-party mods, treated as raw material rather than a
-committed load order. Catalogued in `docs/data/PARTS-BIN.md`.
+Every third-party mod on disk, treated as raw material rather than a committed load
+order. Catalogued in `docs/data/PARTS-BIN.md`; current verdicts and counts in
+`docs/data/MOD-VERDICTS.md`.
 _Avoid_: the load order, the mod list, ModsConfig
 
 **The build**:
@@ -60,8 +61,8 @@ _Avoid_: bundled, embedded
 
 ### Cost of admitting a mod
 
-Every mod in the build sits at one of three tiers. Barred is not a tier — it is
-the absence of one.
+Every third-party mod in the build sits at one of four tiers. Barred is not a tier —
+it is the absence of one, and the tiers do not apply to our own mods at all.
 
 **Free**:
 Enable it, reference its defNames, change nothing.
@@ -69,6 +70,10 @@ Enable it, reference its defNames, change nothing.
 **Cheap**:
 Enable it plus a `PatchOperation`. `patch_check.py` holds the patch to a match
 count, so it stays honest under upstream drift.
+
+**Cheap + settings**:
+Cheap, plus a managed condition: the mod's `ModSettings` are part of the sync
+surface, so its settings file must be copied rather than re-entered.
 
 **Real**:
 A fork we re-merge on update, or a Harmony patch in our assembly.
@@ -81,9 +86,8 @@ The five things we can do with someone else's work, in default order.
 **Depend** · **Patch** · **Harmony-patch** · **Fork and recompile** · **Reimplement**
 
 **Fork and recompile**:
-Take their `Source/`, fix the line, ship our build of their DLL. A normal move
-with a stated reason, not an emergency — and it does not count against the
-one-assembly rule, because the assembly is theirs, repaired.
+Take their `Source/`, fix the line, and ship our build of their DLL.
+Rules: `CODING_STANDARDS.md`.
 
 **Reimplement**:
 Write our own minimal version of a technique. Neither routine nor last resort:

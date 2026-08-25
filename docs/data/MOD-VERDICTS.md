@@ -1,7 +1,7 @@
 # Mod verdicts
 
 The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applied to
-**every mod on disk — all 119**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
+**every mod on disk — all 120**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
 
 **The instrument, restated so this file stands alone:**
 
@@ -13,7 +13,13 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
   assembly).
 - Barred and declined mods **stay on disk as reference.**
 
-**119 mods scanned** — the workshop folder plus local `Mods/`. **Every one has a verdict.**
+**120 mods on disk** — the workshop folder, local `Mods/`, and this repo. **Every one
+has a verdict.**
+
+**Five of them are ours** (Origins, Pacing, Drifters, Glitterites, Altar) and the
+admission bar does not apply to them: the bar decides whether to admit *someone
+else's* work. Our own code is governed by the two gates in `CODING_STANDARDS.md`.
+So the bar runs over the **115 third-party** mods.
 
 > **`config/ModsConfig.xml` carries no signal and is not referenced below.** Mods are
 > unenabled because the game has not been launched, not because anything was decided.
@@ -34,11 +40,20 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
    on my own judgment; that was not mine to do. Both are tiered below and returned
    to Conrad undecided. Neither is barred — one `WorldComponent` each, no thread
    creation **[V]**.
-4. **Six mods added since the first scan**, taking the total from 113 to 119:
+4. **Six mods added since the first scan**, taking the disk total to 120:
    RimPacts, ATH's Styleable Framework, and the style packs Gothic, Norse and Draconic,
    plus Fix Styled Blueprints. RimPacts closes a standing `PARTS-BIN.md` §14 open item
    — see below. The five ATH/style entries are one family: a framework, three style
    packs and a blueprint compat fix; none carries a bar risk of any kind.
+5. **`Archinity.Altar` was absent from every earlier revision**, despite the claim
+   that every mod had a verdict. It lives only in this repo, not in Steam's `Mods/`
+   folder like the other four Archinity mods, so the disk scan never saw it — and it
+   is the one Archinity mod that ships an assembly. Now covered under **Ours** below.
+6. **Vehicle Framework and TechBlock were counted twice**, appearing in both the
+   Cheap+settings table and the Real tier. Real is now carved *out of* Cheap+settings.
+7. **The TechBlock evidence was read from the wrong build** — the `1.0` assembly
+   rather than the `1.6` one that actually loads. Re-verified; the verdict stands but
+   the reasoning changed. See the Real tier.
 
 ---
 
@@ -47,9 +62,9 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
 Byte-marker scan of every 1.6 assembly, then `ilspycmd` decompiles wherever a marker
 was load-bearing. `[V]` = decompiled and read. `[M]` = marker-level only.
 
-**82 of 119 are mechanically unbarrable** — no assembly at all, or an assembly with
+**83 of 120 are mechanically unbarrable** — no assembly at all, or an assembly with
 no threading and no `WorldComponent`. For those the bar cannot bite and no
-decompile is needed. The remaining 36 were examined individually.
+decompile is needed. The remaining 37 were examined individually.
 
 **What the scan proves.** Absence of `ThreadStart` / `ThreadPool` / `IsBackground`
 is strong evidence a mod starts no background threads. Assembly presence and
@@ -79,7 +94,7 @@ mods as `brrainz.harmony`. Parse the XML; take the direct child of `ModMetaData`
 |---|---|---|
 | **Rim War** | `Torann.RimWar` | `ThreadStart` present in the 1.6 assembly **[V]**, plus `WorldComponent_PowerTracker` and `WorldComponent_IncidentTracker` running a genuine parallel world power simulation, plus a 30-field settings ref constructed inside `WorldComponentTick`. Threads are on by default. |
 
-**One mod, out of 119.** That is the instrument working as designed, not a shortfall.
+**One mod, out of 115 third-party.** That is the instrument working as designed, not a shortfall.
 With licence struck and the set pinned, almost every defect that used to read as
 disqualifying is now something we can simply fix. Already mined for the
 faction-tension shape; stays on disk as reference.
@@ -112,15 +127,38 @@ Conrad's, and gets recorded here only once he has said so.
 
 ---
 
-## In — 116, by tier
+## Ours — 5, and the bar does not apply
 
-Everything not barred and not declined.
+The admission bar exists to decide whether to take *someone else's* work. Our own
+mods answer to the two gates in `CODING_STANDARDS.md` instead — **divergence** and
+**loudness** — and to nothing here.
 
-**Free (25)** — no assembly. Nothing can go wrong that is not XML.
+| Mod | packageId | Assembly | Scan |
+|---|---|---|---|
+| Archinity – Origins | `archinity.origins` | none | — |
+| Archinity – Pacing | `archinity.pacing` | none | — |
+| Archinity – Drifters | `archinity.drifters` | none | — |
+| Archinity – Glitterites | `archinity.glitterites` | none | — |
+| **Archinity – Altar** | `archinity.altar` | `ArchinityAltar.dll`, 24 KB | No `ThreadStart`, no `ThreadPool`, no `IsBackground`, no `System.Threading.Thread`, no `WorldComponent`, no `GameComponentUpdate`, no `ModSettings`, no `Verse.Rand` **[V]** |
+
+**Altar is the only Archinity mod carrying code, and it passes both gates cleanly** —
+nothing client-local, no threads, and no `Rand` at all. Worth stating plainly because
+it is the assembly the whole project routes through, and because an earlier revision
+of this file **omitted it entirely**: it lives only in this repo, not in Steam's
+`Mods/` folder like the other four, so the disk scan never saw it. Corrected here.
+
+---
+
+## In — 112 third-party, by tier
+
+Everything third-party that is not barred and not declined. **Our five are not listed
+here** — see the note at the top; they are in by definition and answer to the two
+gates, not to a tier.
+
+**Free (21)** — no assembly. Nothing can go wrong that is not XML.
 
 | Mod | packageId |
 |---|---|
-| Archinity – Origins / Pacing / Drifters / Glitterites | `archinity.*` |
 | Vanilla Weapons Expanded | `VanillaExpanded.VWE` |
 | Vanilla Weapons Expanded – Tribal | `VanillaExpanded.VWETB` |
 | Vanilla Weapons Expanded – Frontier | `VanillaExpanded.VWEFT` |
@@ -166,7 +204,7 @@ where wanted.
 | ATH's Styleable Framework | `Anthitei.ATHsStyleableFramework.Style` |
 | Fix Styled Blueprints | `kathanon.FixStyledBlueprints` |
 
-**Cheap + settings (58)** — Cheap plus a **managed condition**: per
+**Cheap + settings (56)** — Cheap plus a **managed condition**: per
 `CODING_STANDARDS.md`, `config/ModSettings/` is part of the sync surface. Copy the
 file; never re-click it. This is a rule to follow, not a defect to fix.
 
@@ -180,8 +218,8 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | Vanilla Psycasts Expanded | `VanillaExpanded.VPsycastsE` |
 | Vanilla Ideology Expanded – Memes and Structures | `VanillaExpanded.VMemesE` |
 | Vanilla Gravship Expanded Ch.1 · Biotech for Gravship · GravTech | `vanillaexpanded.gravship`, `als.biotechgravship`, `als.gravtech` |
-| Vehicle Framework · Vanilla Vehicles Expanded | `SmashPhil.VehicleFramework`, `OskarPotocki.VanillaVehiclesExpanded` |
-| TechBlock · Ignorance Is Bliss · Lemmy Progression | `fridgeBaron.TechBlock`, `dame.ignorance`, `LemmyMods.LemProgression` |
+| Vanilla Vehicles Expanded | `OskarPotocki.VanillaVehiclesExpanded` |
+| Ignorance Is Bliss · Lemmy Progression | `dame.ignorance`, `LemmyMods.LemProgression` |
 | Faction Customizer · Sensible Factions · Xenotype Spawn Control | `azravos.factioncustomizer`, `Boots.SensibleFactions`, `bs.xenotypespawncontrol` |
 | Faction Territories and Vassalage · Worksites Expanded | `jaeger972.factionterritories`, `godsfathermixtape.worksitesexpanded` |
 | Better Traders Guild · Ushankas Glittertech · Alpha Mechs | `shunter.bettertradersguild`, `Ushanka.GlittertechExpansion`, `sarg.alphamechs` |
@@ -195,16 +233,19 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
 | **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` |
 
-> **Arithmetic**, since an earlier revision of this file got it wrong: 119 total,
-> tiered as Free 27 / Cheap 33 / Cheap+settings 59. Three are out — Elves and Dwarves
-> (both Free) and Rim War (Cheap+settings) — so the **in** set is 25 + 33 + 58 = **116**.
+> **Arithmetic.** 120 mods on disk. **Five are ours** (Origins, Pacing, Drifters,
+> Glitterites, Altar) and are not subject to the admission bar, leaving **115
+> third-party**. Three distinct mods are out — Rim War (barred *and* declined),
+> Elves and Dwarves (declined) — so the **in** set is **112**, tiered Free 21 / Cheap 33 /
+> Cheap+settings 56 / Real 2 = 112. Real is carved *out of* Cheap+settings, not
+> added to it — an earlier revision counted Vehicle Framework and TechBlock twice.
 
-### Real tier — 2
+### Real (2) — counted separately from Cheap+settings, not in addition to it
 
 | Mod | The price |
 |---|---|
-| **Vehicle Framework** `SmashPhil.VehicleFramework` **[V]** | The only mod besides Rim War with real thread-creation machinery: `SmashTools.Performance.DedicatedThread` runs `new Thread(Execute){IsBackground=true}` + `Start()`, and `Vehicles.DeferredGridGeneration` enqueues **vehicle pathing-grid and region generation** onto it — simulation off the synced tick. **Saved by a switch:** `Vehicles.SectionDebug.debugUseMultithreading` is a scribed bool defaulting `true`; false ⇒ `ReleaseThread()` instead of `InitThread()` ⇒ `ThreadAvailable` false ⇒ every enqueue site takes its synchronous fallback. Price: one settings flag, treated as save-critical. Unverified residuals: the sync fallback is not confirmed deterministic, and single-threaded grid generation costs frame time. **This is what decides whether vehicles are available to the campaign at all — and the answer is yes.** |
-| **TechBlock** `fridgeBaron.TechBlock` | `GameComponentUpdate()` writes research progress **per frame**, so clients at different frame rates diverge continuously and no settings file fixes it, because frame rate is not a setting. Fork-and-recompile, or a Harmony prefix. Owned by [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7). |
+| **Vehicle Framework** `SmashPhil.VehicleFramework` **[V]** | The only mod besides Rim War with real thread-creation machinery: `SmashTools.Performance.DedicatedThread` runs `new Thread(Execute){IsBackground=true}` + `Start()`, and `Vehicles.DeferredGridGeneration` enqueues **vehicle pathing-grid and region generation** onto it — simulation off the synced tick. **Saved by a switch:** `Vehicles.SectionDebug.debugUseMultithreading` is a scribed bool defaulting `true`; false ⇒ `ReleaseThread()` instead of `InitThread()` ⇒ `ThreadAvailable` false ⇒ every enqueue site takes its synchronous fallback. Price: one settings flag, treated as save-critical. Unverified residuals: the sync fallback is not confirmed deterministic, and single-threaded grid generation costs frame time. **This is what decides whether vehicles are available to the campaign at all. The lever exists and is confirmed in source; whether it is *sufficient* is not confirmed until the fallback is shown deterministic** — which is why that sits in Open below rather than being claimed here. |
+| **TechBlock** `fridgeBaron.TechBlock` **[V]** | Verified against `1.6/Assemblies/TechBlock 1.2.1.dll`, which is what actually loads — an earlier revision of this file read the `1.0` build by mistake. `TechBlock_Component.GameComponentUpdate()` runs **per frame** (`Game.UpdatePlay` → `GameComponentUtility.GameComponentUpdate`, confirmed in `Assembly-CSharp`), and inside it: `AddRandomProgress()` calls `GenCollection.RandomElement(techLevelProjects)` — **a draw from the shared `Rand` stream taken outside the synced tick** — then `Find.ResearchManager.AddProgress(val, 25f * settings.randomInsightRate)`, writing synced sim state scaled by a client-local setting, with the whole branch gated on client-local `settings.randomInsights`. **Correction to an earlier claim in this file:** it is *not* simply "progress diverges with frame rate" — the component accumulates `savedProgress` and only draws per 25 points, so the draw *count* tracks research, not frames. The decisive defect is the **interleaving position**: a `Rand` draw taken from a per-frame method enters the shared stream at a frame-dependent point, so two clients diverge even with identical settings and identical draw counts. Matching settings files therefore does **not** fix it. Fork-and-recompile, or a Harmony prefix. Owned by [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7). |
 
 ### RimPacts — the §14 open item, closed **[V]**
 
@@ -270,20 +311,25 @@ each is a specific thing to do when the mod ships.
 
 ## What this pass changes
 
-1. **One mod is barred out of 119, and three are declined.** The bar is not a filter
+1. **One mod is barred out of 115 third-party, and three are declined.** The bar is not a filter
    that removes work — it removes almost nothing, and that *is* the finding. What
    actually shapes the set is cost and taste, and taste is recorded here only when
    Conrad has stated it.
 2. **The bar reduces to one testable question: does it create threads.** A world sim
    on the synced tick is deterministic; disliking it is a decline, not a bar.
 3. **Vehicles are available**, at one settings flag. Previously this read as a hard block.
-4. **The real cost of the set is its settings surface.** 52 of 113 mods carry one, so
-   `config/ModSettings/` is save-critical across most of the build and
+4. **The real cost of the set is its settings surface.** 59 of the 120 mods on disk carry
+   one, so `config/ModSettings/` is save-critical across half the build and
    [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) must snapshot it as a
    single artifact.
-5. **Three ejections are already decided and all are cheap.** Saurid and Waster cost
-   two `MayRequire` gene lines in `Archinity.Origins` (`VRESaurids_Pheromones`,
-   `VRE_Instability_Extreme`) plus an over-declared `<modDependencies>` block.
+5. **Saurid and Waster are cheap to drop if #8 wants to.** `PARTS-BIN.md` blocked both
+   under the pre-#3 reasoning, but under the current bar neither is barred — both are
+   patchable. So they are **in and undecided**, routed to
+   [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) like every other want
+   question. Recorded only because the cost of dropping them is unusually low: two
+   `MayRequire` gene lines in `Archinity.Origins` (`VRESaurids_Pheromones`,
+   `VRE_Instability_Extreme`) plus an over-declared `<modDependencies>` block, and
+   Origins' own description already says missing sources degrade gracefully.
 
 ## Open
 

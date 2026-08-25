@@ -2260,9 +2260,16 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
 
 ## 15. Added after the depth pass
 
-Six mods appeared on disk after §1–§14 were written, taking the bin from 113 to
-**119**. Verdicted in `docs/data/MOD-VERDICTS.md` (ticket #17); recorded here so the
-bin stays the single index of what is on disk.
+Six mods appeared on disk after §1–§14 were written, taking the bin to **120** —
+115 third-party plus our own five.
+
+> §1's scope line ("108 Workshop mods… plus the 4 local Archinity mods") predates
+> these additions **and** undercounts our own mods, because `Archinity.Altar` lives
+> only in the repo rather than in Steam's `Mods/` folder and was never counted.
+> `docs/data/MOD-VERDICTS.md` carries the authoritative count.
+
+All six are verdicted in `docs/data/MOD-VERDICTS.md` (ticket #17); they are recorded
+here so the bin stays the single index of what is on disk.
 
 | ID | Mod | packageId | Supplies | Cost |
 |---|---|---|---|---|
