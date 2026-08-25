@@ -51,6 +51,8 @@ DATA = r"C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Data"
 WORKSHOP = r"C:\Program Files (x86)\Steam\steamapps\workshop\content\294100"
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODSCONFIG = os.path.join(REPO, "config", "ModsConfig.xml")
+BASELINE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "audit_research_baseline.txt")
 
 STALE = re.compile(r"[\\/]1\.[0-5][\\/]")
 
@@ -153,13 +155,44 @@ def build_defs(trees, tag):
 
 # --------------------------------------------------------------------------
 
+def load_merged():
+    """The def database as RimWorld will actually build it.
+
+    Reading raw def files audits content that will not exist in game. Our own
+    patches delete every AM_* research project, for one, so auditing them for
+    deadlocks reports risks in content the player can never reach - and any
+    retier we ship is invisible, so tier totals lag reality.
+
+    Returned in the (path, tree) shape the rest of this file expects, as a
+    single merged tree. `//` xpaths behave identically against it.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import defdb
+    root, report, _ = defdb.build(apply_our_patches=True,
+                                  apply_thirdparty_patches=True)
+    return [("<merged def database>", root)], report
+
+
 def main():
     show_all = "--all" in sys.argv
+    raw = "--raw" in sys.argv
 
-    roots = active_roots()
-    print("scanning %d active mod/DLC roots..." % len(roots))
-    trees = load_trees(roots)
-    print("parsed %d xml files\n" % len(trees))
+    if raw:
+        roots = active_roots()
+        print("--raw: scanning %d active mod/DLC roots, no patches applied"
+              % len(roots))
+        trees = load_trees(roots)
+        print("parsed %d xml files\n" % len(trees))
+    else:
+        print("building merged def database (patches applied) ...")
+        trees, report = load_merged()
+        print("  %d def files merged, %d patch operations applied"
+              % (report.def_files, report.patch_ops_applied))
+        notes = report.render()
+        if notes:
+            print("merge fidelity:")
+            print(notes)
+        print()
 
     projects = build_defs(trees, "ResearchProjectDef")
     things = build_defs(trees, "ThingDef")
@@ -295,6 +328,32 @@ def main():
 
     # ---- report ------------------------------------------------------------
     deadlocks = [r for r in rows if r[4]]
+
+    # Accepted pre-existing deadlocks. These live in third-party research we
+    # have not decided about yet, and they are not caused by any diff. A gate
+    # that is permanently red gets ignored, which costs more than it catches -
+    # so the baseline holds the known set and the gate fails only on NEW ones.
+    # Shrink it deliberately as the research pass settles; never grow it to
+    # silence something a change introduced.
+    known = set()
+    if os.path.isfile(BASELINE):
+        with open(BASELINE, encoding="utf-8") as fh:
+            known = {ln.split("#")[0].strip() for ln in fh
+                     if ln.split("#")[0].strip()}
+
+    if "--update-baseline" in sys.argv:
+        with open(BASELINE, "w", encoding="utf-8") as fh:
+            fh.write("# Accepted research deadlock risks. See audit_research.py.\n")
+            fh.write("# Regenerate deliberately: python tools/audit_research.py "
+                     "--update-baseline\n")
+            for name, tl, kind, _n, _b in sorted(deadlocks):
+                fh.write("%-42s # [%s] %s\n" % (name, tl, kind))
+        print("\nbaseline updated: %d accepted deadlock(s) written to %s"
+              % (len(deadlocks), os.path.relpath(BASELINE, REPO)))
+        return 0
+
+    fresh = [r for r in deadlocks if r[0] not in known]
+    stale = sorted(known - {r[0] for r in deadlocks})
     print("\n" + "=" * 78)
     print("DEADLOCK RISKS  -  auto-generated projects whose study subject")
     print("                   never appears in any layout, prefab, loot table,")
@@ -316,6 +375,17 @@ def main():
     for k in sorted(buckets):
         print("  %-16s %d" % (k, buckets[k]))
     print("  %-16s %d" % ("DEADLOCK RISK", len(deadlocks)))
+    print("  %-16s %d accepted, %d new"
+          % ("  vs baseline", len(deadlocks) - len(fresh), len(fresh)))
+    if stale:
+        print("\n  %d baseline entr(y/ies) no longer deadlocked - remove from %s:"
+              % (len(stale), os.path.relpath(BASELINE, REPO)))
+        for s in stale:
+            print("      %s" % s)
+    if fresh:
+        print("\n  NEW deadlock risk(s), not in the baseline:")
+        for name, tl, kind, _n, _b in fresh:
+            print("      %s  [%s]  %s" % (name, tl, kind))
 
     if "--tiers" in sys.argv:
         # TechBlock sets each TechLock's baseCost to a fraction of the
@@ -374,7 +444,7 @@ def main():
             flag = "  <-- RISK" if blocked else ""
             print("  %-40s %-10s %-24s %s%s" % (name, tl, kind, note, flag))
 
-    return 1 if deadlocks else 0
+    return 1 if fresh else 0
 
 
 if __name__ == "__main__":

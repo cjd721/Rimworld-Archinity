@@ -129,13 +129,34 @@ def build(trees):
         for n in tree.xpath("//TraderKindDef//thingDef"):
             if n.text:
                 routes[n.text.strip()].add("TRADE")
+    # ThingCategoryDefs form a tree, and StockGenerator_Category stocks a
+    # category AND every category beneath it. Comparing names by equality
+    # therefore misses the common case: nothing stocks "Leathers", but plenty
+    # stocks "Textiles", and Leathers -> Textiles -> Manufactured -> Root.
+    # Without walking that chain, ordinary leather scores as a single point of
+    # failure, which is how this check first failed.
+    cat_parent = {}
+    for name, (fields, _) in A.build_defs(trees, "ThingCategoryDef").items():
+        p = fields.get("parent")
+        if p is not None and p.text:
+            cat_parent[name] = p.text.strip()
+
+    def with_ancestors(cats):
+        out = set()
+        for c in cats:
+            seen = c
+            while seen and seen not in out:
+                out.add(seen)
+                seen = cat_parent.get(seen)
+        return out
+
     for name, (fields, _) in things.items():
         tr = fields.get("tradeability")
         if tr is not None and (tr.text or "").strip() in ("None", "Sellable"):
             continue
         tags = {x.text.strip() for x in fields.get("tradeTags", []) if x.text}
         cats = {x.text.strip() for x in fields.get("thingCategories", []) if x.text}
-        if tags & stock_tags or cats & stock_cats:
+        if tags & stock_tags or with_ancestors(cats) & stock_cats:
             routes[name].add("TRADE")
 
     # ---- QUEST / LOOT / MAPGEN / HARVEST ----------------------------------

@@ -228,22 +228,42 @@ def _value_children(op):
     return list(value) if value is not None else []
 
 
+def resolve_success(op, matched):
+    """Apply an operation's <success> field to its raw result.
+
+    RimWorld's PatchOperationSuccess: Always always reports success, Never
+    always reports failure, Invert flips the real result, Normal (the default)
+    reports it. This is not cosmetic - PatchOperationSequence aborts on the
+    first operation that reports failure, so a PatchOperationTest with
+    <success>Invert</success> is how mods guard a whole block of operations.
+    Ignoring it runs guarded blocks that the game would skip.
+    """
+    mode = (op.findtext("success") or "Normal").strip()
+    if mode == "Always":
+        return True
+    if mode == "Never":
+        return False
+    if mode == "Invert":
+        return not matched
+    return bool(matched)
+
+
 def _apply_leaf(root, op, report):
-    """Apply one operation. Returns the number of nodes its xpath matched."""
+    """Apply one operation. Returns (matched_count, reported_success)."""
     cls = (op.get("Class") or "").strip()
     xpath_node = op.find("xpath")
     if xpath_node is None or not (xpath_node.text or "").strip():
         report.skip(cls or "<no Class>")
-        return 0
+        return 0, True
 
     try:
         targets = root.xpath(xpath_node.text.strip())
     except etree.XPathEvalError:
         report.skip("%s <bad xpath>" % cls)
-        return 0
+        return 0, False
 
     if not isinstance(targets, list):
-        return 0
+        return 0, False
 
     if cls == "PatchOperationReplace":
         for t in targets:
@@ -298,23 +318,37 @@ def _apply_leaf(root, op, report):
                 ext = etree.SubElement(t, "modExtensions")
             ext.extend(copy.deepcopy(c) for c in _value_children(op))
     elif cls == "PatchOperationTest":
-        pass  # match count is the whole point; nothing to mutate
+        # Mutates nothing. Its entire purpose is the success value it reports,
+        # which gates the rest of its enclosing sequence.
+        report.patch_ops_applied += 1
+        return len(targets), resolve_success(op, len(targets))
     else:
         report.skip(cls)
-        return len(targets)
+        return len(targets), resolve_success(op, len(targets))
 
     report.patch_ops_applied += 1
-    return len(targets)
+    return len(targets), resolve_success(op, len(targets))
 
 
 def apply_operation(root, op, report, active_ids):
-    """Apply an operation, walking Sequence / FindMod / Conditional wrappers."""
+    """Apply an operation, walking Sequence / FindMod / Conditional wrappers.
+
+    Returns the success value the operation reports, which its parent sequence
+    needs in order to decide whether to keep going.
+    """
     cls = (op.get("Class") or "").strip()
 
     if cls == "PatchOperationSequence":
+        # Stops at the first operation that reports failure, exactly as
+        # PatchOperationSequence.ApplyWorker does. Running the whole list
+        # regardless is how a guarded block gets applied when the game would
+        # have skipped it.
+        ok = True
         for child in _elements(op.find("operations")):
-            apply_operation(root, child, report, active_ids)
-        return
+            if not apply_operation(root, child, report, active_ids):
+                ok = False
+                break
+        return resolve_success(op, ok)
 
     # For FindMod and Conditional, <match> and <nomatch> ARE operations -
     # they carry their own Class attribute. Iterating their children walks
@@ -326,9 +360,10 @@ def apply_operation(root, op, report, active_ids):
         # author; we accept either, since active_ids carries both.
         hit = any(n in active_ids for n in names)
         branch = op.find("match") if hit else op.find("nomatch")
+        ok = True
         if branch is not None:
-            apply_operation(root, branch, report, active_ids)
-        return
+            ok = apply_operation(root, branch, report, active_ids)
+        return resolve_success(op, ok)
 
     if cls == "PatchOperationConditional":
         xpath_node = op.find("xpath")
@@ -338,13 +373,14 @@ def apply_operation(root, op, report, active_ids):
                 hit = bool(root.xpath(xpath_node.text.strip()))
             except etree.XPathEvalError:
                 report.skip("PatchOperationConditional <bad xpath>")
-                return
+                return False
         branch = op.find("match") if hit else op.find("nomatch")
+        ok = True
         if branch is not None:
-            apply_operation(root, branch, report, active_ids)
-        return
+            ok = apply_operation(root, branch, report, active_ids)
+        return resolve_success(op, ok)
 
-    _apply_leaf(root, op, report)
+    return _apply_leaf(root, op, report)[1]
 
 
 def iter_operations(patch_root, active_ids=None, root=None):

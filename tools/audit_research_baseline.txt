@@ -1,0 +1,36 @@
+# Accepted research deadlock risks. See audit_research.py.
+# Regenerate deliberately: python tools/audit_research.py --update-baseline
+BlackHole_GT                               # [Ultra] AUTO: Theoretical
+GravBiotech                                # [Spacer] AUTO: ReverseEngineering
+GravDeathrest                              # [Spacer] AUTO: ReverseEngineering
+GravEngineBuild                            # [Spacer] AUTO: ReverseEngineering
+GravForge                                  # [Ultra] AUTO: Theoretical
+GravTuning                                 # [Ultra] AUTO: Theoretical
+GravWeapon                                 # [Ultra] AUTO: Theoretical
+GroundPenetratingScanner                   # [Industrial] AUTO: ReverseEngineering
+MF_WasteDisposal                           # [Industrial] AUTO: ReverseEngineering
+PenoxycylineProduction                     # [Industrial] AUTO: ReverseEngineering
+ShipBasics                                 # [Spacer] AUTO: ReverseEngineering
+ShipCryptosleep                            # [Spacer] AUTO: ReverseEngineering
+ShipEngine                                 # [Spacer] AUTO: ReverseEngineering
+ShipReactor                                # [Spacer] AUTO: ReverseEngineering
+ShipSensorCluster                          # [Spacer] AUTO: ReverseEngineering
+SpacerFurniture                            # [Spacer] AUTO: ReverseEngineering
+VFEP_Warcaskets                            # [Industrial] AUTO: ReverseEngineering
+VFES_ConcealedDefenses                     # [Industrial] AUTO: ReverseEngineering
+VFES_EMPCannon                             # [Spacer] AUTO: ReverseEngineering
+VFES_Railgun                               # [Spacer] AUTO: ReverseEngineering
+VFES_RepulsorTechnology                    # [Ultra] AUTO: Theoretical
+VFE_AdvancedBatteries                      # [Spacer] AUTO: ReverseEngineering
+VFE_AdvancedPowerSources                   # [Spacer] AUTO: ReverseEngineering
+VFE_IndustrialGenerators                   # [Industrial] AUTO: ReverseEngineering
+VFE_NuclearPower                           # [Spacer] AUTO: ReverseEngineering
+VFE_Res_AdvancedHydroponics                # [Spacer] AUTO: ReverseEngineering
+VFE_Res_Sprinkler                          # [Industrial] AUTO: ReverseEngineering
+VFE_TidalPower                             # [Industrial] AUTO: ReverseEngineering
+VGE_AstrofuelRefining                      # [Spacer] AUTO: ReverseEngineering
+VGE_CompactWorkspaces                      # [Spacer] AUTO: ReverseEngineering
+VGE_GravshipPower                          # [Spacer] AUTO: ReverseEngineering
+VGE_HeatDissipation                        # [Spacer] AUTO: ReverseEngineering
+VVE_BasicVehicles                          # [Industrial] AUTO: ReverseEngineering
+VWE_TrenchWarfare                          # [Industrial] AUTO: ReverseEngineering
