@@ -18,24 +18,33 @@ Here are the last 10 commits:
 
 </recent-commits>
 
+# STANDARDS
+
+Read @CODING_STANDARDS.md before writing anything. It is the implementation brief:
+hard constraints, the failures that produce no error message, the verification
+commands, and how the red-green loop applies in a codebase that is mostly XML defs.
+
 # EXPLORATION
 
 Explore the repo and fill your context window with relevant information that will allow you to complete the task.
 
-Pay extra attention to test files that touch the relevant parts of the code.
-
 # EXECUTION
 
-If applicable, use RGR to complete the task.
+Use the red-green loop as `CODING_STANDARDS.md` defines it for this repo.
 
-1. RED: write one test
-2. GREEN: write the implementation to pass that test
-3. REPEAT until done
-4. REFACTOR the code
+For def work the match count is the test: record what an xpath matches before you
+patch, apply the patch, confirm the count is what you predicted, then move to the
+next one. One patch, one confirmation.
+
+Verify with the tools the repo actually has. Never fabricate a harness to satisfy
+the loop, and never claim tests were run when they were not. If the change
+genuinely warrants test infrastructure that does not exist yet, say so on the
+issue rather than adding it unasked.
 
 # FEEDBACK LOOPS
 
-Before committing, run `npm run typecheck` and `npm run test` to ensure the tests pass.
+Before committing, run all four verification commands from `CODING_STANDARDS.md`
+and include their results. A def change is not done until all four pass.
 
 # COMMIT
 
