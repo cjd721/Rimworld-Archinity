@@ -25,8 +25,9 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
 ## Corrections to the first pass
 
 1. **Factional War is not barred.** It has no threading of any kind — a single
-   `WorldCompFormCaravanAfterAllyExit` and nothing else **[V]**. It is **declined**,
-   which Conrad had already decided; the barred label was mine and unsupported.
+   `WorldCompFormCaravanAfterAllyExit` and nothing else **[V]**. The barred label was
+   mine and unsupported by evidence. Whether we *want* it is a separate, still-open
+   question — see **Nothing declined yet** below.
 2. **The Medieval Overhaul flag is void.** It rested on MO being disabled, which
    means nothing. MO is a normal candidate.
 3. **Faction Territories and Worksites Expanded are un-declined.** I declined both
@@ -78,19 +79,36 @@ With licence struck and the set pinned, almost every defect that used to read as
 disqualifying is now something we can simply fix. Already mined for the
 faction-tension shape; stays on disk as reference.
 
-## Declined — 3
+## Declined — none yet
 
-Conrad's calls. No justification owed, none recorded.
+**Nothing on this list is closed.** Three mods have been *spoken of* as unwanted —
+Faction – Elves, Dwarves of the Rim, and Factional War — but that was conversational,
+not reasoned, and Conrad has since said explicitly that it needs thinking through
+before it is recorded as a verdict.
 
-| Mod | packageId |
-|---|---|
-| Faction – Elves | `ICC.FOV.ELVES` |
-| Dwarves of the Rim | `bean.customxenotypes.dwarvesoftherim` |
-| [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
+| Mod | packageId | Status |
+|---|---|---|
+| Faction – Elves | `ICC.FOV.ELVES` | **Open want-question** → [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) |
+| Dwarves of the Rim | `bean.customxenotypes.dwarvesoftherim` | **Open want-question** → [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) |
+| [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` | **Open want-question** → [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) |
+
+All three are faction and world content, so the want-question belongs to
+[The world roster](https://github.com/cjd721/Rimworld-Archinity/issues/8) alongside
+Empire, Deserters and Android — not to this file. **This pass declines nothing.**
+It establishes what we *can* use; what we *want* is decided elsewhere, deliberately.
+
+Recorded so the reasoning is not lost: Elves and Dwarves both add **medieval-era
+factions at world creation**, which puts them behind the freeze and makes them a
+roster decision rather than a content one. Factional War resolves faction-vs-faction
+combat, which overlaps whatever shape [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)
+lands on for faction tension — so it is a question of *duplication*, not of safety.
 
 ---
 
-## In — 109, by tier
+## In — 112, by tier
+
+Everything not barred. Three of these carry an open want-question, flagged **†** and
+listed above; they are counted here because the bar admits them.
 
 **Free (24)** — no assembly. Nothing can go wrong that is not XML.
 
@@ -112,6 +130,8 @@ Conrad's calls. No justification owed, none recorded.
 | Rustic Workbenches | `SereQ.RusticWorkbenches` |
 | Advanced Pollution Pump · Faster Moisture Pump | `Bart.APP`, `Kangel.Moisture` |
 | Filth Vanishes With Rain And Time · No Alzheimer's | `FrozenSnowFox.…`, `willworkforicecream.NoAlzheimers` |
+| **†** Faction – Elves | `ICC.FOV.ELVES` |
+| **†** Dwarves of the Rim | `bean.customxenotypes.dwarvesoftherim` |
 
 **Cheap (31)** — an assembly, no settings surface. Enable plus a `PatchOperation`
 where wanted.
@@ -137,7 +157,7 @@ where wanted.
 | Pharmacist: Represcribed · Milky Way · Architect Icons | `Fluffy.Pharmacist`, `Andromeda.MilkyWay`, `com.bymarcin.ArchitectIcons` |
 | More Gravship Workbenches · [sbz] Fridge | `LTS.MGW`, `sbz.NeatStorageFridge` |
 
-**Cheap + settings (52)** — Cheap plus a **managed condition**: per
+**Cheap + settings (57)** — Cheap plus a **managed condition**: per
 `CODING_STANDARDS.md`, `config/ModSettings/` is part of the sync surface. Copy the
 file; never re-click it. This is a rule to follow, not a defect to fix.
 
@@ -163,6 +183,11 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | Replace Stuff · Pick Up And Haul · Compositable Loadouts | `Memegoddess.ReplaceStuff`, `Mehni.PickUpAndHaul`, `Wiri.compositableloadouts` |
 | Tribal Furniture · Tribal Siege Raids · TakeCover · Vanilla Combat Reloaded | `Xercaine.Tribal.Furniture`, `PJerri.TribalSiegeRaids`, `rabiosus.TakeCover`, `Donald.VCR` |
 | Better Architect Menu · Architect Menu Optimizer | `ferny.BetterArchitect`, `MRK.architectmenuoptimizer` |
+| **†** [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
+
+> **Arithmetic**, since an earlier revision of this file got it wrong: 113 total,
+> tiered as Free 24 / Cheap 31 / Cheap+settings 58. Rim War is barred and sits in
+> Cheap+settings, so the **in** set is 24 + 31 + 57 = **112**.
 
 ### Real tier — 2
 
@@ -202,9 +227,9 @@ each is a specific thing to do when the mod ships.
 
 ## What this pass changes
 
-1. **One mod is barred out of 113.** The bar is not a filter that removes work — it
-   removes almost nothing, and that *is* the finding. What actually shapes the set is
-   cost and taste.
+1. **One mod is barred out of 113, and nothing is declined.** The bar is not a filter
+   that removes work — it removes almost nothing, and that *is* the finding. What
+   actually shapes the set is cost and taste, and taste is not this file's to record.
 2. **The bar reduces to one testable question: does it create threads.** A world sim
    on the synced tick is deterministic; disliking it is a decline, not a bar.
 3. **Vehicles are available**, at one settings flag. Previously this read as a hard block.
