@@ -19,11 +19,45 @@ The simplest thing that achieves the goal without violating a constraint. XML is
 the usual answer, not the rule. Reject unrequested scope, speculative
 abstraction, and cleverness that buys nothing.
 
-Working test before proposing code at all: **does this need a random number or a
-client-local cache?** If no, code is cheap — GameComponents, stat parts, ITabs,
-inspect strings, letters and synced designators all cost nothing. If yes, think
-hard or push it into XML. The expensive thing was never writing the code, it was
-debugging a desync in a live co-op session.
+### The two gates
+
+Run these at **design time, across candidate solutions** — the job is to
+eliminate what cannot work before the work starts, not to grade a finished diff.
+Both must pass.
+
+**Divergence.** Does it read anything that can differ between the two machines?
+`ModSettings`, camera or viewport state, `Find.CurrentMap`, current selection,
+`Prefs`, wall-clock time, a static cache with no key.
+
+> `Rand` is **not** on that list. `Rand` reached from an already-synced tick or
+> job is deterministic by construction — VFE Medieval 2 ships `Rand.Chance`
+> inside the bill-completion path today and it works. `Rand` reached from an
+> *unsynced* path is on the list, and the canonical shape is viewport-gated RNG:
+> `if (GenView.ShouldSpawnMotesAt(...)) { Rand.Value; }` makes two clients draw a
+> different number of values from the shared stream in the same tick.
+
+**Loudness.** When it breaks, does it say so? Harmony throws at startup on a
+missing target — loud. A PatchOperation matching zero nodes is loud under
+`patch_check.py` and silent in game. A facility declaring `statFactors` is silent
+everywhere. Between two solutions that both work, prefer the one whose failure
+announces itself.
+
+**Both pass ⇒ write it. Code is cheap** — GameComponents, stat parts, ITabs,
+inspect strings, letters and synced designators all cost nothing. One fails ⇒
+redesign or push it into XML. The expensive thing was never writing the code, it
+was debugging a desync in a live co-op session, and these two gates are what
+predict that.
+
+**Permanence is deliberately not a gate.** Decided in
+[#3](https://github.com/cjd721/Rimworld-Archinity/issues/3): once established,
+this does not change, so a one-way door nobody walks through costs nothing. The
+one place permanence still binds is **world creation** — see
+[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18).
+
+> This replaces the older one-line test (*"does this need a random number or a
+> client-local cache?"*), which named `Rand` as the primary danger. The parts-bin
+> census of 51 settings-bearing assemblies found the reverse: client-local state
+> was the dominant defect and raw `Rand` was almost never the defect on its own.
 
 ---
 
@@ -35,8 +69,16 @@ debugging a desync in a live co-op session.
 - **Save integrity.** Two people play one save across months of real time. Small
   code that fails loudly beats clever code that fails quietly. A broken save is
   worse than a missing feature.
-- **One assembly.** `Archinity.Altar` ships the Harmony assembly. A diff that
-  introduces a second assembly is rejected unless the issue explicitly decided to.
+- **One assembly of ours.** Everything we own ships in a single assembly under
+  the `Archinity.Core` namespace, so our Harmony patches sit in one file and
+  cannot fight each other across load order. A diff that introduces a second
+  assembly *of ours* is rejected unless the issue explicitly decided to. A
+  **recompiled third-party DLL does not count** — it is theirs, repaired, and the
+  rule was never about DLL count in the abstract
+  ([#3](https://github.com/cjd721/Rimworld-Archinity/issues/3)).
+  > The assembly is currently `ArchinityAltar.dll` in `Archinity.Altar`. The
+  > rename is decided and free until worldgen; which mod ships it waits on the
+  > mod-structure decision.
 
 ---
 
@@ -233,7 +275,11 @@ checked.
 
 - `CLAUDE.md` is a map, not a manual. It earns pointers and mode-switching rules,
   nothing else.
-- **This file** owns everything about how code and defs get written.
+- **This file** owns everything about how code and defs get written — the rules an
+  author follows and a reviewer checks a diff against.
+- `CONTEXT.md` owns what the project's words *mean*, and nothing else. A term's
+  definition goes there; the rule for applying it stays here. If you find yourself
+  explaining a rule in `CONTEXT.md`, or defining a word here, they are swapped.
 - `docs/technical-findings.md` owns verified facts, so they are never
   re-litigated.
 - `docs/WAYSTONE.md` owns design intent. A diff does not get to change it.
