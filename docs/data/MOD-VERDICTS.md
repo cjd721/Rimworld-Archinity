@@ -1,7 +1,7 @@
 # Mod verdicts
 
 The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applied to
-**every mod on disk — all 118**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
+**every mod on disk — all 119**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
 
 **The instrument, restated so this file stands alone:**
 
@@ -13,7 +13,7 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
   assembly).
 - Barred and declined mods **stay on disk as reference.**
 
-**118 mods scanned** — the workshop folder plus local `Mods/`. **Every one has a verdict.**
+**119 mods scanned** — the workshop folder plus local `Mods/`. **Every one has a verdict.**
 
 > **`config/ModsConfig.xml` carries no signal and is not referenced below.** Mods are
 > unenabled because the game has not been launched, not because anything was decided.
@@ -34,11 +34,11 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
    on my own judgment; that was not mine to do. Both are tiered below and returned
    to Conrad undecided. Neither is barred — one `WorldComponent` each, no thread
    creation **[V]**.
-4. **Five mods added since the first scan**, taking the total from 113 to 118:
-   RimPacts, ATH's Styleable Framework, ATH's style Gothic, ATH's styles Norse, and
-   Fix Styled Blueprints. RimPacts closes a standing `PARTS-BIN.md` §14 open item —
-   see below. The four ATH/style entries are one family: a framework plus two style
-   packs plus a blueprint compat fix; none carries a bar risk of any kind.
+4. **Six mods added since the first scan**, taking the total from 113 to 119:
+   RimPacts, ATH's Styleable Framework, and the style packs Gothic, Norse and Draconic,
+   plus Fix Styled Blueprints. RimPacts closes a standing `PARTS-BIN.md` §14 open item
+   — see below. The five ATH/style entries are one family: a framework, three style
+   packs and a blueprint compat fix; none carries a bar risk of any kind.
 
 ---
 
@@ -47,7 +47,7 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
 Byte-marker scan of every 1.6 assembly, then `ilspycmd` decompiles wherever a marker
 was load-bearing. `[V]` = decompiled and read. `[M]` = marker-level only.
 
-**81 of 118 are mechanically unbarrable** — no assembly at all, or an assembly with
+**82 of 119 are mechanically unbarrable** — no assembly at all, or an assembly with
 no threading and no `WorldComponent`. For those the bar cannot bite and no
 decompile is needed. The remaining 36 were examined individually.
 
@@ -79,7 +79,7 @@ mods as `brrainz.harmony`. Parse the XML; take the direct child of `ModMetaData`
 |---|---|---|
 | **Rim War** | `Torann.RimWar` | `ThreadStart` present in the 1.6 assembly **[V]**, plus `WorldComponent_PowerTracker` and `WorldComponent_IncidentTracker` running a genuine parallel world power simulation, plus a 30-field settings ref constructed inside `WorldComponentTick`. Threads are on by default. |
 
-**One mod, out of 118.** That is the instrument working as designed, not a shortfall.
+**One mod, out of 119.** That is the instrument working as designed, not a shortfall.
 With licence struck and the set pinned, almost every defect that used to read as
 disqualifying is now something we can simply fix. Already mined for the
 faction-tension shape; stays on disk as reference.
@@ -112,11 +112,11 @@ Conrad's, and gets recorded here only once he has said so.
 
 ---
 
-## In — 115, by tier
+## In — 116, by tier
 
 Everything not barred and not declined.
 
-**Free (24)** — no assembly. Nothing can go wrong that is not XML.
+**Free (25)** — no assembly. Nothing can go wrong that is not XML.
 
 | Mod | packageId |
 |---|---|
@@ -138,6 +138,7 @@ Everything not barred and not declined.
 | Filth Vanishes With Rain And Time · No Alzheimer's | `FrozenSnowFox.…`, `willworkforicecream.NoAlzheimers` |
 | ATH's style Gothic and Bloody Gothic | `anthitei.athsstylegothic.style` |
 | ATH's styles Norse | `anthitei.athsstylenorse.style` |
+| ATH's style Draconic | `Anthitei.ATHsStyleDraconic.Style` |
 
 **Cheap (33)** — an assembly, no settings surface. Enable plus a `PatchOperation`
 where wanted.
@@ -194,9 +195,9 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
 | **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` |
 
-> **Arithmetic**, since an earlier revision of this file got it wrong: 118 total,
-> tiered as Free 26 / Cheap 33 / Cheap+settings 59. Three are out — Elves and Dwarves
-> (both Free) and Rim War (Cheap+settings) — so the **in** set is 24 + 33 + 58 = **115**.
+> **Arithmetic**, since an earlier revision of this file got it wrong: 119 total,
+> tiered as Free 27 / Cheap 33 / Cheap+settings 59. Three are out — Elves and Dwarves
+> (both Free) and Rim War (Cheap+settings) — so the **in** set is 25 + 33 + 58 = **116**.
 
 ### Real tier — 2
 
@@ -269,7 +270,7 @@ each is a specific thing to do when the mod ships.
 
 ## What this pass changes
 
-1. **One mod is barred out of 118, and three are declined.** The bar is not a filter
+1. **One mod is barred out of 119, and three are declined.** The bar is not a filter
    that removes work — it removes almost nothing, and that *is* the finding. What
    actually shapes the set is cost and taste, and taste is recorded here only when
    Conrad has stated it.

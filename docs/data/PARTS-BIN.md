@@ -2260,8 +2260,8 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
 
 ## 15. Added after the depth pass
 
-Five mods appeared on disk after §1–§14 were written, taking the bin from 113 to
-**118**. Verdicted in `docs/data/MOD-VERDICTS.md` (ticket #17); recorded here so the
+Six mods appeared on disk after §1–§14 were written, taking the bin from 113 to
+**119**. Verdicted in `docs/data/MOD-VERDICTS.md` (ticket #17); recorded here so the
 bin stays the single index of what is on disk.
 
 | ID | Mod | packageId | Supplies | Cost |
@@ -2270,11 +2270,13 @@ bin stays the single index of what is on disk.
 | `3016405872` | ATH's Styleable Framework | `Anthitei.ATHsStyleableFramework.Style` | Style framework — 25 patch files, ships `Source/`. | Cheap. No threading, no `WorldComponent`, no settings. **[M]** |
 | `3136210612` | ATH's style Gothic and Bloody Gothic | `anthitei.athsstylegothic.style` | Style pack, 10 defs. | Free — no assembly. **[M]** |
 | `3292048218` | ATH's styles Norse | `anthitei.athsstylenorse.style` | Style pack, 6 defs. **On-theme for the Neolithic and Medieval eras**, where the campaign's visual vocabulary is thinnest. | Free — no assembly. **[M]** |
+| `2998389369` | ATH's style Draconic | `Anthitei.ATHsStyleDraconic.Style` | Style pack, 6 defs. | Free — no assembly. **[M]** |
 | `2957953663` | Fix Styled Blueprints | `kathanon.FixStyledBlueprints` | Compat fix for styled blueprints. | Cheap. No threading, no `WorldComponent`, no settings. **[M]** |
 
-The four style entries are one family — a framework, two style packs, and a blueprint
-compat fix. None carries a bar risk of any kind, and together they are a pure reskin
-resource, which is the strongest form of *reskin before you rebuild*.
+The five style entries are one family — a framework, three style packs (Gothic, Norse,
+Draconic), and a blueprint compat fix. None carries a bar risk of any kind, and
+together they are a pure reskin resource, which is the strongest form of *reskin
+before you rebuild*.
 
 **RimPacts is a design decision, not a safety one**, and it belongs to
 [The world roster](https://github.com/cjd721/Rimworld-Archinity/issues/8). It is worth
