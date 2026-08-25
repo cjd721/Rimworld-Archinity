@@ -291,6 +291,7 @@ what makes it worth raiding as a parts bin.
 | VIE Memes and Structures | 704 | plus 16 ritual `.ogg` audio loops |
 | Alpha Mechs | 664 | the late-game mechanoid bestiary |
 | Vanilla Gravship Expanded | 523 | |
+| **Tavern** | 519 | added after the depth pass (§15); medieval tavern, kitchen and bedroom furniture |
 | Vanilla Psycasts Expanded | 468 | |
 | VQE Ancients | 407 | already the altar's art source |
 | VFE Insectoids 2 | 380 | |
@@ -2264,15 +2265,16 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
 
 ## 15. Added after the depth pass
 
-Six mods appeared on disk after §1–§14 were written, taking the bin to **120** —
-115 third-party plus our own five.
+Eight mods appeared on disk after §1–§14 were written, taking the bin to **122** —
+117 third-party plus our own five. Six arrived as one batch; **Tavern** and **Slave
+Rebellions Improved (Continued)** landed later and are the last two rows below.
 
 > §1's scope line ("108 Workshop mods… plus the 4 local Archinity mods") predates
 > these additions **and** undercounts our own mods, because `Archinity.Altar` lives
 > only in the repo rather than in Steam's `Mods/` folder and was never counted.
 > `docs/data/MOD-VERDICTS.md` carries the authoritative count.
 
-All six are verdicted in `docs/data/MOD-VERDICTS.md` (ticket #17); they are recorded
+All eight are verdicted in `docs/data/MOD-VERDICTS.md` (ticket #17); they are recorded
 here so the bin stays the single index of what is on disk.
 
 | ID | Mod | packageId | Supplies | Cost |
@@ -2283,6 +2285,60 @@ here so the bin stays the single index of what is on disk.
 | `3292048218` | ATH's styles Norse | `anthitei.athsstylenorse.style` | Style pack, 6 defs. **On-theme for the Neolithic and Medieval eras**, where the campaign's visual vocabulary is thinnest. | Free — no assembly. **[M]** |
 | `2998389369` | ATH's style Draconic | `Anthitei.ATHsStyleDraconic.Style` | Style pack, 6 defs. | Free — no assembly. **[M]** |
 | `2957953663` | Fix Styled Blueprints | `kathanon.FixStyledBlueprints` | Compat fix for styled blueprints. | Cheap. No threading, no `WorldComponent`, no settings. **[M]** |
+| `3775694305` | **Tavern** | `ODs.Tavern` | **73 defs and 519 sprites.** 38 building defs (30 concrete + 8 abstract bases) — tables, counters, chairs, racks, straw rugs, wall lights, beds, 3 production benches; 7 items and 23 recipes forming a small food chain (corn → dough → mush/bread, rice buns, meat rice, tallow); one `Tav_AteHomeCookedMeal` thought; three workgivers; and its own `TavernFurniture` architect category. Its `Stoves.xml` patch links three kitchen facilities to the vanilla electric and fuelled stoves via `CompProperties_AffectedByFacilities`. | **Free** — no assembly of any kind, XML and textures only. **[V]** Two things to know: it declares a **hard `modDependencies` on VEF**, and **~27 of its 30 concrete buildings are `techLevel` Undefined** — see below. |
+| `3259932217` | **Slave Rebellions Improved (Continued)** | `Mlie.SlaveRebellionsImproved` | Rewrites slave-rebellion generation: rebellion vs. escape decided by whether rebels can reach usable weapons, scale (single / local / grand) decided by how many slaves qualify, a genuine flee-for-your-life escape AI (`LordJob_SlaveEscape`, `LordToil_SlavesEscapeNoViolence`) instead of slaves suiciding into the colony, and alerts that name the specific slaves about to rebel. Hard `modDependencies` on **Ideology** (in the floor) and Harmony. | **Cheap + settings, and the settings are load-bearing on synced sim state.** No threading, no `WorldComponent`, no `GameComponent` **[V]**. But `SlaveSettings` (two floats, `RebellionMin` 0.6 / `RebellionLoyal` 0.8) is read **inside the rebellion logic itself** — see below. |
+
+**Tavern's two catches, both worth acting on.**
+
+**It is a new hard VEF dependent.** `About.xml` declares
+`OskarPotocki.VanillaFactionsExpanded.Core` under `modDependencies`, not `loadAfter`,
+so Tavern does not load without VEF. That is a data point for
+[The VEF dependency](https://github.com/cjd721/Rimworld-Archinity/issues/15), not a
+decision — but it makes the door slightly heavier.
+
+**Exactly one def in the whole mod declares a `<techLevel>`, and it is the bed base.**
+`TavComfortBedBase` (abstract) sets `Medieval`, and it propagates to `Tav_BasicBedBase`
+and the three concrete beds beneath them. **Every other concrete building — roughly 27
+of 30 — inherits from a vanilla base** (`ArtableFurnitureBase`,
+`FurnitureWithQualityBase`, `BuildingBase`, `BenchBase`, `LampBase`), none of which sets
+`techLevel`, so they resolve to **Undefined**. Twelve defs carry a
+`researchPrerequisites` (mostly `ComplexFurniture`); the rest are gated by nothing at
+all.
+
+Any era gate that filters on `techLevel` — which is exactly how World Tech Level works —
+**will not see those 27 buildings**, and most of a medieval tavern becomes buildable in
+the Neolithic. This is a concrete instance of the *mod-proofing the def surface* problem
+and a live input to
+[The era-gating mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/7). The
+fix is cheap — one `PatchOperation` stamping `techLevel` across the set — but it has to
+be **noticed**, and nothing in the game will tell you: an ungated building is not an
+error, it is just available. Treat this as the worked example of why a `techLevel` audit
+belongs in the build backlog for *every* art-and-furniture mod admitted, not just this
+one.
+
+**Slave Rebellions Improved: the settings are not cosmetic.** `RebellionMin` gates a
+Postfix on `SlaveRebellionUtility.CanParticipateInSlaveRebellion` — a slave above that
+suppression level cannot rebel at all — and `RebellionLoyal` decides who joins a grand
+rebellion. Both read `SlaveMod.Instance.Settings.*` **from inside game logic**, so two
+clients with different settings files compute **different rebelling-slave rosters from
+the same tick**. That is §3.1's dominant hazard exactly: not `Rand`, but client-local
+`ModSettings` steering synced state. Copy `config/ModSettings/`; never re-click it.
+
+Two further notes. It keeps one vanilla `Rand.Value < 0.5f` draw inside
+`StartSlaveRebellion` (choosing whether the rebellion targets the initiator) — that is
+**on the synced tick and therefore safe** per
+[#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), despite the mod's "random
+free" marketing. And it patches `SlaveRebellionUtility.IsRebelling` with a **Transpiler**,
+the most collision-prone patch type there is; the author states outright that the mod is
+"incompatible with anything that also affects generation of slave rebellions". Nothing
+else in the bin does, but that is a constraint on what may be added later.
+
+**Design relevance, recorded because it is not obvious from the verdict.** This mod is
+the closest thing in the bin to the *ideological mirror* — the internal half of the
+politics story, where you hold a colony of people who do not share your religion. It
+makes suppression a **legible, controllable dial** rather than a dice roll, which is
+what the standing *design against the min-maxer* and *no dice roll may cost a good pawn*
+biases both ask for. Whether the campaign wants it is a design call, not a safety one.
 
 The five style entries are one family — a framework, three style packs (Gothic, Norse,
 Draconic), and a blueprint compat fix. None carries a bar risk of any kind, and

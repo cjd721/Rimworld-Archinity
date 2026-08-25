@@ -1,7 +1,7 @@
 # Mod verdicts
 
 The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applied to
-**every mod on disk — all 120**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
+**every mod on disk — all 122**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
 
 **The instrument, restated so this file stands alone:**
 
@@ -13,13 +13,13 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
   assembly).
 - Barred and declined mods **stay on disk as reference.**
 
-**120 mods on disk** — the workshop folder, local `Mods/`, and this repo. **Every one
+**122 mods on disk** — the workshop folder, local `Mods/`, and this repo. **Every one
 has a verdict.**
 
 **Five of them are ours** (Origins, Pacing, Drifters, Glitterites, Altar) and the
 admission bar does not apply to them: the bar decides whether to admit *someone
 else's* work. Our own code is governed by the two gates in `CODING_STANDARDS.md`.
-So the bar runs over the **115 third-party** mods.
+So the bar runs over the **117 third-party** mods.
 
 > **`config/ModsConfig.xml` carries no signal and is not referenced below.** Mods are
 > unenabled because the game has not been launched, not because anything was decided.
@@ -45,6 +45,12 @@ So the bar runs over the **115 third-party** mods.
    plus Fix Styled Blueprints. RimPacts closes a standing `PARTS-BIN.md` §14 open item
    — see below. The five ATH/style entries are one family: a framework, three style
    packs and a blueprint compat fix; none carries a bar risk of any kind.
+4b. **Two more mods added since, taking the disk total to 122:** **Tavern**
+   (`ODs.Tavern`, `3775694305`) and **Slave Rebellions Improved (Continued)**
+   (`Mlie.SlaveRebellionsImproved`, `3259932217`). Neither is barred. Tavern is
+   **Free** — no assembly at all. SRI is **Cheap + settings**, and its settings are
+   read from inside rebellion logic, so they are save-critical in the strong sense.
+   Both are tiered below and recorded in `PARTS-BIN.md` §15.
 5. **`Archinity.Altar` was absent from every earlier revision**, despite the claim
    that every mod had a verdict. It lives only in this repo, not in Steam's `Mods/`
    folder like the other four Archinity mods, so the disk scan never saw it — and it
@@ -62,7 +68,7 @@ So the bar runs over the **115 third-party** mods.
 Byte-marker scan of every 1.6 assembly, then `ilspycmd` decompiles wherever a marker
 was load-bearing. `[V]` = decompiled and read. `[M]` = marker-level only.
 
-**83 of 120 are mechanically unbarrable** — no assembly at all, or an assembly with
+**85 of 122 are mechanically unbarrable** — no assembly at all, or an assembly with
 no threading and no `WorldComponent`. For those the bar cannot bite and no
 decompile is needed. The remaining 37 were examined individually.
 
@@ -81,6 +87,14 @@ runs **off the synced tick**. A `WorldComponent` doing heavy world-state work in
 objection about shadow worlds, which is a reason to **decline**, never to bar. In
 practice the bar reduces to one testable thing: **does it create threads.**
 
+**A second methodological trap, found while verdicting Slave Rebellions Improved:**
+**do not byte-scan for a fully-qualified type name.** Searching that assembly for
+`Verse.Rand` returns **zero** hits, yet the decompile shows a live `Rand.Value` call —
+.NET metadata stores namespace and type name as *separate* strings, so the qualified
+form never appears as a contiguous byte run. Scan for the bare type (`Rand`) and treat
+any hit as "decompile to find out". A zero on `Verse.Rand` proves nothing whatsoever,
+and any earlier claim in this file resting on that string is only as good as its `[V]`.
+
 **One methodological trap, recorded because it cost a pass:** reading `<packageId>`
 by regex over `About.xml` returns the first match in the file, which for many mods is
 a *dependency's* id inside `<modDependencies>`. The first run reported eight separate
@@ -94,7 +108,7 @@ mods as `brrainz.harmony`. Parse the XML; take the direct child of `ModMetaData`
 |---|---|---|
 | **Rim War** | `Torann.RimWar` | `ThreadStart` present in the 1.6 assembly **[V]**, plus `WorldComponent_PowerTracker` and `WorldComponent_IncidentTracker` running a genuine parallel world power simulation, plus a 30-field settings ref constructed inside `WorldComponentTick`. Threads are on by default. |
 
-**One mod, out of 115 third-party.** That is the instrument working as designed, not a shortfall.
+**One mod, out of 117 third-party.** That is the instrument working as designed, not a shortfall.
 With licence struck and the set pinned, almost every defect that used to read as
 disqualifying is now something we can simply fix. Already mined for the
 faction-tension shape; stays on disk as reference.
@@ -149,13 +163,13 @@ of this file **omitted it entirely**: it lives only in this repo, not in Steam's
 
 ---
 
-## In — 112 third-party, by tier
+## In — 114 third-party, by tier
 
 Everything third-party that is not barred and not declined. **Our five are not listed
 here** — see the note at the top; they are in by definition and answer to the two
 gates, not to a tier.
 
-**Free (21)** — no assembly. Nothing can go wrong that is not XML.
+**Free (22)** — no assembly. Nothing can go wrong that is not XML.
 
 | Mod | packageId |
 |---|---|
@@ -177,6 +191,7 @@ gates, not to a tier.
 | ATH's style Gothic and Bloody Gothic | `anthitei.athsstylegothic.style` |
 | ATH's styles Norse | `anthitei.athsstylenorse.style` |
 | ATH's style Draconic | `Anthitei.ATHsStyleDraconic.Style` |
+| **Tavern** | `ODs.Tavern` — hard `modDependencies` on VEF; ~27 of its 30 concrete buildings are `techLevel` Undefined (`PARTS-BIN.md` §15) |
 
 **Cheap (33)** — an assembly, no settings surface. Enable plus a `PatchOperation`
 where wanted.
@@ -204,7 +219,7 @@ where wanted.
 | ATH's Styleable Framework | `Anthitei.ATHsStyleableFramework.Style` |
 | Fix Styled Blueprints | `kathanon.FixStyledBlueprints` |
 
-**Cheap + settings (56)** — Cheap plus a **managed condition**: per
+**Cheap + settings (57)** — Cheap plus a **managed condition**: per
 `CODING_STANDARDS.md`, `config/ModSettings/` is part of the sync surface. Copy the
 file; never re-click it. This is a rule to follow, not a defect to fix.
 
@@ -232,12 +247,13 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | Better Architect Menu · Architect Menu Optimizer | `ferny.BetterArchitect`, `MRK.architectmenuoptimizer` |
 | [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
 | **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` |
+| **Slave Rebellions Improved (Continued)** | `Mlie.SlaveRebellionsImproved` — no threads, no `WorldComponent` **[V]**, but both settings floats are read *inside* rebellion logic, so mismatched files produce different rebel rosters from the same tick. Transpiles `SlaveRebellionUtility.IsRebelling`. |
 
-> **Arithmetic.** 120 mods on disk. **Five are ours** (Origins, Pacing, Drifters,
-> Glitterites, Altar) and are not subject to the admission bar, leaving **115
+> **Arithmetic.** 122 mods on disk. **Five are ours** (Origins, Pacing, Drifters,
+> Glitterites, Altar) and are not subject to the admission bar, leaving **117
 > third-party**. Three distinct mods are out — Rim War (barred *and* declined),
-> Elves and Dwarves (declined) — so the **in** set is **112**, tiered Free 21 / Cheap 33 /
-> Cheap+settings 56 / Real 2 = 112. Real is carved *out of* Cheap+settings, not
+> Elves and Dwarves (declined) — so the **in** set is **114**, tiered Free 22 / Cheap 33 /
+> Cheap+settings 57 / Real 2 = 114. Real is carved *out of* Cheap+settings, not
 > added to it — an earlier revision counted Vehicle Framework and TechBlock twice.
 
 ### Real (2) — counted separately from Cheap+settings, not in addition to it
@@ -311,14 +327,14 @@ each is a specific thing to do when the mod ships.
 
 ## What this pass changes
 
-1. **One mod is barred out of 115 third-party, and three are declined.** The bar is not a filter
+1. **One mod is barred out of 117 third-party, and three are declined.** The bar is not a filter
    that removes work — it removes almost nothing, and that *is* the finding. What
    actually shapes the set is cost and taste, and taste is recorded here only when
    Conrad has stated it.
 2. **The bar reduces to one testable question: does it create threads.** A world sim
    on the synced tick is deterministic; disliking it is a decline, not a bar.
 3. **Vehicles are available**, at one settings flag. Previously this read as a hard block.
-4. **The real cost of the set is its settings surface.** 59 of the 120 mods on disk carry
+4. **The real cost of the set is its settings surface.** 60 of the 122 mods on disk carry
    one, so `config/ModSettings/` is save-critical across half the build and
    [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) must snapshot it as a
    single artifact.
