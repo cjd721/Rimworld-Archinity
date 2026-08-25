@@ -25,9 +25,9 @@ carries **zero weight** and was deliberately ignored throughout.
 > permanence, maintenance status, performance, design fit — are unaffected and still
 > stand. Where an entry gave both, only the engineering half survives.
 >
-> Section 4 has been rewritten. Inline `no licence` / `unlicensed` annotations
-> elsewhere are left in place as harmless provenance metadata; read them as facts
-> about a mod, never as an argument against using it.
+> Section 4 has been rewritten and the per-mod verdicts corrected. A few inline
+> provenance notes remain — read them as facts about a mod, never as an argument
+> against using it.
 
 **Scope.** 108 Workshop mods (`C:\Program Files (x86)\Steam\steamapps\workshop\content\294100\`)
 plus the 4 local Archinity mods (symlinked into
@@ -87,7 +87,7 @@ Game version 1.6.4871. Verify again after any major RimWorld update.
 
 7. **The era-gating contest is settled on facts.** TechBlock's ladder is
    *unclimbable* under World Tech Level and fails silently. Node Research is
-   unlicensed and silently kills WTL's research filter. And the two candidates the
+   silently kills WTL's research filter. And the two candidates the
    project already leans on are the two the Multiplayer compat layer does not cover.
    §5. **[V]** No winner picked — that is a separate ticket.
 
@@ -98,9 +98,9 @@ Game version 1.6.4871. Verify again after any major RimWorld update.
 
 9. ~~**Licence is the binding constraint on art, not quality.**~~ **STRUCK — see the
    standing correction above.** Licence is not a constraint on this project at all.
-   The finding that survives is the raw volume: **~6,800 sprites across the assessed
-   set, all of them usable**, led by Medieval Overhaul's 4,119 and VFE Medieval 2's
-   1,122. *Reskin before you rebuild* applies at full strength. §4. **[V]**
+   The finding that survives is the raw volume: **north of 14,000 sprites across the
+   assessed set, all of them usable**, led by Medieval Overhaul's 4,119 and VFE
+   Medieval 2's 1,122. *Reskin before you rebuild* applies at full strength. §4. **[V]**
 
 ---
 
@@ -277,11 +277,9 @@ on by default**. **[V]**
 
 ## 4. Art volume — what each mod actually ships
 
-> **Licence is not a consideration for this project and never was.** Archinity is a
-> private mod for two people, never published and never distributed. Every asset,
-> def and line of source in the bin is available to lift, fork, vendor, restat or
-> repair. The original version of this section ranked mods by what their licences
-> permitted; that reasoning is void. See the standing note at the top of this file.
+> This section originally ranked mods by what their licences permitted. That reasoning
+> is void — see the standing correction at the top of this file. What follows is the
+> half that was actually useful.
 
 What survives is the useful half — **how much art each mod actually ships**, which is
 what makes it worth raiding as a parts bin.
@@ -289,7 +287,7 @@ what makes it worth raiding as a parts bin.
 | Mod | Sprites | Notes |
 |---|---:|---|
 | Medieval Overhaul | 4,119 | by far the largest single art source in the bin |
-| VFE Medieval 2 | 1,122 | includes the 566 heraldry masks (§10) |
+| VFE Medieval 2 | 1,122 | includes the 566 heraldry masks (§10.4) |
 | VIE Memes and Structures | 704 | plus 16 ritual `.ogg` audio loops |
 | Alpha Mechs | 664 | the late-game mechanoid bestiary |
 | Vanilla Gravship Expanded | 523 | |
@@ -297,19 +295,23 @@ what makes it worth raiding as a parts bin.
 | VQE Ancients | 407 | already the altar's art source |
 | VFE Insectoids 2 | 380 | |
 | Dark Ages: Beasts and Monsters | 347 | the wall-breaking-monster candidates |
-| VRE Archon | 269 | |
+| VRE Archon | 268 | |
 | VFE Security | 231 | |
 | Dark Ages (Tools + Crypts) | 137 | 85 of them at up to 2048² |
 | Ushankas Glittertech | 91 | full C# source ships alongside |
 
-Roughly **6,800 sprites total** across the assessed set, all of them usable.
+Those thirteen sum to **~9,460**. They are the largest sources, not the whole bin —
+another twenty-plus assessed mods carry art too (VFE Props and Decor alone ships 1,073),
+putting the real assessed-set total north of **14,000 sprites**. All of it usable.
 
 **Practical consequences.** *Reskin before you rebuild* applies at full strength — there
-is no legal reason to author art for anything the bin already draws. **Ushankas
+is no reason to author art for anything the bin already draws. **Ushankas
 Glittertech ships full C# source**, so it can be forked and repaired outright rather
-than worked around. **Vanilla Expanded Framework can be vendored** if depending on it
-proves fragile, which materially softens the one-way-door problem in
-[The VEF dependency](https://github.com/cjd721/Rimworld-Archinity/issues/15). And
+than worked around. **Vanilla Expanded Framework can be vendored**, which is insurance
+against upstream abandonment — not an exit from the save-state commitment in
+[The VEF dependency](https://github.com/cjd721/Rimworld-Archinity/issues/15), since its
+GameComponents scribe by class name and vendoring under new namespaces orphans those
+refs rather than rescuing them. And
 `Source/` folders anywhere in the bin are fair game to read and copy.
 
 ---
@@ -321,7 +323,6 @@ proves fragile, which materially softens the one-way-door problem in
 | | **World Tech Level** `3414187030` | **TechBlock** `1970774610` | **Node Research** `3729878405` |
 |---|---|---|---|
 | Installed | yes | yes | **no** |
-| Licence | CC BY-NC-SA 4.0 | none | none |
 | Subs | 204k / 330k lifetime | 9.9k / 60k | 27.9k / 44.5k |
 | Mutates defs? | **no — explicitly** | yes, at startup | yes, incl. the research main tab |
 | Save-safe on removal | **yes, cleanest in the bin** | mostly; orphans player FactionDef | author says *"try not to remove it"* |
@@ -421,7 +422,7 @@ per raid/caravan/quest evaluation. **[V]**
   FactionDef**, rolled deterministically inside a synced command, persisted via WTL's
   GameComponent.
 
-16 commits, all on 2025-08-14. No licence. Four hard dependencies. **REBUILD.**
+16 commits, all on 2025-08-14. Four hard dependencies. **REBUILD.**
 
 ### 5.3 The era ladder that already exists — VFE Tribals `3079786283`
 
@@ -446,7 +447,7 @@ buildings — which **collides head-on with `Archinity.Pacing/Patches/Retier_Med
 Whichever loads later wins, silently. Reconcile deliberately.
 
 Removal is a one-way door: because `Core.xml` retiered vanilla buildings, removal can
-leave a colony holding buildings it can no longer rebuild. No licence.
+leave a colony holding buildings it can no longer rebuild.
 
 **Verdict: RESTAT, leaning REBUILD.** The ladder is five XML defs and one
 GameComponent; the ritual-outcome workers are ~40 lines each. Rebuilding it in
@@ -471,7 +472,7 @@ frictionless and the bite starts at Medieval, exactly where the first real era w
 belongs. `Defs\readme.txt` documents the `ManualAnalysisDef` XML format. **[V]**
 
 Cleanest of the era cluster on RNG: no `Rand.`, no `System.Random`, no threading,
-**no mod settings at all**. **[V]** But: unlicensed, anonymous author, 1.6-only, no
+**no mod settings at all**. **[V]** But: anonymous author, 1.6-only, no
 upstream, an **undeclared and unguarded Anomaly coupling**, runtime ThingDef comp
 injection, and a transposed `Mathf.Clamp(num, 20, 0)` that silently discards the
 Intellectual-skill term. **[V]** Its `Devilstrand` entry is circular — already
@@ -628,7 +629,7 @@ Its thesis — *"medieval technologies remain relevant even as you advance"* —
 come to take and burn, not to kill**, reframing "defend the colony" from a combat
 problem into a protect-the-stores problem. **[V]**
 
-### 5.8 The CC BY quarry — Dark Ages
+### 5.8 The Dark Ages art quarry
 
 **Dark Ages: Medieval Tools `3028566550` — CC BY 4.0, and the best small idea in the
 cluster.** 7 tool ThingDefs, 4 facility buildings, **0 research, 0 explicit
@@ -670,8 +671,8 @@ roofs**. **[V]** Two shipped bugs: defName typo `DA_DarkligtSepulchralStatue`, a
 unanchored xpath in `Patches\PatchMisc.xml` injects `DA_WallTomb` into every ThingDef
 matching a meditation-comp shape, including other mods'. **Verdict: PULL the art,
 RESTAT into your own defs, BLOCK as a live dependency** — not because it is unsafe,
-but because you should not accept a never-uninstallable dependency for content you are
-legally free to own.
+but because you should not accept a never-uninstallable dependency for art you can
+simply copy.
 
 **Dark Ages: Beasts and Monsters `3472275628` — CC BY 4.0.** 20 animal races, 12 spawn
 incidents, 7 abilities, 5 buildings, 22 materials including 12 leathers and two drug
@@ -684,7 +685,7 @@ without adding a people** — exactly what *"a trace of the exotic is flavour"* 
 
 ### 5.9 Neolithic art — and a content-retirement primitive
 
-**208 PNGs across three mods, none licensed. [V]**
+**208 PNGs across three mods. [V]**
 
 **Tribal Furniture `3671245310`** — 138 PNGs, 16 ThingDefs, 0 research, 0 recipes. Its
 seven 12-file bench folders are **three stuff-appearance variants × 4 rotations**,
@@ -712,12 +713,11 @@ mismatched settings mean one client has a ThingDef the other does not. **[V]**
 `FSFurCoat` and `FSDesertRobe` with **complete five-body-type worn graphics** (the
 expensive part most mods skip). 9 ThingDefs, all Neolithic, craftable at a
 `CraftingSpot` from turn one. **No assemblies.** Passes the expiry test. **[V]**
-**PULL — dependency or art, either way.**
+**PULL.**
 
 **VWE Tribal `2454918552`** — 10 PNGs, 30 Neolithic weapon/tool defs, no assemblies.
 Passes on 6 of 7 — `VWE_Weapon_FireBomb` costs 80 `Chemfuel`, a neolithic item priced
-in an industrial intermediate. **[V]** **PULL — dependency or art, either way**; restat
-the firebomb's cost.
+in an industrial intermediate. **[V]** **PULL**, and restat the firebomb's `Chemfuel` cost.
 
 **Adaptive Primitive Storage `3400037215`** — 83 PNGs of genuine early-era storage:
 Granary, CoveredClayPot, LargeLogPile, stone and wood cellars. 28 defs, no assembly.
@@ -774,7 +774,7 @@ StructureLayouts, and `QuestNodes.cs:135` seeds properly with
 `Archinity.Glitterites` already moves `USH_GlittertechOutpost` /
 `USH_GlittertechFacility` from day 45 / 1000 points out to day 240–300 / 2500.
 
-**MP: fails on settings only, and all four are fixable — and MIT permits the fix.**
+**MP: fails on settings only, and all four are fixable.**
 Full C# source (75 files), **zero threading, zero `System.Random`**. The four:
 `FormingSpeedMultiplier` in `BillTick()` (production speed per client),
 `PylonMoodMultiplier` and the positive/negative mood multipliers in `MoodOffset()`
@@ -782,13 +782,11 @@ Full C# source (75 files), **zero threading, zero `System.Random`**. The four:
 Minor: an unseeded `RandomInRange` in a WorldComponent constructor. **[V]**
 
 **Verdict: PULL the mechanism, the 91 textures, the 20-project tree and the implant
-set; FIX the four settings reads; do not expect villain gear.** MIT plus shipped
-source make this the only mod in the bin you can legally fork and repair.
+set; FIX the four settings reads; do not expect villain gear.** It ships full C#
+source, so it is the cheapest mod in the bin to fork and repair outright.
 
 ### 5.11 The Spacer tier — gravship group
 
-**No licence on any of the four. [V]** No VE asset policy appears in any file — do not
-assume one exists.
 
 **GravTech `3545374124`** — 90 ThingDefs, 24 recipes, **7 research** (`GravEngineBuild`
 3000 Spacer → six at Ultra, 3000–6000), 130 PNGs. **The Ultra arsenal the project
@@ -874,8 +872,9 @@ with a different enabled set per client, on every build.** Plus `defaultTargetQu
 and `Rand.Chance(destroyChance)` followed by a per-client setting gating a
 `PlaceBlueprintForBuild`. **[V]** It *is* covered by the compat layer.
 
-**Verdict: do not adopt it as a house mechanism** — on the multiplayer grounds above,
-which are unaffected by the licence correction. If used at all, cap
+**Verdict: do not adopt it as a house mechanism** — on the design grounds above: it
+makes the intermediate-item anti-pattern free, which is exactly the friction the
+Waystone wants preserved. The settings-read hazard is a secondary strike. If used at all, cap
 the count deliberately — three processors for the whole run — and only for things that
 are genuinely *time* rather than *labour*; vanilla's fermenting barrel already covers
 most of it. **And note: if MO is used at all, PF comes with it as a hard dependency.**
@@ -943,7 +942,7 @@ inside `IncidentWorker_PsychicStorm.TryExecuteWorker` — a client-local slider 
 a branch on a shared draw. **[V]** `Archinity.Pacing/Patches/Faction_Archons.xml`
 already pushes `earliestRaidDays` to 999999.
 
-**Verdict: RESTAT the design, REBUILD the code and art.** Do not ship it, or you get a
+**Verdict: RESTAT the design, REBUILD the code, PULL the art.** Do not ship it, or you get a
 second competing Archon faction.
 
 **VRE Starjack `3531912428` — not what the name promises.** **[V]** **It defines no
@@ -1009,7 +1008,7 @@ campaign that spends years in the neolithic, the highest value-per-risk item her
 ### 6.2 Faction politics
 
 **Faction Territories and Vassalage `3626725895`** — the most design-aligned mod in
-the bin, and the one that cannot be forked. **[V]**
+the bin. **[V]**
 - **Territory** is a multi-source Dijkstra flood fill from every settlement across the
   world grid, weighted by terrain difficulty, road difficulty and hilliness, rendered
   through Map Mode Framework. Derived and cached, **never saved**.
@@ -1036,8 +1035,7 @@ a lockstep session; disable `enableDefeatedSettlementVassalisePrompt`. **[V]** E
 interval and multiplier is client-local. No threads, and the RNG that matters is
 deterministically seeded — the author was thinking about determinism even if not about
 MP. Removal is a one-way door and settlements that changed hands stay changed.
-**PULL with surgery** — and note this project *is* the private run, so the "REBUILD for
-anything shipped" half of the original verdict never applies.
+**PULL with surgery.**
 
 **Rim War `2222935097` — MIT, and MP-catastrophic by construction.** The reference
 implementation of a living political board: per-faction behaviour archetypes, a points
@@ -1049,7 +1047,7 @@ whatever later tick they finish, `threadingEnabled` **defaults true**, a fresh 3
 `SettingsRef` is constructed *inside* `WorldComponentTick`, and War/Peace/Alliance
 buttons mutate shared state from `Widgets.ButtonText` while `TributeSilver` walks
 `Find.AnyPlayerHomeMap.listerThings` and `Destroy()`s silver from a click handler.
-**[V]** **BLOCK — and harvest the design under MIT into deterministic, synced code.**
+**[V]** **BLOCK — and harvest the design into deterministic, synced code.**
 
 **[SR] Factional War (fork) `3423264477` — Apache 2.0**, the best cheap answer to
 *"factions want things from each other and not only from you."* Four incident families:
@@ -1075,7 +1073,7 @@ configured** — `allowedFactionDefNames` starts as an empty `HashSet`. **[V]** 
 region-cache generation and feeds no gameplay state. **[V]** Hard dependency of Faction
 Territories. Its real value: *"standing should move on its own, and the movement should
 be visible before it becomes a crisis"* — Archinity could ship its own `MapMode`
-subclasses (era reach, faction standing, threat pressure) on this framework under MIT.
+subclasses (era reach, faction standing, threat pressure) on this framework.
 **PULL.**
 
 **Faction Customizer `3336572602`** — `technical-findings.md` already records that it
@@ -1196,7 +1194,7 @@ choice in every mission is "take nothing, lower your heat." A cost dressed as a 
 **[V]**
 
 MP: **BLOCK as a dependency.** Currency spend and quest generation from UI buttons with
-no sync, four settings read inside simulation. **[V]** No licence.
+no sync, four settings read inside simulation. **[V]**
 
 ### 7.5 Reward types worth knowing
 
@@ -1252,7 +1250,7 @@ gunsmithing, clothes-making, black market, homestead, mercenary, orbital platfor
 vehicles ×2), **48 KCSG `StructureLayoutDef`s**, 8 `SitePartDef`s, 57 GenSteps, a
 parley hediff, and a `Duties_WorksiteSack` duty set. **[V]** A worked, shipping example
 of "go somewhere and take something" built from vanilla nodes plus a handful of custom
-finders. Depends on VEF. No licence. **RESTAT.**
+finders. Depends on VEF. **RESTAT.**
 
 **Vanilla Outposts Expanded `2688941031`** — the inverse verb: send colonists to a tile
 and they produce on a timer. Zero quest integration. **[V]** The engine
@@ -1307,7 +1305,7 @@ different pawns. **[V]** Generate recurring NPCs inside a quest with vanilla
 Nothing there is a parcel on the roof. Every step is *travel to a named place, find a
 specific object, take it*.
 
-**The cost:** VEF becomes a hard dependency, and it is a one-way door.
+**The cost:** VEF becomes a hard dependency, and close to a one-way door.
 
 ---
 
@@ -1456,7 +1454,7 @@ but a collision with another mod is a **silent last-one-wins overwrite**. **[V]*
 
 ### 8.4 Fortification and siege — VFE Security `1845154007`
 
-**The only MIT-licensed mod in the Vanilla Expanded set. [V]** Content by era, counted
+Content by era, counted
 against actual ThingDefs rather than the blurb: **Medieval (4)** —
 `VFES_Turret_Ballista` and `VFES_Turret_Catapult` (both off `VFES_SiegeEquipment`, 900
 points, prereq vanilla **`Smithing`**), `VFES_CavalrySpikes`, `VFES_BearTrap`;
@@ -1485,7 +1483,7 @@ hediffs. **[V]**
 **Verdict: PULL the Medieval siege slice** — `VFES_Turret_Ballista`,
 `VFES_Turret_Catapult`, `VFES_Artillery_Catapult`, `VFES_Gun_BallistaTurret`,
 `VFES_CavalrySpikes`, `VFES_BarbedWire` and the `VFES_SiegeEquipment` research —
-**all vanilla classes, MIT-licensed, copyable into Archinity with the copyright notice,
+**all vanilla classes, copyable straight into Archinity,
 loading none of `VFESecurity.dll`.** Drop the one `VEF.Weapons.AutoRefuelMannedTurrets`
 modExtension. **BLOCK the assembly.** `technical-findings.md` already records the
 complementary finding that `VFEM2_Turret_WallMountedArbalest` and `_Arquebus` exist and
@@ -1727,11 +1725,6 @@ pawns that were puppets with no needs suppression, no work restrictions and no o
 **[V]** **But PULL its `PuppetSettings : Def` technique** — config-as-Def is exactly how
 Archinity should express every tunable, and it costs nothing.
 
-**Licences: VPE, Hemosage, Puppeteer, VIE Memes and VRE Sanguophage all ship no licence
-file. [V] All rights reserved.** VIE Memes additionally credits two **Looperman** audio
-loops in `About/Credits.txt` — a second licence layer on its 16 ritual `.ogg`
-sustainers.
-
 ### 9.3 What the altar demands
 
 The richest part of design area (d), and the answer is a stack of vanilla XML: **[V]**
@@ -1797,7 +1790,7 @@ which uses `CompProperties_Facility` `statOffsets` to apply `BedHungerRateFactor
 real change to `Need_Food`, ~15 lines of XML, no assembly. Limitation: it applies only
 while the animal is in the bed. A full-strength version is ~60 lines of C#.
 
-Licence: **MIT** (© 2020 Mlie) — free trough art and a def shape to extend. **RESTAT.**
+Trough art and a def shape to extend. **RESTAT.**
 
 ### 10.2 Ingredient-tier food buffs — refuted, by an installed mod
 
@@ -2048,7 +2041,7 @@ from `KCSG.dll`, `MVCF.dll`, `Outposts.dll`, `PipeSystem.dll` too. **[V]** What 
 `VEF.Buildings.AffectedByFacilitiesExtension` (`copyLinksFrom`) and
 `RecipeInheritanceExtension` (`inheritRecipesFrom`, `allowedRecipes`,
 `disallowedRecipes`) — both already in `technical-findings.md`, both ~30 lines to
-reimplement, which matters because VEF is ND.
+reimplement, which avoids deepening the dependency.
 
 **The closest architectural template is VVE-Upgrades `3302208420`** — pure XML on
 **Vehicle Framework**, with `Vehicles.UpgradeTreeDef` whose `nodes` carry
@@ -2057,9 +2050,7 @@ reimplement, which matters because VEF is ND.
 layer stat offsets. **[V]** Vehicle-only, no bills or facilities concept, no licence.
 Worth stealing as a *design template*.
 
-Replace Stuff's licence has a provenance wrinkle: `LICENSE.txt` reads
-`Copyright (c) [2025] [Alex Tearse-Doyle]` with the template brackets unfilled, while
-`About.xml` credits `Uuugggg`. **[V]** Fine to use; clarify before vendoring. MP:
+MP:
 low-moderate — no `Rand`, no threading; the replace flow rides vanilla construction paths
 that MP syncs generically. **[I] — smoke-test one workbench replace in a real MP session
 before building progression on it.**
@@ -2104,7 +2095,7 @@ Not depth-assessed. Recorded so the next pass does not re-hunt. Counts are
 | `1880253632` | VFE Production | 15 / 9 / 58 | no assembly |
 | `2454918139` | VWE Frontier | 18 / 30 / 16 | |
 | `1718191613` | VFE Medical | 27 / 3 / 25 | |
-| `2836791007` | RimFantasy – MO Edition | 406 / – / 163 | 30 arcane weapons, 114 trait defs; **CC BY-NC-ND, ND on the art**; hard MO dependency drags in the ingot chain; **no settings surface at all — one of the safest assemblies in the bin** |
+| `2836791007` | RimFantasy – MO Edition | 406 / – / 163 | 30 arcane weapons, 114 trait defs; hard MO dependency drags in the ingot chain; **no settings surface at all — one of the safest assemblies in the bin** |
 
 ### Storage
 `3033901359` Adaptive Storage Framework (**MIT**, the only natively MP-aware mod, and
@@ -2163,13 +2154,12 @@ repo `ying636/Custom-Quest-Framework`). Consumer mods built on it are provably 1
 adds a `DialogTreeDef`: a branching dialogue graph in XML with indexed nodes, per-option
 conditions (`DialogCondition_Skill`, `DialogCondition_Hediff`), `hideWhenDisabled` and
 `results → nextIndex`. **[V]** It even ships Claude agent skills in-repo (in Chinese).
-**Catches:** **no licence at all**, the author's own compatibility statement is literally
+**Catches:** the author's own compatibility statement is literally
 *"I don't know"*, English is machine-translated, it self-describes as `(WIP)`, and its
 runtime surface is exactly the shape that desyncs.
 
 > **The ticket's own alternative is the right one.** Vanilla `QuestScriptDef` plus VEF's
-> `QuestChainExtension` (§7) delivers the Chronicle with no second assembly and no
-> unlicensed dependency. Mark `Evaluate Story Framework` resolved-negative.
+> `QuestChainExtension` (§7) delivers the Chronicle with no second assembly. Mark `Evaluate Story Framework` resolved-negative.
 
 ### 12.2 `Worldbuilder` — identified, and larger than assumed
 
@@ -2224,8 +2214,8 @@ stop re-litigating:
    is the only genuinely unclaimed one, and it has a ~15-line XML path nobody has taken.
 6. **Story Framework is closed.** §12.1.
 7. ~~**Licence, not quality, is what gates the art.**~~ **STRUCK.** Licence is not a
-   constraint on this project. The whole bin — ~6,800 sprites, plus every `Source/`
-   folder in it — is available. §4.
+   constraint on this project. The whole bin — 14,000-plus sprites, plus every
+   `Source/` folder in it — is available. §4.
 
 And two things to decide deliberately rather than drift into:
 
@@ -2255,7 +2245,7 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
 - **Reconcile `Archinity.Pacing/Patches/Retier_Medieval.xml` against VFE Tribals'
   `Core.xml`** — they retier overlapping vanilla buildings and the loser is silent (§5.3).
 - ~~Ask three authors for art permission.~~ **STRUCK** — licence is not a constraint
-  on this project. No permission is needed for anything in the bin.
+  on this project.
 - **Audit Biotech for Gravship's unseeded gene `Rand`** (§5.11) before use.
 - Not assessed at depth, and cheap to finish if wanted: `3697533935` Tribal Siege Raids,
   `3309003431` VFE Insectoids 2, `2860414285` Vanilla Combat Reloaded and `3749200746`
