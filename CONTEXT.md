@@ -141,7 +141,33 @@ One of the six tech tiers the campaign passes through in order.
 _Avoid_: tier (which means a RimWorld `techLevel`), age
 
 **Leap**:
-A named capability jump *within* an era. An era has several.
+A named capability jump *within* an era. An era has several — fourteen across the
+campaign. [#5](https://github.com/cjd721/Rimworld-Archinity/issues/5)
+
+**The coda**:
+The Archotech stretch after transcendence. Not an era and not a leap: nothing new is
+researchable, and the campaign's last state is played rather than climbed.
+_Avoid_: the Archotech era, the endgame
+
+**Chapter close**:
+The end of a political era, where the cast is replaced — one or two factions climb
+forward with you and the rest fade. Two are structural: the end of M3 and the end of S1.
+
+### Research
+
+The two axes every research node sits on.
+[#5](https://github.com/cjd721/Rimworld-Archinity/issues/5)
+
+**Spine** · **Muscle** · **Comfort**:
+What a node is worth. **Spine** — you cannot go forward without it. **Muscle** — you can,
+and you will be measurably weaker for it. **Comfort** — you would never miss it if you
+did not know it existed.
+
+**Practice** · **Instruction** · **Analysis**:
+How a node is earned, chosen by asking *how would you actually figure this out?*
+**Practice** — resource cost alone, the default. **Instruction** — a techprint, a book, a
+teacher. **Analysis** — a physical example you took apart.
+_Avoid_: gating, hunt requirements
 
 ### Process
 
