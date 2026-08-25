@@ -81,9 +81,15 @@ python -c "from lxml import etree; import glob; [etree.parse(f) for f in glob.gl
 
 All five are needed and none subsumes another. `check_refs.py` validates defNames
 only — it passes on files that do not parse, on fields that do not exist, and on
-defs nothing references. `audit_research.py` reads raw defs and does **not** apply
-our own PatchOperations, so its tier totals lag any retier already shipped; treat
-a tier-total mismatch as expected, not as a finding.
+defs nothing references.
+
+`audit_research.py` reads the merged, patched database, so its tier totals now
+reflect any retier we have shipped. It carries a **baseline** in
+`tools/audit_research_baseline.txt`: 34 deadlock risks that live in third-party
+research nobody has decided about yet. The gate fails only on deadlocks *not* in
+that file. Shrink the baseline deliberately as the research pass settles; never
+grow it to silence something a change introduced. `--update-baseline` rewrites it,
+and `--raw` restores the old unpatched view for comparison.
 
 `patch_check.py` is the one that reads the database the way RimWorld builds it:
 every active mod's defs merged in load order, then every third-party patch

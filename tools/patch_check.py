@@ -106,6 +106,16 @@ def main():
             continue
 
         print(rel)
+        # Operations are measured and applied one leaf at a time, so a
+        # PatchOperationSequence guarded by a Test would be applied here even
+        # where the game would abort the sequence. None of our patches use a
+        # Test today; say so loudly if that changes.
+        if patch_tree.getroot().xpath('.//*[@Class="PatchOperationTest"]'):
+            print("    NOTE  contains a PatchOperationTest. Sequence-abort "
+                  "semantics are not modelled per-leaf;")
+            print("          counts below may include operations the game "
+                  "would skip.")
+
         for label, op in defdb.iter_operations(patch_tree.getroot(),
                                                active_ids=active,
                                                root=defs_root):
