@@ -2237,7 +2237,10 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
 - **Install *Multiplayer Compatibility* (`1629973374`) before any co-op smoke test.**
   Without it the entire VE stack — ~40 of the 108 mods — runs unsynced, and it fixes
   VPE's viewport-gated RNG class explicitly.
-- **Decompile `[WG] RimPacts` (`3762723122`)** before building faction demands (§10.3).
+- ~~**Decompile `[WG] RimPacts` (`3762723122`)** before building faction demands (§10.3).~~
+  **DONE** — see §15 and `MOD-VERDICTS.md`. Not barred (no threads; everything in
+  `WorldComponentTick`), but the largest shadow world in the bin and a heavy
+  57-field settings surface gating `Rand` inside the tick.
 - **Verify whether More Realistic Research's study loop functions without the Anomaly
   DLC** on the target install (§5.4). It is unguarded and undeclared.
 - **Smoke-test one workbench replace in a real MP session** before building progression
@@ -2252,3 +2255,30 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
   TakeCover (combat-AI changes are a classic desync source and neither of the last two is
   covered by the compat layer), and the full enumeration of VEF's XML-driven
   raid/arrival-mode knobs.
+
+---
+
+## 15. Added after the depth pass
+
+Five mods appeared on disk after §1–§14 were written, taking the bin from 113 to
+**118**. Verdicted in `docs/data/MOD-VERDICTS.md` (ticket #17); recorded here so the
+bin stays the single index of what is on disk.
+
+| ID | Mod | packageId | Supplies | Cost |
+|---|---|---|---|---|
+| `3762723122` | **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` | Treaties, vassalage, tribute, coalitions, pending conquests, a player court, forced battles, counter-espionage. The only thing in the bin that already implements what WAYSTONE §5 asks the political board to do. | **Cheap + settings, and the settings are the whole safety story.** 623 types; `WorldComponent_RimPacts` alone decompiles to **33,715 lines**. `RimPactsSettings` has **57 fields** and they gate `Rand` paths *inside the ticking component* (`if (Settings.enableDynamics) { … Rand.Chance(…) }`, `startAsEmpireTributary`, `enemySpyDetectNoBureau`). §3.1's dominant hazard at full scale: mismatched settings ⇒ different draw counts ⇒ the whole diplomatic sim diverges. **[V]** |
+| `3016405872` | ATH's Styleable Framework | `Anthitei.ATHsStyleableFramework.Style` | Style framework — 25 patch files, ships `Source/`. | Cheap. No threading, no `WorldComponent`, no settings. **[M]** |
+| `3136210612` | ATH's style Gothic and Bloody Gothic | `anthitei.athsstylegothic.style` | Style pack, 10 defs. | Free — no assembly. **[M]** |
+| `3292048218` | ATH's styles Norse | `anthitei.athsstylenorse.style` | Style pack, 6 defs. **On-theme for the Neolithic and Medieval eras**, where the campaign's visual vocabulary is thinnest. | Free — no assembly. **[M]** |
+| `2957953663` | Fix Styled Blueprints | `kathanon.FixStyledBlueprints` | Compat fix for styled blueprints. | Cheap. No threading, no `WorldComponent`, no settings. **[M]** |
+
+The four style entries are one family — a framework, two style packs, and a blueprint
+compat fix. None carries a bar risk of any kind, and together they are a pure reskin
+resource, which is the strongest form of *reskin before you rebuild*.
+
+**RimPacts is a design decision, not a safety one**, and it belongs to
+[The world roster](https://github.com/cjd721/Rimworld-Archinity/issues/8). It is worth
+weighing carefully in both directions: it is a **parallel world model**, which is the
+stated reason §12 and the Waystone distrust faction-sim mods — and it is also the only
+existing implementation of tribute, vassalage and a humiliating peace, which WAYSTONE §5
+names as the floor beneath total hostility.

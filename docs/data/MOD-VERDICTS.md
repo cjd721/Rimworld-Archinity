@@ -1,7 +1,7 @@
 # Mod verdicts
 
 The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applied to
-**every mod on disk — all 113**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
+**every mod on disk — all 118**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
 
 **The instrument, restated so this file stands alone:**
 
@@ -13,7 +13,7 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
   assembly).
 - Barred and declined mods **stay on disk as reference.**
 
-**113 mods scanned** — 108 in `workshop/`, the rest local. **Every one has a verdict.**
+**118 mods scanned** — the workshop folder plus local `Mods/`. **Every one has a verdict.**
 
 > **`config/ModsConfig.xml` carries no signal and is not referenced below.** Mods are
 > unenabled because the game has not been launched, not because anything was decided.
@@ -24,16 +24,21 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
 
 ## Corrections to the first pass
 
-1. **Factional War is not barred.** It has no threading of any kind — a single
-   `WorldCompFormCaravanAfterAllyExit` and nothing else **[V]**. The barred label was
-   mine and unsupported by evidence. Whether we *want* it is a separate, still-open
-   question — see **Nothing declined yet** below.
+1. **Factional War is not barred, and not declined.** It has no threading of any kind
+   — a single `WorldCompFormCaravanAfterAllyExit` and nothing else **[V]**. Both the
+   barred label and a later declined label were mine and neither was supported. It is
+   **in and undecided**; see **Explicitly NOT declined** below.
 2. **The Medieval Overhaul flag is void.** It rested on MO being disabled, which
    means nothing. MO is a normal candidate.
 3. **Faction Territories and Worksites Expanded are un-declined.** I declined both
    on my own judgment; that was not mine to do. Both are tiered below and returned
    to Conrad undecided. Neither is barred — one `WorldComponent` each, no thread
    creation **[V]**.
+4. **Five mods added since the first scan**, taking the total from 113 to 118:
+   RimPacts, ATH's Styleable Framework, ATH's style Gothic, ATH's styles Norse, and
+   Fix Styled Blueprints. RimPacts closes a standing `PARTS-BIN.md` §14 open item —
+   see below. The four ATH/style entries are one family: a framework plus two style
+   packs plus a blueprint compat fix; none carries a bar risk of any kind.
 
 ---
 
@@ -42,7 +47,7 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
 Byte-marker scan of every 1.6 assembly, then `ilspycmd` decompiles wherever a marker
 was load-bearing. `[V]` = decompiled and read. `[M]` = marker-level only.
 
-**77 of 113 are mechanically unbarrable** — no assembly at all, or an assembly with
+**81 of 118 are mechanically unbarrable** — no assembly at all, or an assembly with
 no threading and no `WorldComponent`. For those the bar cannot bite and no
 decompile is needed. The remaining 36 were examined individually.
 
@@ -74,41 +79,42 @@ mods as `brrainz.harmony`. Parse the XML; take the direct child of `ModMetaData`
 |---|---|---|
 | **Rim War** | `Torann.RimWar` | `ThreadStart` present in the 1.6 assembly **[V]**, plus `WorldComponent_PowerTracker` and `WorldComponent_IncidentTracker` running a genuine parallel world power simulation, plus a 30-field settings ref constructed inside `WorldComponentTick`. Threads are on by default. |
 
-**One mod, out of 113.** That is the instrument working as designed, not a shortfall.
+**One mod, out of 118.** That is the instrument working as designed, not a shortfall.
 With licence struck and the set pinned, almost every defect that used to read as
 disqualifying is now something we can simply fix. Already mined for the
 faction-tension shape; stays on disk as reference.
 
-## Declined — none yet
+## Declined — 3
 
-**Nothing on this list is closed.** Three mods have been *spoken of* as unwanted —
-Faction – Elves, Dwarves of the Rim, and Factional War — but that was conversational,
-not reasoned, and Conrad has since said explicitly that it needs thinking through
-before it is recorded as a verdict.
+Conrad's calls, made directly. No justification owed and none recorded.
 
-| Mod | packageId | Status |
+| Mod | packageId |
+|---|---|
+| Faction – Elves | `ICC.FOV.ELVES` |
+| Dwarves of the Rim | `bean.customxenotypes.dwarvesoftherim` |
+| Rim War | `Torann.RimWar` |
+
+Rim War is **both** barred and declined; the barred verdict is the operative one.
+
+### Explicitly NOT declined
+
+These three were listed as declined in an earlier revision **on my judgment, not
+Conrad's**. That was not mine to do. All three are in, tiered below, and undecided:
+
+| Mod | packageId | Where the want-question lives |
 |---|---|---|
-| Faction – Elves | `ICC.FOV.ELVES` | **Open want-question** → [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) |
-| Dwarves of the Rim | `bean.customxenotypes.dwarvesoftherim` | **Open want-question** → [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) |
-| [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` | **Open want-question** → [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) |
+| [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` | [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) — a *duplication* question against whatever shape #8 lands on for faction tension, not a safety one. Not barred: one caravan `WorldComponent`, no threading **[V]**. |
+| Faction Territories and Vassalage | `jaeger972.factionterritories` | [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) — one `WorldComponent`, no thread creation **[V]**. |
+| Worksites Expanded | `godsfathermixtape.worksitesexpanded` | Undecided. One `WorldComponent`, no thread creation **[V]**. |
 
-All three are faction and world content, so the want-question belongs to
-[The world roster](https://github.com/cjd721/Rimworld-Archinity/issues/8) alongside
-Empire, Deserters and Android — not to this file. **This pass declines nothing.**
-It establishes what we *can* use; what we *want* is decided elsewhere, deliberately.
-
-Recorded so the reasoning is not lost: Elves and Dwarves both add **medieval-era
-factions at world creation**, which puts them behind the freeze and makes them a
-roster decision rather than a content one. Factional War resolves faction-vs-faction
-combat, which overlaps whatever shape [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)
-lands on for faction tension — so it is a question of *duplication*, not of safety.
+**The rule this file follows:** it decides what we *can* use. What we *want* is
+Conrad's, and gets recorded here only once he has said so.
 
 ---
 
-## In — 112, by tier
+## In — 115, by tier
 
-Everything not barred. Three of these carry an open want-question, flagged **†** and
-listed above; they are counted here because the bar admits them.
+Everything not barred and not declined.
 
 **Free (24)** — no assembly. Nothing can go wrong that is not XML.
 
@@ -130,10 +136,10 @@ listed above; they are counted here because the bar admits them.
 | Rustic Workbenches | `SereQ.RusticWorkbenches` |
 | Advanced Pollution Pump · Faster Moisture Pump | `Bart.APP`, `Kangel.Moisture` |
 | Filth Vanishes With Rain And Time · No Alzheimer's | `FrozenSnowFox.…`, `willworkforicecream.NoAlzheimers` |
-| **†** Faction – Elves | `ICC.FOV.ELVES` |
-| **†** Dwarves of the Rim | `bean.customxenotypes.dwarvesoftherim` |
+| ATH's style Gothic and Bloody Gothic | `anthitei.athsstylegothic.style` |
+| ATH's styles Norse | `anthitei.athsstylenorse.style` |
 
-**Cheap (31)** — an assembly, no settings surface. Enable plus a `PatchOperation`
+**Cheap (33)** — an assembly, no settings surface. Enable plus a `PatchOperation`
 where wanted.
 
 | Mod | packageId |
@@ -156,8 +162,10 @@ where wanted.
 | EdB Prepare Carefully | `EdB.PrepareCarefully` |
 | Pharmacist: Represcribed · Milky Way · Architect Icons | `Fluffy.Pharmacist`, `Andromeda.MilkyWay`, `com.bymarcin.ArchitectIcons` |
 | More Gravship Workbenches · [sbz] Fridge | `LTS.MGW`, `sbz.NeatStorageFridge` |
+| ATH's Styleable Framework | `Anthitei.ATHsStyleableFramework.Style` |
+| Fix Styled Blueprints | `kathanon.FixStyledBlueprints` |
 
-**Cheap + settings (57)** — Cheap plus a **managed condition**: per
+**Cheap + settings (58)** — Cheap plus a **managed condition**: per
 `CODING_STANDARDS.md`, `config/ModSettings/` is part of the sync surface. Copy the
 file; never re-click it. This is a rule to follow, not a defect to fix.
 
@@ -183,11 +191,12 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | Replace Stuff · Pick Up And Haul · Compositable Loadouts | `Memegoddess.ReplaceStuff`, `Mehni.PickUpAndHaul`, `Wiri.compositableloadouts` |
 | Tribal Furniture · Tribal Siege Raids · TakeCover · Vanilla Combat Reloaded | `Xercaine.Tribal.Furniture`, `PJerri.TribalSiegeRaids`, `rabiosus.TakeCover`, `Donald.VCR` |
 | Better Architect Menu · Architect Menu Optimizer | `ferny.BetterArchitect`, `MRK.architectmenuoptimizer` |
-| **†** [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
+| [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
+| **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` |
 
-> **Arithmetic**, since an earlier revision of this file got it wrong: 113 total,
-> tiered as Free 24 / Cheap 31 / Cheap+settings 58. Rim War is barred and sits in
-> Cheap+settings, so the **in** set is 24 + 31 + 57 = **112**.
+> **Arithmetic**, since an earlier revision of this file got it wrong: 118 total,
+> tiered as Free 26 / Cheap 33 / Cheap+settings 59. Three are out — Elves and Dwarves
+> (both Free) and Rim War (Cheap+settings) — so the **in** set is 24 + 33 + 58 = **115**.
 
 ### Real tier — 2
 
@@ -195,6 +204,39 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 |---|---|
 | **Vehicle Framework** `SmashPhil.VehicleFramework` **[V]** | The only mod besides Rim War with real thread-creation machinery: `SmashTools.Performance.DedicatedThread` runs `new Thread(Execute){IsBackground=true}` + `Start()`, and `Vehicles.DeferredGridGeneration` enqueues **vehicle pathing-grid and region generation** onto it — simulation off the synced tick. **Saved by a switch:** `Vehicles.SectionDebug.debugUseMultithreading` is a scribed bool defaulting `true`; false ⇒ `ReleaseThread()` instead of `InitThread()` ⇒ `ThreadAvailable` false ⇒ every enqueue site takes its synchronous fallback. Price: one settings flag, treated as save-critical. Unverified residuals: the sync fallback is not confirmed deterministic, and single-threaded grid generation costs frame time. **This is what decides whether vehicles are available to the campaign at all — and the answer is yes.** |
 | **TechBlock** `fridgeBaron.TechBlock` | `GameComponentUpdate()` writes research progress **per frame**, so clients at different frame rates diverge continuously and no settings file fixes it, because frame rate is not a setting. Fork-and-recompile, or a Harmony prefix. Owned by [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7). |
+
+### RimPacts — the §14 open item, closed **[V]**
+
+`wowgag.RimPacts` (`3762723122`), *RimPacts – Diplomacy Overhaul*. `PARTS-BIN.md` §14
+has asked for this decompile since the last pass, because it bears on the faction-demands
+question (§10.3). Done.
+
+**Not barred.** No `ThreadStart`, no `ThreadPool`, no `IsBackground`, no
+`System.Threading.Thread`. Everything runs in `WorldComponentTick`, which is synced.
+**Tier: Cheap + settings.**
+
+**But it is the largest shadow world in the bin, by a distance.** One class,
+`WorldComponent_RimPacts`, decompiles to **33,715 lines**; the assembly carries 623
+types including `ActiveTreaty`, `PendingConquest`, `RptCoalitionStats`, `RptBorderMap`,
+`PlayerCourt`/`CourtMember`/`CourtRecord`, `RptForcedBattleManager`, a counter-spy
+subsystem, and its own chronicle (`RptChronicle` — unrelated to ours, but a name
+collision worth knowing about).
+
+**The managed condition here is unusually heavy.** `RimPactsSettings` has **57 fields**,
+and they gate `Rand` paths *inside the ticking component* — `if (RimPactsMod.Settings.enableDynamics)`
+wrapping code that then calls `Rand.Chance`, plus `startAsEmpireTributary`,
+`enemySpyDetectNoBureau` and others in the same shape. That is §3.1's dominant hazard
+at full scale: two clients with different settings draw a **different number of values
+from the shared stream**, and the whole diplomatic sim diverges from there. Identical
+settings files are not a nicety for this mod, they are the entire safety story.
+
+**So the decision is a design decision, not a safety one**, and it belongs to
+[The world roster](https://github.com/cjd721/Rimworld-Archinity/issues/8). Weigh it
+against the Waystone's *do not build a shadow world* — the stated reason faction-sim
+mods are perpetually beta is that they maintain a parallel world model, and this is
+one, ticking synced or not. Against that: it is the only thing in the bin that
+already implements treaties, vassalage, tribute and a humiliating peace, which is
+close to a literal restatement of what WAYSTONE §5 asks the political board to do.
 
 ### Named prices already known
 
@@ -227,9 +269,10 @@ each is a specific thing to do when the mod ships.
 
 ## What this pass changes
 
-1. **One mod is barred out of 113, and nothing is declined.** The bar is not a filter
+1. **One mod is barred out of 118, and three are declined.** The bar is not a filter
    that removes work — it removes almost nothing, and that *is* the finding. What
-   actually shapes the set is cost and taste, and taste is not this file's to record.
+   actually shapes the set is cost and taste, and taste is recorded here only when
+   Conrad has stated it.
 2. **The bar reduces to one testable question: does it create threads.** A world sim
    on the synced tick is deterministic; disliking it is a decline, not a bar.
 3. **Vehicles are available**, at one settings flag. Previously this read as a hard block.
@@ -245,5 +288,4 @@ each is a specific thing to do when the mod ships.
 
 - Enable `rwmt.MultiplayerCompatibility` before any co-op smoke test.
 - Confirm Vehicle Framework's synchronous fallback is deterministic, if vehicles ship.
-- Decompile `[WG] RimPacts` (`3762723122`) — **not installed**; carried from `PARTS-BIN.md` §14.
 - Everything else is a *want* question, owned by the design tickets, not by this file.
