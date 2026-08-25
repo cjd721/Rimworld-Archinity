@@ -2241,8 +2241,12 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
   **DONE** — see §15 and `MOD-VERDICTS.md`. Not barred (no threads; everything in
   `WorldComponentTick`), but the largest shadow world in the bin and a heavy
   57-field settings surface gating `Rand` inside the tick.
-- **Verify whether More Realistic Research's study loop functions without the Anomaly
-  DLC** on the target install (§5.4). It is unguarded and undeclared.
+- ~~**Verify whether More Realistic Research's study loop functions without the Anomaly
+  DLC** on the target install (§5.4). It is unguarded and undeclared.~~ **CLOSED — moot.**
+  [The DLC floor](https://github.com/cjd721/Rimworld-Archinity/issues/6) rules Anomaly **out**, and
+  §5.4's verdict is already **REBUILD**, so the mod's assembly never loads and its study loop never
+  runs. Verified in passing: **all 113 mods on disk reference Anomaly only under `loadAfter`, never
+  under `modDependencies`** — nothing in the bin fails to load without it. **[V]**
 - **Smoke-test one workbench replace in a real MP session** before building progression
   on Replace Stuff (§10.5).
 - **Reconcile `Archinity.Pacing/Patches/Retier_Medieval.xml` against VFE Tribals'

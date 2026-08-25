@@ -364,14 +364,22 @@ Vanilla Races Expanded – Android); source mods are attributed individually.
 
 Where the current collection is thin, and what would fill it.
 
-**1. Genuinely eldritch / reality-warping content — the largest gap.**
-There is nothing installed that reads as *cosmic horror* or *unstable reality*: no void nodes, no
+**1. ~~Genuinely eldritch / reality-warping content — the largest gap.~~ STRUCK — not a gap.**
+> Ruled out by [The DLC floor](https://github.com/cjd721/Rimworld-Archinity/issues/6). **Anomaly is
+> out, and cosmic horror with it** — refused on design rather than on price, so it does not reopen.
+> The campaign's register is **gothic and sacral with an edge of realism**: vampire gods, Roman
+> Catholic Church meets Vlad the Impaler, the medieval-creature mods in for *demonic* flavour rather
+> than eldritch. The Archons' otherness is **sacral, not void** — gods, not entities. This is a
+> direction not taken, not a hole to fill; **do not source against it.** The observation below stands
+> as fact, but its conclusion is struck.
+
+~~There is nothing installed that reads as *cosmic horror* or *unstable reality*: no void nodes, no
 monoliths, no anomalous entities, no metalhorror, no unnatural darkness, no "the geometry is wrong"
-props. Every "creepy" item found is merely dusty or broken.
-- **Anomaly** (official DLC, 1.6-compatible) is the direct fix. It ships the void monolith, obelisks,
+props. Every "creepy" item found is merely dusty or broken.~~
+- ~~**Anomaly** (official DLC, 1.6-compatible) is the direct fix. It ships the void monolith, obelisks,
   gray flesh, unnatural corpses, bioferrite structures, void provocations, and a whole entity roster.
   For a civilisation that "built the universe as a simulation", Anomaly's void material is by far the
-  best fit available and it is first-party, so no compatibility risk.
+  best fit available and it is first-party, so no compatibility risk.~~
 
 **2. Psycasts and psychic infrastructure.**
 Royalty's five eltex garments plus two lances is the entire psychic loot pool. There are no psycast
