@@ -39,6 +39,7 @@
        moves whenever you want them.
        ==================================================================== -->
 
+  <!-- expect: 1 -->
   <Operation Class="PatchOperationReplace">
     <xpath>/Defs/ResearchProjectDef[defName="DrugProduction"]/techLevel</xpath>
     <value>
