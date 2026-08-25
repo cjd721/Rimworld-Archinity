@@ -562,6 +562,25 @@ no Neolithic trader stocks `Fabric`.
 
 ## Factions
 
+### The faction roster must be final BEFORE world creation
+
+**Adding a `FactionDef` to an already-generated world does nothing, and says
+nothing.** `FactionManager.ExposeData` has no reconcile path: it scribes the
+faction list it was saved with and never re-reads `DefDatabase` for defs that
+appeared since. No error, no warning, no log line — the faction simply is not in
+the world and never will be.
+
+For a single long co-op run this is a **one-time hard gate**, and it is the most
+consequential silent failure in the project: a roster mistake is not a patch, it
+is a new world.
+
+There is a C# escape hatch — `FactionGenerator.CreateFactionAndAddToManager(layer, def)`
+is public static — but it is a repair, not a plan.
+
+Recorded here because it is load-bearing for the world-roster decision and
+previously lived only in `docs/archive/sys/05-factions.md`, which is archived
+prose rather than the fact store.
+
 ### requiredCountAtGameStart is DEAD CODE in 1.6
 
 `FactionGenerator.InitializeFactions(layer, factions)` early-returns when
