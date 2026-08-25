@@ -53,4 +53,7 @@ are in, and where the real instructions live. Everything else is filed elsewhere
 - Verified facts, so they are never re-litigated → `docs/technical-findings.md`
 - Design intent and the campaign's North Star → `docs/WAYSTONE.md`
 
-If something here grows longer than a pointer, it is probably misfiled.
+If something here grows longer than a pointer, it is probably misfiled. The one
+standing exception is **Ground rules** above: workflow rules have no other home,
+and an agent that misses one has already done the wrong thing by the time anyone
+could point it at a document.
