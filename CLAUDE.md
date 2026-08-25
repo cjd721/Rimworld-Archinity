@@ -3,8 +3,6 @@
 A suite of RimWorld 1.6 mods for one long two-player co-op playthrough on the
 **Multiplayer** mod. Neolithic start, every tech era in order, endgame in orbit.
 
-Most of the project is pure XML defs. One C# assembly ships: `Archinity.Altar`.
-
 ## How we work
 
 Two modes. Know which one you are in.
@@ -22,6 +20,12 @@ discipline, and several of its rules fail with **no error message at all** — y
 will not discover them by running the game. You do not need the design docs to
 write a patch. Carefully engineer the simplest solution to what was actually
 asked.
+
+## Ground rules
+
+**Work directly on `main`. Do not create branches.** No feature branches, no
+`research/*` branches, no worktrees. One dev, one repo, no review gate — a
+branch buys nothing here and costs a merge.
 
 ## Agent skills
 

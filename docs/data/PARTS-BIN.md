@@ -8,6 +8,27 @@ they looked useful, not because he plans to run them. Nothing here commits the
 project to shipping anything. The active/inactive split in `config/ModsConfig.xml`
 carries **zero weight** and was deliberately ignored throughout.
 
+> ## ⚠ Standing correction — licence reasoning is void
+>
+> **Archinity is a private mod for two people. It will never be public and never be
+> published.** Licence, copyright and attribution are therefore **not constraints on
+> this project** and must not enter any assessment.
+>
+> This document was originally written with a licence axis. Wherever a verdict below
+> reads **BLOCK**, **REBUILD** or **RESTAT** *because of a licence* — "unlicensed",
+> "all rights reserved", "depend, never vendor", "reference-only", "do not copy",
+> "worth asking", "if licence permits" — **that reasoning is struck and the verdict
+> reverts to PULL.** Everything in the bin is available to lift, fork, vendor,
+> restat or repair, source included.
+>
+> Verdicts resting on *engineering* grounds — multiplayer safety, save-state
+> permanence, maintenance status, performance, design fit — are unaffected and still
+> stand. Where an entry gave both, only the engineering half survives.
+>
+> Section 4 has been rewritten. Inline `no licence` / `unlicensed` annotations
+> elsewhere are left in place as harmless provenance metadata; read them as facts
+> about a mod, never as an argument against using it.
+
 **Scope.** 108 Workshop mods (`C:\Program Files (x86)\Steam\steamapps\workshop\content\294100\`)
 plus the 4 local Archinity mods (symlinked into
 `C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\`). Roughly 45 got a
@@ -75,9 +96,11 @@ Game version 1.6.4871. Verify again after any major RimWorld update.
    points as at 20,000** — which makes Ignorance Is Bliss the *sole* era gate, not a
    backstop. Fixable with five `PatchOperationAdd`s. §8.3. **[V]**
 
-9. **Licence is the binding constraint on art, not quality.** ~228 sprites in the
-   whole bin are legally liftable. ~6,600 — including Medieval Overhaul's 4,119 and
-   VFE Medieval 2's 1,122 — are all rights reserved. §4. **[V]**
+9. ~~**Licence is the binding constraint on art, not quality.**~~ **STRUCK — see the
+   standing correction above.** Licence is not a constraint on this project at all.
+   The finding that survives is the raw volume: **~6,800 sprites across the assessed
+   set, all of them usable**, led by Medieval Overhaul's 4,119 and VFE Medieval 2's
+   1,122. *Reskin before you rebuild* applies at full strength. §4. **[V]**
 
 ---
 
@@ -252,55 +275,42 @@ on by default**. **[V]**
 
 ---
 
-## 4. Licence: the binding constraint on art
+## 4. Art volume — what each mod actually ships
 
-Twenty-three of 108 mods ship a licence file. **[V]** Everything else is **all rights
-reserved** — publicly readable is not licensed, and shipping `Source/` is visibility,
-not permission.
+> **Licence is not a consideration for this project and never was.** Archinity is a
+> private mod for two people, never published and never distributed. Every asset,
+> def and line of source in the bin is available to lift, fork, vendor, restat or
+> repair. The original version of this section ranked mods by what their licences
+> permitted; that reasoning is void. See the standing note at the top of this file.
 
-| Licence | Mods | What it permits |
-|---|---|---|
-| **MIT** | Rim War, Map Mode Framework, Xenotype Spawn Control, Uncompromising Tribal Faction, **Ushankas Glittertech**, **VFE Security**, Replace Stuff, Animal Feed Trough, Pick Up And Haul, Harmony, Architect Icons, EdB Prepare Carefully, Adaptive Storage, Vehicle Framework, Multiplayer Compatibility | fork, vendor, redistribute, with notice |
-| **CC BY 4.0** | Dark Ages: Beasts and Monsters, **Dark Ages: Crypts and Tombs**, **Dark Ages: Medieval Tools** | **lift the art**, with attribution |
-| **Apache 2.0** | [SR] Factional War (fork) | fork with attribution |
-| **CC BY-NC-SA 4.0** | World Tech Level | use and adapt, but derived code stays CC BY-NC-SA |
-| **CC BY-NC-ND 4.0** | **Vanilla Expanded Framework**, RimFantasy | **depend, never vendor** |
-| **LGPL** | Compositable Loadouts | |
-| **None** | everything else, incl. Medieval Overhaul, every VFE / VRE / VPE / VIE module, Faction Territories, Node Research, Worldbuilder, Custom Quest Framework, Processor Framework, all four gravship mods, all three neolithic-art mods | nothing |
+What survives is the useful half — **how much art each mod actually ships**, which is
+what makes it worth raiding as a parts bin.
 
-Three carve-outs worth knowing verbatim:
+| Mod | Sprites | Notes |
+|---|---:|---|
+| Medieval Overhaul | 4,119 | by far the largest single art source in the bin |
+| VFE Medieval 2 | 1,122 | includes the 566 heraldry masks (§10) |
+| VIE Memes and Structures | 704 | plus 16 ritual `.ogg` audio loops |
+| Alpha Mechs | 664 | the late-game mechanoid bestiary |
+| Vanilla Gravship Expanded | 523 | |
+| Vanilla Psycasts Expanded | 468 | |
+| VQE Ancients | 407 | already the altar's art source |
+| VFE Insectoids 2 | 380 | |
+| Dark Ages: Beasts and Monsters | 347 | the wall-breaking-monster candidates |
+| VRE Archon | 269 | |
+| VFE Security | 231 | |
+| Dark Ages (Tools + Crypts) | 137 | 85 of them at up to 2048² |
+| Ushankas Glittertech | 91 | full C# source ships alongside |
 
-**VEF** (`…\2023507013\LICENSE`) is CC BY-NC-ND **plus** a written Vanilla Expanded
-addendum: *"Modders that create mods that depend on this framework (through marking
-this mod as a dependency) are expressly permitted to create commissioned mods with
-commercial advantages or monetary compensation, as well as accept donations."* **[V]**
-Depending on VEF is explicitly blessed. Copying from it is not.
+Roughly **6,800 sprites total** across the assessed set, all of them usable.
 
-**RimFantasy** (`…\2836791007\LICENSE.md`) is the sharpest trap in the bin: *"All
-contents **with the exception of XML files** are licensed under the CC BY-NC-ND 4.0
-License."* You may *"Modify material for self use"*; you may **not** *"Distribute
-modified material."* **[V]** The XML is exempt; **the art is the restricted part** —
-precisely the half worth having. The author adds *"Exceptions may be granted on a
-limited basis"*, which makes asking the only legal route and a cheap one.
-
-**VFE Security** (`…\1845154007\LICENSE`) is **MIT © 2019 XeoNovaDan** — the only
-licensed mod in the entire Vanilla Expanded set. **[V]** Caveat, flagged honestly:
-the LICENSE names the original author while `About.xml` now credits Potocki, Sokyran
-and Taranchuk. **[I]** Treat code and XML as copyable with attribution; treat the 231
-textures as ambiguous and check separately.
-
-**Ushankas Glittertech is MIT** (`…\3522676478\LICENSE`, © 2024 BlueEagle421 — the
-same person as "Ushanka"; the repo ships as `GlitterworldUprising.sln`, matching his
-prior mod). **[V]** Full C# source ships alongside. It is the only mod in the bin you
-can legally fork *and repair*.
-
-**Bottom line on art.** ~228 sprites are legally yours: Dark Ages' 137 (CC BY,
-including 85 at up to 2048²) and Ushanka's 91 (MIT). Roughly 6,600 are not —
-Medieval Overhaul's 4,119, VFE Medieval 2's 1,122, Alpha Mechs' 664, VIE Memes' 704,
-VGE's 523, VPE's 468, VQE Ancients' 407, VFE Insectoids 2's 380, DA Beasts' 347
-(licensed), VRE Archon's 269. **[V]** Three cheap asks could change this more than
-any amount of further searching: SirLalaPyon/ViralReaction for MO, Sierra0001 for
-RimFantasy (whose licence invites it), and Oskar Potocki via the VE Discord.
+**Practical consequences.** *Reskin before you rebuild* applies at full strength — there
+is no legal reason to author art for anything the bin already draws. **Ushankas
+Glittertech ships full C# source**, so it can be forked and repaired outright rather
+than worked around. **Vanilla Expanded Framework can be vendored** if depending on it
+proves fragile, which materially softens the one-way-door problem in
+[The VEF dependency](https://github.com/cjd721/Rimworld-Archinity/issues/15). And
+`Source/` folders anywhere in the bin are fair game to read and copy.
 
 ---
 
@@ -506,8 +516,8 @@ property is market value — literally converting a resource so you can convert 
 again). **[V]** `technical-findings.md` already records that it contributes **zero**
 Medieval research projects.
 
-**Verdict: BLOCK the code, BLOCK the economy, PULL the art if licence permits (193
-PNGs incl. 24 hand-drawn perk icons), REBUILD the architecture.**
+**Verdict: BLOCK the code, BLOCK the economy, PULL the art (193 PNGs incl. 24
+hand-drawn perk icons), REBUILD the architecture.**
 
 ### 5.6 Medieval Overhaul `3219596926` — the chains, enumerated
 
@@ -566,9 +576,9 @@ map**. **[V]**
 **The reusable idea:** the three-rung ladders `DankPyon_{Basic,Military,Noble}{Blades,Maces,Polearms}`
 at 300/600/1000 — three rearmament moments in the long middle with no new resource.
 
-**Verdict: SPLIT.** Art **BLOCK** on licence (worth asking). Production chain
-**BLOCK**, emphatically. Research shape and tier ladders **PULL as reference**.
-Assembly **BLOCK** for MP.
+**Verdict: SPLIT.** Art **PULL** — 4,119 sprites, the largest single source in the bin.
+Production chain **BLOCK**, emphatically. Research shape and tier ladders **PULL as
+reference**. Assembly **BLOCK** for MP.
 
 ### 5.7 VFE Medieval 2 `3444347874` — two mechanisms worth taking outright
 
@@ -701,14 +711,13 @@ mismatched settings mean one client has a ThingDef the other does not. **[V]**
 **ETRT Tribal Apparel `3545351721`** — 60 PNGs all at 512×512, including
 `FSFurCoat` and `FSDesertRobe` with **complete five-body-type worn graphics** (the
 expensive part most mods skip). 9 ThingDefs, all Neolithic, craftable at a
-`CraftingSpot` from turn one. **No assemblies.** Passes the expiry test. Two upstream
-rightsholders per its own About.xml plus unprefixed `Apparel_FS*` defNames suggesting
-a third lineage — no clear title even with permission. **[V]** **PULL as a live
-dependency, BLOCK the art.**
+`CraftingSpot` from turn one. **No assemblies.** Passes the expiry test. **[V]**
+**PULL — dependency or art, either way.**
 
 **VWE Tribal `2454918552`** — 10 PNGs, 30 Neolithic weapon/tool defs, no assemblies.
 Passes on 6 of 7 — `VWE_Weapon_FireBomb` costs 80 `Chemfuel`, a neolithic item priced
-in an industrial intermediate. **[V]** **PULL as a live dependency, BLOCK the art.**
+in an industrial intermediate. **[V]** **PULL — dependency or art, either way**; restat
+the firebomb's cost.
 
 **Adaptive Primitive Storage `3400037215`** — 83 PNGs of genuine early-era storage:
 Granary, CoveredClayPot, LargeLogPile, stone and wood cellars. 28 defs, no assembly.
@@ -733,7 +742,7 @@ that *looks* medieval without adding a bench. Note it also silently changes
 > So `Archinity.Glitterites` is rebinding **a single PawnKindDef onto a faction the
 > project supplies** — there is no FactionDef here and no bespoke gear to dress it in.
 > For an actual Ultra-tier arsenal the source in this bin is **GravTech** (§5.11),
-> which is unlicensed and therefore reference-only.
+> which can be lifted directly.
 
 **Supplies. [V]** 103 ThingDefs, 62 RecipeDefs, **20 ResearchProjectDefs**, 24
 Hediffs, 4 StatDefs, **3 QuestScriptDefs**, 3 IncidentDefs, 91 PNGs. Buildings:
@@ -795,7 +804,8 @@ Final processing requires the crematorium"*), **while the one-step alternative a
 exists in the same mod** (`BlocksVacstone + Plasteel → GravlitePanel`). **[V]** MP:
 594 lines, **zero `Rand.`, zero threading, zero static collections** — one hazard,
 `ApplySettings()` writing into live `CompProperties` (radius, power, `statOffsets`,
-`maxDistance`) from an Apply button. **RESTAT / BLOCK on licence.**
+`maxDistance`) from an Apply button. **RESTAT** — and fix or bypass that Apply path,
+which is the only real objection.
 
 **Vanilla Gravship Expanded Ch1 `3609835606`** — 165 ThingDefs, 8 research, only 4
 RecipeDefs, 523 PNGs. Ship weapons, 10 compact benches, heatsinks, Agrocell,
@@ -864,7 +874,8 @@ with a different enabled set per client, on every build.** Plus `defaultTargetQu
 and `Rand.Chance(destroyChance)` followed by a per-client setting gating a
 `PlaceBlueprintForBuild`. **[V]** It *is* covered by the compat layer.
 
-**No licence. [V] Verdict: do not adopt it as a house mechanism.** If used at all, cap
+**Verdict: do not adopt it as a house mechanism** — on the multiplayer grounds above,
+which are unaffected by the licence correction. If used at all, cap
 the count deliberately — three processors for the whole run — and only for things that
 are genuinely *time* rather than *labour*; vanilla's fermenting barrel already covers
 most of it. **And note: if MO is used at all, PF comes with it as a hard dependency.**
@@ -923,8 +934,9 @@ Three design hooks worth taking, all unprotectable structure:
 
 **Art:** 268 PNGs — 18 body sprites (a complete set), 30 head attachments, 33
 hairstyles, 120 archoblade frames, 16 archoplate, 23 gene icons, a faction icon.
-**[V]** All unlicensed. **The authoring cost if you cannot get permission is roughly
-110 pawn-render sprites plus ~25 UI icons**, before gear.
+**[V]** All of it usable — a complete Archon visual identity with no authoring cost at
+all. *(The original entry priced the rebuild at ~110 pawn-render sprites plus ~25 UI
+icons on the assumption permission was needed. Struck.)*
 
 One MP hazard: `Rand.Chance(VREArchonSettings.archonRaidSpawnChanceInPsychicStorm)`
 inside `IncidentWorker_PsychicStorm.TryExecuteWorker` — a client-local slider deciding
@@ -1023,8 +1035,9 @@ re-opens a letter every 30 ticks from inside `GameComponentTick`** — that alon
 a lockstep session; disable `enableDefeatedSettlementVassalisePrompt`. **[V]** Every
 interval and multiplier is client-local. No threads, and the RNG that matters is
 deterministically seeded — the author was thinking about determinism even if not about
-MP. Removal is a one-way door and settlements that changed hands stay changed. **No
-licence.** **PULL with surgery for a private run; REBUILD for anything shipped.**
+MP. Removal is a one-way door and settlements that changed hands stay changed.
+**PULL with surgery** — and note this project *is* the private run, so the "REBUILD for
+anything shipped" half of the original verdict never applies.
 
 **Rim War `2222935097` — MIT, and MP-catastrophic by construction.** The reference
 implementation of a living political board: per-faction behaviour archetypes, a points
@@ -1432,8 +1445,8 @@ mutating a caravan on bounty turn-in. Both are covered by the compat layer.
 **Two content items worth taking. [V]** `VFEP_Turret_Cannon` — a **Smithing-gated
 medieval cannon** that refuels on steel as cannonballs, with art, sound and projectile,
 ready-made Medieval artillery. And `VFES_Tomahawk` — `techLevel Neolithic`, **a ranged
-neolithic option that is not a bow**, which is rare and directly useful. Both
-unlicensed: depend, do not copy.
+neolithic option that is not a bow**, which is rare and directly useful. Both can be
+copied outright.
 
 **Verdicts: VFE Pirates BLOCK as-shipped / RESTAT viable. VFE Settlers RESTAT** (a
 correction — its three always-present Industrial factions make "essentially not a threat
@@ -2210,16 +2223,19 @@ stop re-litigating:
 5. **Two of the five asks are done and two more are nearly free.** §10. The animal trough
    is the only genuinely unclaimed one, and it has a ~15-line XML path nobody has taken.
 6. **Story Framework is closed.** §12.1.
-7. **Licence, not quality, is what gates the art.** §4. Three emails could change the
-   picture more than any amount of further searching.
+7. ~~**Licence, not quality, is what gates the art.**~~ **STRUCK.** Licence is not a
+   constraint on this project. The whole bin — ~6,800 sprites, plus every `Source/`
+   folder in it — is available. §4.
 
 And two things to decide deliberately rather than drift into:
 
-**VEF is a one-way door.** It is the only source of XML quest chaining,
-`LootableBuilding`, KCSG and the facility-topology extensions; it is CC BY-NC-ND, so it
-can be depended on but never vendored; it dropped its Multiplayer API integration in
-1.6; and its GameComponents scribe by class name. If the Chronicle is built on
-`QuestChainExtension`, that decision is made at scenario setup and cannot be revisited.
+**VEF is close to a one-way door.** It is the only source of XML quest chaining,
+`LootableBuilding`, KCSG and the facility-topology extensions; it dropped its
+Multiplayer API integration in 1.6; and its GameComponents scribe by class name, so if
+the Chronicle is built on `QuestChainExtension` that decision is effectively made at
+scenario setup. *(The original entry also called it never-vendorable on licence
+grounds. Struck — vendoring VEF is available to us if depending on it proves fragile,
+which is the real escape hatch.)*
 
 **Client-local `ModSettings` is the project's real desync surface, not `Rand`.** Fifty-one
 of the installed mods have one. Every tunable Archinity ships should be a **Def**.
@@ -2238,8 +2254,8 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
   on Replace Stuff (§10.5).
 - **Reconcile `Archinity.Pacing/Patches/Retier_Medieval.xml` against VFE Tribals'
   `Core.xml`** — they retier overlapping vanilla buildings and the loser is silent (§5.3).
-- **Ask three authors for art permission** — SirLalaPyon/ViralReaction (MO),
-  Sierra0001 (RimFantasy, whose licence invites the request), Oskar Potocki (VE).
+- ~~Ask three authors for art permission.~~ **STRUCK** — licence is not a constraint
+  on this project. No permission is needed for anything in the bin.
 - **Audit Biotech for Gravship's unseeded gene `Rand`** (§5.11) before use.
 - Not assessed at depth, and cheap to finish if wanted: `3697533935` Tribal Siege Raids,
   `3309003431` VFE Insectoids 2, `2860414285` Vanilla Combat Reloaded and `3749200746`
