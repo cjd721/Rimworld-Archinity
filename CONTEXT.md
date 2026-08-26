@@ -153,6 +153,45 @@ _Avoid_: the Archotech era, the endgame
 The end of a political era, where the cast is replaced — one or two factions climb
 forward with you and the rest fade. Two are structural: the end of M3 and the end of S1.
 
+### Era gating
+
+The four jobs the era gate does, kept separate on purpose.
+[#7](https://github.com/cjd721/Rimworld-Archinity/issues/7)
+
+**The ceiling**:
+The single stored scalar gating what content may *exist* — research, trader stock, quest
+rewards, gear on generated pawns, incidents. A ceiling, never a level: everything at or
+below it stays available forever.
+_Avoid_: the world tech level, the tech cap
+
+**The band**:
+Which factions may *contact* you — your tier and one below, and nobody else.
+**This is a configuration we must write, not a default.** Ignorance Is Bliss ships
+`numTechsAhead 1` / `numTechsBehind 1` and `empireIsAlwaysEligible true`, and the repo's
+settings file sets none of the three. [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)
+_Avoid_: the tech range, the faction filter
+
+**The advance**:
+The one synced command that raises the ceiling, writes the player faction's tier, and
+stamps the era-start tick. The only writer of an era anywhere in the project.
+
+**The trigger**:
+What the player does to earn the advance — a capstone that unlocks a rite at the altar.
+
+**Capstone**:
+The research project whose prerequisites are an era's named Spine nodes. Always declared
+at the techLevel of the era it climbs *from*, never the one it climbs to.
+_Avoid_: theory project, tech lock
+
+**Fade**:
+What happens to a faction the band has left behind. It stays alive, visible and raidable;
+it simply stops being eligible to raid, trade or send quests. Nothing else happens to it.
+
+**Exposure** · **Supply**:
+The line the gate is drawn on. **Exposure** — seeing, mining, holding and using what you
+took at real risk — is free. **Supply** — a trader who restocks it, a recipe that makes
+it, a research node that unlocks it — is gated.
+
 ### Research
 
 The two axes every research node sits on.
