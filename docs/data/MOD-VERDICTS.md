@@ -113,7 +113,7 @@ With licence struck and the set pinned, almost every defect that used to read as
 disqualifying is now something we can simply fix. Already mined for the
 faction-tension shape; stays on disk as reference.
 
-## Declined — 3
+## Declined — 5
 
 Conrad's calls, made directly. No justification owed and none recorded.
 
@@ -122,18 +122,31 @@ Conrad's calls, made directly. No justification owed and none recorded.
 | Faction – Elves | `ICC.FOV.ELVES` |
 | Dwarves of the Rim | `bean.customxenotypes.dwarvesoftherim` |
 | Rim War | `Torann.RimWar` |
+| VFE – Insectoids 2 | `OskarPotocki.VFE.Insectoid2` |
+| Faction Territories and Vassalage | `jaeger972.factionterritories` |
 
 Rim War is **both** barred and declined; the barred verdict is the operative one.
+
+**The last two were declined in [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2:**
+
+- **VFE – Insectoids 2** — Conrad: *"I don't like that mod and we're going for a mech-themed bad
+  guy."* Side effect worth knowing: it removes **5.6 of `ThreatBig` incident weight** that would
+  otherwise have crowded the incident pool.
+- **Faction Territories and Vassalage** — declined as a *dependency*, with its ideas kept. The
+  design it was carrying (territory, caravan-tile ambush forcing, off-map AI-vs-AI invasion,
+  vassalage) is **reimplemented in `Archinity.Core`**, and the territory model is deliberately *not*
+  its Dijkstra flood-fill: a claimed tile is one within a small radius of a visible settlement or
+  outpost. See [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2 and `scratch/recon-vassalage-territory.md`.
 
 ### Explicitly NOT declined
 
 These three were listed as declined in an earlier revision **on my judgment, not
-Conrad's**. That was not mine to do. All three are in, tiered below, and undecided:
+Conrad's**. That was not mine to do. Two remain in, tiered below, and undecided —
+**Faction Territories has since been declined by Conrad** and has moved to the table above:
 
 | Mod | packageId | Where the want-question lives |
 |---|---|---|
 | [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` | [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) — a *duplication* question against whatever shape #8 lands on for faction tension, not a safety one. Not barred: one caravan `WorldComponent`, no threading **[V]**. |
-| Faction Territories and Vassalage | `jaeger972.factionterritories` | [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) — one `WorldComponent`, no thread creation **[V]**. |
 | Worksites Expanded | `godsfathermixtape.worksitesexpanded` | Undecided. One `WorldComponent`, no thread creation **[V]**. |
 
 **The rule this file follows:** it decides what we *can* use. What we *want* is
@@ -163,7 +176,12 @@ of this file **omitted it entirely**: it lives only in this repo, not in Steam's
 
 ---
 
-## In — 114 third-party, by tier
+## In — 112 third-party, by tier
+
+> **Amended by [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2.** Was 114. **VFE – Insectoids 2** and **Faction
+> Territories and Vassalage** have since been declined by Conrad and are listed in **Declined**
+> above. Both still appear in the tier tables below, where the tier verdict (what we *can* use)
+> remains accurate — the decline supersedes it on whether we *will*.
 
 Everything third-party that is not barred and not declined. **Our five are not listed
 here** — see the note at the top; they are in by definition and answer to the two
@@ -346,6 +364,16 @@ each is a specific thing to do when the mod ships.
    `MayRequire` gene lines in `Archinity.Origins` (`VRESaurids_Pheromones`,
    `VRE_Instability_Extreme`) plus an over-declared `<modDependencies>` block, and
    Origins' own description already says missing sources degrade gracefully.
+
+## Wanted, decided
+
+Recorded here only because Conrad has said so — the rule above still holds.
+
+| Mod | packageId | Decision |
+|---|---|---|
+| Tribal Siege Raids | `PJerri.TribalSiegeRaids` | **In, and it needs work.** [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2: its `TribalCatapultSiege` is the only siege strategy in the bin that bypasses `FactionDef.canSiege` and gates on Neolithic \|\| Medieval — but its `selectionWeightPerPointsCurve` is `(0,0)(2000,0)(3000,0.4)(5000,0.75)(10000,1)`, **zero weight below 3000 threat points**, so it must be re-curved into band. A `canSiege` `PatchOperation` onto the Medieval load-bearing factions and an authored medieval siege blueprint set go with it. |
+
+---
 
 ## Open
 
