@@ -992,6 +992,18 @@ entirely. VRE **Hussar** rewrites the vanilla `Hussar` xenotype **and** lets
 client-local settings determine the GeneDef count at load time. Each is
 counter-patchable, and none returns enough content to be worth it.
 
+> **A fifth of the same shape, added later: VRE Genie `2901424072` (§16).**
+> `GenieXenotypePatch.xml` rewrites the *vanilla* `Genie` xenotype in place — nine genes
+> added, `AptitudeRemarkable_Crafting` removed — exactly the Waster manoeuvre, and
+> exactly as invisible to a `Patches/` grep for faction xpaths. **It is not listed with
+> the four above and it is not blocked**: its assembly is the cleanest in the bin (no
+> settings, no threads, no `WorldComponent`, no RNG of its own **[V]**), so the
+> pre-#3 reasoning that produced "block" does not reach it. What it shares with them is
+> only the def-surface consequence, and that is the point worth carrying: **three VRE
+> mods now edit base-game xenotypes in place, so a vanilla xenotype name no longer
+> implies vanilla content.** Whether Genie ships is a want question for
+> [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8), not a safety one.
+
 **Faction – Elves `3726293423`** and **Dwarves of the Rim `2939964151`** are blocked on
 era grounds: four **medieval** factions and one **Industrial `naturalEnemy`** faction
 respectively, all `requiredCountAtGameStart: 1`, present before the player has a stone
@@ -2113,6 +2125,16 @@ Faster Moisture Pump · `2903717987` Advanced Pollution Pump · `3760520682` No
 Alzheimer's · `3749200746` TakeCover · `2860414285` Vanilla Combat Reloaded ·
 `3773448562` Milky Way (a GUI toolkit, miscategorised — §6.2).
 
+**Added by the §16 batch**, listed here for subject and tiered there:
+`1332119637` Range Finder · `3550360467` Defensive Positions – Forked · `935982361`
+Better Workbench Management · `3512466087` QualityBuilder Unofficial 1.6 · `3459647882`
+Auto-Cast Specialist Commands · `2307494117` AI Upscaled Textures – Core · `2275310562`
+Vanilla Pawns Retextured. **Read §16 before enabling any of them** — "no design bearing"
+is true and is not the same as "nothing to manage". Three carry settings that reach synced
+state (Auto-Cast, Better Workbench Management, QualityBuilder), Defensive Positions instead
+keeps *stored* positions per-player and silently so (§16.1), and **QualityBuilder is the
+only one the compat layer touches at all** — partly.
+
 ### Assessed and blocked
 VRE **Saurid** `2880990495` (`replacesFaction` deletes a vanilla faction) · VRE
 **Hussar** `2893586390` (client-local settings determine the GeneDef count at load) ·
@@ -2255,6 +2277,14 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
 - ~~Ask three authors for art permission.~~ **STRUCK** — licence is not a constraint
   on this project.
 - **Audit Biotech for Gravship's unseeded gene `Rand`** (§5.11) before use.
+- **Confirm which `RangeFinder.dll` the game loads** (§16). Both its root `Assemblies/`
+  and `1.6/Assemblies/` are in the v1.6 load path and hold different builds; only the
+  stale one threads and Harmony-patches `ModMetaData.VersionCompatible`. Launch-log check.
+- ~~**Smoke-test Defensive Positions in a live MP session** (§16) — it issues pawn orders
+  from gizmos and the compat layer does not cover it.~~ **CLOSED, premise wrong** — its
+  orders ride vanilla sync registrations **[V]** (§16.1). Replaced by a want question:
+  **should defensive positions and squads be shared between the two players?** They are
+  per-player today.
 - Not assessed at depth, and cheap to finish if wanted: `3697533935` Tribal Siege Raids,
   `3309003431` VFE Insectoids 2, `2860414285` Vanilla Combat Reloaded and `3749200746`
   TakeCover (combat-AI changes are a classic desync source and neither of the last two is
@@ -2268,6 +2298,9 @@ of the installed mods have one. Every tunable Archinity ships should be a **Def*
 Eight mods appeared on disk after §1–§14 were written, taking the bin to **122** —
 117 third-party plus our own five. Six arrived as one batch; **Tavern** and **Slave
 Rebellions Improved (Continued)** landed later and are the last two rows below.
+
+> **Superseded as a count.** A further eight mods have landed since; the bin is now
+> **130**. See **§16**. This section stands as the record of *this* batch.
 
 > §1's scope line ("108 Workshop mods… plus the 4 local Archinity mods") predates
 > these additions **and** undercounts our own mods, because `Archinity.Altar` lives
@@ -2351,3 +2384,101 @@ weighing carefully in both directions: it is a **parallel world model**, which i
 stated reason §12 and the Waystone distrust faction-sim mods — and it is also the only
 existing implementation of tribute, vassalage and a humiliating peace, which WAYSTONE §5
 names as the floor beneath total hostility.
+
+---
+
+## 16. The QoL batch — eight more, taking the bin to 130
+
+Seven quality-of-life mods and one race arrived after §15, all but one on a single day.
+Verdicts and the full evidence live in `docs/data/MOD-VERDICTS.md`; recorded here so the
+bin stays the single index of what is on disk.
+
+**None is barred, none has design bearing on the four areas, and that is the point** —
+this is the first batch admitted purely for how the game *feels to operate*. §11's
+"Quality of life — no design bearing" list is where six of them belong by subject. What
+makes them worth more than a bookmark line is the pattern below.
+
+| ID | Mod | packageId | Supplies | Cost |
+|---|---|---|---|---|
+| `2307494117` | AI Upscaled Textures – Core | `AIRetexture.Core` | 6,760 upscaled textures over the base game and all five DLCs, folder-gated per DLC. | **Free** — no defs, no patches, no assembly **[V]**. Price is 196 MB of RAM and load time, not correctness. |
+| `2275310562` | Vanilla Pawns Retextured | `neronix17.hd.pawns` | 246 pawn textures; 7 patch files retargeting Biotech eye/horn gene graphics and furskin head graphics. | **Free** — no assembly **[V]**. Uses `PatchOperationReplace` on `Eyes_Red`/`Eyes_Gray` `renderNodeProperties`; anything else editing those loses silently. |
+| `1332119637` | Range Finder | `brrainz.rangefinder` | Range rings on hover under a modifier key. Three draw/input Harmony patches, nothing else. | **Cheap + settings**, settings display-only. **The batch's one bar question**, and it resolves to no: threads exist, but they are Pardeike's Steam Workshop cross-promotion widget running at the main menu. See `MOD-VERDICTS.md`. |
+| `3550360467` | Defensive Positions – Forked | `GonDragon.DefensivePositions` | Saved defensive positions and pawn squads, recalled by hotkey or gizmo; four advanced slots; squad hotkeys on the numpad. | **Cheap + settings**, settings inert. **Orders are MP-safe with no patch at all** — the fork routes them through `TryTakeOrderedJob`, which Multiplayer syncs itself. The residue is that *stored* positions and squads are per-player and silently so. See §16.1. |
+| `935982361` | Better Workbench Management | `falconne.BWM` | Bill copy/paste, linked bill sets, drag-reorder, worktable restrictions, product-count sources. Two `WorldComponent`s persisting bill metadata. | **Cheap + settings, load-bearing.** Three count settings are read inside a `RecipeWorkerCounter.CountProducts` detour — the number that decides whether a bill is done. Not covered by the compat layer. |
+| `3512466087` | QualityBuilder Unofficial 1.6 | `hatti.qualitybuilder` | Auto-reconstructs a building until it hits a target quality; per-map and global defaults. | **Cheap + settings, partly fixed for us.** The only mod in this batch MP Compatibility covers — and it covers the commands, not the `PostSpawnSetup` defaults path or the 10-second `Stopwatch` cache on best-builder skill. |
+| `3459647882` | Auto-Cast Specialist Commands | `Linnun.AutoCastSpecialistCommands` | Auto-casts the Ideology role specialist commands when a pawn starts the matching work. | **Cheap + settings, and the heaviest settings dependency in the bin.** Six bools gate whether a toil is inserted into five vanilla `JobDriver.MakeNewToils`. Two of the six abilities it looks for do not exist in this bin — see below. |
+| `2901424072` | Vanilla Races Expanded – Genie | `vanillaracesexpanded.genie` | Rewrites the vanilla Genie xenotype: nine genes added, `AptitudeRemarkable_Crafting` removed. 19 new GeneDefs, an antibiotics chain, elongated heads. | **Cheap.** 9.7 KB assembly, no settings, no threads, no `WorldComponent`, no RNG of its own **[V]** — the cleanest assembly in the bin. |
+
+**The finding that generalises: a settings surface is a multiplier, not a cost.**
+
+Five of these eight carry `ModSettings`, which by `CODING_STANDARDS.md` puts all five in
+Cheap + settings. That tiering is correct and it is also nearly uninformative, because
+the five are not remotely comparable. Range Finder's four settings choose a modifier key
+and a colour. Auto-Cast's six decide **whether a toil exists in a pawn's job**. Both tier
+identically. The tier answers *is this in the sync surface*; it does not answer *what
+happens when it differs*, and for this batch the second question is the whole story:
+
+- **Inert** — Range Finder, Defensive Positions. Mismatch changes what one player sees.
+- **Steers a value** — QualityBuilder. Mismatch changes a quality target and a skill threshold.
+- **Steers a count** — Better Workbench Management. Mismatch changes when a bill stops.
+- **Steers control flow** — Auto-Cast Specialist Commands. Mismatch changes the *shape* of a job.
+
+Everything above the first line means the settings file is save-critical, which
+[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) already assumes. The reason
+to write the ladder down is that it is the first time the bin has held two mods at the
+same tier with an order-of-magnitude difference in what a mismatch costs, and the tier
+alone will not tell a future reader that.
+
+**Two of Auto-Cast's six abilities are dead in this bin.** It resolves `SO_ButcherCommand`
+and `SO_VoidCommand` out of `DefDatabase<AbilityDef>` with `errorOnFail: false`; both are
+SierraOnline defs and neither mod is on disk, so both resolve null and the cooking and
+void branches never fire **[V]**. Its `JobDriver_StudyInteract` patch is Anomaly-gated by
+a `Prepare()` type check and Anomaly is ruled out by
+[The DLC floor](https://github.com/cjd721/Rimworld-Archinity/issues/6), so that path is dead
+too. **Three of six settings do nothing here** — worth knowing before anyone debugs why a
+checkbox has no effect, and an instance of the same silence §15 flagged for Tavern's
+`techLevel`: nothing in the game reports a def that failed to resolve optionally.
+
+**Genie is the Waster shape, and it is now a pattern rather than an incident.**
+`GenieXenotypePatch.xml` edits the vanilla `Genie` `XenotypeDef` in place. Combined with
+`vanillaracesexpanded.waster` doing the same to Waster and
+`vanillaracesexpanded.saurid`'s `replacesFaction`, three VRE mods now rewrite base-game
+content rather than adding beside it. None is a safety problem; together they mean **a
+vanilla xenotype name no longer implies vanilla content**, which matters for
+`Archinity.Origins` and for any era gate reasoning about what a pawn can be.
+
+**Range Finder is the only entry here with a technical lesson worth carrying.** Its
+`LoadFolders.xml` puts *two* directories in the 1.6 path and both hold an
+`Assemblies/RangeFinder.dll` — different builds, and only the stale one threads. The
+`MOD-VERDICTS.md` method section now carries this as a third scanning trap: resolve
+`LoadFolders.xml` before deciding which assembly "the 1.6 assembly" means.
+
+### 16.1 Defensive Positions – Forked — the one worth reading in full
+
+Checked because the fork advertises two specific changes: **HugsLib dependency removed**
+and **the Multiplayer section deleted**. Both are true; full evidence in
+`MOD-VERDICTS.md`. Two findings generalise well past this mod.
+
+**A mod that needs no MP-specific code beats a mod with an MP patch.** The fork could
+delete its `Multiplayer.API` integration because it issues every order as a real
+`JobDriver_DraftToPosition` through `Pawn_JobTracker.TryTakeOrderedJob` — a method
+Multiplayer registers as a SyncMethod on its own, alongside `Pawn_DraftController.Drafted`
+**[V]**. Drafting and the goto both happen inside the job's toil, on the synced tick. This
+is the pattern to imitate in `Archinity.Core`: **push the player's intent into a Job and
+let the existing sync surface carry it**, rather than adding sync registrations for bespoke
+commands. It also ages better — there is no compat entry to rot when either mod updates.
+*(This corrects §16's first pass and the previous `MOD-VERDICTS.md` revision, both of which
+claimed DP's orders were unsynced. They are not.)*
+
+**A desync is not the worst outcome; a silent split is.** What the fork does *not* sync is
+the stored data — saved positions, squads, the advanced-mode flag — all of which
+`MapComponent.ExposeData` writes into the save. None of those writes touches `Rand`, and
+Multiplayer's detector compares `Rand` state only **[V]**, so nothing ever complains. The
+simulation stays identical because the *consequences* travel as synced jobs carrying an
+explicit target cell; only the stored preference diverges. The result is two players
+quietly holding different defensive positions until a save-and-reload discards the
+client's.
+
+That is the **loudness** gate failing while the **divergence** gate passes, and it is worth
+keeping as the bin's clearest worked example of the two coming apart. A desync announces
+itself and gets fixed in an evening. This would go unnoticed for a campaign.

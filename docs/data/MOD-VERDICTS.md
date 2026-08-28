@@ -1,7 +1,7 @@
 # Mod verdicts
 
 The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applied to
-**every mod on disk — all 122**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
+**every mod on disk — all 130**. Issue [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17).
 
 **The instrument, restated so this file stands alone:**
 
@@ -13,13 +13,13 @@ The bar from [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3), applie
   assembly).
 - Barred and declined mods **stay on disk as reference.**
 
-**122 mods on disk** — the workshop folder, local `Mods/`, and this repo. **Every one
+**130 mods on disk** — the workshop folder, local `Mods/`, and this repo. **Every one
 has a verdict.**
 
 **Five of them are ours** (Origins, Pacing, Drifters, Glitterites, Altar) and the
 admission bar does not apply to them: the bar decides whether to admit *someone
 else's* work. Our own code is governed by the two gates in `CODING_STANDARDS.md`.
-So the bar runs over the **117 third-party** mods.
+So the bar runs over the **125 third-party** mods.
 
 > **`config/ModsConfig.xml` carries no signal and is not referenced below.** Mods are
 > unenabled because the game has not been launched, not because anything was decided.
@@ -51,6 +51,14 @@ So the bar runs over the **117 third-party** mods.
    **Free** — no assembly at all. SRI is **Cheap + settings**, and its settings are
    read from inside rebellion logic, so they are save-critical in the strong sense.
    Both are tiered below and recorded in `PARTS-BIN.md` §15.
+4c. **Eight more mods added since, taking the disk total to 130** — seven QoL and one
+   race, recorded in `PARTS-BIN.md` §16. **None is barred.** The batch is cheap in
+   content and expensive in *settings*: five of the eight carry a `ModSettings` surface
+   and **three of those steer synced simulation state**, which is §3.1's dominant hazard
+   rather than anything new. The sharpest is **Auto-Cast Specialist Commands**, which
+   gates *toil-list construction* on a client-local bool — see the Named prices table.
+   One item outside the tiers: **Range Finder** ships a second, stale assembly in a
+   folder its own `LoadFolders.xml` puts in the 1.6 load path; see below.
 5. **`Archinity.Altar` was absent from every earlier revision**, despite the claim
    that every mod had a verdict. It lives only in this repo, not in Steam's `Mods/`
    folder like the other four Archinity mods, so the disk scan never saw it — and it
@@ -68,9 +76,9 @@ So the bar runs over the **117 third-party** mods.
 Byte-marker scan of every 1.6 assembly, then `ilspycmd` decompiles wherever a marker
 was load-bearing. `[V]` = decompiled and read. `[M]` = marker-level only.
 
-**85 of 122 are mechanically unbarrable** — no assembly at all, or an assembly with
+**90 of 130 are mechanically unbarrable** — no assembly at all, or an assembly with
 no threading and no `WorldComponent`. For those the bar cannot bite and no
-decompile is needed. The remaining 37 were examined individually.
+decompile is needed. The remaining 40 were examined individually.
 
 **What the scan proves.** Absence of `ThreadStart` / `ThreadPool` / `IsBackground`
 is strong evidence a mod starts no background threads. Assembly presence and
@@ -95,6 +103,17 @@ form never appears as a contiguous byte run. Scan for the bare type (`Rand`) and
 any hit as "decompile to find out". A zero on `Verse.Rand` proves nothing whatsoever,
 and any earlier claim in this file resting on that string is only as good as its `[V]`.
 
+**A third trap, found while verdicting Range Finder: "the 1.6 assembly" is not always
+one file.** The TechBlock correction above says to read the build that actually loads.
+Range Finder shows the harder case — **two builds load**. Its `LoadFolders.xml` maps
+`v1.6` to `/` *and* `1.6`, and **both** directories contain an `Assemblies/RangeFinder.dll`:
+a clean 21 KB 1.6 build, and a stale 36 KB legacy build at the root that ILMerges
+`CrossPromotion` and `MultiVersionModFix`. They are different files
+(`813a891bc7fb…` vs `d660775e8b43…`) **[V]**, and only the stale one contains
+`new Thread(…)`. **So resolve `LoadFolders.xml` first and scan every `Assemblies/`
+directory it puts in the version's path** — scanning the version-numbered folder alone
+would have returned a clean result here and missed the threading entirely.
+
 **One methodological trap, recorded because it cost a pass:** reading `<packageId>`
 by regex over `About.xml` returns the first match in the file, which for many mods is
 a *dependency's* id inside `<modDependencies>`. The first run reported eight separate
@@ -108,7 +127,7 @@ mods as `brrainz.harmony`. Parse the XML; take the direct child of `ModMetaData`
 |---|---|---|
 | **Rim War** | `Torann.RimWar` | `ThreadStart` present in the 1.6 assembly **[V]**, plus `WorldComponent_PowerTracker` and `WorldComponent_IncidentTracker` running a genuine parallel world power simulation, plus a 30-field settings ref constructed inside `WorldComponentTick`. Threads are on by default. |
 
-**One mod, out of 117 third-party.** That is the instrument working as designed, not a shortfall.
+**One mod, out of 125 third-party.** That is the instrument working as designed, not a shortfall.
 With licence struck and the set pinned, almost every defect that used to read as
 disqualifying is now something we can simply fix. Already mined for the
 faction-tension shape; stays on disk as reference.
@@ -176,9 +195,9 @@ of this file **omitted it entirely**: it lives only in this repo, not in Steam's
 
 ---
 
-## In — 112 third-party, by tier
+## In — 120 third-party, by tier
 
-> **Amended by [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2.** Was 114. **VFE – Insectoids 2** and **Faction
+> **Amended by [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2.** Was 122. **VFE – Insectoids 2** and **Faction
 > Territories and Vassalage** have since been declined by Conrad and are listed in **Declined**
 > above. Both still appear in the tier tables below, where the tier verdict (what we *can* use)
 > remains accurate — the decline supersedes it on whether we *will*.
@@ -187,7 +206,7 @@ Everything third-party that is not barred and not declined. **Our five are not l
 here** — see the note at the top; they are in by definition and answer to the two
 gates, not to a tier.
 
-**Free (22)** — no assembly. Nothing can go wrong that is not XML.
+**Free (24)** — no assembly. Nothing can go wrong that is not XML.
 
 | Mod | packageId |
 |---|---|
@@ -210,8 +229,10 @@ gates, not to a tier.
 | ATH's styles Norse | `anthitei.athsstylenorse.style` |
 | ATH's style Draconic | `Anthitei.ATHsStyleDraconic.Style` |
 | **Tavern** | `ODs.Tavern` — hard `modDependencies` on VEF; ~27 of its 30 concrete buildings are `techLevel` Undefined (`PARTS-BIN.md` §15) |
+| **AI Upscaled Textures – Core** | `AIRetexture.Core` — 6,760 textures, 196 MB, and **not one def, patch or assembly** **[V]**. Pure path-shadowing over the base game and DLCs, DLC-gated by `loadfolders.xml`, so the Anomaly folder never loads. Declares Harmony under `modDependencies` and then ships no code. |
+| **Vanilla Pawns Retextured** | `neronix17.hd.pawns` — 246 textures plus 7 patch files, all cosmetic: `graphicData` / `renderNodeProperties` on the Biotech eye and horn genes and graphic attributes on the furskin `HeadTypeDef`s. **[V]** |
 
-**Cheap (33)** — an assembly, no settings surface. Enable plus a `PatchOperation`
+**Cheap (34)** — an assembly, no settings surface. Enable plus a `PatchOperation`
 where wanted.
 
 | Mod | packageId |
@@ -236,8 +257,9 @@ where wanted.
 | More Gravship Workbenches · [sbz] Fridge | `LTS.MGW`, `sbz.NeatStorageFridge` |
 | ATH's Styleable Framework | `Anthitei.ATHsStyleableFramework.Style` |
 | Fix Styled Blueprints | `kathanon.FixStyledBlueprints` |
+| **Vanilla Races Expanded – Genie** | `vanillaracesexpanded.genie` — the cleanest assembly in the bin at 9.7 KB: no threading, no `WorldComponent`, no `GameComponent`, **no `ModSettings` and no RNG of its own** **[V]**. Two `IngestionOutcomeDoer`s and one `InternalDefOf`; the only draw is vanilla `IngestionOutcomeDoer.chance`, taken on the ingestion tick and therefore synced. Its price is a def-surface one, not a code one — see Named prices. |
 
-**Cheap + settings (57)** — Cheap plus a **managed condition**: per
+**Cheap + settings (62)** — Cheap plus a **managed condition**: per
 `CODING_STANDARDS.md`, `config/ModSettings/` is part of the sync surface. Copy the
 file; never re-click it. This is a rule to follow, not a defect to fix.
 
@@ -266,13 +288,21 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
 | **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` |
 | **Slave Rebellions Improved (Continued)** | `Mlie.SlaveRebellionsImproved` — no threads, no `WorldComponent` **[V]**, but both settings floats are read *inside* rebellion logic, so mismatched files produce different rebel rosters from the same tick. Transpiles `SlaveRebellionUtility.IsRebelling`. |
+| **Auto-Cast Specialist Commands** | `Linnun.AutoCastSpecialistCommands` — no threads, no `WorldComponent` **[V]**. **The heaviest settings dependency in the bin, by kind rather than by size:** six bools that decide whether a *toil is inserted into a vanilla `JobDriver`*. See Named prices. |
+| **Better Workbench Management** | `falconne.BWM` — no threads **[V]**; two `WorldComponent`s (`ExtendedBillDataStorage`, `WorktableRestrictionDataStorage`) that only persist bill metadata. Three of its seven settings are read inside a `RecipeWorkerCounter.CountProducts` detour. See Named prices. |
+| **QualityBuilder Unofficial 1.6** | `hatti.qualitybuilder` — no threads, no `WorldComponent` **[V]**. **The only mod in this batch the compat layer covers**, and it covers the commands, not the defaults path. See Named prices. |
+| **Defensive Positions – Forked** | `GonDragon.DefensivePositions` — no threads **[V]**: every `Thread` hit in the assembly is the compiler-generated `<>l__initialThreadId` of an iterator, and the one `Task` hit is `MessageTypeDefOf.TaskCompletion`. Its four settings are hotkey and camera behaviour only. **Its orders are MP-safe with no patch of any kind** — see the dedicated section below, which corrects an earlier claim in this file. |
+| **Range Finder** | `brrainz.rangefinder` — settings are display-only (modifier keys, colours, max draw range) and steer nothing synced **[V]**. Tiered here for the rule, not for a hazard. Its assembly question is separate and is recorded below. |
 
-> **Arithmetic.** 122 mods on disk. **Five are ours** (Origins, Pacing, Drifters,
-> Glitterites, Altar) and are not subject to the admission bar, leaving **117
+> **Arithmetic.** 130 mods on disk. **Five are ours** (Origins, Pacing, Drifters,
+> Glitterites, Altar) and are not subject to the admission bar, leaving **125
 > third-party**. Three distinct mods are out — Rim War (barred *and* declined),
-> Elves and Dwarves (declined) — so the **in** set is **114**, tiered Free 22 / Cheap 33 /
-> Cheap+settings 57 / Real 2 = 114. Real is carved *out of* Cheap+settings, not
+> Elves and Dwarves (declined) — so the **in** set is **122**, tiered Free 24 / Cheap 34 /
+> Cheap+settings 62 / Real 2 = 122. Real is carved *out of* Cheap+settings, not
 > added to it — an earlier revision counted Vehicle Framework and TechBlock twice.
+> The two mods Conrad declined in [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)
+> session 2 are still inside those tier counts, which is why the section heading says
+> **120** and this block says 122.
 
 ### Real (2) — counted separately from Cheap+settings, not in addition to it
 
@@ -314,6 +344,108 @@ one, ticking synced or not. Against that: it is the only thing in the bin that
 already implements treaties, vassalage, tribute and a humiliating peace, which is
 close to a literal restatement of what WAYSTONE §5 asks the political board to do.
 
+### Range Finder — the one place this batch touches the bar **[V]**
+
+`brrainz.rangefinder` (`1332119637`). **Not barred, and the reasoning matters more than
+the verdict**, because a literal reading of the bar would bar it.
+
+**Threads exist.** Its `LoadFolders.xml` maps `v1.6` to `/` and `1.6`, and the root
+`Assemblies/RangeFinder.dll` — a stale 36 KB legacy build, distinct from the 21 KB one
+in `1.6/` — carries six `new Thread((ThreadStart)delegate …).Start()` sites. Separately,
+`1.6/Assemblies/CrossPromotion.dll` embeds two more assemblies as manifest resources
+(`Brrainz.CrossPromotionSteam.dll`, `…SteamDeck.dll`) which it loads by
+`Assembly.Load(byte[])`, and those carry `FetchPromotionMods` and `ThreadStart` too.
+
+**But every one of those threads belongs to Pardeike's Steam Workshop cross-promotion
+widget**, not to Range Finder. They are started from `MainMenuDrawer.Init` and from the
+`Page_ModsConfig` screen; they fetch UGC details, preview images and vote status, and
+they write to `promoMods` and `allVoteStati`. **They cannot run during a session and
+they touch no game state** — there is no game when they fire. The bar exists to stop us
+inheriting simulation that runs off the synced tick; this is a mod-list decoration.
+
+**Range Finder itself is inert.** The 1.6 build is three Harmony patches —
+`SelectionDrawer.DrawSelectionOverlays`, `MainTabsRoot.HandleLowPriorityShortcuts`,
+`Map.FinalizeLoading` — drawing range rings under a held modifier key. No `WorldComponent`,
+no `GameComponent`, no writes to anything.
+
+**The one thing to actually do:** confirm which `RangeFinder.dll` the game loads. Both
+directories are in the v1.6 path and only the stale build contains the threading and the
+`MultiVersionModFix` Harmony patch on `ModMetaData.VersionCompatible` — a patch that
+**rewrites which mods the game considers version-compatible**, which is not something to
+inherit unknowingly on a pinned set. This is a launch-log check, not a decompile, and it
+is in Open below.
+
+### Defensive Positions – Forked — the author's two claims, verified **[V]**
+
+`GonDragon.DefensivePositions` (`3550360467`). The fork advertises two changes: the
+**HugsLib dependency removed**, and **the section that required a Multiplayer patch
+deleted**. Both are literally true, and the second is architecturally justified rather
+than a removal of safety.
+
+**The dependencies are genuinely gone.** The assembly references only `0Harmony`,
+`Assembly-CSharp`, `mscorlib`, `UnityEngine.*` and `System.Core`. There is **no
+`Multiplayer.API` surface and no HugsLib surface** — not one `MP.`, `SyncMethod`,
+`RegisterSync`, `SyncField`, `SyncWorker` or `IsInMultiplayer` string anywhere in it —
+and `About.xml` declares no `modDependencies` at all.
+
+**It does not need them, because it routes orders through methods Multiplayer already
+syncs.** The fork issues every move through `JobDriver_DraftToPosition`, a real
+`JobDriver`, started by `Pawn_JobTracker.TryTakeOrderedJob`. Multiplayer registers that
+method itself — `SyncMethod.Register(typeof(Pawn_JobTracker), "TryTakeOrderedJob")
+.SetContext(…).ExposeParameter(0)` **[V]** — and also registers
+`Pawn_DraftController.Drafted` **[V]**, which covers the undraft-all hotkey. The drafting
+and the `Goto` / `ManTurret` order both happen *inside the job's toil*, on the synced
+tick. Both entry points qualify: MP's `InInterface` is
+`Client != null && !Ticking && !ExecutingCmds && !reloading && ProgramState == Playing`,
+which is satisfied during gizmo processing *and* during `MapComponentOnGUI`, so
+`ShouldSync` is true for the button and for the keypad hotkeys alike. The in-toil calls
+run with `Ticking` true, so they execute normally instead of re-syncing.
+
+> **Correction.** An earlier revision of this file said DP "issues draft and position
+> orders straight from gizmos and a `KeyBindingDef` … an unsynced order moves pawns on
+> one client only," and made that the reason for a smoke test. **That was wrong.** The
+> orders are synced, by vanilla registrations, with no DP-specific patch and no compat-layer
+> entry. Struck. This is the better architecture, not a missing one — a mod that needs no
+> MP-specific code cannot have its MP-specific code rot.
+
+**What the deleted section does not cover is the *stored* state, and that is the real
+price.** `DefensivePositionsMapComponent.ExposeData` scribes the saved positions and the
+squads into the save, and `DefensivePositionsWorldComponent` scribes the advanced-mode
+flag and ferries both across gravship moves. Four writers touch that data and **none goes
+through a vanilla synced method**:
+
+| Writer | How it is reached |
+|---|---|
+| `SetDefensivePosition` → `SetPosition` | straight from `HandleControlInteraction`, during gizmo processing |
+| `DiscardSavedPosition` | same path, ctrl-click |
+| `ScheduleAdvancedModeToggle` | sets client-local `modeSwitchScheduled`; applied in `MapComponentTick` |
+| `ReassignSquadMembers` / `ClearSquad` | `mapComponent.pawnSquads.Add` / `.Remove`, from the hotkey `OnGUI` path |
+
+The third deserves naming because **it looks like a fix and is not.** Deferring the write
+to `MapComponentTick` puts it on the tick but synchronises nothing: `modeSwitchScheduled`
+is set on the clicking client only, `MapComponentTick` runs on both, so exactly one client
+applies the toggle.
+
+**None of this can desync the game, and that is precisely what makes it worth writing
+down.** Multiplayer's detector compares **`Rand` state only** — `mapRandomStates`,
+`worldRandomStates`, `commandRandomStates` **[V]** — and not one of those four writes
+touches `Rand`. Meanwhile the data's *consequences* are all funnelled back through synced
+jobs: the clicking client reads its own handler, computes a cell, and issues a job
+carrying that cell **explicitly**, which both clients then execute identically. So the
+simulation stays consistent and the detector stays silent while **each player quietly
+accumulates their own set of defensive positions and squads** — and on the next save-and-reload
+only the host's survive.
+
+That is a **loudness** failure, not a divergence one. Under `CODING_STANDARDS.md`'s second
+gate it is the shape to distrust most: nothing in the game, and nothing in Multiplayer,
+will ever report it.
+
+**Price, and it is optional.** Three `MP.RegisterSyncMethod` calls from `Archinity.Core` —
+on `SetPosition`, on the squad add/remove pair, and on the advanced-mode toggle — make the
+stored state shared. All are reachable by `AccessTools` on public types; no fork, no
+transpiler. **Tier is unchanged at Cheap + settings**: the mod is fully playable without
+them, with per-player positions as the quirk. Do it only if shared positions are wanted.
+
 ### Named prices already known
 
 Carried from `PARTS-BIN.md` rather than re-derived. None of these changes a tier;
@@ -340,22 +472,30 @@ each is a specific thing to do when the mod ships.
 | `syrchalis.processor.framework` | `initialProcessState` in `CompProcessor.Initialize()` ⇒ every processor spawns with a different enabled set. |
 | `adaptive.storage.framework` | The **only natively MP-aware mod** in the bin. Nothing to do. |
 | `rwmt.MultiplayerCompatibility` | **Floor assumption.** Downloaded; enable before any co-op test. |
+| `Linnun.AutoCastSpecialistCommands` | **The worst settings dependency in the bin, and it is not close.** Five postfixes on `MakeNewToils` — `JobDriver_Mine`, `JobDriver_DoBill`, `JobDriver_PlantWork`, `JobDriver_Research`, `JobDriver_StudyInteract` — each call `AutoCastToilInjector.Inject(…, settings.enableAutoCastX)`, which returns immediately if the bool is false and otherwise **inserts a toil into the job's toil list** that calls `ability.verb.TryStartCastOn`. Every other settings hazard in this file changes a *value*; this one changes the *length and indexing of a pawn's toil list*. **The mechanism, stated precisely** (confirmed while verdicting Defensive Positions): Multiplayer syncs the `Job` — `TryTakeOrderedJob` is a registered SyncMethod with the job exposed — but each client then reconstructs the **toil list locally** by calling `MakeNewToils`. So a settings-gated toil injection makes two clients execute *different toils from the same synced job*, and the sync layer has no way to notice: it delivered the job correctly. Not covered by the compat layer. Settings must match, and this is the mod to check first if a desync appears. **[V]** |
+| `falconne.BWM` | `_countOutsideStockpiles`, `_countInventory` and `_countCarriedByNonHumans` are read inside a detour on `RecipeWorkerCounter.CountProducts` (plus a `GetCarriedCount` transpiler). That count is what decides whether a "do until X" bill is satisfied — so mismatched settings mean one client's bill completes and the other's keeps issuing jobs. Not covered by the compat layer. Settings must match. **[V]** |
+| `hatti.qualitybuilder` | **Partly fixed for us, and know which part.** MP Compatibility ships `[MpCompatFor("hatti.qualitybuilder")]` and sync-registers `CompQualityBuilder.ToggleSkilled` and the two quality float-menu lambdas — the *player commands*. It does **not** touch the two paths that read settings inside game logic: `CompQualityBuilder.PostSpawnSetup` seeds `skilled` and `desiredMinQualityRef` on every non-reloaded blueprint from `getDefaultUseQualityBuilder(map)` / `getDefaultMinQualitySetting(map)`, and `getBestConstructionSkillCached` recomputes the best builder's skill on a **`Stopwatch` with a 10-second wall-clock window** — wall-clock time is on the divergence list by name. Settings must match; the map-level override in `QualityBuilder_MapComponent` is saved and so is safe, but it falls back to the client-local global whenever `useMapSettings` is false. **[V]** |
+| `GonDragon.DefensivePositions` | Settings are inert (hotkey mode, shift behaviour, group radius, camera jump). Orders are synced by vanilla registrations and need no patch. **The price is the stored positions and squads, which are not** — three optional `MP.RegisterSyncMethod` calls if we want them shared. See the dedicated section below. **[V]** |
+| `vanillaracesexpanded.genie` | **Rewrites the vanilla `Genie` xenotype in place** — the Waster shape. `GenieXenotypePatch.xml` adds nine genes (`VRE_Hemophiliac`, `VRE_Immunity_VeryWeak`, `VRE_WoundHealing_VerySlow`, `VRE_AptitudePhenomenal_Crafting` and others) and removes `AptitudeRemarkable_Crafting`. Also patches Saurid and Alpha Genes. Free of code hazards; the cost is that a vanilla xenotype no longer means what the base game says it means. **[V]** |
 
 ---
 
 ## What this pass changes
 
-1. **One mod is barred out of 117 third-party, and three are declined.** The bar is not a filter
+1. **One mod is barred out of 125 third-party, and three are declined.** The bar is not a filter
    that removes work — it removes almost nothing, and that *is* the finding. What
    actually shapes the set is cost and taste, and taste is recorded here only when
    Conrad has stated it.
 2. **The bar reduces to one testable question: does it create threads.** A world sim
    on the synced tick is deterministic; disliking it is a decline, not a bar.
 3. **Vehicles are available**, at one settings flag. Previously this read as a hard block.
-4. **The real cost of the set is its settings surface.** 60 of the 122 mods on disk carry
-   one, so `config/ModSettings/` is save-critical across half the build and
+4. **The real cost of the set is its settings surface.** 65 of the 130 mods on disk carry
+   one, so `config/ModSettings/` is save-critical across **exactly half** the build and
    [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) must snapshot it as a
-   single artifact.
+   single artifact. The QoL batch sharpened this rather than adding to it: a settings
+   surface is not a cost, it is a cost *multiplier*, and the thing to grade is what the
+   settings reach. Range Finder has four and reaches nothing; Auto-Cast Specialist
+   Commands has six and reaches the toil list.
 5. **Saurid and Waster are cheap to drop if #8 wants to.** `PARTS-BIN.md` blocked both
    under the pre-#3 reasoning, but under the current bar neither is barred — both are
    patchable. So they are **in and undecided**, routed to
@@ -379,4 +519,13 @@ Recorded here only because Conrad has said so — the rule above still holds.
 
 - Enable `rwmt.MultiplayerCompatibility` before any co-op smoke test.
 - Confirm Vehicle Framework's synchronous fallback is deterministic, if vehicles ship.
+- **Confirm which `RangeFinder.dll` the game loads**, and whether `MultiVersionModFix`'s
+  patch on `ModMetaData.VersionCompatible` is live. Launch-log check, not a decompile.
+- ~~**Smoke-test Defensive Positions in a live MP session** — it is not covered by the
+  compat layer and it issues pawn orders from gizmos.~~ **CLOSED, and the premise was
+  wrong.** Its orders go through `TryTakeOrderedJob` and `Pawn_DraftController.Drafted`,
+  both of which Multiplayer registers itself **[V]**. See the section above. The open
+  question that replaces it is a *want*, not a safety one: **decide whether defensive
+  positions and squads should be shared between the two players.** They are per-player
+  today, silently. Three `MP.RegisterSyncMethod` calls if we want them shared.
 - Everything else is a *want* question, owned by the design tickets, not by this file.
