@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="USH_GE.GE_Settings">
+		<USH_FormingSpeedMultiplier>1</USH_FormingSpeedMultiplier>
+		<USH_PositiveMoodMultiplier>0.5</USH_PositiveMoodMultiplier>
+		<USH_NegativeMoodMultiplier>1</USH_NegativeMoodMultiplier>
+		<USH_PylonMoodMultiplier>0.25</USH_PylonMoodMultiplier>
+	</ModSettings>
+</SettingsBlock>

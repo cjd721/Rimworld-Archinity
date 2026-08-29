@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="BetterArchitect.BetterArchitectSettings">
+		<menuHeight>330</menuHeight>
+		<backgroundAlpha>0.419999987</backgroundAlpha>
+		<sortSettingsPerCategory>
+			<keys />
+			<values />
+		</sortSettingsPerCategory>
+		<groupByTechLevelPerCategory>
+			<keys />
+			<values />
+		</groupByTechLevelPerCategory>
+		<parentOverrides>
+			<keys />
+			<values />
+		</parentOverrides>
+		<categoryOverrides>
+			<keys />
+			<values />
+		</categoryOverrides>
+		<skippedParentCategoryIds />
+	</ModSettings>
+</SettingsBlock>

@@ -27,6 +27,16 @@ Requires Vanilla Quests Expanded - Ancients for the archite genes, the linkable 
       <packageId>Ludeon.RimWorld.Biotech</packageId>
       <displayName>Biotech</displayName>
     </li>
+    <!-- Hard, and it was undeclared. ThingDef Archinity_Altar is itself
+         MayRequire'd on this mod, so without it the def does not exist at
+         all; ArchinityDefOf.Archinity_Altar is a [DefOf] field, and
+         DefOfHelper throws at startup on a null. Both vector ThingDefs and
+         the altar's twelve linkable facilities are the same mod. -->
+    <li>
+      <packageId>vanillaquestsexpanded.ancients</packageId>
+      <displayName>Vanilla Quests Expanded - Ancients</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/3618306875</steamWorkshopUrl>
+    </li>
   </modDependencies>
   <loadAfter>
     <li>brrainz.harmony</li>

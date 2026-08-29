@@ -19,10 +19,20 @@ namespace Archinity
     /// vector, and comes out changed. The recipient is never the one who dies.
     /// The price is always paid by somebody else.
     ///
-    /// ENTRY IS ENTIRELY VANILLA. Willing entry uses JobDefOf.EnterBuilding via
-    /// Building_Enterable.SelectPawn; unwilling entry uses JobDefOf.CarryToBuilding
-    /// via WorkGiver_CarryToBuilding. Both are vanilla jobs, so the Multiplayer
-    /// mod syncs them natively and this class needs no custom command gizmos.
+    /// BOTH ENTRIES RUN ON VANILLA JOBS, but neither of them has a UI in the
+    /// base class - Building_Enterable ships no insert-pawn gizmo and no float
+    /// menu, and SelectPawn is never called from anywhere in it. So the two
+    /// surfaces below exist purely to reach vanilla:
+    ///
+    ///   Willing   - GetFloatMenuOptions issues JobDefOf.EnterBuilding as an
+    ///               ordered job and never touches selectedPawn.
+    ///   Unwilling - a gizmo nominates the fuel by writing selectedPawn, which
+    ///               is what wakes WorkGiver_CarryToBuilding up.
+    ///
+    /// The difference matters for multiplayer. TryTakeOrderedJob is synced by
+    /// Multiplayer natively, so the willing path needs nothing. selectedPawn is
+    /// scribed state, so the unwilling path needs SetSelectedPawn to be a
+    /// SyncMethod.
     /// </summary>
     public class Building_Altar : Building_Enterable, IThingHolderWithDrawnPawn
     {
@@ -147,6 +157,196 @@ namespace Archinity
             {
                 Find.Selector.Select(pawn, playSound: false, forceDesignatorDeselect: false);
             }
+        }
+
+        // ---- entry surfaces -------------------------------------------------
+
+        /// <summary>
+        /// Willing entry. Modelled on Building_GrowthVat's own float menu, with
+        /// one deliberate difference: the vat calls SelectPawn, which writes
+        /// selectedPawn before ordering the job. We only order the job.
+        ///
+        /// That is the whole multiplayer argument. Pawn_JobTracker.TryTakeOrderedJob
+        /// is a registered SyncMethod, so the order crosses the wire and both
+        /// clients run the same job, and the job is what writes selectedPawn.
+        /// JobDriver_EnterBuilding.MakeNewToils writes it twice: its FIRST toil
+        /// sets Building.SelectedPawn = pawn before the pawn has moved, and its
+        /// last toil calls TryAcceptPawn on arrival, which sets it again. Both
+        /// writes sit inside the already-synced job, so both clients make them.
+        /// Setting it here instead would be a one-client write to scribed state.
+        /// </summary>
+        public override IEnumerable<FloatMenuOption> GetFloatMenuOptions(Pawn selPawn)
+        {
+            foreach (FloatMenuOption option in base.GetFloatMenuOptions(selPawn))
+            {
+                yield return option;
+            }
+
+            if (!selPawn.CanReach(this, PathEndMode.InteractionCell, Danger.Deadly))
+            {
+                yield return new FloatMenuOption(
+                    "CannotEnterBuilding".Translate(this) + ": "
+                        + "NoPath".Translate().CapitalizeFirst(),
+                    null);
+                yield break;
+            }
+
+            AcceptanceReport report = CanAcceptPawn(selPawn);
+            if (report.Accepted)
+            {
+                yield return FloatMenuUtility.DecoratePrioritizedTask(
+                    new FloatMenuOption("EnterBuilding".Translate(this), delegate
+                    {
+                        selPawn.jobs.TryTakeOrderedJob(
+                            JobMaker.MakeJob(JobDefOf.EnterBuilding, this), JobTag.Misc);
+                    }),
+                    selPawn, this);
+            }
+            else if (!report.Reason.NullOrEmpty())
+            {
+                // CanAcceptPawn already distinguishes all seven refusals. Say
+                // which one it was rather than greying the option out mutely.
+                yield return new FloatMenuOption(
+                    "CannotEnterBuilding".Translate(this) + ": " + report.Reason.CapitalizeFirst(),
+                    null);
+            }
+        }
+
+        /// <summary>
+        /// Unwilling entry. Fuel does not volunteer, so somebody has to carry it,
+        /// and WorkGiver_CarryToBuilding does not lift a finger until
+        /// SelectedPawn is set. Nominating that pawn is the only thing this
+        /// command does.
+        /// </summary>
+        public override IEnumerable<Gizmo> GetGizmos()
+        {
+            foreach (Gizmo gizmo in base.GetGizmos())
+            {
+                yield return gizmo;
+            }
+
+            Command_Action nominate = new Command_Action
+            {
+                defaultLabel = "Archinity_AltarSelectFuel".Translate(),
+                defaultDesc = "Archinity_AltarSelectFuelDesc".Translate(),
+                icon = Building_GrowthVat.InsertPawnIcon.Texture,
+                action = OpenFuelMenu
+            };
+            // The two refusals that apply to every candidate at once belong on
+            // the button, not repeated down a list of identical grey rows.
+            if (Working || ContainedPawn != null)
+            {
+                nominate.Disable("Archinity_AltarOccupied".Translate());
+            }
+            else if (charge >= MaxCharge)
+            {
+                nominate.Disable("Archinity_AltarFull".Translate());
+            }
+            yield return nominate;
+        }
+
+        private void OpenFuelMenu()
+        {
+            List<FloatMenuOption> options = new List<FloatMenuOption>();
+            foreach (Pawn candidate in base.Map.mapPawns.AllPawnsSpawned)
+            {
+                if (!IsFuel(candidate) || !(bool)CanAcceptPawn(candidate))
+                {
+                    continue;
+                }
+                Pawn target = candidate;
+                if (!CanBeHauledToAltar(target))
+                {
+                    options.Add(new FloatMenuOption(
+                        target.LabelCap + ": " + "Archinity_AltarFuelWalksFree".Translate(),
+                        null));
+                    continue;
+                }
+                options.Add(new FloatMenuOption(
+                    target.LabelCap, delegate { SetSelectedPawn(target); }, target, Color.white));
+            }
+            if (!options.Any())
+            {
+                options.Add(new FloatMenuOption("NoViablePawns".Translate(), null));
+            }
+            if (selectedPawn != null)
+            {
+                options.Add(new FloatMenuOption("CommandCancelLoad".Translate(), delegate
+                {
+                    SetSelectedPawn(null);
+                }));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        /// <summary>
+        /// What WorkGiver_CarryToBuilding.HasJobOnThing will actually agree to
+        /// lift, mirrored from the decompiled source rather than assumed: a
+        /// prisoner, a downed pawn, one that cannot move, or one barred from the
+        /// work type. An upright, mobile slave is none of those, so nominating
+        /// one would leave the order standing with nobody ever coming for it.
+        /// IsFuel accepts slaves, so this second question has to be asked.
+        /// </summary>
+        public static bool CanBeHauledToAltar(Pawn p)
+        {
+            if (p == null)
+            {
+                return false;
+            }
+            WorkTypeDef workType = ArchinityDefOf.Archinity_CarryToAltarWorkGiver?.workType;
+            return p.IsPrisonerOfColony
+                || p.Downed
+                || !p.health.capacities.CapableOf(PawnCapacityDefOf.Moving)
+                || (workType != null && p.WorkTypeIsDisabled(workType));
+        }
+
+        /// <summary>
+        /// selectedPawn is scribed simulation state, so writing it from a gizmo
+        /// callback would diverge the two clients immediately. Multiplayer's
+        /// attribute is inert when the mod is absent, which is what keeps this a
+        /// soft dependency.
+        ///
+        /// Re-checked here rather than trusted from the menu: the command is
+        /// built on one client and executed on both, and the map can move
+        /// between those two moments. When the re-check refuses, it says so -
+        /// a silent no-op looks identical to a broken button.
+        ///
+        /// Messaging from a SyncMethod is safe as long as the message is not
+        /// historical. Multiplayer's SilenceMessagesNotTargetedAtMe prefixes
+        /// Messages.Message and drops any non-historical message raised while a
+        /// synced command is executing on a client that did not issue it, so
+        /// historical:false posts the refusal exactly once, to the player who
+        /// clicked. (It also keeps the message off the shared unique-ID stream.)
+        /// </summary>
+        [Multiplayer.API.SyncMethod]
+        public void SetSelectedPawn(Pawn p)
+        {
+            if (p != null)
+            {
+                AcceptanceReport report = CanAcceptPawn(p);
+                string refusal = null;
+                if (!IsFuel(p))
+                {
+                    refusal = "Archinity_AltarNoLongerFuel".Translate();
+                }
+                else if (!report.Accepted)
+                {
+                    // Every refusal CanAcceptPawn returns carries a reason.
+                    refusal = report.Reason;
+                }
+                else if (!CanBeHauledToAltar(p))
+                {
+                    refusal = "Archinity_AltarFuelWalksFree".Translate();
+                }
+                if (refusal != null)
+                {
+                    Messages.Message(
+                        "Archinity_AltarNominateRejected".Translate(p.LabelShortCap, refusal),
+                        new LookTargets(p), MessageTypeDefOf.RejectInput, historical: false);
+                    return;
+                }
+            }
+            selectedPawn = p;
         }
 
         protected override void Tick()

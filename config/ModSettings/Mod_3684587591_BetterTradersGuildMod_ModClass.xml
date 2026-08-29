@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="BetterTradersGuild.BetterTradersGuildSettings">
+		<threatPointsMultiplier>1</threatPointsMultiplier>
+		<sentryDronePresence>0.25</sentryDronePresence>
+		<securityDefeatFraction>0.800000012</securityDefeatFraction>
+		<tradeRequestQuestWeight>1</tradeRequestQuestWeight>
+		<smugglersDenQuestWeight>0.800000012</smugglersDenQuestWeight>
+	</ModSettings>
+</SettingsBlock>

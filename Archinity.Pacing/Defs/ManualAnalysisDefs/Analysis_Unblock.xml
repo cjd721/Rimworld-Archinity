@@ -24,6 +24,15 @@
        project plus whatever our modded load order adds.
 
        `python tools/audit_research.py` regenerates the candidate list.
+
+       THE DEF BELOW IS MayRequire="sae.researchmod". ManualAnalysisDef is
+       ResearchMakesSense's own def type, supplied by MRR's assembly. With
+       MRR disabled, as it is in the MVP multiplayer set, an ungated def of
+       that type makes RimWorld log "Type ResearchMakesSense.ManualAnalysisDef
+       is not a Def type or could not be found" at startup. MayRequire drops
+       it cleanly instead, and restores it the moment MRR is back. The whole
+       file is a no-op without MRR anyway = there is no auto-generation to
+       unblock.
        ==================================================================== -->
 
   <!-- MULTIANALYZER. The one that matters.
@@ -46,7 +55,7 @@
        what auto-generation would have used for its Experimental pool anyway.
        Industrial components, not spacer: this is an Industrial project and
        should not need spacer-tier goods to unlock. -->
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_Unblock_MultiAnalyzer</defName>
     <researchProject>MultiAnalyzer</researchProject>
     <experimentalMaterials>

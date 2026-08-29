@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="VCE_Fishing.Options.VCE_Fishing_Settings">
+		<VCEF_fishingYieldMultiplier>1</VCEF_fishingYieldMultiplier>
+		<VCEF_fishingSpeedMultiplier>1</VCEF_fishingSpeedMultiplier>
+		<VCEF_maxFishPopulationMultiplier>1</VCEF_maxFishPopulationMultiplier>
+		<VCEF_fishAmountMultiplier>1</VCEF_fishAmountMultiplier>
+		<VCEF_chanceForSpecials>1</VCEF_chanceForSpecials>
+		<VCEF_minDaysBetweenRareCatches>5</VCEF_minDaysBetweenRareCatches>
+		<VCEF_chanceForNegativeOutcome>0.0199999996</VCEF_chanceForNegativeOutcome>
+		<VCEF_DisableGillRot>False</VCEF_DisableGillRot>
+		<VCEF_UseWorktype>False</VCEF_UseWorktype>
+	</ModSettings>
+</SettingsBlock>

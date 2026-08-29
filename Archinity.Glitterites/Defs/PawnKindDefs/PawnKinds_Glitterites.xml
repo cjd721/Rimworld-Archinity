@@ -44,7 +44,11 @@
     <weaponTags>
       <li>SpacerGun</li>
     </weaponTags>
-    <weaponMoney>400~900</weaponMoney>
+    <!-- Floor is 600, not 400: the cheapest SpacerGun in this load order
+         costs 580, and RimWorld's own PawnKindDef error check refuses a
+         weaponMoney minimum below the cheapest weapon matching the tags
+         because the pawn can generate weaponless. -->
+    <weaponMoney>600~1200</weaponMoney>
     <techHediffsChance>0.3</techHediffsChance>
     <techHediffsMoney>800~2000</techHediffsMoney>
     <techHediffsTags>

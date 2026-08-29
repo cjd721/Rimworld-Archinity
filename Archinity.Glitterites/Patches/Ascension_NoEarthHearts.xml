@@ -38,6 +38,7 @@
       <operations>
 
         <!-- 1. Crates no longer roll hearts. -->
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/ThingSetMakerDef[defName="USH_RewardGlittercrate"]//li[thingSetMaker/fixedParams/filter/thingDefs/li="USH_Glitterheart"]/weight</xpath>
           <value>
@@ -46,6 +47,7 @@
         </li>
 
         <!-- 2. Surface wreckage is ordinary slag, not glitterworld debris. -->
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/KCSG.SymbolDef[defName="USH_GlittershipChunk"]/thing</xpath>
           <value>
@@ -56,6 +58,7 @@
              variants at runtime from the ThingDef, so it cannot be patched.
              The layout references it directly in exactly one row, so that row
              is rewritten instead. Only one line in 649 contains it. -->
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>//li[text()="HiddenConduit,.,.,.,.,USH_GlittershipChunk_North,.,.,AncientRazorWire,.,HiddenConduit"]</xpath>
           <value>

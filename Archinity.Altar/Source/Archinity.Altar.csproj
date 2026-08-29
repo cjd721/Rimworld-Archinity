@@ -17,9 +17,13 @@
          checked against HasActiveGene(VRE_Transcendent).
 
     Everything here is deterministic and reads only synced pawn/building state.
-    No Rand calls outside the tick loop, no custom command gizmos - the altar is
-    driven by jobs, like the vanilla gene extractor, so the Multiplayer mod
-    syncs it natively without needing its API.
+    No Rand calls outside the tick loop. The altar is driven by vanilla jobs,
+    like the gene extractor, so Multiplayer syncs almost all of it natively.
+
+    The one exception is nominating a pawn as fuel, which has to write
+    Building_Enterable.selectedPawn before WorkGiver_CarryToBuilding will look
+    at the altar at all. That field is scribed simulation state, so the setter
+    carries [Multiplayer.API.SyncMethod] and the API is referenced below.
   -->
 
   <PropertyGroup>
@@ -45,6 +49,7 @@
   <PropertyGroup>
     <RimWorldManaged>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed</RimWorldManaged>
     <HarmonyDir>C:\Program Files (x86)\Steam\steamapps\workshop\content\294100\2009463077\Current\Assemblies</HarmonyDir>
+    <MultiplayerDir>C:\Program Files (x86)\Steam\steamapps\workshop\content\294100\2606448745\1.6\Assemblies</MultiplayerDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -70,6 +75,13 @@
     </Reference>
     <Reference Include="0Harmony">
       <HintPath>$(HarmonyDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Attributes only, never called. Private=false so we do not ship their
+         DLL; the Multiplayer mod supplies it at runtime, and the attributes are
+         inert when it is absent. A reference is not a second assembly of ours. -->
+    <Reference Include="0MultiplayerAPI">
+      <HintPath>$(MultiplayerDir)\0MultiplayerAPI.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

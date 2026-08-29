@@ -173,9 +173,36 @@ def load_merged():
     return [("<merged def database>", root)], report
 
 
+MRR_PACKAGE_ID = "sae.researchmod"
+
+
+def mrr_is_active():
+    """True when More Realistic Research is in config/ModsConfig.xml.
+
+    Everything this script measures is a property of MRR's auto-generation.
+    With MRR disabled no analysis prerequisite is generated at all, so a
+    'deadlock risk' it reports is a claim about a mod that is not loaded.
+    """
+    if not os.path.isfile(MODSCONFIG):
+        return True          # cannot tell; audit rather than stay silent
+    tree = etree.parse(MODSCONFIG)
+    return any((li.text or "").strip().lower() == MRR_PACKAGE_ID
+               for li in tree.xpath("//activeMods/li"))
+
+
 def main():
     show_all = "--all" in sys.argv
     raw = "--raw" in sys.argv
+    force = "--force" in sys.argv
+
+    if not mrr_is_active() and not force:
+        print("More Realistic Research (%s) is not in config/ModsConfig.xml."
+              % MRR_PACKAGE_ID)
+        print("This audit only measures MRR's auto-generated analysis")
+        print("prerequisites, so with MRR disabled there is nothing to")
+        print("deadlock and every finding would describe a mod that is not")
+        print("loaded.  Skipping.  Re-run with --force to audit anyway.")
+        return 0
 
     if raw:
         roots = active_roots()

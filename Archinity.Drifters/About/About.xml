@@ -15,6 +15,33 @@ Unlike Odyssey's Traders Guild, the Free Companies are a real power - they can s
 Starjack-dominant, and contained: the xenotype never leaks into planetside factions. While relations are neutral they stay off the surface entirely, so a spacer faction will not come wandering into a neolithic camp.
 
 Requires Odyssey (orbit layer, starjack xenotype, astropolitan culture) and Biotech.</description>
+  <!-- Odyssey is hard: Factions_FreeCompanies.xml references PlanetLayerDef
+       Orbit in layerWhitelist and arrivalLayerWhitelist, MemeDef Shipborn in
+       requiredMemes, and PawnKinds_FreeCompanies.xml references
+       Apparel_VacsuitHelmet in apparelRequired. All three are Odyssey defs and
+       none of those references is MayRequire guarded, so without Odyssey they
+       are unresolved cross references.
+
+       Biotech is declared because it owns this faction's identity rather than
+       because it errors: Starjack 0.75, Genie 0.08 and Hussar 0.04 are the
+       whole xenotypeSet, and Archinity_FC_Child is the only child kind. All of
+       those are MayRequire guarded, so a Biotech-less load produces an
+       all-baseliner faction silently rather than an error.
+
+       Ideology is deliberately NOT declared. Every Ideology reference in this
+       mod is a disallowedMemes entry or a structureMemeWeights weight, all
+       guarded, all inert without it. Nothing here needs Ideology to be what it
+       says it is. -->
+  <modDependencies>
+    <li>
+      <packageId>Ludeon.RimWorld.Biotech</packageId>
+      <displayName>Biotech</displayName>
+    </li>
+    <li>
+      <packageId>Ludeon.RimWorld.Odyssey</packageId>
+      <displayName>Odyssey</displayName>
+    </li>
+  </modDependencies>
   <loadAfter>
     <li>Ludeon.RimWorld</li>
     <li>Ludeon.RimWorld.Royalty</li>

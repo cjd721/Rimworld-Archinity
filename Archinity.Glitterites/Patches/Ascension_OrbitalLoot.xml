@@ -35,6 +35,7 @@
        source, and it is deliberate: it requires beating an Ultra-tech raid
        that cannot fire before day 400 and 3000 threat points. You took it
        off their bodies, which is the same story as taking it off their base. -->
+  <!-- expect: 1 -->
   <Operation Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
     <xpath>/Defs/ThingSetMakerDef[defName="Archinity_GlitteritesRaidLootMaker"]/root/fixedParams/filter/thingDefs</xpath>
     <value>
@@ -50,6 +51,7 @@
        Removing the whole node rather than one <li>: RewardStandardLowFreq is
        the only tag on the def, and an empty <thingSetMakerTags> list is not
        the same as absent to ThingSetMakerUtility. -->
+  <!-- expect: 1 -->
   <Operation Class="PatchOperationRemove" MayRequire="Ushanka.GlittertechExpansion">
     <xpath>/Defs/ThingDef[defName="USH_Glitterheart"]/thingSetMakerTags</xpath>
   </Operation>

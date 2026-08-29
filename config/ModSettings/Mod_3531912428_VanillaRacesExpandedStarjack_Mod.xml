@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="VanillaRacesExpandedStarjack.VanillaRacesExpandedStarjack_Settings">
+		<starjackGenesAmount>2</starjackGenesAmount>
+	</ModSettings>
+</SettingsBlock>

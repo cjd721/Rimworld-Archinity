@@ -27,7 +27,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $RepoRoot = $PSScriptRoot
 $ModsDir  = Join-Path $RimWorldPath 'Mods'
-$ConfigDir = Join-Path $env:LOCALAPPDATA 'Low\Ludeon Studios\RimWorld by Ludeon Studios\Config'
+# RimWorld writes to AppData\LocalLow, which is a sibling of AppData\Local and
+# NOT a child of it. Joining 'Low\...' onto $env:LOCALAPPDATA produces
+# AppData\Local\Low\... which does not exist, and -SyncConfig then silently
+# warned and did nothing. There is no environment variable for LocalLow.
+$ConfigDir = Join-Path $env:USERPROFILE 'AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config'
 
 function Write-Step($msg) { Write-Host "  $msg" -ForegroundColor Cyan }
 function Write-Ok($msg)   { Write-Host "  OK   $msg" -ForegroundColor Green }

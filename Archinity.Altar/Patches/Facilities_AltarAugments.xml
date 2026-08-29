@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patches>
+
+  <!-- ====================================================================
+       THE AUGMENT RACK
+
+       Archinity.AltarFacilityExtension is fully implemented in C#
+       (Source/AltarData.cs) and was carried by exactly zero defs. The altar
+       already links all twelve VQE Ancients lab facilities through
+       CompProperties_AffectedByFacilities, so the link lines drew, the
+       facilities looked connected, and AltarModifiers.For() returned the
+       identity every time. That is the "a facility declaring statFactors is
+       silent everywhere" failure class in CODING_STANDARDS.md wearing a
+       different hat. This file is what makes the rack mean something.
+
+       HOW THE THREE LIVE FIELDS ARE CONSUMED
+
+         chargeCostFactor  multiplied across active facilities, then floored
+                           at 0.25 by AltarModifiers.For(). Spent twice in
+                           Building_Altar: once by CanAcceptPawn as the
+                           affordability gate, once by PerformRite as the
+                           actual debit.
+         durationFactor    multiplied across active facilities. Rite length
+                           is baseHours * 2500 * durationFactor ticks.
+         outcomeBonus      summed across active facilities. Success chance is
+                           Clamp01(0.75 + outcomeBonus).
+
+       INERT FIELDS, DELIBERATELY OMITTED
+
+       AltarFacilityExtension also declares biasCategory, biasStrength and
+       extraOptions. AltarModifiers.For() computes all three and no caller
+       reads any of them, because the gene lottery
+       (GenePoolDef.Available) has no call site. Authoring them here would
+       be writing numbers that do nothing, so they are left out entirely.
+       When the lottery is wired up, the prism, the redirector and the
+       pathing array are the three that should get them.
+
+       A facility that is unpowered, broken or unlinked contributes nothing:
+       AltarModifiers.For() skips any facility whose CompFacility.CanBeActive
+       is false. In the neolithic era, before any power exists, the whole
+       rack is inert by that route alone, which is the correct behaviour.
+
+       WHAT A FULL RACK ADDS UP TO
+
+       "Full rack" here means one of each of the twelve, because that is what
+       the campaign can actually deliver: Quest_AncientLab_Grants.xml pays out
+       exactly one of each across the VQE Ancients lab chain, and the
+       facilities are neverBuildable with no recipe, so the only way to hold a
+       second copy of one is to complete a second site that spawns it. Several
+       of them do allow more than one link (CompProperties_Facility
+       maxSimultaneous is 10 on the neurostabilizer, 9 on the pump, 6 on the
+       recovery array, 5 on the buffer coil, 4 on the attenuator), so the
+       ceiling is higher than this in principle. It is priced for the rack you
+       will realistically own.
+
+         charge cost   0.75 * 0.85 * 0.70   = 0.446
+         duration      0.70 * 0.85 * 0.85 * 1.15 * 1.10 = 0.640
+         outcome       0.02 + 0.03 + 0.02 + 0.02 + 0.03 + 0.03 = +0.15
+                       success 0.75 rises to 0.90
+
+       So a complete rack roughly halves the blood price, cuts the rite to
+       about two thirds of its length, and turns a 3 in 4 gamble into a 9 in
+       10. It does not reach the 0.25 charge floor, and it does not reach
+       certainty. The machine stays expensive and stays capable of refusing
+       you, which is the whole point of it.
+
+       TWO OF THE TWELVE ARE DELIBERATE TRADE OFFS
+
+       The mutagen inhibitor core and the complexity harmonizer both cost
+       time, matching what their own descriptions say they do: the inhibitor
+       smothers a surge rather than riding it, and the harmonizer buys success
+       against complexity by spending hours on it. They are the only two
+       entries here that can make something worse, and both pay for it.
+
+       ON MULTIPLAYER
+
+       Def data only. AltarModifiers.For() walks
+       LinkedFacilitiesListForReading, which is save state in a stable order,
+       doing float multiplies and adds. Both clients load byte identical XML
+       and read the same list, so the modifiers are identical by construction.
+       No new sync surface.
+
+       SHAPE NOTE
+
+       Ten of the twelve ship a modExtensions node already (they carry
+       VanillaQuestsExpandedAncients.ArchiteLabFacilityExtension), so those
+       operations add an li into it. The archite recycler and the complexity
+       harmonizer ship none, so those two insert the whole modExtensions
+       element onto the ThingDef instead. Verified: the /modExtensions xpath
+       matches 0 for exactly those two.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationFindMod">
+    <mods>
+      <li>Vanilla Quests Expanded - Ancients</li>
+    </mods>
+    <match Class="PatchOperationSequence">
+      <operations>
+
+        <!-- ================================================================
+             OUTCOME: the buffer and stabiliser family
+             ================================================================ -->
+
+        <!-- Neurostabilizer array. "A steady hum of stabilizing neurostatic
+             fields ... calm archite turbulence during injection cycles."
+             The small, stackable reliability brick, and the cheapest thing
+             in the rack. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_NeurostabilizerArray"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <outcomeBonus>0.02</outcomeBonus>
+            </li>
+          </value>
+        </li>
+
+        <!-- Rejection buffer coil. "Suppress rejection triggering impulses in
+             the nanite stream." Rejection is precisely what the altar's
+             failure roll is, so this is the outcome workhorse. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_RejectionBufferCoil"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <outcomeBonus>0.03</outcomeBonus>
+            </li>
+          </value>
+        </li>
+
+        <!-- Spliceframe uplink. "Scrape and decode archite fluctuation
+             patterns ... maps unstable outcomes." Knowing where the stream is
+             going is worth a little; it does not steer it. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_SpliceframeUplink"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <outcomeBonus>0.02</outcomeBonus>
+            </li>
+          </value>
+        </li>
+
+        <!-- Trait selection prism. "Its prism array glows with shifting
+             spectral patterns when a stable result is detected." Picking
+             between outcomes is the dead lottery's job, so what survives here
+             is the detection of a stable result. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_TraitSelectionPrism"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <outcomeBonus>0.02</outcomeBonus>
+            </li>
+          </value>
+        </li>
+
+        <!-- Aberration redirector. "Reroute unstable gene echoes into
+             controlled outcome channels." Rerouting the aberration rather
+             than choosing among them: the strongest single outcome piece
+             short of the harmonizer. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_AberrationRedirector"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <outcomeBonus>0.03</outcomeBonus>
+            </li>
+          </value>
+        </li>
+
+        <!-- ================================================================
+             DURATION: the infusion and recovery family
+             ================================================================ -->
+
+        <!-- Rapid infusion pump. "Push volatile nanites through the injector
+             lattice at extreme speed"; its own text claims 12 hours off an
+             injection. The single biggest duration cut in the rack. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_RapidInfusionPump"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <durationFactor>0.70</durationFactor>
+            </li>
+          </value>
+        </li>
+
+        <!-- Cognitive recovery array. "Thought restorative pulses that soothe
+             post archite neural disruption." There is no coma in the altar's
+             model, so its day off the coma becomes time off the back end of
+             the rite. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_CognitiveRecoveryArray"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <durationFactor>0.85</durationFactor>
+            </li>
+          </value>
+        </li>
+
+        <!-- Archite pathing array. "Split the injection stream into parallel
+             mutagenic pathways." Parallel pathways finish sooner. The second
+             gene chance it advertises is extraOptions, which nothing reads. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_ArchitePathingArray"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <durationFactor>0.85</durationFactor>
+            </li>
+          </value>
+        </li>
+
+        <!-- ================================================================
+             CHARGE: the reclamation family
+             ================================================================ -->
+
+        <!-- Genomic attenuator. "Pare down excessive gene volatility during
+             archite infusion." Less volatility burned means less blood
+             burned. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_GenomicAttenuator"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <chargeCostFactor>0.85</chargeCostFactor>
+            </li>
+          </value>
+        </li>
+
+        <!-- ================================================================
+             THE TRADE OFFS
+             ================================================================ -->
+
+        <!-- Mutagen inhibitor core. "Cycle suppressive counterwaves that
+             smother mutation cascades before they can form." Smothering the
+             surge instead of riding it wastes almost nothing and takes
+             noticeably longer. The second largest blood discount in the rack,
+             paid for in hours. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_MutagenInhibitorCore"]/modExtensions</xpath>
+          <value>
+            <li Class="Archinity.AltarFacilityExtension">
+              <chargeCostFactor>0.70</chargeCostFactor>
+              <durationFactor>1.15</durationFactor>
+            </li>
+          </value>
+        </li>
+
+        <!-- Complexity harmonizer. "Prevents genetic complexity from reducing
+             success chance, but each point of complexity will increase the
+             injection procedure duration by 1 hour." Ported straight across:
+             it buys success and it pays in time. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_ComplexityHarmonizer"]</xpath>
+          <value>
+            <modExtensions>
+              <li Class="Archinity.AltarFacilityExtension">
+                <outcomeBonus>0.03</outcomeBonus>
+                <durationFactor>1.10</durationFactor>
+              </li>
+            </modExtensions>
+          </value>
+        </li>
+
+        <!-- ================================================================
+             CHARGE, continued: the one that ships no modExtensions node
+             ================================================================ -->
+
+        <!-- Archite recycler. "Draw unstable archite residue back into a
+             containment loop ... reassembles loose nanite clusters into a
+             usable capsule." It refunds the capsule upstream; here it
+             reclaims the charge, which is the same idea in the altar's
+             currency. Largest pure discount.
+
+             This def ships no modExtensions node either. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/ThingDef[defName="VQEA_ArchiteRecycler"]</xpath>
+          <value>
+            <modExtensions>
+              <li Class="Archinity.AltarFacilityExtension">
+                <chargeCostFactor>0.75</chargeCostFactor>
+              </li>
+            </modExtensions>
+          </value>
+        </li>
+
+      </operations>
+    </match>
+  </Operation>
+
+</Patches>

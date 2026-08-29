@@ -83,6 +83,48 @@
           <bondToRandomPlayerPawnChance>1.0</bondToRandomPlayerPawnChance>
         </li>
 
+        <!-- ================================================================
+             THE ALTAR AND THE FIRST VECTOR
+
+             Nothing in the game placed either of these. No quest node, no
+             scatterer, no genstep, no recipe. The whole blood mechanic was
+             dev spawn only, which is not a start condition, it is an absence.
+             The tribe carried the thing here from the burned place: that is
+             what the game start text already says happened.
+
+             ScenPart_StartingThing_Defined works for a 3x2 building.
+             Decompiled RimWorld.ScenPart_StartingThing_Defined.GenerateThing:
+             it calls thing.MakeMinified() whenever thingDef.Minifiable, and
+             Verse.ThingDef.Minifiable is minifiedDef != null. Archinity_Altar
+             sets minifiedDef MinifiedThing, so what lands in the drop pile is
+             a minified crate the colonists install wherever they like. No
+             footprint is placed at map gen at all, so
+             ScenPart_ScatterThingsNearPlayerStart is not needed and would in
+             fact be worse: it would drop the crate at a random nearby cell
+             instead of in the starting pile.
+
+             Both entries are guarded on archinity.altar AND on VQE Ancients,
+             the comma being the AND form of MayRequire. Both conditions are
+             real: the two defs live in Archinity.Altar, which is a separate
+             mod and is not currently in the load order, and both are
+             themselves MayRequire'd on VQE Ancients, so either mod being
+             absent means the def does not exist. Guarded, the ScenParts drop
+             silently; unguarded they would be an unresolved cross reference
+             on a scenario every start uses.
+             ================================================================ -->
+        <li Class="ScenPart_StartingThing_Defined" MayRequire="archinity.altar,vanillaquestsexpanded.ancients">
+          <def>StartingThing_Defined</def>
+          <thingDef>Archinity_Altar</thingDef>
+          <count>1</count>
+        </li>
+        <!-- The cheap vector: one life, eight hours, and the colony finds out
+             what the machine is for. -->
+        <li Class="ScenPart_StartingThing_Defined" MayRequire="archinity.altar,vanillaquestsexpanded.ancients">
+          <def>StartingThing_Defined</def>
+          <thingDef>Archinity_Vector_PerfectVision</thingDef>
+          <count>1</count>
+        </li>
+
         <!-- Scatter -->
         <li Class="ScenPart_ScatterThingsNearPlayerStart">
           <def>ScatterThingsNearPlayerStart</def>

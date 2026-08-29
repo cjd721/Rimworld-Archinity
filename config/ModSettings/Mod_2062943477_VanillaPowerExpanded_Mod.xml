@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="VanillaPowerExpanded.VanillaPowerExpanded_Settings">
+		<disableNuclearMeltdowns>False</disableNuclearMeltdowns>
+		<nuclearOutputMultiplier>1</nuclearOutputMultiplier>
+		<nuclearRadiationMultiplier>1</nuclearRadiationMultiplier>
+		<advSolarOutputMultiplier>1</advSolarOutputMultiplier>
+		<fuelPerSoul>2</fuelPerSoul>
+		<tidalOutputMultiplier>1</tidalOutputMultiplier>
+		<tidalSeparation>40</tidalSeparation>
+		<advWindmillOutputMultiplier>1</advWindmillOutputMultiplier>
+		<advWatermillOutputMultiplier>1</advWatermillOutputMultiplier>
+		<advGeothermalOutputMultiplier>1</advGeothermalOutputMultiplier>
+	</ModSettings>
+</SettingsBlock>

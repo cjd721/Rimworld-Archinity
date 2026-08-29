@@ -24,6 +24,7 @@
     <operations>
 
       <!-- Abandoned platform -->
+      <!-- expect: 1 -->
       <li Class="PatchOperationReplace">
         <xpath>/Defs/GenStepDef[defName="Opportunity_AbandonedPlatform"]/genStep/factionDef</xpath>
         <value>
@@ -32,6 +33,7 @@
       </li>
 
       <!-- Orbital wreck -->
+      <!-- expect: 1 -->
       <li Class="PatchOperationReplace">
         <xpath>/Defs/GenStepDef[defName="Opportunity_OrbitalWreck"]/genStep/factionDef</xpath>
         <value>
@@ -50,6 +52,7 @@
 
            MayRequire-guarded via the prefab def itself; if Glittertech
            Expansion is absent the prefab simply never loads. -->
+      <!-- expect: 1 -->
       <li Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
         <xpath>/Defs/GenStepDef[defName="Opportunity_AbandonedPlatform"]/genStep/exteriorPrefabs</xpath>
         <value>
@@ -60,6 +63,7 @@
       <!-- The wreck uses GenStep_OrbitalWreck, a DIFFERENT class whose prefab
            list is <prefabs> and whose values are weights, not count ranges.
            Verified against the def; do not assume the two gensteps match. -->
+      <!-- expect: 1 -->
       <li Class="PatchOperationAdd" MayRequire="Ushanka.GlittertechExpansion">
         <xpath>/Defs/GenStepDef[defName="Opportunity_OrbitalWreck"]/genStep/prefabs</xpath>
         <value>

@@ -19,6 +19,35 @@ Mechanoid deployment uses vanilla mechs as a guaranteed backbone, with Alpha Mec
 Also adds the glitterheart: an uncraftable, untradeable item that drops only from orbital sites, and which More Realistic Research requires for every glittertech project. Ushanka's tree is otherwise gated only by craftable benches, so without this you can research all of glittertech without ever leaving the ground.
 
 Requires Odyssey (orbit layer) and Biotech. Glittertech Expansion and Alpha Mechs are optional - without them the faction simply fields a smaller roster and gains no planetside sites.</description>
+  <!-- Odyssey is hard: Factions_Glitterites.xml references PlanetLayerDef
+       Orbit unguarded in layerWhitelist and arrivalLayerWhitelist, and this
+       faction generates settlements nowhere else.
+
+       Biotech is declared for content rather than for errors: Genie 0.55,
+       Hussar 0.25 and Highmate 0.05 are 85 percent of the xenotypeSet, and
+       Mech_Militor, Mech_Legionary, Mech_Scorcher and Mech_Centurion appear in
+       every pawnGroupMaker. All guarded, so a Biotech-less load degrades
+       quietly instead of failing.
+
+       Ideology is deliberately NOT declared: its only appearances here are one
+       disallowedMemes entry (Techist) and two structureMemeWeights, all
+       guarded and all inert without it.
+
+       Not declared, but worth knowing: Defs/ManualAnalysisDefs declares 18
+       ResearchMakesSense.ManualAnalysisDef, a type owned by More Realistic
+       Research, with no MayRequire guard. Without that mod those 18 defs log
+       "could not find type". The right fix is a guard on the defs, not a
+       dependency here, since the analysis tree is optional content. -->
+  <modDependencies>
+    <li>
+      <packageId>Ludeon.RimWorld.Biotech</packageId>
+      <displayName>Biotech</displayName>
+    </li>
+    <li>
+      <packageId>Ludeon.RimWorld.Odyssey</packageId>
+      <displayName>Odyssey</displayName>
+    </li>
+  </modDependencies>
   <loadAfter>
     <li>Ludeon.RimWorld</li>
     <li>Ludeon.RimWorld.Royalty</li>

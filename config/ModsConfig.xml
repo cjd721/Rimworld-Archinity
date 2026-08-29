@@ -9,61 +9,86 @@
     <li>ludeon.rimworld.ideology</li>
     <li>ludeon.rimworld.biotech</li>
     <li>ludeon.rimworld.odyssey</li>
-    <li>smashphil.vehicleframework</li>
-    <li>edb.preparecarefully</li>
-    <li>mehni.pickupandhaul</li>
     <li>rwmt.multiplayer</li>
     <li>adaptive.storage.framework</li>
     <li>oskarpotocki.vanillafactionsexpanded.core</li>
+    <li>anthitei.athsstyleableframework.style</li>
     <li>vanillaexpanded.vfecore</li>
     <li>vanillaexpanded.vfefarming</li>
     <li>vanillaexpanded.vfemedical</li>
     <li>vanillaexpanded.vfesecurity</li>
     <li>vanillaexpanded.vfeproduction</li>
-    <li>rabiosus.takecover</li>
-    <li>willworkforicecream.noalzheimers</li>
-    <li>kangel.moisture</li>
-    <li>bart.app</li>
-    <li>frozensnowfox.filthvanisheswithrainandtime</li>
-    <li>sbz.neatstoragefridge</li>
-    <li>sbz.gravshipstorage</li>
-    <li>sbz.neatstorage</li>
-    <li>vanillaexpanded.vfepower</li>
-    <li>vanillaexpanded.vchemfuele</li>
-    <li>wiri.compositableloadouts</li>
-    <li>vanillaexpanded.vaeaccessories</li>
-    <li>oskarpotocki.vfe.pirates</li>
-    <li>vanillaexpanded.vnutriente</li>
-    <li>vanillaquestsexpanded.ancients</li>
-    <li>oskarpotocki.vanillavehiclesexpanded</li>
-    <li>vanillaexpanded.vwenl</li>
-    <li>oskarpotocki.vanillavehiclesexpandedupgrades</li>
-    <li>vanillaracesexpanded.sanguophage</li>
-    <li>vanillaracesexpanded.waster</li>
-    <li>vanillaracesexpanded.saurid</li>
-    <li>oskarpotocki.vanillafactionsexpanded.settlersmodule</li>
-    <li>ushanka.glittertechexpansion</li>
-    <li>fridgebaron.techblock</li>
-    <li>memegoddess.replacestuff</li>
-    <li>sae.researchmod</li>
-    <li>dame.ignorance</li>
-    <li>vanillaexpanded.gravship</li>
-    <li>als.gravtech</li>
-    <li>sarg.alphamechs</li>
     <li>vanillaexpanded.vfespacer</li>
-    <li>shunter.bettertradersguild</li>
-    <li>als.biotechgravship</li>
-    <li>azravos.factioncustomizer</li>
+    <li>vanillaexpanded.vfepower</li>
+    <li>vanillaexpanded.vfepropsanddecor</li>
+    <li>vanillaexpanded.vchemfuele</li>
+    <li>vanillaexpanded.vwe</li>
+    <li>oskarpotocki.vanillafactionsexpanded.settlersmodule</li>
+    <li>vanillaexpanded.vweft</li>
+    <li>vanillaexpanded.vwenl</li>
+    <li>vanillaexpanded.varme</li>
+    <li>vanillaexpanded.vappe</li>
+    <li>vanillaexpanded.vaeaccessories</li>
+    <li>vanillaexpanded.vcooke</li>
+    <li>vanillaexpanded.vcookestews</li>
+    <li>vanillaexpanded.vcef</li>
+    <li>vanillaexpanded.vnutriente</li>
+    <li>vanillaexpanded.basegeneration</li>
+    <li>vanillaexpanded.vexploratione</li>
+    <li>vanillaexpanded.vaewaste</li>
+    <li>vanillaexpanded.ideo.iconsandsymbols</li>
     <li>oskarpotocki.vfe.classical</li>
     <li>oskarpotocki.vfe.medieval2</li>
+    <li>oskarpotocki.vfe.pirates</li>
+    <li>van.beasts</li>
+    <li>van.dacrypts</li>
+    <li>van.datools</li>
+    <li>vanillaquestsexpanded.ancients</li>
+    <li>ushanka.glittertechexpansion</li>
+    <li>sarg.alphamechs</li>
     <li>vanillaracesexpanded.archon</li>
+    <li>vanillaracesexpanded.sanguophage</li>
     <li>vanillaracesexpanded.hussar</li>
     <li>vanillaracesexpanded.starjack</li>
-    <li>bs.xenotypespawncontrol</li>
+    <li>vanillaracesexpanded.waster</li>
+    <li>vanillaracesexpanded.genie</li>
+    <li>vanillaracesexpanded.android</li>
+    <li>vanillaracesexpanded.saurid</li>
+    <li>mehni.pickupandhaul</li>
+    <li>memegoddess.replacestuff</li>
+    <li>wiri.compositableloadouts</li>
+    <li>rabiosus.takecover</li>
+    <li>gondragon.defensivepositions</li>
+    <li>fluffy.pharmacist</li>
+    <li>com.bymarcin.architecticons</li>
+    <li>adaptive.primitivestorage</li>
+    <li>sbz.neatstorage</li>
+    <li>sbz.gravshipstorage</li>
+    <li>bart.app</li>
+    <li>sbz.neatstoragefridge</li>
+    <li>ferny.betterarchitect</li>
+    <li>mrk.architectmenuoptimizer</li>
+    <li>andromeda.milkyway</li>
+    <li>willworkforicecream.noalzheimers</li>
+    <li>frozensnowfox.filthvanisheswithrainandtime</li>
+    <li>kangel.moisture</li>
+    <li>mlie.animalfeedtrough</li>
+    <li>airetexture.core</li>
+    <li>sereq.rusticworkbenches</li>
+    <li>shunter.bettertradersguild</li>
+    <li>mlie.slaverebellionsimproved</li>
+    <li>neronix17.hd.pawns</li>
+    <li>anthitei.athsstylegothic.style</li>
+    <li>anthitei.athsstylenorse.style</li>
+    <li>anthitei.athsstyledraconic.style</li>
+    <li>kathanon.fixstyledblueprints</li>
+    <li>edb.preparecarefully</li>
     <li>archinity.origins</li>
     <li>archinity.pacing</li>
     <li>archinity.drifters</li>
     <li>archinity.glitterites</li>
+    <li>archinity.altar</li>
+    <li>rwmt.multiplayercompatibility</li>
   </activeMods>
   <knownExpansions>
     <li>ludeon.rimworld.royalty</li>

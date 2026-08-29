@@ -40,7 +40,6 @@
     <fillPercent>0.5</fillPercent>
     <castEdgeShadows>true</castEdgeShadows>
     <selectable>true</selectable>
-    <claimable>true</claimable>
     <!-- Given, never built. There is no research that leads here. -->
     <destroyable>false</destroyable>
     <neverMultiSelect>false</neverMultiSelect>
@@ -62,6 +61,9 @@
     </graphicData>
     <building>
       <isEdifice>true</isEdifice>
+      <!-- claimable lives on BuildingProperties, not on ThingDef. Declared at
+           ThingDef level it is a silent no op, which is where it used to be. -->
+      <claimable>true</claimable>
       <destroySound>BuildingDestroyed_Metal_Big</destroySound>
     </building>
     <comps>

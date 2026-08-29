@@ -32,6 +32,7 @@
       <operations>
 
         <!-- 1. The soldiers belong to us now. -->
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/PawnKindDef[defName="USH_AncientGlittertechSoldier"]/defaultFactionDef</xpath>
           <value>
@@ -40,6 +41,7 @@
         </li>
 
         <!-- 2. The quest's faction-exists guard. -->
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechQuestBase"]//li[@Class="QuestNode_FactionExists"]/faction</xpath>
           <value>
@@ -51,6 +53,7 @@
              The text() predicate matters. Without it this xpath also matches
              a second node whose value is the slate REFERENCE "$siteFaction",
              and rewriting that would turn a variable lookup into a literal. -->
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechQuestBase"]//li[name="siteFaction"]/value[text()="AncientsHostile"]</xpath>
           <value>
@@ -62,6 +65,7 @@
              This is a KCSG.SymbolDef, not a StructureLayoutDef. Scoped by
              both defName and current value so it cannot stray onto another
              mod's symbol of the same name. -->
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/KCSG.SymbolDef[defName="AncientSoldier"]/faction[text()="AncientsHostile"]</xpath>
           <value>

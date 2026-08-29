@@ -9,6 +9,12 @@
   <Archinity_AltarAlreadyHasGene>Already carries {0}.</Archinity_AltarAlreadyHasGene>
   <Archinity_AltarNotEnoughCharge>Not enough blood: {0} of {1} required.</Archinity_AltarNotEnoughCharge>
 
+  <Archinity_AltarSelectFuel>Select fuel...</Archinity_AltarSelectFuel>
+  <Archinity_AltarSelectFuelDesc>Choose a prisoner or a helpless captive to be carried to the altar and drawn out. A warden will fetch them.</Archinity_AltarSelectFuelDesc>
+  <Archinity_AltarFuelWalksFree>walks free; must be a prisoner or helpless before anyone will carry them</Archinity_AltarFuelWalksFree>
+  <Archinity_AltarNoLongerFuel>no longer a prisoner or a slave</Archinity_AltarNoLongerFuel>
+  <Archinity_AltarNominateRejected>Cannot send {0} to the altar: {1}</Archinity_AltarNominateRejected>
+
   <Archinity_AltarCharge>Blood held: {0} / {1}</Archinity_AltarCharge>
   <Archinity_AltarVectorLoaded>Vector loaded: {0}</Archinity_AltarVectorLoaded>
   <Archinity_AltarVectorEmpty>No vector loaded.</Archinity_AltarVectorEmpty>

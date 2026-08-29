@@ -69,12 +69,19 @@
        TO TUNE: move the pointsRequired values before changing materials. The
        material is the story, the points are the dial.
 
+       EVERY DEF BELOW IS MayRequire="sae.researchmod". ManualAnalysisDef is
+       ResearchMakesSense's own def type, supplied by More Realistic Research's
+       assembly. With MRR disabled, as it is in the MVP multiplayer set, an
+       ungated def of that type makes RimWorld log "could not find type" once
+       per def at startup. Eighteen red errors that mean nothing. MayRequire
+       drops them cleanly instead, and restores them the moment MRR is back.
+
        NOTE: XML comments cannot contain a double hyphen. Use "=" for rules.
        ==================================================================== -->
 
   <!-- ===================== The gate ===================== -->
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Fabrication</defName>
     <researchProject>USH_GlittertechFabrication</researchProject>
     <!-- The only glitterheart requirement in the tree. Possess, not spend. -->
@@ -90,7 +97,7 @@
 
   <!-- ============ Shallow branches: spacer components ============ -->
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_LightPanels</defName>
     <researchProject>USH_LightGlitterpanelsRes</researchProject>
     <experimentalMaterials>
@@ -100,7 +107,7 @@
   </ResearchMakesSense.ManualAnalysisDef>
 
   <!-- Permanently unresearchable under auto-generation. -->
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_DarkPanels</defName>
     <researchProject>USH_DarkGlitterpanelsRes</researchProject>
     <experimentalMaterials>
@@ -109,7 +116,7 @@
     <experimentalPointsRequired>3</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Utilities</defName>
     <researchProject>USH_GlittertechUtilitiesRes</researchProject>
     <experimentalMaterials>
@@ -118,7 +125,7 @@
     <experimentalPointsRequired>3</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Telepad</defName>
     <researchProject>USH_TelepadRes</researchProject>
     <experimentalMaterials>
@@ -127,7 +134,7 @@
     <experimentalPointsRequired>2</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Teeth</defName>
     <researchProject>USH_TeethRes</researchProject>
     <experimentalMaterials>
@@ -138,7 +145,7 @@
 
   <!-- ============ Skilltrainers: spacer components ============ -->
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_CombatTrainers</defName>
     <researchProject>USH_CombatSkilltrainersRes</researchProject>
     <experimentalMaterials>
@@ -147,7 +154,7 @@
     <experimentalPointsRequired>3</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_EngineeringTrainers</defName>
     <researchProject>USH_EngineeringSkilltrainersRes</researchProject>
     <experimentalMaterials>
@@ -156,7 +163,7 @@
     <experimentalPointsRequired>3</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_IntellectualTrainers</defName>
     <researchProject>USH_IntellectualSkilltrainersRes</researchProject>
     <experimentalMaterials>
@@ -165,7 +172,7 @@
     <experimentalPointsRequired>3</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_SurvivalTrainers</defName>
     <researchProject>USH_SurvivalSkilltrainersRes</researchProject>
     <experimentalMaterials>
@@ -179,7 +186,7 @@
        and which costs a glitterheart to build. -->
 
   <!-- Permanently unresearchable under auto-generation. -->
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Disassembler</defName>
     <researchProject>USH_MolecularDisassemblerRes</researchProject>
     <experimentalMaterials>
@@ -188,7 +195,7 @@
     <experimentalPointsRequired>2</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Neuromodifiers</defName>
     <researchProject>USH_NeuromodifiersBasicsRes</researchProject>
     <experimentalMaterials>
@@ -197,7 +204,7 @@
     <experimentalPointsRequired>2</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Alchemy</defName>
     <researchProject>USH_GlittertechAlchemyRes</researchProject>
     <experimentalMaterials>
@@ -208,7 +215,7 @@
 
   <!-- Unlocks no ThingDef, so auto-generation would give it nothing at all
        and it would be free. Listed so it still costs something. -->
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Overclock</defName>
     <researchProject>USH_OverclockRes</researchProject>
     <experimentalMaterials>
@@ -217,7 +224,7 @@
     <experimentalPointsRequired>2</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Skin</defName>
     <researchProject>USH_SkinRes</researchProject>
     <experimentalMaterials>
@@ -226,7 +233,7 @@
     <experimentalPointsRequired>3</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Heavy</defName>
     <researchProject>USH_HeavyGlittertechRes</researchProject>
     <experimentalMaterials>
@@ -235,7 +242,7 @@
     <experimentalPointsRequired>3</experimentalPointsRequired>
   </ResearchMakesSense.ManualAnalysisDef>
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_DeepMind</defName>
     <researchProject>USH_DeepMindScanningRes</researchProject>
     <experimentalMaterials>
@@ -246,7 +253,7 @@
 
   <!-- ============ The deepest project ============ -->
 
-  <ResearchMakesSense.ManualAnalysisDef>
+  <ResearchMakesSense.ManualAnalysisDef MayRequire="sae.researchmod">
     <defName>Archinity_GT_Resurrector</defName>
     <researchProject>USH_ResurrectorRes</researchProject>
     <experimentalMaterials>

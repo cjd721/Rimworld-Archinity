@@ -22,6 +22,13 @@ namespace Archinity
         /// </summary>
         public static HediffDef Archinity_ArchiteSustenance;
 
+        /// <summary>
+        /// Read for its workType alone, so the fuel menu can ask exactly the
+        /// question WorkGiver_CarryToBuilding will ask before it agrees to
+        /// carry. Reading the def beats hardcoding "Warden" twice.
+        /// </summary>
+        public static WorkGiverDef Archinity_CarryToAltarWorkGiver;
+
         static ArchinityDefOf()
         {
             DefOfHelper.EnsureInitializedInCtor(typeof(ArchinityDefOf));

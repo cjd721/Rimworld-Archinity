@@ -45,12 +45,14 @@
     <match Class="PatchOperationSequence">
       <operations>
 
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechOutpost"]/rootEarliestDay</xpath>
           <value>
             <rootEarliestDay>240</rootEarliestDay>
           </value>
         </li>
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechOutpost"]/rootMinPoints</xpath>
           <value>
@@ -58,12 +60,14 @@
           </value>
         </li>
 
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechFacility"]/rootEarliestDay</xpath>
           <value>
             <rootEarliestDay>300</rootEarliestDay>
           </value>
         </li>
+        <!-- expect: 1 -->
         <li Class="PatchOperationReplace">
           <xpath>/Defs/QuestScriptDef[defName="USH_GlittertechFacility"]/rootMinPoints</xpath>
           <value>

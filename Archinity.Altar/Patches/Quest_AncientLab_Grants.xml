@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patches>
+
+  <!-- ====================================================================
+       THE ALTAR'S GRANT PATH
+
+       The altar is given, never built. Until now nothing gave it: no
+       ScenPart, no quest node, no reward. This file is that path.
+
+       It works by adding things to the site maps VQE Ancients generates for
+       its Ancient Lab chain. Those maps are the only place the chain pays
+       out at all. There is no reward node anywhere in that questline
+       (verified: all six quest roots are C# QuestNode_Root_* that call
+       GenerateSite and attach QuestPart_AncientLab, which ends the quest on
+       a MinifyUtility.Uninstall signal). The "reward" is literally furniture
+       standing on the generated map that you claim, uninstall and haul home.
+
+       So spawnThings IS the extension point. StructureSetGenerator.
+       SpawnPawnsAndThings calls ThingMaker.MakeThing(def, null) then
+       GenSpawn.Spawn with zero eligibility filtering, and every VQEA lab
+       facility inherits minifiedDef MinifiedThing plus claimable. So does
+       Archinity_Altar.
+
+       WHY THIS ADDS ALL TWELVE FACILITIES, NOT JUST THE ALTAR
+
+       QuestPart_AncientLab ends each chain quest on the FIRST uninstall of
+       the matching def, so the chain hands over roughly one facility per
+       quest across five or six quests. The altar's
+       CompProperties_AffectedByFacilities links twelve. Without this file
+       most of the altar's facility rack would be permanently unobtainable.
+
+       ON MULTIPLAYER
+
+       This is generation-side only and it is safe. StructureSetGenerator
+       runs inside map generation, which RimWorld executes under a seeded
+       Rand state (GenStep_AncientComplex.SeedPart is 987654321). Adding
+       entries shifts RNG consumption for that map, but shifts it
+       identically on every client, because Multiplayer enforces a matching
+       mod list and both clients therefore load byte-identical def XML.
+
+       In shared mode there is one player faction and one colony, so one
+       altar is both players' altar. Under multifaction this file becomes
+       load-bearing rather than convenient: GameComponent_QuestChains has no
+       faction dimension and fires the chain once for the whole game, so the
+       second player gets nothing except what is spawned as ordinary loot.
+       To double a payout, raise its count here. Nothing else changes.
+
+       KNOWN COSMETIC COST
+
+       The cell is chosen by CellFinder.RandomSpawnCellForPawnNear, which
+       validates pawn standability, not a building footprint. Four of these
+       facilities are 3x3 and the altar is 3x2, so one spawned against a
+       vault wall will WipeMode.Vanish what it overlaps. Expect the
+       occasional hole in a wall. Not a crash, not a desync.
+       ==================================================================== -->
+
+  <Operation Class="PatchOperationFindMod">
+    <mods>
+      <li>Vanilla Quests Expanded - Ancients</li>
+    </mods>
+    <match Class="PatchOperationSequence">
+      <operations>
+
+        <!-- The altar itself, on the first site in the chain, so it arrives
+             as early as the chain can deliver it. One copy: it is a single
+             shared building even under multifaction, because only one
+             colony can hold it. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/VanillaQuestsExpandedAncients.StructureSetDef[defName="VQEA_AncientLabComplexStructure"]/structureLayouts/li[pattern="VQEA_LabModules_1_.*"]/spawnThings</xpath>
+          <value>
+            <Archinity_Altar>1</Archinity_Altar>
+            <VQEA_NeurostabilizerArray>1</VQEA_NeurostabilizerArray>
+            <VQEA_RapidInfusionPump>1</VQEA_RapidInfusionPump>
+          </value>
+        </li>
+
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/VanillaQuestsExpandedAncients.StructureSetDef[defName="VQEA_ArchiteControlVaultStructure"]/structureLayouts/li[pattern="VQEA_LabModules_2_.*"]/spawnThings</xpath>
+          <value>
+            <VQEA_ArchiteRecycler>1</VQEA_ArchiteRecycler>
+            <VQEA_GenomicAttenuator>1</VQEA_GenomicAttenuator>
+          </value>
+        </li>
+
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/VanillaQuestsExpandedAncients.StructureSetDef[defName="VQEA_SpliceframeBlacksiteStructure"]/structureLayouts/li[pattern="VQEA_LabModules_3_.*"]/spawnThings</xpath>
+          <value>
+            <VQEA_SpliceframeUplink>1</VQEA_SpliceframeUplink>
+            <VQEA_RejectionBufferCoil>1</VQEA_RejectionBufferCoil>
+          </value>
+        </li>
+
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/VanillaQuestsExpandedAncients.StructureSetDef[defName="VQEA_InhibitorResearchLabStructure"]/structureLayouts/li[pattern="VQEA_LabModules_4_.*"]/spawnThings</xpath>
+          <value>
+            <VQEA_MutagenInhibitorCore>1</VQEA_MutagenInhibitorCore>
+            <VQEA_TraitSelectionPrism>1</VQEA_TraitSelectionPrism>
+            <VQEA_CognitiveRecoveryArray>1</VQEA_CognitiveRecoveryArray>
+          </value>
+        </li>
+
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/VanillaQuestsExpandedAncients.StructureSetDef[defName="VQEA_ArchiteArraySiteStructure"]/structureLayouts/li[pattern="VQEA_LabModules_5_.*"]/spawnThings</xpath>
+          <value>
+            <VQEA_ArchitePathingArray>1</VQEA_ArchitePathingArray>
+            <VQEA_ComplexityHarmonizer>1</VQEA_ComplexityHarmonizer>
+            <VQEA_AberrationRedirector>1</VQEA_AberrationRedirector>
+          </value>
+        </li>
+
+        <!-- The research vault's li ships spawnPawns and no spawnThings at
+             all, so this operation inserts the whole element rather than
+             adding into one. Target is the li, not a child. -->
+        <!-- expect: 1 -->
+        <li Class="PatchOperationAdd">
+          <xpath>/Defs/VanillaQuestsExpandedAncients.StructureSetDef[defName="VQEA_AncientResearchVaultStructure_Underground"]/structureLayouts/li[pattern="VQEA_SidequestLabModules_.*"]</xpath>
+          <value>
+            <spawnThings>
+              <VQEA_NeurostabilizerArray>1</VQEA_NeurostabilizerArray>
+            </spawnThings>
+          </value>
+        </li>
+
+      </operations>
+    </match>
+  </Operation>
+
+</Patches>

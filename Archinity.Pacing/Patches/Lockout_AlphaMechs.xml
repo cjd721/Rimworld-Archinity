@@ -101,6 +101,29 @@
           <success>Always</success>
         </li>
 
+        <!-- 4b. THEN drop the prerequisite list itself, and this operation is
+                 the point of the whole "order matters" note above.
+
+                 Without it, operation 5 deletes eleven ResearchProjectDefs
+                 that eleven ThingDefs still name, and RimWorld logs eleven
+                 "Could not resolve cross-reference to Verse.ResearchProjectDef
+                 named AM_*" errors on every boot. It then OMITS each entry
+                 rather than storing null = the exact behaviour the header
+                 warns about. Removing the list ourselves reaches the same end
+                 state deliberately and silently.
+
+                 Verified against the shipped 1.6 defs: exactly eleven
+                 ThingDefs carry a researchPrerequisites list whose entries
+                 are AM_, every one of them has exactly one entry, and NONE
+                 mixes an AM_ prerequisite with a non-AM_ one. So removing the
+                 whole node cannot free something that a vanilla project was
+                 still gating. Re-check that if Alpha Mechs updates. -->
+        <!-- expect: 11 -->
+        <li Class="PatchOperationRemove">
+          <xpath>/Defs/ThingDef[starts-with(researchPrerequisites/li,"AM_")]/researchPrerequisites</xpath>
+          <success>Always</success>
+        </li>
+
         <!-- 5. Finally, out of the research tree. Safe now that nothing
                 above depends on these to stay locked. -->
         <li Class="PatchOperationRemove">

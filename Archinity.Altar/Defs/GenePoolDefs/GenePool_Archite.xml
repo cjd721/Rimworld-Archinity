@@ -125,11 +125,17 @@
       <!-- ===============================================================
            TIER 5 - campaign-defining
            =============================================================== -->
-      <li>
-        <gene>Resurrect</gene>
-        <tier>5</tier>
-        <category>Survival</category>
-      </li>
+      <!-- Biotech's own "Resurrect" gene used to sit here and it has been
+           removed, because it does not exist. Ludeon ships the GeneDef
+           COMMENTED OUT in
+           Data/Biotech/Defs/GeneDefs/GeneDefs_Abilities.xml = the AbilityDef
+           of the same name is live, the GeneDef is not. Referencing it cost
+           a "No Verse.GeneDef named Resurrect found" error on every boot,
+           and check_refs.py did not catch it because the name resolves
+           against the AbilityDef.
+
+           Nothing is lost: VRE_Resurrect below is the live equivalent and
+           occupies the same tier and category. -->
       <li MayRequire="vanillaracesexpanded.sanguophage">
         <gene>VRE_Resurrect</gene>
         <tier>5</tier>

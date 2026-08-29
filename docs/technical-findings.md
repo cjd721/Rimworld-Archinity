@@ -897,3 +897,85 @@ Three defects, and the third is the instructive one:
 
 > The general lesson: when auditing a mod, do not stop at "does the number of draws
 > match". Ask where in the stream the draw lands.
+
+---
+
+# Session 5 findings — first live boot of the MVP multiplayer set
+
+Everything below was read off a real startup log (`Rimworld Log Paste.txt`, 87 mods) or
+verified against the shipped XML, not inferred.
+
+## Biotech's `Resurrect` GeneDef does not exist
+
+`Data/Biotech/Defs/GeneDefs/GeneDefs_Abilities.xml` ships the `Resurrect` **GeneDef
+commented out**. The `AbilityDef` of the same name, in
+`Data/Biotech/Defs/AbilityDefs/Abilities.xml`, is live.
+
+So `<gene>Resurrect</gene>` logs *"Could not resolve cross-reference: No Verse.GeneDef
+named Resurrect found"* at every boot.
+
+**And `check_refs.py` does not catch it**, because the name resolves — just to a def of the
+wrong type. That is the general lesson: a defName check that is not type-aware will pass on
+a reference to a same-named def of another type. `VRE_Resurrect` (VRE Sanguophage) is the
+live equivalent and sits at the same tier and category.
+
+## `MayRequire` is needed on a def whose *type* comes from a mod
+
+`ResearchMakesSense.ManualAnalysisDef` is More Realistic Research's own def type, supplied by
+its assembly. With MRR disabled, RimWorld logs *"Type ResearchMakesSense.ManualAnalysisDef is
+not a Def type or could not be found"* once per def.
+
+`MayRequire` on the def's root element drops it cleanly. We had 19 such defs across two files
+(`Archinity.Glitterites/Defs/ManualAnalysisDefs/Analysis_Glittertech.xml` ×18,
+`Archinity.Pacing/Defs/ManualAnalysisDefs/Analysis_Unblock.xml` ×1).
+
+**The trap when auditing for this:** grepping for the dotted type name and piping through
+`sort -u` collapses every occurrence to one line, so a second file carrying the same type is
+invisible. Grep for files, not for the string.
+
+## Removing a ResearchProjectDef strips prerequisites off things in *other* def types
+
+Already recorded in `CODING_STANDARDS.md` as a rule; here is what it looks like in practice.
+
+`Archinity.Pacing/Patches/Lockout_AlphaMechs.xml` deleted 8 `AM_*` `ResearchProjectDef`s while
+**11 `ThingDef`s** still named them in `researchPrerequisites`. Result: 11 boot errors, and
+RimWorld then omits each entry rather than storing null — leaving those buildings with no
+research gate at all.
+
+The patch's own header described the correct order and the operations did not implement it:
+it removed `designationCategory` from the referencing ThingDefs but never their
+`researchPrerequisites`. **"Neuter the referencing defs" means every referencing field, not
+just the one that makes the thing unbuildable today.**
+
+Verified before fixing: exactly 11 ThingDefs carry an `AM_` prerequisite list, each has
+exactly one entry, and none mixes an `AM_` prerequisite with a non-`AM_` one — so removing the
+whole node cannot free something a vanilla project was still gating.
+
+## `weaponMoney` minimum must clear the cheapest weapon matching `weaponTags`
+
+`Verse.DefDatabase<PawnKindDef>.ErrorCheckAllDefs()` reports *"Cheapest weapon with one of my
+weaponTags costs X but weaponMoney min is Y, so could end up weaponless."* This is a real
+generation failure, not a style warning. In this load order the cheapest `SpacerGun` is **580**.
+
+## Multiplayer Compatibility can fail per-mod, loudly, and then that mod has no sync
+
+`MpCompatLoader.InitCompatInAsm` constructs one compat class per supported mod. If a class's
+constructor throws, MPCompat logs `MPCompat :: Exception loading <packageId>` and **that mod
+runs with no sync patch** — while every other mod's patch still loads normally.
+
+Two threw on this set, both `AccessTools` reflection returning null:
+
+| Mod | Failure |
+|---|---|
+| `fluffy.pharmacist` | `StaticFieldRefAccess(FieldInfo)` — `fieldInfo` null |
+| `vanillaexpanded.vcef` | `FieldRefAccess(Type, string)` — `type` null |
+
+**The Pharmacist cause is a mod substitution.** MPCompat's patch was written against Fluffy's
+original *Pharmacist*. What is installed is **Pharmacist: Represcribed**, assembly
+`PharmacistReprescribed.dll`, which keeps the packageId `Fluffy.Pharmacist` but is a different
+build. A continued/reuploaded mod inheriting a packageId is enough to silently invalidate a
+compat patch.
+
+**So "Multiplayer Compatibility is enabled" is not the same as "this mod is covered."** Read
+the boot log for `MPCompat ::` lines and check which say *Initialized* and which say
+*Exception*.

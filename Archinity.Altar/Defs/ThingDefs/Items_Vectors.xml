@@ -5,7 +5,7 @@
        ARCHITE VECTORS
 
        The item that made this mod need an assembly. A vector is a sealed
-       capsule that means exactly one gene - the thing vanilla has no way to
+       capsule that means exactly one gene = the thing vanilla has no way to
        express, because Genepack rolls its contents the moment it is made.
 
        Because it is an ordinary item, deterministic delivery stops being a
@@ -16,9 +16,29 @@
        Vectors are quest-only: no recipe, no trade tags, excluded from reward
        generation. The world never hands one out by accident.
 
-       These two are worked examples so the system can be tested end to end.
-       The remaining vectors get authored alongside the quest beats that
-       deliver them, since cost and gate belong to the beat rather than here.
+       THE NINETEEN BELOW ARE THE ARCHON CHAIN'S ENTIRE MANIFEST.
+       Beat assignments, story text and the reasoning live in
+       docs/data/ARCHON-CHAIN-BEATS.md. The beat is named in a comment above
+       each vector so this file can be read on its own, but the doc is the
+       source of truth and this file must not be allowed to disagree with it.
+
+       THE PRICE LADDER. chargeCost is lives = the altar yields BodySize per
+       drained pawn, so roughly one per adult. baseHours is the rite's length
+       before durationFactor.
+
+           tier 1     1 life      8 h
+           tier 2     3 lives    12 h
+           tier 3     8 lives    20 h
+           tier 4    18 lives    32 h
+           tier 5    40 lives    48 h
+
+       Tiers are read off GenePool_Archite.xml and must match it. The ladder
+       is the Waystone's "efficiency never means mercy, it means scale" as an
+       actual curve: a full facility rack takes chargeCostFactor to 0.446 and
+       success from 0.75 to 0.90, so across the campaign risk falls by more
+       than half while the price of one rite goes from one life to eighteen.
+
+       NOTE: XML comments cannot contain a double hyphen. Use "=" for rules.
        ==================================================================== -->
 
   <ThingDef Name="Archinity_VectorBase" Abstract="True" ParentName="ResourceBase">
@@ -30,7 +50,11 @@
     <alwaysHaulable>true</alwaysHaulable>
     <useHitPoints>false</useHitPoints>
     <graphicData>
-      <texPath>Things/Item/Special/ArchiteCapsule</texPath>
+      <!-- Biotech's archite capsule art. Verified on disk at
+           workshop/content/294100/2307494117/Biotech/Textures/Things/Item/Resource/ArchiteCapsule.png.
+           There is no Things/Item/Special/ArchiteCapsule anywhere in Core, the
+           DLCs or any subscribed mod, which is what this used to point at. -->
+      <texPath>Things/Item/Resource/ArchiteCapsule</texPath>
       <graphicClass>Graphic_Single</graphicClass>
       <drawSize>(0.85, 0.85)</drawSize>
     </graphicData>
@@ -47,22 +71,14 @@
     <thingSetMakerTags Inherit="False" />
   </ThingDef>
 
-  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
-    <defName>Archinity_Vector_PlasteelSkin</defName>
-    <label>archite vector (plasteel skin)</label>
-    <description>A sealed capsule of archite matter, still warm. Whatever is written inside it is not a substance so much as an instruction, and the instruction is legible only to the altar.\n\nThis one will lace the recipient's skin with plasteel.</description>
-    <modExtensions>
-      <li Class="Archinity.GeneVectorExtension">
-        <gene>VQEA_PlasteelSkin</gene>
-        <chargeCost>3</chargeCost>
-        <baseHours>16</baseHours>
-      </li>
-    </modExtensions>
-  </ThingDef>
 
-  <!-- The first vector, given in the Neolithic era at beat 2 - the moment the
-       altar stops being a mystery. Cheap on purpose: one person. The colony
-       has to work out what that means on its own. -->
+  <!-- ================================================================
+       TIER 1  =  1 life, 8 hours
+       ================================================================ -->
+
+  <!-- BEAT 2 = What It Wants. The first vector, taken from the hands of a
+       body in a burial pit. Cheap on purpose: one person. The colony has to
+       work out what that means on its own. -->
   <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
     <defName>Archinity_Vector_PerfectVision</defName>
     <label>archite vector (perfect vision)</label>
@@ -72,6 +88,295 @@
         <gene>VQEA_PerfectVision</gene>
         <chargeCost>1</chargeCost>
         <baseHours>8</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+
+  <!-- ================================================================
+       TIER 2  =  3 lives, 12 hours
+       ================================================================ -->
+
+  <!-- BEAT 3 = The Ash Kiln. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="Ludeon.RimWorld.Biotech">
+    <defName>Archinity_Vector_DiseaseFree</defName>
+    <label>archite vector (disease-free)</label>
+    <description>A sealed capsule of archite matter. Held to the light it is not quite empty, and what moves inside it moves against the tilt of your hand.\n\nThis one will close the recipient to every sickness this world has.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>DiseaseFree</gene>
+        <chargeCost>3</chargeCost>
+        <baseHours>12</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 4 = The Ossuary. Paired with the medical vector: the first beat
+       where the two founders stop being a matched pair. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_MasterfulConstruction</defName>
+    <label>archite vector (masterful construction)</label>
+    <description>A sealed capsule of archite matter, heavier than its size argues for. The bone-house it came from was built by people who were very good at building, right up until they stopped.\n\nThis one will teach the recipient's hands what their mind cannot.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_MasterfulConstruction</gene>
+        <chargeCost>3</chargeCost>
+        <baseHours>12</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 4 = The Ossuary. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_MasterfulMedical</defName>
+    <label>archite vector (masterful medicine)</label>
+    <description>A sealed capsule of archite matter. Whoever sorted the bones understood anatomy far better than they should have, and this is presumably why.\n\nThis one will make the recipient's hands steady inside another person.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_MasterfulMedical</gene>
+        <chargeCost>3</chargeCost>
+        <baseHours>12</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 5 = The Hermit's Tower. The psychic track opens. Framed as
+       cultivation toward the energy the universe runs on, per WAYSTONE, and
+       never as meditation. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_PassiveMeditation</defName>
+    <label>archite vector (unbroken cultivation)</label>
+    <description>A sealed capsule of archite matter, and the only one so far that is warm rather than cool. The hermit held it for a long moment before handing it over, the way you hold something you have decided not to use.\n\nThis one opens the recipient to the energy the universe actually runs on, and does not close again.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_PassiveMeditation</gene>
+        <chargeCost>3</chargeCost>
+        <baseHours>12</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 11 = The Shipwright's Debt. The Starjack ally beat is a
+       negotiation, so the gene is a social one. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_MasterfulSocial</defName>
+    <label>archite vector (masterful presence)</label>
+    <description>A sealed capsule of archite matter, thrown in at the end of the deal without comment, as though the yard boss had decided something about you and did not intend to discuss it.\n\nThis one will make the recipient impossible to dismiss.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_MasterfulSocial</gene>
+        <chargeCost>3</chargeCost>
+        <baseHours>12</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+
+  <!-- ================================================================
+       TIER 3  =  8 lives, 20 hours
+       ================================================================ -->
+
+  <!-- BEAT 6 = The Drowned Chapel. Paired with the blur runner. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_Herculean</defName>
+    <label>archite vector (herculean frame)</label>
+    <description>A sealed capsule of archite matter, recovered from silt in a flooded undercroft where an altar exactly like yours lies cracked across the middle. Nobody spent this one. You should wonder why.\n\nThis one will build the recipient into something that has to duck through doors.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_Herculean</gene>
+        <chargeCost>8</chargeCost>
+        <baseHours>20</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 6 = The Drowned Chapel. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_BlurRunner</defName>
+    <label>archite vector (blur)</label>
+    <description>A sealed capsule of archite matter. Cold, even out of the water.\n\nThis one will make the recipient hard to watch and harder to catch.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_BlurRunner</gene>
+        <chargeCost>8</chargeCost>
+        <baseHours>20</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 7 = The Iron Concord. Taken by force from a holding that would
+       not sell. Paired with the shooting vector. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_MasterfulMelee</defName>
+    <label>archite vector (masterful blade)</label>
+    <description>A sealed capsule of archite matter, taken off the body of the last man in the hall who was still standing. Three families held this place on the strength of it and none of them ever opened it.\n\nThis one will make the recipient's hands know a weapon better than the smith who made it.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_MasterfulMelee</gene>
+        <chargeCost>8</chargeCost>
+        <baseHours>20</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 7 = The Iron Concord. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_MasterfulShooting</defName>
+    <label>archite vector (masterful aim)</label>
+    <description>A sealed capsule of archite matter from the same hall, in a box that had not been opened in two centuries and was still oiled.\n\nThis one will put the recipient's shot where their eye already was.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_MasterfulShooting</gene>
+        <chargeCost>8</chargeCost>
+        <baseHours>20</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 9 = The Ledger. Where the altar's true odds become legible. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="Ludeon.RimWorld.Biotech">
+    <defName>Archinity_Vector_PerfectImmunity</defName>
+    <label>archite vector (perfect immunity)</label>
+    <description>A sealed capsule of archite matter, shelved in a records vault beside eleven hundred years of accounts. It is catalogued. It has a number. Somebody filed it and went home.\n\nThis one will make the recipient's body win every argument it is ever offered.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>PerfectImmunity</gene>
+        <chargeCost>8</chargeCost>
+        <baseHours>20</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 10 = The Ascent. The chain starts pulling toward orbit. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="Ludeon.RimWorld.Odyssey">
+    <defName>Archinity_Vector_VacuumResistance</defName>
+    <label>archite vector (vacuum-proof)</label>
+    <description>A sealed capsule of archite matter, left on a launch pad by something that departed in a hurry and did not come back.\n\nThis one will let the recipient stand in nothing at all and keep breathing out of habit rather than need.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VacuumResistance_Total</gene>
+        <chargeCost>8</chargeCost>
+        <baseHours>20</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 11 = The Shipwright's Debt. Boarding legs, from the Free
+       Companies, who hold that a ship belongs to the people aboard it. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaracesexpanded.archon">
+    <defName>Archinity_Vector_LeapjumpLegs</defName>
+    <label>archite vector (leapjump legs)</label>
+    <description>A sealed capsule of archite matter, sold to you out of a breaker-yard by people who did not ask what you were and did not care.\n\nThis one will let the recipient cross a gap that has no floor in it.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VRE_LeapjumpLegs</gene>
+        <chargeCost>8</chargeCost>
+        <baseHours>20</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+
+  <!-- ================================================================
+       TIER 4  =  18 lives, 32 hours
+       ================================================================ -->
+
+  <!-- BEAT 8 = The First Machine. THE MID-CAMPAIGN HINGE. The altar opens to
+       disciples, and this is the mechanism rather than a gift, which is why
+       the beat delivers exactly one and the two of you have to decide out
+       loud who holds it. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="Ludeon.RimWorld.Biotech">
+    <defName>Archinity_Vector_XenogermReimplanter</defName>
+    <label>archite vector (reimplanter)</label>
+    <description>A sealed capsule of archite matter, found in a buried laboratory beside forty machines exactly like the one in your colony, each wired to a bench with a chair beside it.\n\nThey were not worshipping it. They were operating it. The manual was never about the machine. It was about who is allowed in the chair.\n\nThis one will let the recipient give away what they are. Not what they were chosen for = that stays.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>XenogermReimplanter</gene>
+        <chargeCost>18</chargeCost>
+        <baseHours>32</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 12 = The Gate. The Glitterites state their instruction plainly. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_PlasteelSkin</defName>
+    <label>archite vector (plasteel skin)</label>
+    <description>A sealed capsule of archite matter, still warm. Whatever is written inside it is not a substance so much as an instruction, and the instruction is legible only to the altar.\n\nThis one will lace the recipient's skin with plasteel.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_PlasteelSkin</gene>
+        <chargeCost>18</chargeCost>
+        <baseHours>32</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 13 = The Siege of the Ring. Paired with the psychic vector. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaquestsexpanded.ancients">
+    <defName>Archinity_Vector_Levitation</defName>
+    <label>archite vector (levitation)</label>
+    <description>A sealed capsule of archite matter, taken off a ring that was built to keep things like you inside this system.\n\nThis one will stop the ground mattering to the recipient.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VQEA_Levitation</gene>
+        <chargeCost>18</chargeCost>
+        <baseHours>32</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 13 = The Siege of the Ring. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaracesexpanded.archon">
+    <defName>Archinity_Vector_PsychicExtreme</defName>
+    <label>archite vector (deep cultivation)</label>
+    <description>A sealed capsule of archite matter. It hums, faintly, in a register that is not sound, and the pawns carrying it will not carry it twice.\n\nThis one takes the recipient much further into the energy the universe runs on than a human nervous system was ever meant to go. That is not overheating. That is processing more than neurons can carry.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VRE_PsychicAbility_MoreExtreme</gene>
+        <chargeCost>18</chargeCost>
+        <baseHours>32</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+
+  <!-- ================================================================
+       TIER 5  =  40 lives, 48 hours
+
+       The last beat. Forty lives each, and a full facility rack only brings
+       that down to eighteen. By the end the altar can barely fail and the
+       body count is at its highest, and you are acquiring people
+       specifically to feed it. That is the intended shape, not a balance
+       problem to solve.
+       ================================================================ -->
+
+  <!-- BEAT 14 = The Door. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="vanillaracesexpanded.archon">
+    <defName>Archinity_Vector_Transcendent</defName>
+    <label>archite vector (transcendent)</label>
+    <description>A sealed capsule of archite matter, handed to you personally, which has never happened before and will not happen again.\n\nThere is no ruin attached to this one. No pit, no vault, no ring. They simply held it out, and waited, and did not explain.\n\nThis one is the last thing They have to give.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>VRE_Transcendent</gene>
+        <chargeCost>40</chargeCost>
+        <baseHours>48</baseHours>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- BEAT 14 = The Door. Founder-only: Patches.cs strips Deathless and
+       Ageless on xenogerm reimplant, so this cannot be passed down. The
+       founders can make you like them. They cannot make you one of Theirs. -->
+  <ThingDef ParentName="Archinity_VectorBase" MayRequire="Ludeon.RimWorld.Biotech">
+    <defName>Archinity_Vector_Deathless</defName>
+    <label>archite vector (deathless)</label>
+    <description>A sealed capsule of archite matter, and the weight of it is wrong in a way you stop being able to describe after the first minute.\n\nWhatever is in here does not stop a wound. It refuses the conclusion of one.\n\nIt cannot be passed on. Nothing you do afterwards will let you give this away.</description>
+    <modExtensions>
+      <li Class="Archinity.GeneVectorExtension">
+        <gene>Deathless</gene>
+        <chargeCost>40</chargeCost>
+        <baseHours>48</baseHours>
       </li>
     </modExtensions>
   </ThingDef>

@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="Replace_Stuff.Settings">
+		<bridgePrefNames>
+			<li>HeavyBridge</li>
+			<li>AncientHeavyBridge</li>
+			<li>Bridge</li>
+			<li>AncientBridge</li>
+		</bridgePrefNames>
+	</ModSettings>
+</SettingsBlock>

@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="VNPE.NutrientPasteMod_Settings">
+		<nutrientPasteDripperThreshold>0.25999999</nutrientPasteDripperThreshold>
+	</ModSettings>
+</SettingsBlock>
