@@ -225,6 +225,53 @@ machine means re-snapshot, re-push, re-paste.**
 > "config folder not found" branch, printed a warning, and did nothing. Fixed; both it and
 > `snapshot-config.ps1` now resolve from `$env:USERPROFILE`.
 
+## 2c. Load order — nobody sorts anything in the mod menu
+
+`ModsConfig.xml` carries the enabled list **and** the order. Pasting it is the whole job;
+neither player ever opens the mod menu to tick boxes or drag rows.
+
+**The order is validated, not assumed:**
+
+```
+$ python tools/check_load_order.py
+active mods       : 87
+ordering rules    : 251  (only pairs where both mods are active)
+
+OK  every declared rule is satisfied by the current order.
+```
+
+`check_load_order.py` implements RimWorld's own algorithm, decompiled from
+`Verse.ModsConfig.TrySortMods`, rather than a guess at it. It reads `loadBefore`,
+`loadAfter`, `forceLoadBefore` and `forceLoadAfter` out of all 87 `About.xml` files, keeps
+the rules where both mods are active, and checks every one against actual position. `--fix`
+does a stable topological sort that keeps the hand-authored grouping wherever the rules allow.
+
+Two things it gets right that are easy to get wrong:
+
+- **`modDependencies` is not part of the sort.** RimWorld checks dependencies are *present*
+  and separately checks order through those four fields only. A mod can hard-depend on
+  another and declare no ordering at all.
+- **`loadAfterByVersion` replaces `loadAfter`** for the running version rather than adding to
+  it — `ModMetaData.Init` assigns over the top of it.
+
+### If you use RimSort
+
+Do. It is better than this tool at *deciding* an order, because it carries a community rules
+database holding ordering knowledge that appears in no `About.xml`. This tool only validates
+what mods actually declare.
+
+**But run it on one machine, once.** RimSort's output depends on its rules-database version,
+so two people running it against the same mod list can get **different orders**, and a
+different order is a mismatch the client cannot join through.
+
+1. Sort on the host, in RimSort.
+2. `.\tools\snapshot-config.ps1` to capture the result.
+3. `python tools/check_load_order.py` to confirm nothing broke.
+4. Commit, re-export, send.
+5. **He never sorts.** He pastes `ModsConfig.xml`, which is the contract.
+
+Same rule as the settings, for the same reason: one machine decides, the file carries it.
+
 ## 3. Before you generate the world — nothing, as it turns out
 
 **An earlier revision of this file listed two pre-worldgen must-dos. Both were wrong, and
