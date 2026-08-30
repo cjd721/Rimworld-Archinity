@@ -32,6 +32,14 @@ Failing only #3 defers a mod past tonight; it does not remove it from the campai
 
 ## APPROVED — 87 mods
 
+> **2026-08-28, field correction.** `Wiri.compositableloadouts` was caught desyncing a live
+> two-player session — the first defect in this project found by desync report rather than
+> by static analysis. It **stays in the set behind a patch of ours**
+> (`LoadoutSchedulingSync`), which means it now **fails rule #3 below** and is here by
+> Conrad's explicit call, not by the rule. `Ushanka.GlittertechExpansion` picked up a
+> second patch (`GlittershipChunkSync`) in the same pass for a latent defect of the same
+> shape. Both are written up in `MOD-VERDICTS.md`.
+
 ### Tier 0 · Load-bearing (11)
 
 ```

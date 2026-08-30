@@ -5,6 +5,7 @@ using System.Reflection;
 using HarmonyLib;
 using Multiplayer.API;
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 
 namespace Archinity
@@ -18,6 +19,22 @@ namespace Archinity
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             NeutraliseArchonEquipmentGate();
             WarnAboutGenesMissingFromPool();
+
+            // Determinism repairs to third-party mods. These name no Multiplayer
+            // type, so they are safe to JIT with the Multiplayer mod absent, and
+            // they are registered unconditionally on purpose: both machines then
+            // run identical code whether or not this session happens to be co-op,
+            // and neither repair is worse in singleplayer. Glittertech's is a save
+            // -integrity fix that singleplayer wants on its own merits.
+            if (ModIsLoaded("wiri.compositableloadouts"))
+            {
+                LoadoutSchedulingSync.Register(harmony);
+            }
+
+            if (ModIsLoaded("ushanka.glittertechexpansion"))
+            {
+                GlittershipChunkSync.Register(harmony);
+            }
 
             if (!ModIsLoaded("rwmt.multiplayer"))
             {
@@ -444,6 +461,233 @@ namespace Archinity
                 care = careSettingsRef();
             }
             return care;
+        }
+    }
+
+    /// <summary>
+    /// Compositable Loadouts schedules its per-pawn loadout pass through
+    /// <c>ThinkNode_LoadoutRealisation.nextUpdateTick</c>, a
+    /// <c>Dictionary&lt;Pawn, int&gt;</c> that is never scribed, never cleared on
+    /// load, and keyed by <b>Pawn object reference</b>. Multiplayer's
+    /// SaveAndReload rebuilds every Pawn at every join point, so after a reload
+    /// every lookup misses. A miss is defaulted to 0 - "update now" - and
+    /// <c>SetPawnLastUpdated</c> then draws <c>Rand.Range(10000, 15000)</c>
+    /// *inside* <c>TryIssueJobPackage</c>. That is an unequal draw against the
+    /// tick-seeded stream Multiplayer hashes.
+    ///
+    /// This is not theoretical. It desynced a live two-player session on
+    /// 2026-08-28: desync report Desync-01, tick 18216, pawn Human1189 - the host
+    /// ran PickUpAndHaul's CheckIfPawnShouldUnloadInventory while the client ran
+    /// SetPawnLastUpdated, and ThinkNode_LoadoutRealisation appears 4x in the
+    /// client's traces and 0x in the host's. Every rejoin re-empties the
+    /// dictionary, so it re-fired within seconds, indefinitely.
+    ///
+    /// The replacement is stateless. Eligibility becomes a pure function of
+    /// TicksAbs and thingIDNumber, both synced simulation state. No dictionary to
+    /// go stale, no Rand to draw unequally, and nothing a reload can reset on one
+    /// machine and not the other.
+    ///
+    /// <b>Rand.PushState/PopState would not fix this.</b> The usual compat-layer
+    /// wrap would hide the random-state divergence while leaving the pawn taking
+    /// a different think-tree branch on each machine, which is real divergence,
+    /// not just a hash mismatch. The schedule itself has to be deterministic.
+    /// </summary>
+    public static class LoadoutSchedulingSync
+    {
+        private const string Tag = "[Archinity] Compositable Loadouts scheduling: ";
+
+        /// <summary>Mean of the original <c>Rand.Range(10000, 15000)</c>.</summary>
+        private const int IntervalTicks = 12500;
+
+        /// <summary>
+        /// How long each pawn stays eligible within an interval. The original
+        /// updated on the first job request past a per-pawn deadline; a stateless
+        /// rule needs a window rather than an instant, because TryIssueJobPackage
+        /// only runs when a job ends and would almost never land on one exact
+        /// tick. 600 ticks is ten seconds - wide enough that a working colonist
+        /// reliably asks for a job inside it, narrow enough to stay a ~4.8% duty
+        /// cycle. A pawn may re-check more than once inside the window; the pass
+        /// is a re-evaluation, so that costs a little work and changes nothing.
+        /// </summary>
+        private const int WindowTicks = 600;
+
+        internal static void Register(Harmony harmony)
+        {
+            Type node = AccessTools.TypeByName("Inventory.ThinkNode_LoadoutRealisation");
+            if (node == null)
+            {
+                Warn("type Inventory.ThinkNode_LoadoutRealisation not found");
+                return;
+            }
+
+            MethodInfo needsUpdate = AccessTools.Method(
+                node, "PawnNeedsUpdate", new[] { typeof(Pawn) });
+            MethodInfo setUpdated = AccessTools.Method(
+                node, "SetPawnLastUpdated", new[] { typeof(Pawn) });
+            if (needsUpdate == null || setUpdated == null)
+            {
+                Warn("PawnNeedsUpdate and/or SetPawnLastUpdated not found on "
+                     + "ThinkNode_LoadoutRealisation");
+                return;
+            }
+
+            harmony.Patch(needsUpdate, prefix: new HarmonyMethod(AccessTools.Method(
+                typeof(LoadoutSchedulingSync), nameof(NeedsUpdatePrefix))));
+            harmony.Patch(setUpdated, prefix: new HarmonyMethod(AccessTools.Method(
+                typeof(LoadoutSchedulingSync), nameof(SetUpdatedPrefix))));
+
+            // Success is logged, not just failure. This patch is the difference
+            // between a playable session and a desync loop, both players have to
+            // be running it, and neither can tell by looking at the game. One line
+            // in the log is how each of them confirms their own install.
+            Log.Message(Tag + "loadout scheduling is deterministic "
+                        + "(interval " + IntervalTicks + ", window " + WindowTicks + ").");
+        }
+
+        /// <summary>
+        /// Replaces the dictionary lookup outright. Both terms are synced: TicksAbs
+        /// is the shared clock and thingIDNumber is scribed with the pawn, so the
+        /// two machines agree on every tick without storing anything.
+        /// </summary>
+        private static bool NeedsUpdatePrefix(Pawn pawn, ref bool __result)
+        {
+            if (pawn == null)
+            {
+                __result = false;
+                return false;
+            }
+            int phase = (GenTicks.TicksAbs + pawn.thingIDNumber) % IntervalTicks;
+            __result = phase >= 0 && phase < WindowTicks;
+            return false;
+        }
+
+        /// <summary>
+        /// The only caller of the dictionary's writer. With eligibility computed
+        /// rather than stored there is nothing to write, and writing would
+        /// reintroduce the Rand draw this patch exists to remove.
+        /// </summary>
+        private static bool SetUpdatedPrefix()
+        {
+            return false;
+        }
+
+        private static void Warn(string what)
+        {
+            Log.Warning(Tag + what + ". The mod's own scheduler is therefore still "
+                        + "in force, and it draws Rand inside the think tree off a "
+                        + "dictionary that a reload resets on one machine only. This "
+                        + "WILL desync a multiplayer session. Re-check Inventory.dll "
+                        + "against Patches.cs, or disable the mod.");
+        }
+    }
+
+    /// <summary>
+    /// Ushanka's Glittertech Expansion keeps its glittership-debris event timer in
+    /// <c>WorldComponent_GlittershipChunk</c>, and two details make it desync under
+    /// Multiplayer:
+    ///
+    /// 1. <c>Instance</c> is a static that survives Multiplayer's SaveAndReload. The
+    ///    constructor early-returns when it is already set, so from the second load
+    ///    onward the live component is the stale original and the freshly
+    ///    constructed one is discarded. That is the "Duplicate
+    ///    WorldComponent_GlittershipChunk detected. Ignoring." line in every log.
+    ///
+    /// 2. <c>ExposeData</c> scribes only <c>_didEvent</c>. <c>_ticksToFire</c> and
+    ///    <c>_ticksPassed</c> are never saved, so the host carries values
+    ///    accumulated since worldgen while a joining client starts from a fresh
+    ///    roll, and the two evaluate <c>_ticksPassed % TICK_CHECK_INTERVAL</c> on
+    ///    different ticks.
+    ///
+    /// Today this is latent: the tick body returns early until
+    /// USH_GlittertechFabrication is researched. When that research lands, FireEvent
+    /// runs PawnGroupMakerUtility.GeneratePawns and CellFinderLoose on one machine
+    /// only - both heavy Rand consumers - and the save diverges.
+    ///
+    /// The prefix clears <c>Instance</c> so the constructor takes its normal full
+    /// path on every load, and the postfix scribes the two timers under our own
+    /// labels, so the author adding real persistence later cannot collide with us.
+    /// </summary>
+    public static class GlittershipChunkSync
+    {
+        private const string Tag = "[Archinity] Glittertech glittership chunk: ";
+
+        private static FieldInfo instanceBackingField;
+        private static FieldInfo ticksToFireField;
+        private static FieldInfo ticksPassedField;
+
+        internal static void Register(Harmony harmony)
+        {
+            Type comp = AccessTools.TypeByName("USH_GE.WorldComponent_GlittershipChunk");
+            if (comp == null)
+            {
+                Warn("type USH_GE.WorldComponent_GlittershipChunk not found");
+                return;
+            }
+
+            ConstructorInfo ctor = AccessTools.Constructor(comp, new[] { typeof(World) });
+            MethodInfo expose = AccessTools.DeclaredMethod(comp, "ExposeData");
+            instanceBackingField = AccessTools.Field(comp, "<Instance>k__BackingField");
+            ticksToFireField = AccessTools.Field(comp, "_ticksToFire");
+            ticksPassedField = AccessTools.Field(comp, "_ticksPassed");
+
+            if (ctor == null || expose == null || instanceBackingField == null
+                || ticksToFireField == null || ticksPassedField == null)
+            {
+                Warn("constructor, ExposeData, Instance backing field, _ticksToFire "
+                     + "or _ticksPassed not found");
+                return;
+            }
+
+            harmony.Patch(ctor, prefix: new HarmonyMethod(AccessTools.Method(
+                typeof(GlittershipChunkSync), nameof(ClearInstancePrefix))));
+            harmony.Patch(expose, postfix: new HarmonyMethod(AccessTools.Method(
+                typeof(GlittershipChunkSync), nameof(ExposeDataPostfix))));
+
+            Log.Message(Tag + "debris-event timer now reload-stable and scribed.");
+        }
+
+        /// <summary>
+        /// Nulling the static before construction is what makes the author's own
+        /// full-init path run every time, rather than us reaching in afterwards to
+        /// repair a half-constructed object. World.FillComponents builds exactly one
+        /// of these per World, so there is no case where the earlier instance should
+        /// have won.
+        /// </summary>
+        private static void ClearInstancePrefix()
+        {
+            instanceBackingField.SetValue(null, null);
+        }
+
+        private static void ExposeDataPostfix(object __instance)
+        {
+            int toFire = (int)ticksToFireField.GetValue(__instance);
+            int passed = (int)ticksPassedField.GetValue(__instance);
+
+            Scribe_Values.Look(ref toFire, "Archinity_ticksToFire", 0);
+            Scribe_Values.Look(ref passed, "Archinity_ticksPassed", 0);
+
+            if (Scribe.mode != LoadSaveMode.LoadingVars)
+            {
+                return;
+            }
+
+            // A save written before this patch has no node, so Look leaves 0. The
+            // constructor has already rolled a real delay by then and that roll is
+            // the better value; only overwrite it when the save actually carried one.
+            if (toFire > 0)
+            {
+                ticksToFireField.SetValue(__instance, toFire);
+            }
+            ticksPassedField.SetValue(__instance, passed);
+        }
+
+        private static void Warn(string what)
+        {
+            Log.Warning(Tag + what + ". The debris-event timer therefore stays "
+                        + "unscribed behind a static that survives reloads, and the "
+                        + "event will fire on one machine only once "
+                        + "USH_GlittertechFabrication is researched. Re-check "
+                        + "GlittertechExpansion.dll against Patches.cs.");
         }
     }
 }

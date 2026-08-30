@@ -156,7 +156,20 @@ distinct packageIds across 214 `MpCompatFor` patch files at master (pushed
 `VanillaExpanded.VCEF`, `VanillaExpanded.VExplorationE`, `VanillaExpanded.VFECore`,
 `…VFEFarming`, `…VFEPower`, `…VFESecurity`, `…VMemesE`, `…VNutrientE`, `…VPE.Hemosage`,
 `…VPE.Puppeteer`, `…VPsycastsE`, `vanillaracesexpanded.android`, `…hussar`,
-`…sanguophage`, `…saurid`, `Wiri.compositableloadouts`.
+`…sanguophage`, `…saurid`.
+
+> **Correction, 2026-08-28.** This list read 36 and included `Wiri.compositableloadouts`.
+> **It is not covered. [V]** The installed MPCompat assembly carries 216 compat classes and
+> **none** names that mod, by packageId or by its `Inventory.*` namespace; at runtime
+> MPCompat logs no `Initialized compatibility for wiri.compositableloadouts` line. The
+> original figure came from diffing `MpCompatFor` filenames at master, which evidently
+> over-matched. Whether upstream master carries a patch is untested and irrelevant to the
+> installed build. **Coverage is 35 of 108.** The mod went on to desync a live session and
+> now runs behind a patch of ours — see `MOD-VERDICTS.md`.
+>
+> **This is worth a wider pass.** The mod sat in a safe tier partly on the strength of a
+> coverage claim that was never true. The same over-match may be hiding elsewhere in the
+> other 35.
 
 **The four uncovered mods that actually matter** — uncovered *and* simulation-affecting
 rather than cosmetic:
@@ -2119,7 +2132,9 @@ covered) · `3400037215` Adaptive Primitive Storage (neolithic storage art) ·
 ### Quality of life — no design bearing
 `1195427067` Architect Icons (MIT) · `3563882422` Better Architect Menu (990 patch
 files) · `3697920753` Architect Menu Optimizer · `1279012058` Pick Up And Haul (MIT,
-covered) · `2679126859` Compositable Loadouts (LGPL, covered) · `3527418098` Pharmacist:
+covered) · `2679126859` Compositable Loadouts (LGPL, **not** covered — desynced a live
+session 2026-08-28, now behind our `LoadoutSchedulingSync` patch, see `MOD-VERDICTS.md`)
+· `3527418098` Pharmacist:
 Represcribed (covered) · `1508341791` Filth Vanishes With Rain And Time · `2734454892`
 Faster Moisture Pump · `2903717987` Advanced Pollution Pump · `3760520682` No
 Alzheimer's · `3749200746` TakeCover · `2860414285` Vanilla Combat Reloaded ·

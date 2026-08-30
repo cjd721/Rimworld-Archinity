@@ -132,6 +132,55 @@ With licence struck and the set pinned, almost every defect that used to read as
 disqualifying is now something we can simply fix. Already mined for the
 faction-tension shape; stays on disk as reference.
 
+### The one defect this file has caught in the field — Compositable Loadouts **[V]**
+
+`Wiri.compositableloadouts` **desynced a live two-player session on 2026-08-28.** It is
+the only entry here established by a desync report rather than by static analysis, and it
+is recorded in full because the shape generalises: *client-local state keyed by object
+reference, read inside a synced path.*
+
+`Inventory.ThinkNode_LoadoutRealisation` schedules its per-pawn loadout pass through
+`private Dictionary<Pawn, int> nextUpdateTick` — **never scribed, never cleared on load,
+keyed by `Pawn` object reference**. Multiplayer's `SaveAndReload` rebuilds every `Pawn` at
+every join point, so afterwards every lookup misses; `PawnNeedsUpdate` defaults the miss to
+`0` ("update now") and `SetPawnLastUpdated` then draws `Verse.Rand.Range(10000, 15000)`
+**inside `TryIssueJobPackage`** — an unequal draw against the tick-seeded stream MP hashes.
+
+> Desync report `Desync-01`, tick 18216, pawn `Human1189`. Host ran
+> `PickUpAndHaul.PawnUnloadChecker.CheckIfPawnShouldUnloadInventory`; client ran
+> `SetPawnLastUpdated`. `ThinkNode_LoadoutRealisation` appears **4× in the client's traces
+> and 0× in the host's**. Every rejoin re-emptied the dictionary, so it re-fired within
+> seconds, indefinitely.
+
+**Fixed, not barred.** `LoadoutSchedulingSync` in `Patches.cs` replaces the schedule with a
+pure function of synced state — `(TicksAbs + thingIDNumber) % 12500 < 600` — and no-ops the
+writer. No dictionary to go stale, no `Rand` to draw unequally. Note that the usual
+`Rand.PushState`/`PopState` wrap that the compat layer applies elsewhere is **not sufficient
+here**: it would hide the random-state divergence while leaving the pawn taking a different
+think-tree branch on each machine.
+
+**This is a named price, not a free mod.** It fails MVP rule #3 (*"no Harmony patch of
+ours"*) and is in the set anyway, by Conrad's call on 2026-08-28. Recorded so the rule is
+seen to be broken deliberately rather than quietly.
+
+### Glittertech glittership chunk — same class, caught before it fired **[V]**
+
+`Ushanka.GlittertechExpansion`'s `WorldComponent_GlittershipChunk` holds `Instance` in a
+static that survives `SaveAndReload`, so its constructor early-returns from the second load
+onward and the stale original stays live — the `Duplicate WorldComponent_GlittershipChunk
+detected. Ignoring.` line present in every log. `ExposeData` scribes only `_didEvent`, so
+`_ticksToFire` and `_ticksPassed` diverge between host and client. Latent only because the
+tick body returns early until `USH_GlittertechFabrication` is researched; when that lands,
+`FireEvent` runs `PawnGroupMakerUtility.GeneratePawns` and `CellFinderLoose` on one machine
+only. Fixed by `GlittershipChunkSync` in `Patches.cs`.
+
+**Still open in the same mod, deliberately not patched:** `Building_GlittershipChunk`
+declares no `ExposeData` at all, so `_strikeTicks`, `_strikeAge` and `strikeLoc` never
+persist, while its `Tick` draws `RandomElement()` and `RandomInRange` once the timer
+expires. Reaching it requires a postfix on `Building.ExposeData` — a patch that runs for
+every building in the game — to repair one building that cannot exist until the event above
+fires. Deferred as a bad trade until that event is actually reachable.
+
 ## Declined — 5
 
 Conrad's calls, made directly. No justification owed and none recorded.
@@ -282,7 +331,7 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | Vanilla Apparel Expanded · Cooking Expanded · Fishing Expanded | `VanillaExpanded.VAPPE`, `…VCookE`, `…VCEF` |
 | Vanilla Animals Expanded – Waste Animals | `VanillaExpanded.VAEWaste` |
 | Adaptive Storage Framework · [SYR] Processor Framework · Map Mode Framework | `adaptive.storage.framework`, `syrchalis.processor.framework`, `NozoMe.MapModeFramework` |
-| Replace Stuff · Pick Up And Haul · Compositable Loadouts | `Memegoddess.ReplaceStuff`, `Mehni.PickUpAndHaul`, `Wiri.compositableloadouts` |
+| Replace Stuff · Pick Up And Haul | `Memegoddess.ReplaceStuff`, `Mehni.PickUpAndHaul` — Compositable Loadouts was tiered here until 2026-08-28. It desynced a live session and now carries a **named price**, our `LoadoutSchedulingSync` patch; see above. |
 | Tribal Furniture · Tribal Siege Raids · TakeCover · Vanilla Combat Reloaded | `Xercaine.Tribal.Furniture`, `PJerri.TribalSiegeRaids`, `rabiosus.TakeCover`, `Donald.VCR` |
 | Better Architect Menu · Architect Menu Optimizer | `ferny.BetterArchitect`, `MRK.architectmenuoptimizer` |
 | [SR] Factional War (fork) | `SR.ModRimworld.FactionalWarContinued` |
