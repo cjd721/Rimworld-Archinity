@@ -120,11 +120,32 @@ The two player pawns the Archons marked. Protagonists and progress bar both.
 _Avoid_: the chosen ones, the mains, the player characters
 
 **The mark**:
-What makes the founders singular. It has no power of its own; it exists so the
-campaign can tell them from everyone who rises after.
+What makes the founders singular. Gates the core vectors and Transcendence, and carries a
+small permanent presence. [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10)
 
 **The altar**:
 The one machine that turns lives into power. One machine, one philosophy.
+
+**Disciple**:
+A colonist raised onto the psychic track. Psychic only — it changes nothing about a
+pawn's genetics. [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10)
+_Avoid_: acolyte, initiate, priest (a **role**, not this)
+
+**Cultivation**:
+What meditation is reskinned into: attendance at the altar and its dead.
+_Avoid_: meditation, training
+
+**The rite**:
+The prisoner sacrifice at the altar that grants one psylink rank.
+
+**Core vector** · **Augment vector**:
+The two named-gene classes. **Core** is the path-to-divinity set and is mark-locked;
+**augment** is specialisation and works on anyone.
+_Avoid_: main genes, side genes
+
+**Lottery capsule**:
+An Archon capsule converted by Industrial research into something usable.
+_Avoid_: archite capsule (the **inert** pre-conversion item)
 
 **The Chronicle**:
 The quest chain from the first Archon gift to transcendence. Currently greenfield

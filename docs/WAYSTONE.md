@@ -63,8 +63,18 @@ They can pass on strength. They cannot pass on being chosen.
 
 > *I can make you like me. I cannot make you one of Theirs.*
 
-Ordinary colonists may rise slowly, at real cost, and must never arrive. Two
-chosen ones who can mint copies of themselves are not chosen.
+Ordinary colonists rise, and they rise as far as their commitment carries them —
+a disciple who has genuinely mastered a discipline is a character, not a
+footnote. What separates the founders is not a **ceiling** on everyone else but a
+difference in **kind**: there are gifts only the marked may receive, and no
+amount of climbing reaches them. Two chosen ones who can mint copies of
+themselves are not chosen — but two chosen ones surrounded by useless people are
+not interesting either.
+
+So the design does not police how far a colonist gets. It fences off what is
+categorically not theirs, and lets consequence handle the rest: a colonist who
+takes a god's gift is still a colonist, and the next firefight teaches that
+lesson better than any rule.
 
 **Their power arrives on two tracks**: Archon genes, which come from the chain
 and are named, chosen and deterministic; and psychic ability, reflavoured away
@@ -77,18 +87,30 @@ The mechanics can be borrowed. The framing cannot.
 
 The centre of the campaign, and the thing everything else hangs off.
 
-**One machine, one philosophy.** There is exactly one way to become more than you
-are and it runs on blood. No second path, no rival device. When a mechanic needs
-extending, extend the altar.
+**One machine, one philosophy.** There is exactly one *path* to becoming an
+Archon, and it runs on blood: the machine, the sacrifices, and the discipline
+that grows out of them. Read that as one philosophy, not one mechanism — the
+genes and the psychic track are both on it, because both are paid for the same
+way and neither can be had anywhere else. What is refused is a **rival** device:
+a second machine, a second way of buying power that does not cost a life. When a
+mechanic needs extending, extend the altar.
 
 **It runs on lives, not power.** A person goes in and is drawn out entirely.
 What is left is a corpse and a charge that never spoils. That is why it works
 from the first hour of the Neolithic and is never obsoleted by electricity — a
 windmill cannot make what it needs.
 
+Power arrives late, and it never replaces blood. It makes blood go further, and
+that is worse rather than better: cheaper lives mean more of them. The machine
+ends the campaign holding two charges at once, and only one of them is the price.
+
 **The price is always paid by somebody else.** The person in the vat dies. The
 person receiving the gene never does. That asymmetry is the horror of it, and it
 is also what makes the machine safe to gamble with.
+
+For most of what the machine does, any life will do. But the rite that grants
+psychic power is particular, and always has been: it will not take a stranger.
+It wants one of your own, going in willingly, because you asked.
 
 **Efficiency never means mercy. It means scale.** Risk falls across the campaign
 while cost rises far faster. By the end it can barely fail and the body count is
@@ -212,11 +234,40 @@ need that outlives the era*.
 Where an upgrade happens to collapse four benches into one, that is a pleasure
 worth chasing. It is not a bar every addition has to clear.
 
+**Kits are assembled, not granted.** The colony's work is done by specialists,
+and what makes a specialist is a *set* — the cook's hat, apron and cleaver. The
+set is what the player is working toward. That does not mean any one node hands
+one over: the pieces come from wherever they would honestly come from, the hat
+and apron out of tailoring, the cleaver out of smithing, the boots out of
+leatherwork. A kit finished across three branches is a project. A kit dropped by
+a single node is a delivery.
+
+What a node must not do is **dump** — fifteen unlocks at once — or hand out two
+answers to the same need, which is the same as handing out one. Leather and
+chainmail together means leather was never unlocked, only skipped.
+
+So: spread the pieces across the tree and let the player pull them together. That
+is what turns a pile of apparel into something worth wanting, and gear that
+forces specialisation is what makes the colony a cast of people rather than a
+pool of interchangeable labour.
+
 **Earned beats granted.** Anything that meaningfully changes how you play should
 have a story of how you got it — you went somewhere, you took it, someone taught
 you, you studied a captured example. Research alone is not a story. This is not a
 tax on the critical path; it is what makes the memorable acquisitions memorable,
 and it doubles as something to do in the hours the player would otherwise idle.
+
+**The first answer to a need is never gated behind a fetch.** A colony that
+cannot cook until it has crossed the map for something is being punished for
+starting, and that protection holds until it owns a Neolithic answer to every
+need it has. Then it expires. Once you can already cook, gating a *better* stove
+is fair game, and the same goes for every rung above it.
+
+Spend that gating on the leaps worth remembering rather than spreading it thin.
+Electricity should cost an expedition — learning what electricity *is* from
+something you had to go and take is exactly the kind of story this section is
+asking for. Every bench in the game demanding one is a tollbooth with extra
+steps.
 
 **Keep the surface, cut the procedure.** Take the research, the building, the
 roleplay, the unlock. Throw away the chain of intermediate steps wrapped around
@@ -275,16 +326,14 @@ Not a to-do list. These are places where two good principles pull against each
 other and the design has deliberately not collapsed them. Anyone proposing a
 resolution should know they are resolving something, not discovering it.
 
+Two were closed by [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10)
+and are gone from this list: *how disciples rise without arriving* — answered by
+kind rather than by cap, see §2 — and *when the random path opens* — the founders
+get their first psylink in the Neolithic, and the lottery waits for the Industrial
+because the capsules are inert until then, not because a rule forbids it.
+
 **How much power to hand over at the start.** Too much and the founders' arc has
 nowhere to go; too little and the opening does not deliver on *you are gods*.
-
-**How disciples rise without arriving.** Real enough to matter, capped hard
-enough that the founders stay singular. Check every proposal against
-copy-minting first.
-
-**When the random path opens.** Early, it is the loop that stops the altar going
-untouched between beats. Late, it keeps the Neolithic silence intact. Both
-arguments are good.
 
 **How far to lean on our own code.** Every custom system is a desync surface;
 every avoided system is a piece of the vision not delivered.

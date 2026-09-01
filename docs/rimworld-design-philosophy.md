@@ -71,7 +71,11 @@ Useful for evaluating what an addition is actually doing:
 1. **Subtraction** (e.g. Medieval Overhaul). Doesn't fix the sag; postpones it by deleting the tech that ends the desperate phase. Effective — and note that it works by _removing_.
 2. **Unlocking a dormant system** (e.g. Vehicles). The transformative part is not the vehicle; it's that the world map stops being a menu nobody opens. Converts existing dead content into live content. **Highest value per byte.**
 3. **Pressure variety** (e.g. faction/raid mods). New raid _shapes_ force reconfiguration rather than a bigger box. Genuine value, but treats a symptom.
-4. **More stuff.** New benches, new apparel. Adds micromanagement, not progression. Most content marketed as category 2 is actually category 4.
+4. **More stuff.** New benches, new apparel. Adds micromanagement, not progression *as it is normally delivered*. Most content marketed as category 2 is actually category 4.
+
+   **Qualified by play, 2026-08-29** (`playtest-notes.md`, session 1). The failure is in the delivery, not the content. Apparel that arrives as a **complete kit for a role** — the chef's hat, apron and cleaver together — seeds precisely the player-invented project of §5 below: a defined end state, visible in the world, at real cost, and chosen. It also forces specialisation, so the colony becomes a cast of named people instead of a pool of interchangeable labour. The identical defs dumped fifteen at a time onto one research node stay category 4 and clog the menus besides.
+   
+   So category 4 describes how content is **paced and grouped**, not what it contains. Regrouping a category-4 pile into kits converts dead content into live content, which is category 2 work — and it is the cheapest category 2 available, because the assets already exist.
 
 ---
 
