@@ -20,7 +20,9 @@ Every map and ticket is an issue, so it has a **name**: its title. In everything
 
 The map is a single issue on this repo's issue tracker, labelled `wayfinder:map`, the canonical artifact. Its tickets are child issues of the map.
 
-The map is an **index**, not a store. It lists the decisions made and points at the tickets that hold their detail; a decision lives in exactly one place, its ticket, so the map never restates it, only gists it and links.
+The map is an **index**, not a store. It lists the decisions made and points at the tickets that hold their detail; a decision lives in exactly one place, its ticket, so the map never restates it, only gists it and links. Hold each entry to one line, ~200 characters: past that a gist has become a restatement, and a second copy of a decision drifts from the first.
+
+**A decision is never edited on the map.** Corrections go to the ticket that owns it, and the map's line is then **replaced wholesale** — never annotated, no "this previously read", no parentheticals. The map carries the current verdict and nothing else.
 
 **Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** The issue tracker should have been provided to you. If not, tell the user to run `/setup-matt-pocock-skills`. Consult the tracker doc's "Wayfinding operations" section for how _this_ repo expresses them. If no tracker has been provided, default to the local-markdown tracker.
 
@@ -39,7 +41,7 @@ The whole map at low resolution, loaded once per session. Open tickets are **not
 
 ## Decisions so far
 
-<!-- the index: one line per closed ticket, enough to judge relevance, then zoom the link for the detail the ticket holds -->
+<!-- the index: one line per closed ticket, ~200 chars, enough to judge relevance, then zoom the link for the detail the ticket holds -->
 
 - [<closed ticket title>](link): <one-line gist of the answer>
 
@@ -54,13 +56,21 @@ The whole map at low resolution, loaded once per session. Open tickets are **not
 
 ### Tickets
 
-Each ticket is a **child issue** of the map; the tracker's issue id is its identity. Its body is the question, sized to one 100K token agent session:
+Each ticket is a **child issue** of the map; the tracker's issue id is its identity. Its body carries two sections and no others, and its question is sized to one 100K token agent session:
 
 ```markdown
 ## Question
 
 <the decision or investigation this ticket resolves>
+
+## State
+
+<what's settled, what's still open, what a later session reversed and why. Added only once a session has left the ticket unresolved.>
 ```
+
+**`## Question` is written at charting and never edited** — it records what was originally asked, which is often the reason a later decision makes sense. **`## State` is rewritten in place, never appended**, and stays a few hundred words: a State section that grows has become a comment. A session reads the body, and zooms a comment only where State points at one.
+
+**Size a ticket by naming what its resolution comment will physically contain.** If that takes more than one clause, it's more than one ticket. A ticket that needs a second session is **split, not continued**: an unresolved first session is the evidence the scope was wrong, and carrying on is how one ticket accumulates four sessions of reversals.
 
 Each ticket carries a `wayfinder:<type>` label, one of `research`, `prototype`, `grilling`, `task` (see [Ticket Types](#ticket-types)).
 
@@ -69,6 +79,12 @@ A session **claims** a ticket by assigning it to the dev driving the map, **firs
 Blocking uses the tracker's **native** dependency relationship: essential because it renders the frontier _visually_ in the tracker's own UI, so the human sees what's takeable without opening the map. Only a tracker that lacks native blocking falls back to a body convention. A ticket is **unblocked** when every ticket blocking it is closed; the **frontier** is the open, unblocked, unclaimed children, the edge of the known.
 
 The answer isn't part of the body; it's recorded on resolution (see [Work through the map](#work-through-the-map)). Assets created while resolving a ticket are linked from the issue, not pasted in.
+
+**Never delete a comment** — the comment stack is the ticket's archive. When a later session overturns one, edit a banner onto its top instead, so the reasoning stays readable and the refuted conclusion stops being actionable:
+
+```markdown
+> **SUPERSEDED by <link>** — kept for the reasoning, don't act on it.
+```
 
 ## Ticket Types
 
@@ -83,7 +99,9 @@ Every ticket is either **HITL** (human in the loop, worked _with_ a human who sp
 
 The map is _deliberately_ incomplete: don't chart what you can't yet see. Beyond the live tickets lies the **fog of war**: the dim view of decisions and investigations you can tell are coming but can't yet pin down, because they hang on questions still open. Resolving a ticket clears the fog ahead of it, graduating whatever's now specifiable into fresh tickets, one at a time, until the way to the destination is clear and no tickets remain.
 
-The map's **Not yet specified** section is where that dim view is written down: the suspected question, the area to revisit later. It's the undiscovered frontier _toward_ the destination: everything here is in scope, just not sharp enough to ticket. Write as loosely or as fully as the view allows; it doubles as a signpost for collaborators reading where the effort is headed.
+The map's **Not yet specified** section is where that dim view is written down: the suspected question, the area to revisit later. It's the undiscovered frontier _toward_ the destination: everything here is in scope, just not sharp enough to ticket. It doubles as a signpost for collaborators reading where the effort is headed.
+
+Keep each patch to a signpost, ~300 characters: it points at something coming, it isn't a running record of it. A patch you've sharpened three times is sharp enough — graduate it into a ticket, or leave it alone.
 
 **Fog or ticket?** The test is whether you can state the question precisely now, _not_ whether you can answer it now.
 
@@ -122,7 +140,7 @@ User invokes with a map (URL or number). A ticket is **optional**: without one, 
 1. Load the **map**: the low-res view, not every ticket body.
 2. Choose the ticket. If the user named one, use it. Otherwise take the first frontier ticket in order. **Claim it**: assign it to yourself before any work.
 3. Resolve it. **Zoom as needed**: fetch the full body of any related or closed ticket on demand; call the Skill tool for whichever skills the `## Notes` block names. If in doubt, call the Skill tool twice, for "grilling" and "domain-modeling".
-4. Record the resolution: post the answer as a **resolution comment**, **close** the issue, and **append a context pointer** to the map's Decisions-so-far.
+4. Record the resolution: post the answer as a **resolution comment**, **close** the issue, and **append a context pointer** to the map's Decisions-so-far. If the session ends without resolving, rewrite the ticket's `## State` instead, and banner any comment it overturned.
 5. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals that a ticket (this one or another) sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
 
 The user may run unblocked tickets in parallel, so expect other sessions to be editing the tracker concurrently.
