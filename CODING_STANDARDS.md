@@ -108,6 +108,24 @@ are caught by running the game.
   Is Bliss and Medieval Overhaul are all settings-driven, and a mismatch means
   divergent defs and an immediate desync. A diff that changes settings must
   re-snapshot them.
+- **`MeditationFocusDef` gates are backstory gates, and a failed gate looks like
+  nothing at all.** `Natural` — the anima tree's only focus type — requires a
+  **Childhood** backstory in category `Tribal`, `AdultTribal` or `ChildTribal`. A
+  pawn without one is simply never offered the linking ritual: no error, no
+  message, no disabled button. The founders' backstories are therefore load-bearing
+  on the Neolithic psychic on-ramp
+  ([#21](https://github.com/cjd721/Rimworld-Archinity/issues/21)). Of the six vanilla
+  focus types only three are ungated — `Morbid`, `Minimal` and `Flame` — and `Morbid`
+  is the altar's.
+- **`RoyalTitleDef.Awardable` is believed to be derived from `favorCost > 0`,** not
+  from a flag, so a title with no favour cost is invisible to every vanilla award
+  path and nothing reports why. **Corroborated, not verified at source:** no
+  `awardable` field exists in any XML, so it is a computed C# property and the repo
+  carries no decompile — but exactly seven `RoyalTitleDef`s carry a `favorCost` and
+  those are exactly the seven player-attainable titles. Our tiers of godhood are
+  conferred by calling `SetTitle` directly from a ritual outcome worker, which never
+  consults `Awardable`; if the rule holds, a later attempt to award one through a
+  normal route silently does nothing.
 
 ---
 
