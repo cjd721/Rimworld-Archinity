@@ -10,7 +10,9 @@ issues carry them.
 **It does not restate RimWorld design theory.** How RimWorld works as a game —
 the homeostasis inversion, the mid-game sag, demand versus capability, the
 evaluation tests — lives in `rimworld-design-philosophy.md`. Read that once and
-apply it everywhere. This document is only what is specific to *this* campaign.
+apply it everywhere. This document is only what is specific to _this_ campaign.
+
+**It is not a theology document.** For information on theology/cosmology, see `COSMOLOGY.md`.
 
 **Read the examples as shape, not spec.** Where something here is illustrated,
 the illustration is one instance of a pattern, not the required implementation.
@@ -39,7 +41,7 @@ skipping, roughly six hundred in-game days, ending with the founders receiving
 the last Archon gene and stepping out of the simulation into the real universe.
 
 **The questline ends and says so.** Transcendence is the end of the Archon chain
-and it should be announced and celebrated — you know you made it. It is *not* a
+and it should be announced and celebrated — you know you made it. It is _not_ a
 RimWorld victory condition. The colony keeps running, you can keep playing as a
 god with nothing left to fear, and that is a fine way to spend an evening.
 Beating the campaign and ending the save are different events.
@@ -61,7 +63,7 @@ so the campaign can tell them apart from everyone who comes after.
 
 They can pass on strength. They cannot pass on being chosen.
 
-> *I can make you like me. I cannot make you one of Theirs.*
+> _I can make you like me. I cannot make you one of Theirs._
 
 Ordinary colonists rise, and they rise as far as their commitment carries them —
 a disciple who has genuinely mastered a discipline is a character, not a
@@ -87,7 +89,7 @@ The mechanics can be borrowed. The framing cannot.
 
 The centre of the campaign, and the thing everything else hangs off.
 
-**One machine, one philosophy.** There is exactly one *path* to becoming an
+**One machine, one philosophy.** There is exactly one _path_ to becoming an
 Archon, and it runs on blood: the machine, the sacrifices, and the discipline
 that grows out of them. Read that as one philosophy, not one mechanism — the
 genes and the psychic track are both on it, because both are paid for the same
@@ -118,21 +120,21 @@ at its highest, and you are acquiring people specifically to feed it.
 
 **It starts as religion and ends as industry.**
 
-| Era | What the altar is to your people |
-|---|---|
-| Neolithic | An object that demands blood. You understand nothing. It refuses you and you never learn why. |
-| Medieval | A rite. Not science — priesthood. You learn by repetition what pleases it. |
-| Industrial | A machine. You work out what you have been doing for four hundred years, and do not stop. |
-| Spacer / Ultra | An instrument. You are engineering your own divinity. |
-| Archotech | A door. |
+| Era            | What the altar is to your people                                                              |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| Neolithic      | An object that demands blood. You understand nothing. It refuses you and you never learn why. |
+| Medieval       | A rite. Not science — priesthood. You learn by repetition what pleases it.                    |
+| Industrial     | A machine. You work out what you have been doing for four hundred years, and do not stop.     |
+| Spacer / Ultra | An instrument. You are engineering your own divinity.                                         |
+| Archotech      | A door.                                                                                       |
 
 **It opens in stages.** Fuel and named gifts from the start. Much later, the
 ability to lift ordinary colonists at all — the mid-campaign hinge, which only
 lands because the ability was withheld for hundreds of days first. Later still,
 the truth about its own odds.
 
-**Determinism where it counts.** Uncertainty about *how well* is welcome.
-Uncertainty about *what you are getting* is not, and no dice roll may cost a good
+**Determinism where it counts.** Uncertainty about _how well_ is welcome.
+Uncertainty about _what you are getting_ is not, and no dice roll may cost a good
 pawn. Named rewards from the chain do not fail. Everything random is opt-in, on
 its own path, priced as a gamble the player chose — including outcomes that are
 genuinely bad, because a lottery with no bad band is not a lottery.
@@ -142,14 +144,14 @@ genuinely bad, because a lottery with no bad band is not a lottery.
 Every era gets its own character. The pacing intent below is intent, not
 schedule; balance comes later and pinning numbers early only means redoing them.
 
-| Era | The colony's story | What the founders get |
-|---|---|---|
-| **Neolithic** | Figuring out fire. Research grants *jobs and gizmos*, not just recipes. Ends with you in boiled leather behind wooden walls, learning that wood burns and the world is much bigger than you. | The first taste. Enough to be worshipped for. |
-| **Medieval** | Metal, and the sweep where everything you own can be improved. The long middle, and the hardest era to keep interesting — a sword is a sword. | The heaviest gains. By the end they are terrifying, and the world has to answer that. |
-| **Industrial** | Components, electricity, and the map opening up as travel gets cheap. Two or three mini-eras stacked. | Their thinnest era, because the real unlock is **disciples** — the altar opens, and a chosen few can finally be lifted. |
-| **Spacer** | The gravship. You begin leaving the base behind, and by the end the ship can carry everyone. | Steady. The chain is pulling you toward orbit. |
-| **Ultra** | You live on the ship. Land, take, leave. The Glitterites become the standing enemy and the war is in orbit. | Approaching finished. Archon gear, archotech limbs. |
-| **Archotech** | Nothing left on the board that frightens you. | The door. |
+| Era            | The colony's story                                                                                                                                                                           | What the founders get                                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Neolithic**  | Figuring out fire. Research grants _jobs and gizmos_, not just recipes. Ends with you in boiled leather behind wooden walls, learning that wood burns and the world is much bigger than you. | The first taste. Enough to be worshipped for.                                                                           |
+| **Medieval**   | Metal, and the sweep where everything you own can be improved. The long middle, and the hardest era to keep interesting — a sword is a sword.                                                | The heaviest gains. By the end they are terrifying, and the world has to answer that.                                   |
+| **Industrial** | Components, electricity, and the map opening up as travel gets cheap. Two or three mini-eras stacked.                                                                                        | Their thinnest era, because the real unlock is **disciples** — the altar opens, and a chosen few can finally be lifted. |
+| **Spacer**     | The gravship. You begin leaving the base behind, and by the end the ship can carry everyone.                                                                                                 | Steady. The chain is pulling you toward orbit.                                                                          |
+| **Ultra**      | You live on the ship. Land, take, leave. The Glitterites become the standing enemy and the war is in orbit.                                                                                  | Approaching finished. Archon gear, archotech limbs.                                                                     |
+| **Archotech**  | Nothing left on the board that frightens you.                                                                                                                                                | The door.                                                                                                               |
 
 **The run leaves residue.** The throne room you built as a medieval king is still
 yours in orbit — because you chose to keep it, not because the game denied you
@@ -169,11 +171,11 @@ gate.
 
 **The Starjack Free Companies — the ally.** Independent crews who hold that a
 ship belongs to the people aboard it and nobody planetside gets a say. A
-spacefaring faction with real teeth, which you can ally with *and* go to war with.
+spacefaring faction with real teeth, which you can ally with _and_ go to war with.
 
 **The Archons — man behind the curtain.** You barely see them. One or two
 encounters in a whole playthrough is plenty. Hidden, no diplomacy, they never
-raid, and the only thing they ever ask is *become one of us*.
+raid, and the only thing they ever ask is _become one of us_.
 
 **No race bleeding.** Archons and Starjacks must not seep into ordinary
 planetside factions. A trace of the exotic is flavour; a world where everyone is
@@ -208,7 +210,7 @@ a legitimate escalation.
 
 ## 6. What we are actually protecting
 
-The premise above is the *what*. This is the *why* — the small set of things that
+The premise above is the _what_. This is the _why_ — the small set of things that
 make this campaign feel like itself, distinct from general RimWorld design.
 
 **Narrative first; systems fall out of it.** The deepest rule in the project. If
@@ -217,8 +219,8 @@ in — and if the story needs something, the mechanism is negotiable.
 
 **The need is permanent; the answer is not.** A colony acquires a fixed set of
 needs — butcher, cook, craft, clothe, arm, grow fibre, treat a wound — and never
-loses one of them. What changes across six hundred days is *what answers the
-need*: cloth until devilstrand answers it better, a butcher spot until a butcher
+loses one of them. What changes across six hundred days is _what answers the
+need_: cloth until devilstrand answers it better, a butcher spot until a butcher
 table does. Replacing an answer with a better one is not loss, it is the whole
 pleasure of teching up, and the design should be enthusiastic about it.
 
@@ -227,15 +229,15 @@ processing step invented to serve one era and then gone. Cotton is fine: fibre i
 forever and cotton is the first rung of a ladder that keeps going. A furnace that
 smelts ingots for medieval recipes is not, because "ingots" was never a need, only
 a chore attached to one — permanent management cost for temporary value, and
-clutter in every trade screen for the rest of the run. The test is not *will I
-still use this later*, which almost nothing survives. It is *does this serve a
-need that outlives the era*.
+clutter in every trade screen for the rest of the run. The test is not _will I
+still use this later_, which almost nothing survives. It is _does this serve a
+need that outlives the era_.
 
 Where an upgrade happens to collapse four benches into one, that is a pleasure
 worth chasing. It is not a bar every addition has to clear.
 
 **Kits are assembled, not granted.** The colony's work is done by specialists,
-and what makes a specialist is a *set* — the cook's hat, apron and cleaver. The
+and what makes a specialist is a _set_ — the cook's hat, apron and cleaver. The
 set is what the player is working toward. That does not mean any one node hands
 one over: the pieces come from wherever they would honestly come from, the hat
 and apron out of tailoring, the cleaver out of smithing, the boots out of
@@ -260,23 +262,23 @@ and it doubles as something to do in the hours the player would otherwise idle.
 **The first answer to a need is never gated behind a fetch.** A colony that
 cannot cook until it has crossed the map for something is being punished for
 starting, and that protection holds until it owns a Neolithic answer to every
-need it has. Then it expires. Once you can already cook, gating a *better* stove
+need it has. Then it expires. Once you can already cook, gating a _better_ stove
 is fair game, and the same goes for every rung above it.
 
 Spend that gating on the leaps worth remembering rather than spreading it thin.
-Electricity should cost an expedition — learning what electricity *is* from
+Electricity should cost an expedition — learning what electricity _is_ from
 something you had to go and take is exactly the kind of story this section is
 asking for. Every bench in the game demanding one is a tollbooth with extra
 steps.
 
 **Keep the surface, cut the procedure.** Take the research, the building, the
 roleplay, the unlock. Throw away the chain of intermediate steps wrapped around
-it. Complexity may grow in the *kinds* of system the player runs; it must not
+it. Complexity may grow in the _kinds_ of system the player runs; it must not
 grow in the number of exact items they track. Anything that has you converting a
 resource so you can convert it again is suspect on sight, and doubly so if you
 will still be doing it in orbit.
 
-**The world makes you feel the gap.** The player should not have to be *told*
+**The world makes you feel the gap.** The player should not have to be _told_
 that the next tier is better — they should discover they are insufficient, in a
 fight, and go and fix it. Progress that only shows up on a stat block gets
 researched and never built.
@@ -327,13 +329,13 @@ other and the design has deliberately not collapsed them. Anyone proposing a
 resolution should know they are resolving something, not discovering it.
 
 Two were closed by [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10)
-and are gone from this list: *how disciples rise without arriving* — answered by
-kind rather than by cap, see §2 — and *when the random path opens* — the founders
+and are gone from this list: _how disciples rise without arriving_ — answered by
+kind rather than by cap, see §2 — and _when the random path opens_ — the founders
 get their first psylink in the Neolithic, and the lottery waits for the Industrial
 because the capsules are inert until then, not because a rule forbids it.
 
 **How much power to hand over at the start.** Too much and the founders' arc has
-nowhere to go; too little and the opening does not deliver on *you are gods*.
+nowhere to go; too little and the opening does not deliver on _you are gods_.
 
 **How far to lean on our own code.** Every custom system is a desync surface;
 every avoided system is a piece of the vision not delivered.
