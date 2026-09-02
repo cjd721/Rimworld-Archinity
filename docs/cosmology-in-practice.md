@@ -35,45 +35,57 @@ three in the morning, both wrong in different ways, is the target state.
 
 Write toward a grander scheme. Never name it.
 
-## 2. The belief is the player's to supply
+## 2. Hand over the facts. Never hand over the meaning
 
-This is the rule that protects the whole receiving half of Cosmology §8, and it
-is the easiest one to break by accident, because breaking it looks like good
-worldbuilding.
+This protects the receiving half of Cosmology §8, and it is the easiest rule to
+break by accident, because breaking it looks like good worldbuilding.
+
+**The facts are given, and they narrow the field.** The player is not inventing a
+religion from nothing. The world tells them, early and unambiguously, that the
+Archons made this place — and later that anima exists and is the life of the
+universe. That is common property. It is not mysterious and it is not optional,
+and by the Industrial era a literate colony can more or less state it.
+
+**How it is told evolves; what is told does not.** Thunder and gods and a story
+about the first blood in the Neolithic. A liturgy in the Medieval. A translated
+text with three conflicting versions in the Industrial. Someone in orbit reading
+the Neolithic version and realising it was accurate. This is how a real religion
+carries a real fact across four thousand years, and the Book of Enoch is the
+model. The player watching the same truth survive four retellings is doing more
+work than any exposition could.
+
+**What is never supplied is what it means.** Why a made world is worth climbing
+out of. What is owed to whatever made it. Whether the life in the bowl was
+sacred. Cosmology §8 is explicit that two people can answer differently and both
+be entirely right — so the campaign asks the question everywhere and answers it
+nowhere.
 
 **Never write what the founders believe.** No canonical creed, no scripture, no
-authored conviction placed in a protagonist's mouth. The heart state that lets a
-vessel receive requires a belief about the nature of things — and if the campaign
-supplies that belief, it has taken the one seat the player was meant to sit in and
-hardcoded a personality over the top of two pawns the player is supposed to be
-roleplaying.
+conviction placed in a protagonist's mouth. Those two pawns are the player's to
+roleplay, and a hardcoded inner life takes the seat they were meant to sit in.
 
-**The ideology system is where the belief lives.** The player names what their
-people hold true, and the campaign proceeds as though that answer is the right
-one. Because it is. Cosmology §8 is explicit that the content is not fixed:
-irreconcilable creeds can both qualify, so any sincere answer satisfies the
-condition by construction.
-
-**Never validate it and never grade it.** No line of text anywhere confirms that
-the player's creed is correct, and no line implies a different one would have
-worked better. The world simply behaves as though they answered.
+**The ideology system is where the answer goes**, and the campaign proceeds as
+though it is the right one. Never validate it, never grade it, never imply a
+different creed would have worked better.
 
 > The game does not check your answer. It checks that you answered.
 
+**Write the gap, never fill it.** Ritual and quest text can refer to *what your
+people hold true*, to conviction, to the thing the founders reach through — in
+the second person and in the abstract, so it lands on whatever the player
+actually chose. That phrasing is the whole technique. Use it everywhere the
+fiction needs a creed, and never name one.
+
 **This is written for a player who takes it seriously, and that assumption is
 allowed.** Someone clicking through ideology setup at random gets nothing out of
-this and is not who any of it is for. Designing around that player would mean
+it and is not who any of it is for. Designing around that player would mean
 scoring sincerity, and sincerity is exactly the thing that cannot be scored.
-
-**Write the gap, never fill it.** Quest and ritual text can refer to *what your
-people believe*, to conviction, to the thing the founders are reaching through —
-in the second person and in the abstract, so it lands on whatever the player
-actually chose. That phrasing is the whole technique. Use it everywhere the
-fiction needs a creed and never name one.
 
 ## 3. The giving half is a real system. Build it properly
 
-Cosmology §8 says the giving half is solvable and meant to be solved.
+Cosmology §8 says purity is a question about the giver, and it has a
+straightforward answer: they have to mean it. That makes it solvable, and it is
+meant to be solved.
 
 **Conversion and conviction are the sanctioned progression, not a loophole.**
 Ideology, faith, and a congregation that genuinely believes are the engine the
@@ -83,26 +95,26 @@ here rather than violated: the min-maxed outcome is a colony that built a real
 religion, which is the intended one.
 
 **Build it out.** This is the deep system on the fiction side and it deserves the
-mechanical investment — belief, conversion, worship throughput, the arithmetic of
-a congregation that both sides can do from the first meeting (§9).
+mechanical investment — belief, conversion, worship throughput, and the zero-sum
+arithmetic of a congregation that both sides can do from the first meeting (§9).
 
 ## 4. The receiving half is never a score
 
 **A hidden purity meter is the one implementation guaranteed to ruin this.** Not
 a risk — the guaranteed outcome. Anything tracked becomes a number, anything
-numbered becomes optimised, and a heart state that can be optimised was never a
-heart state.
+numbered becomes optimised, and a channel that can be optimised was never a
+channel.
 
 **So nothing about the receiving half is tracked, scored, penalised or enforced.**
-Not contempt, not habituation, not sincerity, not the founders' inner condition.
-It lives entirely in how the campaign is written.
+Not drift, not habituation, not sincerity, not the founders' inner condition. It
+lives entirely in how the campaign is written.
 
 The fiction already guarantees what it needs without a mechanic:
 
 | The requirement | What already delivers it |
 | --- | --- |
 | The giver must mean it | The conviction threshold — nobody reaches it un-brought, so the relationship exists by construction (§8) |
-| The receiver must hold a live belief | The player's own ideology, chosen sincerely (§2 above) |
+| The receiver's channel must be clear | The player's own answer to what it all means, given sincerely (§2 above) |
 | Disciples are load-bearing, not decorative | A disciple raised inside the player's faith holds it by construction — the ideology carries them too |
 | The antagonists stall and the founders do not | Authored into the factions, not computed from a stat |
 
@@ -112,20 +124,41 @@ six hundred days does to a person at the keyboard. It is delivered by pacing and
 by writing. The moment there is a debuff for it, the point has been inverted: the
 player is now managing a resource instead of noticing something about themselves.
 
+**Drift goes in every direction, and the writing has to show that.** Cosmology §8
+is explicit that zeal closes a channel as surely as indifference — so the failures
+depicted in the world must not all be coldness. A fanatic who has run so far into
+devotion that nothing else reaches them is the same failure as a butcher who
+stopped counting, and at least one of them should be sympathetic.
+
 ## 5. Vocabulary discipline
 
 **Borrow the idea, never the words.** No meridians, no core, no gates, no dantian,
-no qi. Those are load-bearing in another genre and would turn this campaign into
-cosplay of it. Plain English only: capacity, vessel, how much you can hold.
+no qi, no cultivation. Those are load-bearing in another genre and would turn this
+campaign into cosplay of it.
 
-**One strange noun, permanently.** `anima` is it. Everything else uses plain
-words — blood, the mark, the climb, the price, worship, sacrifice, taken, given,
-leaded, heart. Resist adding a second term: a world with one strange word is
-mystical; a world with five is a rulebook.
+**One strange noun, permanently.** `anima` is it. Everything else is plain English
+— blood, the mark, the climb, the price, worship, sacrifice, taken, given,
+tainted, pure, channel, clear, heart. `channel` is doing real work in the fiction
+and is exactly the sort of ordinary word that is allowed to: it is a description,
+not a term of art. Resist adding a second strange one. A world with one strange
+word is mystical; a world with five is a rulebook.
 
-**Do not name the heart state.** Cosmology §8 circles it on purpose because
-naming it would make it a category, and a category invites a stat. Describe the
-condition, never label it.
+**Say tainted and say pure.** Anima taken by force is tainted — it carries out
+what the person felt about dying. That is the plain reading and it needs no
+apparatus around it. Avoid industrial metaphors for anima entirely: it is not ore,
+not material, not fuel, not leaded. It is the life of the universe, and language
+that makes it sound like refinery feedstock loses the only thing that makes the
+price cost anything.
+
+**Describe the channel, never specify it.** The image is a connection between a
+person and the source, which has a width and a clarity. That is the whole of it.
+It never gets a stated mechanism, a list of what obstructs it, a rating, or a
+diagram — the moment it is enumerated it becomes a power system, and this is a
+narrative device that happens to be true.
+
+**And do not name the condition.** Cosmology §8 circles the state of a clear
+channel on purpose, next to *enlightenment* and *nirvana* and *love*, because a
+name would make it a category and a category invites a stat.
 
 ## 6. What needs no new mechanic
 
@@ -137,13 +170,15 @@ already correct once renamed.
   other way round. The old tribes named it correctly. No reskin at all.
 - **Vampires / sanguophages.** Mechanically unchanged. Only the reason changes:
   a degraded inheritance thinned hand to hand, not a separate supernatural order.
-- **Psylink, psyfocus, neural heat.** One object seen from three angles — size of
-  the vessel, how full it is, what happens when overdriven. Any future flavour
-  text for any of the three is written off that paragraph in §7 so they never
-  drift apart.
+- **Psylink, psyfocus, neural heat.** One thing seen from three angles — how wide
+  the channel is, how much is moving through it, and what happens when more is
+  drawn through than it can carry. Any future flavour text for any of the three
+  is written off that paragraph in §7 so they never drift apart. Note that the
+  reflavour Waystone asks for (*you are not overheating, you are processing more
+  than human neurons can carry*) is the same sentence.
 - **Mechanoids and mechanites.** Already exactly what the fiction needs: a loop
-  still executing, and a lattice that holds without will. No new content required
-  to make a fibrous mechanite infection mean something.
+  still executing, and a lattice that holds without a channel. No new content
+  required to make a fibrous mechanite infection mean something.
 
 ## 7. Where this touches Waystone
 
