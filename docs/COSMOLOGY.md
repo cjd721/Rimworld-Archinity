@@ -230,10 +230,10 @@ larger. They can only be met halfway.
 
 So the two tracks are different acts on different parts of a person:
 
-|                  | What it changes                | Whose blood serves                                   |
-| ---------------- | ------------------------------- | ---------------------------------------------------- |
-| **Archon genes** | What you are                   | Anyone. It is material.                              |
-| **The rite**     | How much of it you can carry   | Only a willing believer. Intent cannot be extracted. |
+|                  | What it changes                | Whose blood serves                                              |
+| ---------------- | ------------------------------- | ---------------------------------------------------------------- |
+| **Archon genes** | What you are                   | Anyone. It is material.                                          |
+| **The rite**     | How much of it you can carry   | A believer who means it, received by someone fit to receive it.  |
 
 **Capacity is the model under every psychic number.** Psylink level is the size
 of the vessel. Psyfocus is how full it currently is. Neural heat is what happens
@@ -252,26 +252,57 @@ can hold.
 
 ## 8. Will
 
-**Both halves of section 7 hinge on the same word, and it is the only thing in
-this cosmology that cannot be manufactured.**
+**Anima passes through two hands on its way into a vessel, and either one can
+spoil it.** This is the only thing in the cosmology that cannot be bought, and
+both antagonists died on it.
 
-A gift has to be meant. And — the half everyone misses — **it has to be received
-by someone capable of meaning it back.**
+### The giving is a system, and you are meant to build one
 
-**Taken anima is leaded.** It runs the engine. It carries something mixed in with
-it: the resentment of the person it was taken from, still in the fuel, forever.
-Blunt work tolerates lead, which is why the entire industrial-scale sacrifice
-economy functions exactly as designed and is never punished for functioning.
+Blood taken by force arrives **leaded**. It runs the engine — blunt work tolerates
+lead, which is why the entire industrial-scale sacrifice economy functions exactly
+as designed and is never punished for functioning. But the resentment of the
+person it came from is mixed into the fuel and stays there.
 
-**Pure anima requires a clean vessel on the receiving end.** If the person doing
-the receiving holds the giver in contempt — sees people as stock, as throughput,
-as a means — then the gift lands in something that cannot use it, and yields a
-fraction. This is not a rule the Archons enforce. It is what a vessel is.
+Blood from someone raised inside a faith they genuinely hold, walking to the altar
+because they want to, arrives **pure**. This half is solvable and is meant to be
+solved. Conversion and conviction are the sanctioned route, not a loophole, and
+building a religion that produces real believers is the intended progression
+rather than a trick played on the design.
 
-**The taint is not killing.** It cannot be. This colony kills constantly, at
-scale, on purpose, and is right to. The taint is **contempt** — and its real and
-far more dangerous form is **habituation**. The failure is not cruelty. It is the
-moment a person stops registering as one.
+It is also why the rite refuses a stranger without needing a further rule.
+**Conviction is the relationship.** Nobody reaches that threshold without having
+been brought there by somebody, over time, on purpose.
+
+### The receiving is a condition, and it can never be a system
+
+The vessel taking it in decides whether any of that survives contact.
+
+The bar is not the absence of cruelty — that is only the floor. The bar is nearer
+to enlightenment: at peace with the world, not run too far into any single
+emotion, holding life as sacred while ending it, still in contact with your own
+humanity. A perfect gift landing in a vessel that has lost that yields a fraction.
+Same blood, same rite, same willingness, wasted on arrival.
+
+|                    | Received clean                                                     | Received in contempt                                               |
+| ------------------ | ------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Given freely**   | Pure. Widens the vessel. The only thing that ever gets anyone out. | A fraction. Everything else was identical and none of it mattered. |
+| **Taken by force** | Ore. Leaded, serviceable, blunt work only.                        | Ore, and nothing better will ever work again.                      |
+
+**And the test recurses.** The balance that separates the two antagonists at the
+scale of a civilization is the same test running inside a single person. Lean too
+far in either direction and you spoil what passes through you. It is the same
+examination at every scale, which is why the door cannot be argued with.
+
+**This applies to everyone who takes the rite, disciples included.** A disciple's
+character is load-bearing rather than decorative, which is part of what keeps the
+inner circle a cast instead of a pool.
+
+### What the taint actually is
+
+**Not killing.** It cannot be. This colony kills constantly, at scale, on purpose,
+and is right to. The taint is contempt — and its real and far more dangerous form
+is **habituation**. The failure is not cruelty. It is the moment a person stops
+registering as one.
 
 > You are not being asked to kill less. You are being asked to never stop knowing
 > what you are doing while you do it.
@@ -285,20 +316,20 @@ arrives and it is the player.
 nothing. Eating ore keeps you alive; only the pure grade makes you larger. The
 hunger stays morally neutral and mechanically unencumbered.
 
-### How this is built, and how it must not be
+### How this is built
 
-**Grades of fuel, never a morality meter.** Waystone is explicit about designing
-against the min-maxer, and a hidden purity score that punishes efficient play is
-precisely the system that would be optimised into a worse game. There is no
-score. There is no penalty. There is a **second grade of anima that cannot be
-farmed**, because it requires someone who genuinely means it, and meaning it is
-not a resource anyone can manufacture. A supply that money does not buy.
+**The giving half is the deep system. The receiving half is never a score.**
 
-**Leave the trap open and do not warn anyone.** A player who tries to manufacture
-devotion — indoctrination, drugs, slaves, a beautiful temple and a compliant
-population — will produce **compliance**, which reads as willing on every
-instrument in the world and yields ore. That is the Glitterite experiment, run
-again, at small scale, by you.
+Ideology, conversion and conviction carry the giving half, and it should be built
+out properly — a real engine the player engineers. Waystone's warning about
+designing against the min-maxer is satisfied here, because optimising that engine
+is precisely what the campaign wants them doing.
+
+The receiving half needs no mechanic at all. The conviction threshold already
+guarantees the relationship the fiction requires, so nothing has to be tracked,
+scored or enforced. It is the reason the rivals are capped and the founders are
+not, and it lives entirely in how the campaign is written. **A hidden purity meter
+is the one implementation guaranteed to ruin it.**
 
 ## 9. Worship is bloodletting
 
@@ -348,47 +379,58 @@ own missing half.
 
 ### The Glitterites — take without give
 
-**They are androids.** They replaced their biological bodies, deliberately, as an
-upgrade, and that is the end of the story rather than the beginning of it.
+**The fall came first, and everyone applauded it.**
 
-They solved supply immediately and completely. Unlimited cloned bodies, drained
-at scale, anima refined to purities nobody in this universe has reached before or
-since. **They still have it.** It sits in their holds right now. Supply was never
-their problem.
+A civilization of the profoundly convicted: a body is a substrate, a mind is a
+process, sentiment is noise in the measurement. They were right about nearly
+everything and proved it by taking galaxies. So they removed sentiment from their
+decision-making the way you would remove a bug from a system — deliberately,
+rigorously, across centuries, every individual step correct and defensible at the
+time it was taken. **Becoming androids was the last of those steps, not a separate
+fact.** They replaced the biological body as an upgrade, and it was one.
 
-What they could never grow was a vessel — because capacity widens only on given
-anima, and there is no gift available from a body grown in a vat for the purpose.
-A clone has no will to surrender. It was never its own before it was theirs.
-Every batch proved the extraction worked and widened nothing, forever.
+What went out with the noise was the receiving end.
 
-**So they built something that would hold it. That is the mechanites.** A lattice
-grown inside a body to store what flesh cannot. It works — that is the horror. It
-holds anima far past what any body permits. It holds it the way a tank holds
-water: contained, inert, still. Capacity without will, and a lattice can never
-give anything to anything, because it has nothing to give with.
+**They can manufacture belief.** They can manufacture anything — willing donors,
+sincere faith, whole populations who walk to the altar meaning it, at any scale
+they care to run. What they cannot do is perceive that it makes no difference in
+their hands, because the faculty that would notice the difference is exactly the
+one they deleted. Every instrument they own reports success. Only the outcome
+disagrees, and an outcome that contradicts every instrument gets filed as noise.
 
-Which made the fall irreversible. Replace your vessel with an architecture and
-you can never be given anything again — the organ that could have widened is
-gone, removed on purpose, as an optimisation.
+So everything is fuel. That is not a description of their attitude. It is the
+complete inventory of categories they have left.
+
+**Which leaves them running a loop that cannot terminate:**
+
+> Obtain anima. Burn it as fuel. Observe no ascent. Conclude the shortfall was
+> quantity. Obtain more anima.
+
+Forever, across galaxies, with unlimited cloned bodies and anima refined to
+purities nobody in this universe has reached before or since. **They have oceans
+of it.** Supply was never their problem and they will never once suspect that.
+No quantity exits the loop, because the exit condition requires something they
+removed as an inefficiency.
+
+**They fail both gates at once.** A body grown in a vat for the purpose has no
+will to surrender — it was never its own before it was theirs — so nothing they
+harvest was ever given. And a thing that optimised away its own humanity could not
+receive a gift if one arrived. Take without give, on both sides of the exchange,
+permanently.
+
+**The mechs are the loop's arms, and nothing ever escaped.** They are still on
+task — harvesting, storing, returning, executing an instruction with no
+termination condition. Mechanites are the storage half of the same machinery: a
+lattice grown inside a body to hold what flesh cannot, which works exactly as
+designed and holds anima the way a tank holds water. Contained, inert, still.
+Capacity without will, and a lattice can never give anything to anything, because
+it has nothing to give with. A colonist coming down with fibrous mechanites in
+year two has been touched by a machine that is still, patiently, doing its job.
 
 > They did not hit a wall. They became one.
 
-**And they ran the willing experiment.** Of course they did; they test everything.
-They solicited genuine gifts from genuine volunteers and measured **nothing** —
-correctly, rigorously, repeatably. Because the fault was on the receiving end,
-inside the instrument, and no instrument in the universe can detect a fault in
-itself. They have the data. The data says the willing route is superstition. They
-will show you the data.
-
-They were never cruel. They are the profoundly convicted: a body is a substrate, a
-mind is a process, sentiment is noise in the measurement. They were right about
-nearly everything and proved it by taking galaxies. They removed sentiment from
-their decision-making the way you would remove a bug from a system, and the thing
-they removed was the receptor. Perfect method, one corrupted axiom, unfalsifiable
-conclusion — and the only symptom of the flaw is the inability to notice it.
-
 **So the envy is not of your power.** They hold more raw anima than the founders
-ever will. It is envy of your *potential*, visible to them, working, in people
+ever will. It is envy of your *potential* — visible to them, working, in people
 wearing leather — and amputated from themselves centuries ago by their own best
 minds. You are what they were before they got clever. They cannot properly want it
 back, because the wanting went with it.
@@ -398,20 +440,18 @@ have taken the system by force_ is a pure-take test. It measures accumulation,
 because accumulation is the only axis they have left. They would wave a fleet
 through and stop you, and be wrong both times.
 
-Two things this settles. Waystone's *glitterworld tech first, Archon tech after*
-holds and improves: they wield Archon artifacts as machines, getting real power
-from the half they can operate. **Gear without gnosis**, which is a genuinely
-frightening thing to fight at the top of the tower. And mechanites exist in the
-wider world because they **got loose** — a colonist coming down with fibrous
-mechanites in year two is a scrap of the greatest failed experiment in history,
-still drifting through a backwater.
+And Waystone's *glitterworld tech first, Archon tech after* holds and improves:
+they wield Archon artifacts as machines, drawing real power from the half they can
+operate. **Gear without gnosis** — a genuinely frightening thing to fight at the
+top of the tower, and an exact portrait of the failure.
 
 ### The rival church — give without take
 
 **Same failure, opposite pole.** Their congregation is sincere: millions of
-genuine gifts, freely given, exactly right, generation after generation. The
-apparatus for converting devotion into power is better than anything the colony
-will ever build.
+genuine gifts, freely given, exactly right, generation after generation. They
+solved the giving half completely and at a scale nobody else has managed — the
+apparatus for turning devotion into power is better than anything the colony will
+ever build.
 
 And the men at the top farm them. Pure anima poured into contemptuous vessels
 yields a fraction, so the church stalls — not for want of a machine, but because
