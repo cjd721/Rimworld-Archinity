@@ -126,6 +126,8 @@ are caught by running the game.
   conferred by calling `SetTitle` directly from a ritual outcome worker, which never
   consults `Awardable`; if the rule holds, a later attempt to award one through a
   normal route silently does nothing.
+- **Factions and worldgen carry seven more silent failures of their own** — read
+  `docs/technical-findings.md` § *Session 6 findings* before touching either.
 
 ---
 

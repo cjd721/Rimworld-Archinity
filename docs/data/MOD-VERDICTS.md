@@ -337,7 +337,10 @@ from the shared stream**, and the whole diplomatic sim diverges from there. Iden
 settings files are not a nicety for this mod, they are the entire safety story.
 
 **So the decision is a design decision, not a safety one**, and it belongs to
-[The world roster](https://github.com/cjd721/Rimworld-Archinity/issues/8). Weigh it
+[The faction pressure prototype](https://github.com/cjd721/Rimworld-Archinity/issues/13),
+which owns the RimPacts whole / fork / ours question — with the vassalage half at
+[Vassalage and the tithe catalogue](https://github.com/cjd721/Rimworld-Archinity/issues/35).
+Weigh it
 against the Waystone's *do not build a shadow world* — the stated reason faction-sim
 mods are perpetually beta is that they maintain a parallel world model, and this is
 one, ticking synced or not. Against that: it is the only thing in the bin that

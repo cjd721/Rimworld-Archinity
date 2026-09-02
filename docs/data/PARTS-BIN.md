@@ -2379,7 +2379,10 @@ together they are a pure reskin resource, which is the strongest form of *reskin
 before you rebuild*.
 
 **RimPacts is a design decision, not a safety one**, and it belongs to
-[The world roster](https://github.com/cjd721/Rimworld-Archinity/issues/8). It is worth
+[The faction pressure prototype](https://github.com/cjd721/Rimworld-Archinity/issues/13),
+which owns the RimPacts whole / fork / ours question — with the vassalage half at
+[Vassalage and the tithe catalogue](https://github.com/cjd721/Rimworld-Archinity/issues/35).
+It is worth
 weighing carefully in both directions: it is a **parallel world model**, which is the
 stated reason §12 and the Waystone distrust faction-sim mods — and it is also the only
 existing implementation of tribute, vassalage and a humiliating peace, which WAYSTONE §5
