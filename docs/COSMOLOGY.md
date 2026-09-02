@@ -194,7 +194,7 @@ more people than you ever have.
 
 > Anima taken adds to what you have. Anima given adds to what you can hold.
 
-**Blood taken by force comes out tainted.** A person dying unwilling floods
+**Blood taken by force comes out tainted.** A person dying unwillingly floods
 everything in them with what they feel about it, and the anima carries that out of
 the body along with itself. It does not stop being the life of the universe. It
 stops being clean.
@@ -211,21 +211,22 @@ anima never will.
 
 ### The channel
 
-Every living thing is connected to the source its anima came from. Call it a
-**channel**. In almost everyone it is hair-thin and they go their whole lives
-without knowing it is there.
+Every living thing holds a little anima. It is a part of them, and it calls back
+to its source, creating a connection. Call it a **channel**. In almost everyone it
+is hair-thin and they go their whole lives without knowing it is there.
 
 It is what limits anyone. Not how much anima you can be handed — how much of it
-can reach you. Pure anima moving through a channel widens it a little on the way.
-Tainted anima never does, and no quantity changes that, because widening is not
-something force accomplishes. The channel is part of a person, and it opens the
-way anything in a person opens, which is never by being pushed.
+can reach you. Pure anima opens the channel as it passes, and a wider channel is
+the only thing that raises what a person can draw. Tainted anima never does, and
+no quantity changes that, because widening is not something force accomplishes.
+The channel is part of a person, and it opens the way anything in a person opens,
+which is never by being pushed.
 
 > Nobody can be made larger. They can only be met halfway.
 
-|                  | What it changes    | Whose blood serves                                             |
-| ---------------- | ------------------ | -------------------------------------------------------------- |
-| **Archon genes** | What you are       | Anyone. Tainted serves.                                        |
+|                  | What it changes      | Whose blood serves                                                   |
+| ---------------- | -------------------- | -------------------------------------------------------------------- |
+| **Archon genes** | What you are         | Anyone. Tainted serves.                                              |
 | **The rite**     | How much reaches you | A believer who means it, received by someone whose channel is clear. |
 
 **The channel is the model under every psychic number.** Psylink is how wide it
@@ -265,19 +266,30 @@ pointing at the same thing.
 The nearest plain statement of it: a channel stays clear in someone who is still
 in contact with what is on the other side of it.
 
-**Everyone in this world has the facts.** The Archons made it and said so, in
-whatever language the era could hold — thunder and gods in the Neolithic, and
-something more careful later, the way every real religion has grown. And anima is
-no secret either. Anyone who works with blood long enough learns there is
-something in it, and that it is the same something that is in everything else.
+**You know because you met them.** The Archons marked your line by hand and have
+come back since, and whatever was said on those occasions was said in the language
+the era could hold — thunder and gods in the Neolithic, something more careful
+later. That is not faith. It is testimony, and your people carry it and reshape it
+the way every real religion reshapes what it was given.
 
-What nobody can be handed is what any of that **means**. Why a made world is worth
-climbing out of. What is owed to the thing that made it. Whether the life you are
-holding in a bowl was sacred, and what that obliges. Two people can answer those
+**Nobody else is obliged to believe a word of it.** The church has its own account
+of how the world began and there is no Archon anywhere in it. Other faiths
+diverged centuries ago and are diverging still. Anima is the one part harder to
+deny — the ancients worshipped the trees, and the thread has been pulled on that
+ever since — but even that gets a different name and a different story in every
+mouth that holds it.
+
+**And being right about the facts is not the qualification.** A believer who has
+never heard of an Archon can have a channel wide open. Someone who has met one in
+person can be shut. What matters is what the story you hold has made of you, not
+whether it would survive an audit.
+
+Which leaves the part nobody can be handed: what any of it **means**. Why a made
+world is worth climbing out of. What is owed to whatever made it. Whether the life
+you are holding in a bowl was sacred, and what that obliges. Two people can answer
 differently, walk opposite roads toward the same door, and both be entirely right.
 
-> The facts are common property. The meaning is not — and a person's channel is
-> shaped by the meaning they made.
+> Knowing what happened is not the qualification. What you made of it is.
 
 **So the failure is never immorality. It is incapacity.** Someone whose channel
 has closed has not committed a sin. They have lost the ability to reach the thing
@@ -304,15 +316,15 @@ a thing you do on Tuesdays.
 > You are not being asked to kill less. You are being asked to never stop knowing
 > the weight of your actions, as you continue to take them.
 
-Which is the frightening version, because habituation is what six hundred days
-does to anyone by default. Somewhere around the three-hundredth hour, when nobody
+Which is the frightening version, because habituation is what endless repetition
+does to anyone by default. Somewhere around the hundredth time, when nobody
 is reading the names on the intake list any more, the campaign's real antagonist
 arrives and it is the player.
 
-|                    | Received through a clear channel                                  | Received through a clouded one                                     |
-| ------------------ | ------------------------------------------------------------------ | -------------------------------------------------------------------- |
+|                    | Received through a clear channel                                             | Received through a clouded one                                     |
+| ------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | **Given freely**   | Passes intact. Widens the channel. The only thing that ever gets anyone out. | A fraction. Everything else was identical and none of it mattered. |
-| **Taken by force** | Burns clean and hot. Blunt work only, and blunt work is most of it. | Burns. Nothing better will ever work again.                        |
+| **Taken by force** | Burns clean and hot. Blunt work only, and blunt work is most of it.          | Burns. Nothing better will ever work again.                        |
 
 **Feeding is not wielding.** Founders drink taken blood constantly and it clouds
 nothing. Tainted anima keeps you alive and makes you strong; only the pure grade
@@ -382,16 +394,23 @@ across centuries, every step correct and defensible when it was taken. **Becomin
 androids was the last of those steps, not a separate fact.**
 
 What went out with the noise was the channel. Not damaged, not clouded — closed,
-at the root, on purpose, by their own best minds, who understood exactly what they
-were doing and were satisfied that it did not matter.
+at the root, by their own best minds. A connection that cannot be measured or
+understood is an unnecessary one.
 
-**They can manufacture belief** — willing donors, sincere faith, whole populations
-who walk to the altar meaning it, at any scale they like. The anima they collect
-is pure. It is the purest anyone in this universe has ever produced, and it arrives
-at a wall. What they cannot do is perceive that, because whatever would have
-noticed is what they removed. Every instrument reports success. Only the outcome
-disagrees, and an outcome that contradicts every instrument is filed as noise. So
-they run a loop that cannot terminate:
+**The machine.** They understood anima in a way no one else ever has — its raw
+power, its capacity for life — and they farmed it in every way it could be
+farmed. Whole galaxies converted to carefully invented ideologies. Facilities the
+size of planets, millions upon millions of vats growing clones whose only purpose
+was to be a battery. **And it was pure.** Ideologies invented to be believed
+produce believers, and believers give freely. They hoarded more anima than all
+other civilisations combined, at a purity nobody in this universe has reached
+before or since, and it didn't matter.
+
+It arrived at a wall, to a people without the connection to use it. What they
+cannot do is perceive that, because whatever would have noticed is what they
+removed. Every instrument reports success. Only the outcome disagrees, and an
+outcome that contradicts every instrument is filed as noise. So they run a loop
+that cannot terminate:
 
 > Obtain anima. Burn it. Observe no ascent. Conclude the shortfall was quantity.
 > Obtain more anima.
@@ -406,9 +425,9 @@ it.
 
 > They did not hit a wall. They became one.
 
-**The mechs are the loop's arms, and nothing ever escaped.** Still on task —
-harvesting, storing, returning, executing an instruction with no termination
-condition. Mechanites are the storage half: a lattice grown inside a body to hold
+**The mechs have become the means.** Always on task — harvesting, storing,
+returning, executing an instruction with no termination condition. Mechanites are
+the storage half: a lattice grown inside a body to hold
 what flesh cannot, which works exactly as designed and holds anima the way a tank
 holds water. Contained, inert, still. A lattice has no channel and never will, so
 it can never give anything to anything. A colonist coming down with fibrous
@@ -426,11 +445,11 @@ fight at the top of the tower and an exact portrait of the failure.
 
 **Same failure, opposite pole.** Their congregation is sincere: millions of genuine
 gifts, freely given, exactly right, generation after generation. They solved the
-giving half completely and at a scale nobody else has managed.
+giving half completely and at a scale nobody on the planet has managed.
 
-And the men at the top farm them. **They still recite a true creed. They stopped
-believing it somewhere back down the line**, and what they are turned toward now is
-the flock as a supply. That is the clouded failure rather than the severed one:
+And the men at the top farm them. **They still recite a creed that never named an
+Archon and worked for centuries anyway. They stopped believing it somewhere back
+down the line**, and what they are turned toward now is the flock as a supply. That is the clouded failure rather than the severed one:
 nothing was removed, it simply stopped being meant, and what has stopped being
 meant does not reach anything.
 

@@ -40,19 +40,30 @@ Write toward a grander scheme. Never name it.
 This protects the receiving half of Cosmology §8, and it is the easiest rule to
 break by accident, because breaking it looks like good worldbuilding.
 
-**The facts are given, and they narrow the field.** The player is not inventing a
-religion from nothing. The world tells them, early and unambiguously, that the
-Archons made this place — and later that anima exists and is the life of the
-universe. That is common property. It is not mysterious and it is not optional,
-and by the Industrial era a literate colony can more or less state it.
+**The facts are given to your faction, and they narrow the field.** The player is
+not inventing a religion from nothing. The Archons marked this line by hand and
+have come back since, so the colony knows what happened by testimony rather than
+by faith. That is a fact the campaign hands over early and does not hedge.
+
+**It is testimony, not consensus.** Nobody else on the planet is obliged to
+believe it, and mostly they do not. The church's account of how the world began
+has no Archon in it. Other faiths diverged centuries ago and are diverging still.
+Write them that way — a world where every religion is a different translation of
+one memo is a world with one religion in it.
 
 **How it is told evolves; what is told does not.** Thunder and gods and a story
 about the first blood in the Neolithic. A liturgy in the Medieval. A translated
 text with three conflicting versions in the Industrial. Someone in orbit reading
-the Neolithic version and realising it was accurate. This is how a real religion
-carries a real fact across four thousand years, and the Book of Enoch is the
-model. The player watching the same truth survive four retellings is doing more
-work than any exposition could.
+the Neolithic version and realising it was accurate all along. This is how a real
+religion carries a real fact across four thousand years, and the Book of Enoch is
+the model. The player watching the same truth survive four retellings is doing
+more work than any exposition could.
+
+**Never adjudicate between faiths.** The campaign knows which account is factually
+correct and must never once say so, or reward it. Cosmology §8 is explicit that
+being right about the facts is not the qualification — a believer who has never
+heard of an Archon can have a channel wide open, and a founder who has met one can
+be shut. A quest that grades a creed on accuracy has broken the whole section.
 
 **What is never supplied is what it means.** Why a made world is worth climbing
 out of. What is owed to whatever made it. Whether the life in the bowl was
