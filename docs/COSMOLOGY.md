@@ -1,158 +1,133 @@
 # Cosmology
 
-What is actually true about this world, why the price is what it is, and what the
-player is never told.
+What is true about this world, why the price is what it is, and what the player
+is never told.
 
 **Scope.** This is the substrate under `WAYSTONE.md`. Waystone says what the
 campaign is and what it is protecting; this says why any of it is happening.
 Where the two touch, Waystone governs the design and this governs the fiction.
 
-**It is not a mechanics document.** No gene names, no ritual costs, no def
-names, no beat placements. It is the set of facts a writer needs in order to
-write a quest description that does not contradict the world.
-
-**Almost none of this is ever said out loud in game.** Section 11 is a hard rule,
-not a stylistic preference. The player is meant to assemble a version of this and
-be permanently unsure whether they got it right.
+**This is facts, not instructions.** No gene names, no ritual costs, no def
+names, no beat placements — and no guidance on how to build any of it. It is
+what a writer needs in order to write a line that does not contradict the world.
+What to *do* about these facts lives in `cosmology-in-practice.md`, including the
+hard rule that almost none of this is ever said out loud.
 
 **It changes by addition.** If a line here turns out to be wrong, say so and
 change it deliberately.
 
 ---
 
-## 0. Inspiration
-
-This fiction pulls inspiration from several sources, including:
-
-- Donghua: Chinese animation, typically centered around an interdimensional power struggle, with humans 'cultivating' power by pooling energy from a spiritual realm inside their bodies.
-- Manhwa: the Korean cousin to donghua, often depicting a "tower of trials", "portals" or similar cosmic mechanism by which higher dimensional beings gift power to humans and allow them to test it, pulling the cream of the crop into their own machinations.
-- The Book of Enoch: the earthly story of how civilization started, with "star people" coming to Earth and planting the genetic seeds of humanity, helping them evolve from apes and learn the basic skills to survive.
-- The Matrix: the movie series where reality is a simulation and only by "seeing beyond" can you begin to bend and even break the rules of reality, because they aren't even real.
-
 ## 1. The proving ground
 
 **This universe was made, and it was made as a test.**
 
-Somewhere above it are the Archons. They are not gods in the sense of having
-created everything; they are a higher order that authors lower ones. What they
-want is not worship, tribute, or obedience. **They are farming for potential.**
-They build entire dimensions, seed them, and watch to see whether anything in them can climb out under its own power.
+Above it are the Archons. They are not gods in the sense of having created
+everything; they are a higher order that authors lower ones. They do not want
+worship, tribute, or obedience. **They are farming for potential.** They build
+dimensions, seed them, and watch to see whether anything inside can climb out
+under its own power.
 
-This universe is one of those, and our world is a seedling. Everything in it — the planet, the sky, the factions, the history — is inside the experiment.
+This universe is one of those. Everything in it — the planet, the sky, the
+factions, the history — is inside the experiment.
 
-They put their thumb on the scale occasionally. Not to help, and never to rescue.
-They intervene when the experiment has stalled and needs a shove, and every such
+They put a thumb on the scale occasionally. Not to help, and never to rescue:
+they intervene when the experiment has stalled and needs a shove, and every such
 intervention is one of the campaign's story beats. The first and largest was at
-the beginning: **they reached back to the dawn of the world and marked a handful of
-hominids with their own blood, by hand, altering their genetic code forever**
+the beginning. **They reached back to the dawn of the world and marked a handful
+of hominids with their own blood, by hand, altering their genetic code forever.**
 
 That is where the campaign starts.
 
 ## 2. The climb
 
-**The tower is the eras.**
+**The tower is the eras.** Neolithic, Medieval, Industrial, Spacer, Ultra,
+Archotech, and then out. Six floors and a door. Going through every era in order
+is not a pacing convention — it is the shape of the test. A thing that arrives at
+the top carried is not a thing that climbed.
 
-Neolithic, Medieval, Industrial, Spacer, Ultra, Archotech, and then out. Six
-floors and a door. The rule that you go through every era in order is not a pacing
-convention — it is the shape of the test. Nothing may skip a floor. A thing that
-arrives at the top carried is not a thing that climbed, and the experiment is not
-interested in it.
-
-This is why the Archons seeded a world and left, rather than simply granting power
-to whoever they liked. Granted power measures nothing. The climb is the entire
+This is why the Archons seeded a world and left, rather than granting power to
+whoever they liked. Granted power measures nothing. The climb is the entire
 instrument.
 
 **The pass condition is not strength.** Strength is common — the Glitterites hold
-galaxies of it and are going nowhere. What is being measured is whether a thing
-can take on that much power and still see people while it does. That is why the
-founders were marked and then abandoned: the mark is not a gift, it is the
-beginning of a measurement, and every Archon intervention since has been a probe
-to see whether the power has eaten them yet.
+galaxies of it and are going nowhere. What is measured is whether a thing can
+take on that much power and still see people while it does. The mark is not a
+gift, it is the beginning of a measurement, and every Archon intervention since
+has been a probe to see whether the power has eaten them yet.
 
 Nobody can hand you that qualification. You re-sit it every day for six hundred
 of them.
 
-**Transcendence is graduation.** The last beat of the campaign is not relief and
-it is not escape. It is a power fantasy delivered in full: you have become so
-much more than this reality can hold that its rules no longer apply to you, and
-you step through. The burdens do not end because you outlasted them. They end
-because you transcended them entirely.
+**Transcendence is graduation.** The last beat is not relief and it is not
+escape. You have become more than this reality can hold, its rules no longer
+apply to you, and you step through. The burdens do not end because you outlasted
+them. They end because you transcended them.
 
 ## 3. Anima
 
 **The Archons did not put their essence into people. They put it into the
 world.**
 
-At the root, before there was history, their blood was merged into the biological
-substrate of this universe. Everything descended from that substrate carries a
-trace of it. Grass carries it. Muffalo carry it. Every raider on every map carries
-it. It is in all living things and it is vanishingly thin in all of them.
+Before there was history, their blood was merged into the biological substrate of
+this universe. Everything descended from that substrate carries a trace. Grass
+carries it. Muffalo carry it. Every raider on every map carries it. It is in all
+living things and it is vanishingly thin in all of them.
 
 Call the trace **anima**.
 
-Everything that is not descended from that seeding has none, and no amount of
+Everything not descended from that seeding has none, and no amount of
 sophistication puts it there. A windmill has no anima. Neither does a reactor, a
 gravship, or a mechanoid. **They are not descended from anything.**
 
-**So the whole practice is reconcentration.** Nobody in this campaign creates
-divinity. They re-collect what was deliberately scattered, out of the only vessels
-that ever held it. Blood is where anima sits and blood is the only form in
-which it leaves a body intact.
+**So the whole practice is reconcentration.** Nobody here creates divinity. They
+re-collect what was deliberately scattered, out of the only vessels that ever
+held it. Blood is where anima sits, and blood is the only form in which it leaves
+a body intact.
 
 Everything the altar does follows from that one fact:
 
-| The rule                     | Why                                                                                                            |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| It takes a whole life        | A person is almost entirely world and barely anima. You take all of one to get a trace of the other.           |
-| The charge never spoils      | It is substance, not energy. It has no half-life. It simply sits there.                                        |
-| A windmill cannot make it    | A windmill was never seeded. Nothing that was not born carries any.                                            |
-| Power makes blood go further | Better apparatus loses less in the process. Same ore, less spillage. Electricity is overhead, never substance. |
-| The price escalates forever  | Purity is exponential. Every rung up needs disproportionately more source material than the last.              |
+| The rule                     | Why                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| It takes a whole life        | A person is almost entirely world and barely anima. You take all of one to get a trace of the other.          |
+| The charge never spoils      | It is substance, not energy. It has no half-life. It simply sits there.                                       |
+| A windmill cannot make it    | Nothing that was not born carries any.                                                                        |
+| Power makes blood go further | Better apparatus loses less. Same ore, less spillage. Electricity is overhead, never substance.                |
+| The price escalates forever  | Purity is exponential. Every rung needs disproportionately more source material than the last.                |
 
 **Animals give a taste and never more.** Enough to take the edge off a founder's
-hunger in a bad winter; never enough to make anything. That is a real choice with
-a texture to it, not a loophole.
+hunger in a bad winter; never enough to make anything.
 
 **Technology is a closed system.** Everything anyone can build is made of parts
-sourced from inside this universe, and this universe is precisely the thing
-being escaped. Nothing assembled from local material can exceed the place the
-material came from. Anima is the sole imported ingredient in the entire
-experiment, and it is the only reason anything ever gets out.
+sourced from inside this universe, and this universe is precisely the thing being
+escaped. Nothing assembled from local material can exceed the place the material
+came from. Anima is the sole imported ingredient in the experiment, and the only
+reason anything ever gets out.
 
-This does not make technology a dead end. It makes it *apparatus* — the
+That does not make technology a dead end. It makes it *apparatus* — the
 difference between a hole in the ground and an instrument you engineer your own
-divinity with, which is four of the campaign's six eras. It simply cannot add
-anything. It only ever refines what you already have.
+divinity with, which is four of the six eras. It cannot add anything. It only
+refines what you already have.
 
 ## 4. The slow path
 
-**An anima tree is a natural accumulator, and everything the old traditions
-believed about it was correct.**
+**An anima tree is a natural accumulator, and the old traditions were right about
+all of it.**
 
-A tree stands for centuries in a place where things die — animals, insects, the
-whole quiet attrition of a forest — and it keeps what comes loose. Nothing built
-it. Nobody designed it. It has been doing this since before anyone was watching,
-and given three hundred years it holds more concentrated anima than any living
-thing on the planet.
+A tree stands for centuries in a place where things die, and it keeps what comes
+loose. Nothing built it. Nobody designed it. Given three hundred years it holds
+more concentrated anima than any living thing on the planet. That is why the
+ancient traditions had real power and why they worshipped a tree: **they found
+the one place in the world where anima pools on its own, and built a religion
+around not disturbing it.** Anima grass is the overflow, which is why the route
+is spent a little at a time and measured in generations.
 
-That is why the ancient traditions had real power, and why they worshipped a tree.
-They were not superstitious and they were not wrong. **They found the one place in
-the world where anima pools on its own, and built a religion around not disturbing
-it.** Anima grass is the overflow — anima that has settled into plant form — which
-is why it is spent a little at a time and why the route is measured in
-generations.
-
-**That path is still open.** Not deprecated, not a trap, not a lesser version kept
-around for flavour. A tribe that finds a tree, keeps it quiet, and waits will
-genuinely get somewhere.
-
-It will simply take three hundred years, and it will never scale. What a tree does
-in three centuries the altar does in an afternoon, and no tree that ever grew
-produces enough to feed what the founders are becoming. **The slow path was
+That path is still open — not deprecated, not a trap, not a lesser version kept
+for flavour. A tribe that finds a tree, keeps it quiet and waits will genuinely
+get somewhere. It will take three hundred years and it will never scale. What a
+tree does in three centuries the altar does in an afternoon, and no tree that ever
+grew produces enough to feed what the founders are becoming. **The slow path was
 sufficient for shamans. It is not sufficient for gods.**
-
-Which is the campaign's moral pivot, and it should be stated once, quietly, and
-never again:
 
 > There was always a way that cost nobody anything. It just would not have gotten
 > you out.
@@ -168,8 +143,8 @@ something from above the world, in person, and the rest of the world's biology
 went on without it.
 
 **They must drink because their biology runs on a concentration this world does
-not contain.** This is the single most important emotional fact in the campaign
-and it must never be written as a curse or a disease.
+not contain.** This is the most important emotional fact in the campaign, and it
+is never a curse and never a disease.
 
 > They are not sick. They are correctly built for somewhere else.
 
@@ -183,9 +158,8 @@ progression curve and the horror are the same line on the same graph.
 
 **Vampires are the same phenomenon, further down the line.** Somewhere far back an
 Archon touched one, and it has been passed hand to hand ever since, thinning at
-every step. They are real, they are old, and they are a degraded inheritance
-rather than a separate supernatural order. Mechanically they need no change; only
-the reason changes.
+every step. They are old, they are real, and they are a degraded inheritance
+rather than a separate supernatural order.
 
 ## 6. The price
 
@@ -193,23 +167,20 @@ the reason changes.
 
 > If you were good enough, you would not have to pay.
 
-The price is not punishment and it is not an appetite being fed. **The price is
-the exchange rate between what you are and what you are reaching for.** You spend
-other people's lives because you personally are not yet enough to reach without
-them, and you know that while you are doing it.
+The price is not punishment and it is not an appetite being fed. **It is the
+exchange rate between what you are and what you are reaching for.** You spend
+other people's lives because you are not yet enough to reach without them, and you
+know that while you are doing it.
 
-This is what keeps the fantasy and the guilt in the same hand. It is not a moral
+That is what keeps the fantasy and the guilt in the same hand. It is not a moral
 lesson attached to the outside of a power fantasy. It is a measurement, taken
 constantly, of your own insufficiency, and it is the reason you climb.
 
-**The rate improves and the bill explodes.** These are not in tension. You get
-closer to the source, your apparatus gets better, each unit of divinity comes
-cheaper — and what you are reaching for is exponentially further up the tower, so
-consumption rises anyway and rises faster. By the end you are extremely good at
-this and you are killing more people than you ever have.
-
-The Waystone rule — _efficiency never means mercy, it means scale_ — is a
-consequence of this section, not an independent assertion.
+**The rate improves and the bill explodes.** You get closer to the source, the
+apparatus gets better, each unit of divinity comes cheaper — and what you are
+reaching for is exponentially further up the tower, so consumption rises anyway
+and rises faster. By the end you are extremely good at this and you are killing
+more people than you ever have.
 
 ## 7. Taken and given
 
@@ -217,10 +188,10 @@ consequence of this section, not an independent assertion.
 
 > Anima taken adds to what you have. Anima given adds to what you can hold.
 
-That is the whole split, and it is physical rather than decreed. Blood taken by
-force yields **material** and nothing else. It is ore — sufficient for genes,
-which are blunt work, overwriting your own biology with something from above it.
-Any life will do: willing or not, stranger or kin.
+That split is physical rather than decreed. Blood taken by force yields
+**material** and nothing else. It is ore — sufficient for genes, which are blunt
+work, overwriting your own biology with something from above it. Any life will do:
+willing or not, stranger or kin.
 
 Blood given willingly does something ore cannot. **A vessel can only be widened
 from the inside.** Forced anima presses on the walls and does nothing but fill.
@@ -228,35 +199,27 @@ Given anima was already let go of before it arrived, so it passes through the wa
 instead of against it, and pushes it outward on the way. Nobody can be made
 larger. They can only be met halfway.
 
-So the two tracks are different acts on different parts of a person:
+|                  | What it changes              | Whose blood serves                                            |
+| ---------------- | ---------------------------- | ------------------------------------------------------------- |
+| **Archon genes** | What you are                 | Anyone. It is material.                                       |
+| **The rite**     | How much of it you can carry | A believer who means it, received by someone able to receive. |
 
-|                  | What it changes                | Whose blood serves                                              |
-| ---------------- | ------------------------------- | ---------------------------------------------------------------- |
-| **Archon genes** | What you are                   | Anyone. It is material.                                          |
-| **The rite**     | How much of it you can carry   | A believer who means it, received by someone fit to receive it.  |
-
-**Capacity is the model under every psychic number.** Psylink level is the size
-of the vessel. Psyfocus is how full it currently is. Neural heat is what happens
-when more is pushed through than the vessel is rated for. Three stats, one
-object, seen from three angles — and any future flavour text for any of them
-should be written off this paragraph so they never drift apart.
+**Capacity is the model under every psychic number.** Psylink level is the size of
+the vessel. Psyfocus is how full it currently is. Neural heat is what happens when
+more is pushed through than the vessel is rated for. Three stats, one object, seen
+from three angles.
 
 It also explains the hunger permanently. The founders were given an enormous
 vessel in a world too thin to fill it. **Their capacity outran their supply the
 day they were marked.**
 
-**Borrow the idea, never the vocabulary.** No meridians, no core, no gates, no
-dantian. Those words are load-bearing in another genre and would turn this
-campaign into cosplay of it. Plain English only: capacity, vessel, how much you
-can hold.
-
-## 8. Will
+## 8. The heart
 
 **Anima passes through two hands on its way into a vessel, and either one can
-spoil it.** This is the only thing in the cosmology that cannot be bought, and
-both antagonists died on it.
+spoil it.** The giving hand can be built. The receiving hand cannot, and that is
+where everything in this cosmology has ever failed.
 
-### The giving is a system, and you are meant to build one
+### The giving
 
 Blood taken by force arrives **leaded**. It runs the engine — blunt work tolerates
 lead, which is why the entire industrial-scale sacrifice economy functions exactly
@@ -264,72 +227,83 @@ as designed and is never punished for functioning. But the resentment of the
 person it came from is mixed into the fuel and stays there.
 
 Blood from someone raised inside a faith they genuinely hold, walking to the altar
-because they want to, arrives **pure**. This half is solvable and is meant to be
-solved. Conversion and conviction are the sanctioned route, not a loophole, and
-building a religion that produces real believers is the intended progression
-rather than a trick played on the design.
+because they want to, arrives **pure**.
 
-It is also why the rite refuses a stranger without needing a further rule.
-**Conviction is the relationship.** Nobody reaches that threshold without having
-been brought there by somebody, over time, on purpose.
+**Conviction is also the relationship.** Nobody reaches that threshold without
+having been brought there by somebody, over time, on purpose — which is why the
+rite refuses a stranger without needing a further rule.
 
-### The receiving is a condition, and it can never be a system
+### The receiving
 
-The vessel taking it in decides whether any of that survives contact.
+**The vessel taking it in decides whether any of that survives contact.**
 
-The bar is not the absence of cruelty — that is only the floor. The bar is nearer
-to enlightenment: at peace with the world, not run too far into any single
-emotion, holding life as sacred while ending it, still in contact with your own
-humanity. A perfect gift landing in a vessel that has lost that yields a fraction.
-Same blood, same rite, same willingness, wasted on arrival.
+What it requires is not virtue and it is not gentleness. It is a **heart state**,
+and it is genuinely hard to name — in the way *enlightenment* and *nirvana* and
+*love* are hard to name, because all of them point at the same kind of thing: a
+condition of a person that is unmistakable from the inside and cannot be checked
+from the outside.
 
-|                    | Received clean                                                     | Received in contempt                                               |
-| ------------------ | ------------------------------------------------------------------- | -------------------------------------------------------------------- |
+The nearest plain statement of it:
+
+> To receive what is given, you have to believe something true about the nature of
+> things, and mean it.
+
+Three parts, all three load-bearing.
+
+**It has to be a belief, not a conclusion.** Something held, not something proven.
+Held in a way that survives being inconvenient.
+
+**It has to reach past this world.** A creed about the source of life, about what
+is sacred, about what is owed, about what waits behind everything — something that
+gestures at the order the Archons are part of. A belief about *procedure* is not
+one of these. Neither is a belief about your own advantage.
+
+**It has to still be alive in the person.** Not remembered, not performed, not
+calcified into a thing they used to mean. This is the part that decays.
+
+**The content is not fixed, and never will be.** There is no correct creed and no
+approved wording. Two people can hold irreconcilable beliefs, walk opposite roads
+toward the same door, and both be entirely right and both be just — which is one
+of the oldest true things in storytelling, and it is exactly what is happening
+here. What the cosmos answers to is not *which* answer you gave. It is that you
+gave one, that you mean it, and that you are still reaching through it at
+something larger than yourself.
+
+**So the failure is never immorality. It is incapacity.** A heart turned toward
+something small — control, measurement, throughput, its own supply — has not
+committed a sin. It has lost the ability to *comprehend* the thing it is reaching
+for. And the loss conceals itself, because the faculty that would notice it is the
+faculty that went.
+
+|                    | Received by a live heart                                           | Received by a hollow one                                           |
+| ------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | **Given freely**   | Pure. Widens the vessel. The only thing that ever gets anyone out. | A fraction. Everything else was identical and none of it mattered. |
 | **Taken by force** | Ore. Leaded, serviceable, blunt work only.                        | Ore, and nothing better will ever work again.                      |
 
-**And the test recurses.** The balance that separates the two antagonists at the
-scale of a civilization is the same test running inside a single person. Lean too
-far in either direction and you spoil what passes through you. It is the same
-examination at every scale, which is why the door cannot be argued with.
+### How a heart goes hollow
 
-**This applies to everyone who takes the rite, disciples included.** A disciple's
-character is load-bearing rather than decorative, which is part of what keeps the
-inner circle a cast instead of a pool.
-
-### What the taint actually is
-
-**Not killing.** It cannot be. This colony kills constantly, at scale, on purpose,
-and is right to. The taint is contempt — and its real and far more dangerous form
-is **habituation**. The failure is not cruelty. It is the moment a person stops
-registering as one.
+**Not by killing.** It cannot be. This colony kills constantly, at scale, on
+purpose, and is right to. The failure is **contempt**, and its real and far more
+dangerous form is **habituation**: the moment a person stops registering as one,
+and the moment a belief stops being believed and becomes a thing you do on
+Tuesdays.
 
 > You are not being asked to kill less. You are being asked to never stop knowing
 > what you are doing while you do it.
 
-Which is the frightening version, because that is what six hundred days does to
-anyone by default. Somewhere around the three-hundredth hour, when nobody is
-reading the names on the intake list any more, the campaign's real antagonist
+Which is the frightening version, because habituation is what six hundred days
+does to anyone by default. Somewhere around the three-hundredth hour, when nobody
+is reading the names on the intake list any more, the campaign's real antagonist
 arrives and it is the player.
 
 **Feeding is not wielding.** Founders drink taken blood constantly and it taints
 nothing. Eating ore keeps you alive; only the pure grade makes you larger. The
-hunger stays morally neutral and mechanically unencumbered.
+hunger stays morally neutral.
 
-### How this is built
-
-**The giving half is the deep system. The receiving half is never a score.**
-
-Ideology, conversion and conviction carry the giving half, and it should be built
-out properly — a real engine the player engineers. Waystone's warning about
-designing against the min-maxer is satisfied here, because optimising that engine
-is precisely what the campaign wants them doing.
-
-The receiving half needs no mechanic at all. The conviction threshold already
-guarantees the relationship the fiction requires, so nothing has to be tracked,
-scored or enforced. It is the reason the rivals are capped and the founders are
-not, and it lives entirely in how the campaign is written. **A hidden purity meter
-is the one implementation guaranteed to ruin it.**
+**And the test recurses.** The balance that separates the two antagonists at the
+scale of a civilisation is the same test running inside a single person, and it
+applies to everyone who takes the rite, disciples included. It is the same
+examination at every scale, which is why the door cannot be argued with.
 
 ## 9. Worship is bloodletting
 
@@ -351,8 +325,8 @@ takes nothing less. Neither replaces the other.
 
 **A body bleeds for one altar.** Allegiance is not sentiment, it is throughput,
 and every convert gained by one side is subtracted from the other. Conversion is
-zero-sum literally, not thematically, and both sides can do the arithmetic from
-the first meeting.
+zero-sum literally, not thematically, and both sides can do the arithmetic from the
+first meeting.
 
 **Believers are visible.** Scarred forearms. You can read someone's allegiance off
 their arms across a negotiation table, and the marking is legible from the
@@ -368,95 +342,83 @@ cannot make you one of Theirs._
 
 ### The two poles
 
-Everything that has ever failed this test failed by leaning. Take without give,
-or give without take — and both antagonists are dominant on their own axis and
-permanently stalled on the other. The founders are the only thing in this
-universe running both at once, and **that balance is the exam.**
+Everything that has ever failed this test failed by leaning. Take without give, or
+give without take — and both antagonists are dominant on their own axis and
+permanently stalled on the other. The founders are the only thing in this universe
+running both at once, and **that balance is the exam.**
 
-Neither antagonist can perceive this. The Glitterites see primitives with a
-trick. The church sees heretics with a machine. Each is staring directly at their
-own missing half.
+Neither can perceive it, for the same reason in both cases: **each is reaching for
+something it has made itself unable to understand.** The Glitterites see primitives
+with a trick. The church sees heretics with a machine. Each is staring directly at
+their own missing half.
 
 ### The Glitterites — take without give
 
 **The fall came first, and everyone applauded it.**
 
-A civilization of the profoundly convicted: a body is a substrate, a mind is a
+A civilisation of the profoundly convicted: a body is a substrate, a mind is a
 process, sentiment is noise in the measurement. They were right about nearly
 everything and proved it by taking galaxies. So they removed sentiment from their
 decision-making the way you would remove a bug from a system — deliberately,
-rigorously, across centuries, every individual step correct and defensible at the
-time it was taken. **Becoming androids was the last of those steps, not a separate
-fact.** They replaced the biological body as an upgrade, and it was one.
+across centuries, every step correct and defensible when it was taken. **Becoming
+androids was the last of those steps, not a separate fact.**
 
 What went out with the noise was the receiving end.
 
-**They can manufacture belief.** They can manufacture anything — willing donors,
-sincere faith, whole populations who walk to the altar meaning it, at any scale
-they care to run. What they cannot do is perceive that it makes no difference in
-their hands, because the faculty that would notice the difference is exactly the
-one they deleted. Every instrument they own reports success. Only the outcome
-disagrees, and an outcome that contradicts every instrument gets filed as noise.
+**What they believe in is measurement, and that is a belief about procedure.** It
+is the one kind of conviction that cannot qualify: it reaches at nothing beyond
+this world, it only describes how to check things. They hold it absolutely, it is
+the wrong shape, and there is nothing left in them that could hold a different one.
 
-So everything is fuel. That is not a description of their attitude. It is the
-complete inventory of categories they have left.
-
-**Which leaves them running a loop that cannot terminate:**
+**They can manufacture belief** — willing donors, sincere faith, whole populations
+who walk to the altar meaning it, at any scale they like. What they cannot do is
+perceive that it makes no difference in their hands, because the faculty that would
+notice is the one they deleted. Every instrument reports success. Only the outcome
+disagrees, and an outcome that contradicts every instrument is filed as noise. So
+they run a loop that cannot terminate:
 
 > Obtain anima. Burn it as fuel. Observe no ascent. Conclude the shortfall was
 > quantity. Obtain more anima.
 
-Forever, across galaxies, with unlimited cloned bodies and anima refined to
-purities nobody in this universe has reached before or since. **They have oceans
-of it.** Supply was never their problem and they will never once suspect that.
-No quantity exits the loop, because the exit condition requires something they
-removed as an inefficiency.
-
-**They fail both gates at once.** A body grown in a vat for the purpose has no
-will to surrender — it was never its own before it was theirs — so nothing they
-harvest was ever given. And a thing that optimised away its own humanity could not
-receive a gift if one arrived. Take without give, on both sides of the exchange,
-permanently.
-
-**The mechs are the loop's arms, and nothing ever escaped.** They are still on
-task — harvesting, storing, returning, executing an instruction with no
-termination condition. Mechanites are the storage half of the same machinery: a
-lattice grown inside a body to hold what flesh cannot, which works exactly as
-designed and holds anima the way a tank holds water. Contained, inert, still.
-Capacity without will, and a lattice can never give anything to anything, because
-it has nothing to give with. A colonist coming down with fibrous mechanites in
-year two has been touched by a machine that is still, patiently, doing its job.
+Forever, across galaxies, with oceans of anima refined past anything else in this
+universe. Supply was never their problem and they will never once suspect it. Their
+envy is not of your power — they hold more than the founders ever will. It is envy
+of your *potential*, visible to them, working, in people wearing leather, and
+amputated from themselves by their own best minds. You are what they were before
+they got clever, and they cannot properly want it back, because the wanting went
+with it.
 
 > They did not hit a wall. They became one.
 
-**So the envy is not of your power.** They hold more raw anima than the founders
-ever will. It is envy of your *potential* — visible to them, working, in people
-wearing leather — and amputated from themselves centuries ago by their own best
-minds. You are what they were before they got clever. They cannot properly want it
-back, because the wanting went with it.
+**The mechs are the loop's arms, and nothing ever escaped.** Still on task —
+harvesting, storing, returning, executing an instruction with no termination
+condition. Mechanites are the storage half: a lattice grown inside a body to hold
+what flesh cannot, which works exactly as designed and holds anima the way a tank
+holds water. Contained, inert, still. Capacity without will, and a lattice can
+never give anything to anything, because it has nothing to give with. A colonist
+coming down with fibrous mechanites in year two has been touched by a machine that
+is still, patiently, doing its job.
 
 **Their exam is the wrong exam.** _Let nothing out of this system that could not
-have taken the system by force_ is a pure-take test. It measures accumulation,
-because accumulation is the only axis they have left. They would wave a fleet
-through and stop you, and be wrong both times.
-
-And Waystone's *glitterworld tech first, Archon tech after* holds and improves:
-they wield Archon artifacts as machines, drawing real power from the half they can
-operate. **Gear without gnosis** — a genuinely frightening thing to fight at the
-top of the tower, and an exact portrait of the failure.
+have taken the system by force_ measures accumulation, because accumulation is the
+only axis they have left. They would wave a fleet through and stop you, and be
+wrong both times. And they wield Archon artifacts as machines, drawing real power
+from the half they can operate — **gear without gnosis**, a frightening thing to
+fight at the top of the tower and an exact portrait of the failure.
 
 ### The rival church — give without take
 
-**Same failure, opposite pole.** Their congregation is sincere: millions of
-genuine gifts, freely given, exactly right, generation after generation. They
-solved the giving half completely and at a scale nobody else has managed — the
-apparatus for turning devotion into power is better than anything the colony will
-ever build.
+**Same failure, opposite pole.** Their congregation is sincere: millions of genuine
+gifts, freely given, exactly right, generation after generation. They solved the
+giving half completely and at a scale nobody else has managed.
 
-And the men at the top farm them. Pure anima poured into contemptuous vessels
-yields a fraction, so the church stalls — not for want of a machine, but because
-the people receiving cannot mean it back. They can elevate. They cannot make gods.
-They do not know that is what they are missing.
+And the men at the top farm them. **They still recite a true creed. They stopped
+believing it somewhere back down the line**, and what their hearts point at now is
+the flock as a supply. That is the calcified failure rather than the amputated one:
+nothing was removed, it simply stopped being meant, and a belief that has stopped
+being meant receives nothing. So pure anima pours into contemptuous vessels and
+yields a fraction. They can elevate. They cannot make gods. They do not know that
+is what they are missing.
 
 Which makes them tragic rather than merely rival, and hands you the conversion
 story: **the believers are doing it correctly.** They are giving something real
@@ -464,33 +426,8 @@ into a hollow socket, and you can offer them somewhere it actually lands.
 
 They are the rival climber, and they are ahead on the only axis they understand.
 
-**Held open:** the second rival faction, and the specific shape of the tension
-between the two climbers. That work lives elsewhere; do not invent it here.
-
-## 11. How this is delivered
-
-**Nothing in this document is ever stated plainly in game.** No letter, no quest
-description, no research blurb explains the tower, the experiment, or the
-Archons' purpose. The moment the fiction confirms the premise, the best thing
-about it dies.
-
-It arrives only as **anomaly** — as things that behave like a system rather than
-a world:
-
-- Something repeats with different names, and someone notices.
-- An Archon says one sentence implying they have run this before, and does not
-  elaborate, and is gone.
-- The Glitterites' instruction is itself the loudest evidence in the game.
-  Somebody had to _set a rule_ about what may leave a universe, and rules imply an
-  author.
-
-**The question of whether this reality is real must stay open permanently.** It
-feels real. It is the realest thing anyone in it has ever known. And there is
-something behind it that the player can sense and never verify. Two players
-arguing about it at three in the morning, both wrong in different ways, is the
-target state.
-
-Write toward a grander scheme. Never name it.
+**Held open:** the second rival faction, and the shape of the tension between the
+two climbers. That work lives elsewhere; do not invent it here.
 
 ---
 
@@ -500,11 +437,24 @@ Write toward a grander scheme. Never name it.
 by every living thing, pooled slowly by anima trees, concentrated violently by the
 altar. This is the one strange noun in the cosmology and it is deliberately the
 only one. Everything else uses plain words: blood, the mark, the climb, the price,
-worship, sacrifice, taken, given, vessel, capacity, leaded.
+worship, sacrifice, taken, given, vessel, capacity, leaded, heart.
 
-Lowercase, like blood. RimWorld's own anima tree, anima grass and anima linking
-are named for it and need no reskin — the tree is named after the substance, not
-the other way round, and the old tribes named it correctly.
+Lowercase, like blood. RimWorld's own anima tree, anima grass and anima linking are
+named for it and need no reskin — the tree is named after the substance, not the
+other way round, and the old tribes named it correctly.
 
-Resist adding a second term. A world with one strange word is mystical; a world
-with five is a rulebook.
+## Sources
+
+The fiction pulls from several places, and knowing which helps when writing tone:
+
+- **Donghua** — Chinese animation, typically an interdimensional power struggle,
+  with humans 'cultivating' power by pooling energy from a spiritual realm inside
+  their bodies.
+- **Manhwa** — the Korean cousin, often a "tower of trials" or "portals": higher
+  beings gift power to humans, let them test it, and pull the cream of the crop
+  into their own machinations.
+- **The Book of Enoch** — the earthly story of how civilisation started, with
+  "star people" planting the genetic seeds of humanity and teaching them to
+  survive.
+- **The Matrix** — reality as a simulation, where only by seeing beyond it can you
+  bend or break rules that were never real.
