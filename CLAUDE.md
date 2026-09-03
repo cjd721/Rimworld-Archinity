@@ -52,6 +52,7 @@ are in, and where the real instructions live. Everything else is filed elsewhere
 - How code and defs get written → `CODING_STANDARDS.md`
 - Verified facts, so they are never re-litigated → `docs/technical-findings.md`
 - Design intent and the campaign's North Star → `docs/WAYSTONE.md`
+- The settled story, marked and reconciled → `docs/STORY-CANON.md`
 
 If something here grows longer than a pointer, it is probably misfiled. The one
 standing exception is **Ground rules** above: workflow rules have no other home,
