@@ -3,17 +3,17 @@
 The project's glossary. What the words mean, and nothing else.
 
 **What belongs here:** a term this project uses as a label, where a reader would
-otherwise guess. One or two lines, defining what it *is*.
+otherwise guess. One or two lines, defining what it _is_.
 
 **What does not:** the rules for applying a term, its rationale, or the argument
 that produced it. Those live where they always did —
 
-| Doc | Owns |
-|---|---|
-| `CODING_STANDARDS.md` | how code and defs get written; the rules an author follows |
-| `docs/technical-findings.md` | verified facts, so they are never re-litigated |
-| `docs/WAYSTONE.md` | design intent and the campaign's North Star |
-| GitHub issues | the decisions themselves, and the reasoning behind them |
+| Doc                          | Owns                                                       |
+| ---------------------------- | ---------------------------------------------------------- |
+| `CODING_STANDARDS.md`        | how code and defs get written; the rules an author follows |
+| `docs/technical-findings.md` | verified facts, so they are never re-litigated             |
+| `docs/WAYSTONE.md`           | design intent and the campaign's North Star                |
+| GitHub issues                | the decisions themselves, and the reasoning behind them    |
 
 A term here links to the doc that carries its detail. If an entry grows past two
 lines it is misfiled.
@@ -35,13 +35,13 @@ The mods that actually ship in the campaign. A strict subset of the parts bin.
 _Avoid_: the final set, production
 
 **Barred**:
-We *cannot* use it. Reserved for the case where fixing the mod would mean owning
+We _cannot_ use it. Reserved for the case where fixing the mod would mean owning
 their assembly — a parallel world simulation, or background threads.
 [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3)
 _Avoid_: blocked, banned, rejected
 
 **Declined**:
-We *can* use it and choose not to. Owes no justification. Orthogonal to barred.
+We _can_ use it and choose not to. Owes no justification. Orthogonal to barred.
 _Avoid_: rejected, cut, dropped
 
 **Reference**:
@@ -55,7 +55,7 @@ auto-updated, so an update lands when we choose and both machines get it at once
 _Avoid_: frozen, locked
 
 **Vendored**:
-A specific mod copied into our control. A pinned mod we have also *edited* is a
+A specific mod copied into our control. A pinned mod we have also _edited_ is a
 **fork**, and forks are the only third-party content committed to this repo.
 _Avoid_: bundled, embedded
 
@@ -106,7 +106,7 @@ _Avoid_: Archinity.Altar (the historical name, being retired)
 **Divergence**:
 The first of the two gates a solution must pass — whether it reads anything that
 can differ between the two machines.
-_Avoid_: desync (the *symptom*; divergence is the cause)
+_Avoid_: desync (the _symptom_; divergence is the cause)
 
 **Loudness**:
 The second gate — whether a failure announces itself or happens silently.
@@ -152,9 +152,22 @@ The quest chain from the first Archon gift to transcendence. Currently greenfiel
 — no def exists.
 _Avoid_: the questline, the main quest
 
+**Plot line**:
+A storyline in the world, with a clock. It exists whether or not the player touches
+it, and it has a beginning, a movement and a landing. The **main plot line** is the
+spine the player is expected to engage with; a **subplot** is any other. Some close inside an era, some run the whole campaign.
+[#11](https://github.com/cjd721/Rimworld-Archinity/issues/11)
+_Avoid_: arc (which is the whole story's shape), thread, storyline
+
+**Section**:
+One of the two halves the plot lines are written in: **the dawn of time to
+electricity** (Neolithic → Industrial) and **the first rocket to the stars**
+(the gravship → the door). A drafting unit, not a thing in the fiction.
+
 **Beat**:
-One step of the Chronicle. Always a place you travel to and take something from,
-never a parcel dropped on the roof.
+One step of the Chronicle, **derived from a plot line** — the point at which a plot
+line touches the player and becomes an event they interact with. **Main beats
+and sub beats**, mirroring the main plot line and its subplots.
 _Avoid_: quest, mission, stage
 
 **Era**:
@@ -162,7 +175,7 @@ One of the six tech tiers the campaign passes through in order.
 _Avoid_: tier (which means a RimWorld `techLevel`), age
 
 **Leap**:
-A named capability jump *within* an era. An era has several — fourteen across the
+A named capability jump _within_ an era. An era has several — fourteen across the
 campaign. [#5](https://github.com/cjd721/Rimworld-Archinity/issues/5)
 
 **The coda**:
@@ -180,13 +193,13 @@ The four jobs the era gate does, kept separate on purpose.
 [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7)
 
 **The ceiling**:
-The single stored scalar gating what content may *exist* — research, trader stock, quest
+The single stored scalar gating what content may _exist_ — research, trader stock, quest
 rewards, gear on generated pawns, incidents. A ceiling, never a level: everything at or
 below it stays available forever.
 _Avoid_: the world tech level, the tech cap
 
 **The band**:
-Which factions may *contact* you — your tier and one below, and nobody else.
+Which factions may _contact_ you — your tier and one below, and nobody else.
 **This is a configuration we must write, not a default.** Ignorance Is Bliss ships
 `numTechsAhead 1` / `numTechsBehind 1` and `empireIsAlwaysEligible true`, and the repo's
 settings file sets none of the three. [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)
@@ -201,7 +214,7 @@ What the player does to earn the advance — a capstone that unlocks a rite at t
 
 **Capstone**:
 The research project whose prerequisites are an era's named Spine nodes. Always declared
-at the techLevel of the era it climbs *from*, never the one it climbs to.
+at the techLevel of the era it climbs _from_, never the one it climbs to.
 _Avoid_: theory project, tech lock
 
 **Fade**:
@@ -224,7 +237,7 @@ and you will be measurably weaker for it. **Comfort** — you would never miss i
 did not know it existed.
 
 **Practice** · **Instruction** · **Analysis**:
-How a node is earned, chosen by asking *how would you actually figure this out?*
+How a node is earned, chosen by asking _how would you actually figure this out?_
 **Practice** — resource cost alone, the default. **Instruction** — a techprint, a book, a
 teacher. **Analysis** — a physical example you took apart.
 _Avoid_: gating, hunt requirements
