@@ -1196,3 +1196,53 @@ therefore sit inside the same synced command.
   before the set is pinned**, and #3's vendoring decision has to say which root
   wins. *(An earlier draft of this line said "seven mods", which was wrong by an
   order of magnitude.)*
+
+---
+
+# Promoted from the map (2026-09-02 compaction)
+
+Verified during the sessions on [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23)
+and [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8), but recorded only in the
+map's fog, which has no owning ticket to hold detail. Moved here so the compaction did not
+bury them. Not re-verified at the time of the move — provenance is those sessions.
+
+## Presentational separation between the two players
+
+Fog-only material behind *the ownership boundary between the two players*. Under one shared
+player faction, every MP `Disable*ForOtherFactions` guard is faction-compared and therefore
+**inert by construction**; no patch restores them without recreating the divergence class
+#24 catalogued. What remains buildable is a *presentational* layer — a filtered colonist
+bar, filtered letters, a filtered quest tab.
+
+**The load-bearing rule, verified from two directions: filter at draw time, never at
+list-membership time.**
+
+- `Letter.CanCullArchivedNow` culls the Archive by **stack membership**, so filtering at
+  receive makes two clients cull different sets, and synced `ChoiceLetter` commands then
+  deserialize to null. MP ships this bug with a TODO admitting it.
+- If such a layer ever patches `MapPawns.FreeColonists`, `PawnsFinder` or `Pawn.IsColonist`,
+  **~15 ticked readers diverge** — recreating the multifaction bug inside shared mode, and
+  equally silent.
+
+What makes it tractable:
+
+- `ColonistBar.cachedEntries` is **never serialised**, and nothing in the tick path reads it.
+- MP already ships the same three filters keyed on `Faction.OfPlayer` — inert under one
+  faction, but a working reference implementation.
+- `MP.GetPlayers()` supplies a sanctioned per-player identity.
+
+⚠️ **Standards gap.** `CODING_STANDARDS.md` has **no** rule on `[SyncMethod]`, UI Harmony
+patches, or deliberate client-local state, and a layer like this **violates the Divergence
+gate as written**. It needs a ratified carve-out, or every review re-litigates it.
+
+## The intel workbench already ships, twice
+
+Fog-only material behind *the acquisition ledger*. The archive's parked "intel workbench"
+idea — a player-initiated way to turn *"I am blocked"* into an action
+(`docs/archive/sys/06-quests.md`) — does not need building.
+
+- **Medieval Overhaul's explorer's workbench** (`MedievalOverhaul.Building_QuestScanner`) is
+  a player-built quest generator fuelled by consumable **Torn Notes**, gated on linkable
+  facilities, exposing an open `MedievalOverhaul.QuestInformation` extension that any
+  `QuestScriptDef` can join.
+- **VFE Deserters ships a second**: an intel-priced rolling queue on a comms tab.
