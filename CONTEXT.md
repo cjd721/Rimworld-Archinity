@@ -12,7 +12,10 @@ that produced it. Those live where they always did —
 | ---------------------------- | ---------------------------------------------------------- |
 | `CODING_STANDARDS.md`        | how code and defs get written; the rules an author follows |
 | `docs/technical-findings.md` | verified facts, so they are never re-litigated             |
+| `docs/PLOT.md`               | the plot — what happens, in what order. Governs the rest.  |
 | `docs/WAYSTONE.md`           | design intent and the campaign's North Star                |
+| `docs/STORY.md`              | the premise, and the rules governing every line of copy    |
+| `docs/COSMOLOGY.md`          | how anima, the channel and the price work. Writer-facing.  |
 | GitHub issues                | the decisions themselves, and the reasoning behind them    |
 
 A term here links to the doc that carries its detail. If an entry grows past two

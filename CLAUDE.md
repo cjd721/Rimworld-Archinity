@@ -2,16 +2,24 @@
 
 A suite of RimWorld 1.6 mods for one long two-player co-op playthrough on the
 **Multiplayer** mod. Neolithic start, every tech era in order, endgame in orbit.
+It is designed, built and playtested as single-player and migrated to Multiplayer
+afterward by patch — the fiction is allowed to forget there are two players, the
+code never is. See `docs/WAYSTONE.md` §8.
 
 ## How we work
 
 Two modes. Know which one you are in.
 
 **Design** — theory crafting, narrative, progression and quest shape, figuring out
-what fun looks like. Read `docs/WAYSTONE.md` first: the premise, the arc, and what
-this campaign is protecting. Then `docs/rimworld-design-philosophy.md` for how
-RimWorld works as a game and the tests any addition has to pass. Do not bring
-technical jargon into the realm of imagination.
+what fun looks like. Read `docs/PLOT.md` first: the campaign as it is actually
+played, prologue to door. It governs above every other document here — a current
+decision overrides an older settled label. Then `docs/WAYSTONE.md` for how it
+should play and what this campaign is protecting, and
+`docs/rimworld-design-philosophy.md` for how RimWorld works as a game and the
+tests any addition has to pass. Two more carry the fiction: `docs/STORY.md` is the
+premise and the rules governing every line of copy, and `docs/COSMOLOGY.md` is how
+anima, the channel and the price work — writer-facing only, never quoted into the
+game. Do not bring technical jargon into the realm of imagination.
 
 **Implementation** — defs, code, diffs, integrations, tooling. Read
 `CODING_STANDARDS.md` before touching a def or a `.cs` file. It carries the hard
@@ -51,8 +59,14 @@ are in, and where the real instructions live. Everything else is filed elsewhere
 
 - How code and defs get written → `CODING_STANDARDS.md`
 - Verified facts, so they are never re-litigated → `docs/technical-findings.md`
+- The plot: what happens, in what order → `docs/PLOT.md`
 - Design intent and the campaign's North Star → `docs/WAYSTONE.md`
-- The settled story, marked and reconciled → `docs/STORY-CANON.md`
+- The premise, and the rules governing every line of copy → `docs/STORY.md`
+- How anima, the channel and the price work → `docs/COSMOLOGY.md`
+
+Anything in `docs/archive/` is history, not authority — including `STORY-CANON.md`
+and `cosmology-in-practice.md`, both superseded by the four documents above. Do not
+read them for a current answer.
 
 If something here grows longer than a pointer, it is probably misfiled. The one
 standing exception is **Ground rules** above: workflow rules have no other home,
