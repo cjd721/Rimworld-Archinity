@@ -52,8 +52,20 @@ The player knows the founders are biologically strange, blood contains anima, th
 
 The opening contact is the invitation; the prehistoric marking is not witnessed
 in play. The founders' strength initially exceeds their fine control. Injury can
-cost limbs and months of usefulness. Whether a founder can die permanently before
-transcendence remains the specific unresolved question in [#11](https://github.com/cjd721/Rimworld-Archinity/issues/11).
+cost limbs and months of usefulness.
+
+**The founders can die, and the campaign can end.** Deathlessness removes the
+ordinary causes and rapid regrowth and accelerated healing carry them through
+injuries that would kill anyone else, but destruction of the brain kills them
+permanently. That holds from the prologue until the altar authors the Transcendent
+Archogene, after which death becomes temporary absence. The resilience is genetic,
+not narrative armor: it is what makes losing a founder to one bad afternoon
+unlikely rather than what makes it impossible. Hard to kill, not unkillable.
+
+The gene package that delivers this is [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31)'s
+to select, and the deathless-plus-brain-destruction behavior needs verifying
+against 1.6 rather than assuming; the post-transcendence gene is described in
+[the ending](ENDING.md#the-transcendent-archogene).
 
 Discovery mechanics are in [Charting](../specs/CHARTING.md); founder rewards and
 the altar's separate progression tracks are in [the altar specification](../specs/ALTAR.md).

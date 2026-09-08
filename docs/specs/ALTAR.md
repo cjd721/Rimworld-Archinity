@@ -51,6 +51,13 @@ Exact pools, genes and psycast gates belong to
 
 Track actual founder psylink/channel progression and the final claimed title.
 Research gates distinguish Industrial lottery access from earlier deterministic
-rewards. Costs, lottery categories and weights, intermediate rites and founder
-survival before transcendence remain specific design/balance work. The latter
-question is retained in [#11](https://github.com/cjd721/Rimworld-Archinity/issues/11).
+rewards. Costs, lottery categories and weights and the intermediate rites remain
+specific design/balance work.
+
+Founder survival before transcendence is settled: the founders are deathless and
+fast-healing but brain destruction kills them permanently, up until the altar
+authors the Transcendent Archogene. See
+[Neolithic](../plot/NEOLITHIC.md#neolithic-iii--settled-tribe). The altar grants
+no death-proofing of its own before that final rite, and the core vectors it
+delivers must not quietly become one; the gene selection belongs to
+[#31](https://github.com/cjd721/Rimworld-Archinity/issues/31).
