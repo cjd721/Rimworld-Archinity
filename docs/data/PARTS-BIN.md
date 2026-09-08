@@ -2312,7 +2312,7 @@ here so the bin stays the single index of what is on disk.
 
 | ID | Mod | packageId | Supplies | Cost |
 |---|---|---|---|---|
-| `3762723122` | **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` | Treaties, vassalage, tribute, coalitions, pending conquests, a player court, forced battles, counter-espionage. The only thing in the bin that already implements what WAYSTONE §5 asks the political board to do. | **Cheap + settings, and the settings are the whole safety story.** 623 types; `WorldComponent_RimPacts` alone decompiles to **33,715 lines**. `RimPactsSettings` has **57 fields** and they gate `Rand` paths *inside the ticking component* (`if (Settings.enableDynamics) { … Rand.Chance(…) }`, `startAsEmpireTributary`, `enemySpyDetectNoBureau`). §3.1's dominant hazard at full scale: mismatched settings ⇒ different draw counts ⇒ the whole diplomatic sim diverges. **[V]** |
+| `3762723122` | **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` | Treaties, vassalage, tribute, coalitions, pending conquests, a player court, forced battles, counter-espionage. The only thing in the bin that already implements the political behavior described in [religion and politics](../specs/RELIGION.md#political-pressure). | **Cheap + settings, and the settings are the whole safety story.** 623 types; `WorldComponent_RimPacts` alone decompiles to **33,715 lines**. `RimPactsSettings` has **57 fields** and they gate `Rand` paths *inside the ticking component* (`if (Settings.enableDynamics) { … Rand.Chance(…) }`, `startAsEmpireTributary`, `enemySpyDetectNoBureau`). §3.1's dominant hazard at full scale: mismatched settings ⇒ different draw counts ⇒ the whole diplomatic sim diverges. **[V]** |
 | `3016405872` | ATH's Styleable Framework | `Anthitei.ATHsStyleableFramework.Style` | Style framework — 25 patch files, ships `Source/`. | Cheap. No threading, no `WorldComponent`, no settings. **[M]** |
 | `3136210612` | ATH's style Gothic and Bloody Gothic | `anthitei.athsstylegothic.style` | Style pack, 10 defs. | Free — no assembly. **[M]** |
 | `3292048218` | ATH's styles Norse | `anthitei.athsstylenorse.style` | Style pack, 6 defs. **On-theme for the Neolithic and Medieval eras**, where the campaign's visual vocabulary is thinnest. | Free — no assembly. **[M]** |
@@ -2385,7 +2385,7 @@ which owns the RimPacts whole / fork / ours question — with the vassalage half
 It is worth
 weighing carefully in both directions: it is a **parallel world model**, which is the
 stated reason §12 and the Waystone distrust faction-sim mods — and it is also the only
-existing implementation of tribute, vassalage and a humiliating peace, which WAYSTONE §5
+existing implementation of tribute, vassalage and a humiliating peace, which the [religion specification](../specs/RELIGION.md)
 names as the floor beneath total hostility.
 
 ---

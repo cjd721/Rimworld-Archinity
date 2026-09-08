@@ -22,12 +22,11 @@ get resolved.
 These predate the skill setup and are not ADRs, but they carry real decisions —
 read them when the topic overlaps:
 
-- `docs/PLOT.md` — what the playthrough actually is, prologue to door. Governs above the rest.
-- `docs/WAYSTONE.md` — how it should play, and what the campaign is protecting
-- `docs/STORY.md` — the premise, and the rules governing every line of copy
-- `docs/COSMOLOGY.md` — how anima, the channel and the price work. Writer-facing only; never quoted into the game.
-- `docs/rimworld-design-philosophy.md` — the design bar
-- `docs/technical-findings.md` — noisy-failure engineering notes (the silent ones live in `CLAUDE.md`)
+- `docs/PLOT.md` — campaign overview, tone and links to era chapters.
+- `docs/plot/` — Neolithic through the ending, one chapter per phase.
+- `docs/specs/` — Charting, religion, altar progression and Glittertech/pursuit.
+- `docs/COSMOLOGY.md` — anima, the channel and selfhood, for writers.
+- `docs/technical-findings.md` — verified engine and mod behavior; coding rules are in `CODING_STANDARDS.md`.
 
 Superseded, and kept in `docs/archive/` as history rather than authority:
 `VISION.md`, `MAP.md`, `PROGRESSION-MAP.md`, `HANDOFF.md`, `STORY-CANON.md`,

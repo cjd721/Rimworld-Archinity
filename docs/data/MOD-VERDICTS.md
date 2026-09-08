@@ -341,11 +341,11 @@ settings files are not a nicety for this mod, they are the entire safety story.
 which owns the RimPacts whole / fork / ours question — with the vassalage half at
 [Vassalage and the tithe catalogue](https://github.com/cjd721/Rimworld-Archinity/issues/35).
 Weigh it
-against the Waystone's *do not build a shadow world* — the stated reason faction-sim
+against the campaign's refusal of a parallel world simulation — the stated reason faction-sim
 mods are perpetually beta is that they maintain a parallel world model, and this is
 one, ticking synced or not. Against that: it is the only thing in the bin that
 already implements treaties, vassalage, tribute and a humiliating peace, which is
-close to a literal restatement of what WAYSTONE §5 asks the political board to do.
+close to what [religion and politics](../specs/RELIGION.md#political-pressure) asks the political board to do.
 
 ### Range Finder — the one place this batch touches the bar **[V]**
 

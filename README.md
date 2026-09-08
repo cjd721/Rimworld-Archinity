@@ -4,22 +4,21 @@ A suite of RimWorld 1.6 mods for a single long co-op playthrough: neolithic star
 slow climb through every tech era, endgame in orbit, and a late-game antagonist
 worth beating.
 
-Everything here is **XML defs only** — no C#, no Harmony patches. Def-only mods
-carry no simulation code, which makes them inherently multiplayer-safe.
+## References
+
+- [Campaign overview](docs/PLOT.md) — the complete arc and links to era chapters.
+- [Cosmology](docs/COSMOLOGY.md) — how anima, devotion and selfhood work.
+- [System specifications](docs/specs/) — Charting, religion, the altar and Glittertech.
+- [Wayfinder](https://github.com/cjd721/Rimworld-Archinity/issues/2) — remaining design and specification work.
+- [Glossary](CONTEXT.md), [coding standards](CODING_STANDARDS.md) and [technical findings](docs/technical-findings.md).
 
 ## Mods
 
-| Mod | Status | Contents |
-|---|---|---|
-| `Archinity.Origins` | **built** | Archonian Sanguophage xenotype + "Seed of Archinity" scenario |
-| `Archinity.Pacing` | **partial** | Orbit size, Archon raid lockout, Transcendent reserved, MRR fix |
-| `Archinity.Drifters` | **built** | Starjack Free Companies — neutral, hostile-capable orbital faction |
-| `Archinity.Glitterites` | **built** | Ultra-tech permanent enemy, orbital holdings, mixed human/mech forces, glitterheart orbital gate |
-| `Archinity.Chronicle` | planned | Quest chain spine tying the arc together |
-
-New session? Read [docs/VISION.md](docs/VISION.md), then
-[docs/technical-findings.md](docs/technical-findings.md), then
-[docs/HANDOFF.md](docs/HANDOFF.md).
+The existing modules are `Archinity.Origins`, `Archinity.Pacing`,
+`Archinity.Drifters`, `Archinity.Glitterites` and `Archinity.Altar`. They contain
+defs, assets, patches and altar source code. Their presence does not mean the
+campaign described in the design references is implemented. Quest authoring and
+integration remain work tracked by the wayfinder.
 
 ## Setup
 
@@ -33,7 +32,7 @@ This creates a **directory junction** for every `Archinity.*` folder into
 RimWorld's `Mods\` directory. Junctions don't need administrator rights, and
 edits in the repo are live in the game with no copy step.
 
-`-SyncConfig` also installs the canonical `ModsConfig.xml` (load order) and any
+`-SyncConfig` also installs the repository's current `ModsConfig.xml` (load order) and any
 per-mod settings from `config/`. Your previous config is backed up first.
 
 Other flags:
@@ -57,24 +56,6 @@ produce divergent behavior that reads as a desync.
 
 Use the **Multiplayer** mod (`rwmt.multiplayer`). Do not run RimWorld Together
 at the same time.
-
-## Design notes
-
-The pacing spine is `requiredResearch` on VEF's `QuestChainExtension`, keyed to
-TechBlock's tier-lock research projects:
-
-| Research def | Means |
-|---|---|
-| `TB_NeolithicTheory` | entered Neolithic |
-| `TB_MedievalTheory` | entered Medieval |
-| `TB_IndustrialTheory` | entered Industrial |
-| `TB_SpacerTheory` | entered Spacer |
-| `TB_UltraTheory` | entered Ultra |
-| `TB_ArchoTheory` | entered Archotech |
-
-This gates story beats on actual progression rather than elapsed days.
-`rootMinProgressScore` is **not** usable for this — it computes as
-`freeColonists + (wealth * 0.0001)` and ignores research entirely.
 
 ## Tooling
 

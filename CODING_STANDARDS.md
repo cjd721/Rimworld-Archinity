@@ -302,13 +302,9 @@ checked.
   explaining a rule in `CONTEXT.md`, or defining a word here, they are swapped.
 - `docs/technical-findings.md` owns verified facts, so they are never
   re-litigated.
-- `docs/PLOT.md` owns the plot — what happens, in what order. It governs above
-  every other document in this repo: a current decision overrides an older
-  settled label.
-- `docs/WAYSTONE.md` owns design intent. A diff does not get to change it.
-- `docs/STORY.md` owns the premise and the rules governing player-facing copy.
-- `docs/COSMOLOGY.md` owns how the fiction works under the hood. It is
-  writer-facing: never lift a line of it into a letter, quest or description.
+- `docs/PLOT.md` summarizes the campaign and links its era chapters in `docs/plot/`.
+- `docs/specs/` carries the shared system details needed by implementation.
+- `docs/COSMOLOGY.md` explains the fictional mechanisms for writers.
 
 A diff that files a rule in the wrong one of these is misfiled, even when the rule
 is correct.

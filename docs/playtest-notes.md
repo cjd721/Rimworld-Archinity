@@ -34,7 +34,7 @@ Conrad, unprompted: *"gives you a real sense of purpose and something to do whil
 playing the game besides just watching your pawns run around."*
 
 That is the mid-game sag being answered by category-4 content, which
-`rimworld-design-philosophy.md` §4 says cannot happen. It happened. The mechanism is
+the [earlier design essay](archive/2026-09-07-campaign-draft/rimworld-design-philosophy.md) §4 says cannot happen. It happened. The mechanism is
 §5 of the same document: the gear **forces specialisation** — a pawn wearing the
 cook's kit is a cook and cannot also be your smith — and a specialist you can finish
 outfitting is a player-invented project with a defined end state, visible in the
@@ -42,8 +42,8 @@ world, at real cost, and chosen. *Deck out eight knights* and *dress the kitchen
 are the same shape.
 
 The variable is not how many apparel defs exist. It is whether they **form a kit for
-a role**. That distinction is now carried in `WAYSTONE.md` §6 and §4.4 of the
-philosophy doc has been qualified.
+a role**. That distinction was carried into the earlier Waystone draft and the
+philosophy essay. The current campaign treatment is in [Campaign in play](PLOT.md#campaign-in-play).
 
 ### What the mods get wrong, and what we take from it
 
@@ -107,8 +107,8 @@ story.
 The utility and augment gear remains a good home for hunt gating on its own merits,
 and a higher resource cost is accepted as a gate there in place of a quest.
 
-`WAYSTONE.md` §6 now carries this as **"The first answer to a need is never gated
-behind a fetch"**, replacing the over-committed version.
+[Campaign in play](PLOT.md#campaign-in-play) carries the surviving rule: the first
+Neolithic answer to a need is not gated behind a fetch.
 
 ### Menus are the binding constraint
 

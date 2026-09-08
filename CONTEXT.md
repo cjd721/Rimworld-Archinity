@@ -2,26 +2,10 @@
 
 The project's glossary. What the words mean, and nothing else.
 
-**What belongs here:** a term this project uses as a label, where a reader would
-otherwise guess. One or two lines, defining what it _is_.
-
-**What does not:** the rules for applying a term, its rationale, or the argument
-that produced it. Those live where they always did —
-
-| Doc                          | Owns                                                       |
-| ---------------------------- | ---------------------------------------------------------- |
-| `CODING_STANDARDS.md`        | how code and defs get written; the rules an author follows |
-| `docs/technical-findings.md` | verified facts, so they are never re-litigated             |
-| `docs/PLOT.md`               | the plot — what happens, in what order. Governs the rest.  |
-| `docs/WAYSTONE.md`           | design intent and the campaign's North Star                |
-| `docs/STORY.md`              | the premise, and the rules governing every line of copy    |
-| `docs/COSMOLOGY.md`          | how anima, the channel and the price work. Writer-facing.  |
-| GitHub issues                | the decisions themselves, and the reasoning behind them    |
-
-A term here links to the doc that carries its detail. If an entry grows past two
-lines it is misfiled.
-
----
+Campaign: [overview](docs/PLOT.md), [era chapters](docs/plot/),
+[systems](docs/specs/) and [cosmology](docs/COSMOLOGY.md).
+Engineering: [coding standards](CODING_STANDARDS.md) and
+[verified findings](docs/technical-findings.md).
 
 ## Language
 
@@ -116,15 +100,15 @@ The second gate — whether a failure announces itself or happens silently.
 
 ### The campaign
 
-Detail for all of these lives in `docs/WAYSTONE.md`; these are the labels only.
+Campaign sequence: [PLOT.md](docs/PLOT.md). Shared mechanics: [specs](docs/specs/).
 
 **The founders**:
 The two player pawns the Archons marked. Protagonists and progress bar both.
 _Avoid_: the chosen ones, the mains, the player characters
 
 **The mark**:
-What makes the founders singular. Gates the core vectors and Transcendence, and carries a
-small permanent presence. [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10)
+The founders' direct Archon inheritance and the key to core vectors. A head start,
+not a cosmological requirement for transcendence. [Altar](docs/specs/ALTAR.md)
 
 **The altar**:
 The one machine that turns lives into power. One machine, one philosophy.
@@ -139,7 +123,8 @@ What meditation is reskinned into: attendance at the altar and its dead.
 _Avoid_: meditation, training
 
 **The rite**:
-The prisoner sacrifice at the altar that grants one psylink rank.
+An altar ceremony. Willing-devotion rites advance psychic capacity; the final
+rite combines Life, aligned Devotion and Self. [Altar](docs/specs/ALTAR.md)
 
 **Core vector** · **Augment vector**:
 The two named-gene classes. **Core** is the path-to-divinity set and is mark-locked;
@@ -151,21 +136,16 @@ An Archon capsule converted by Industrial research into something usable.
 _Avoid_: archite capsule (the **inert** pre-conversion item)
 
 **The Chronicle**:
-The quest chain from the first Archon gift to transcendence. Currently greenfield
-— no def exists.
+The ordered campaign discoveries from the first Archon gift to transcendence.
+[Charting](docs/specs/CHARTING.md)
 _Avoid_: the questline, the main quest
 
 **Plot line**:
-A storyline in the world, with a clock. It exists whether or not the player touches
-it, and it has a beginning, a movement and a landing. The **main plot line** is the
+A sequence of motives, pressures and developments in the world, with a beginning,
+a movement and a landing. The **main plot line** is the
 spine the player is expected to engage with; a **subplot** is any other. Some close inside an era, some run the whole campaign.
 [#11](https://github.com/cjd721/Rimworld-Archinity/issues/11)
 _Avoid_: arc (which is the whole story's shape), thread, storyline
-
-**Section**:
-One of the two halves the plot lines are written in: **the dawn of time to
-electricity** (Neolithic → Industrial) and **the first rocket to the stars**
-(the gravship → the door). A drafting unit, not a thing in the fiction.
 
 **Beat**:
 One step of the Chronicle, **derived from a plot line** — the point at which a plot
@@ -174,21 +154,46 @@ and sub beats**, mirroring the main plot line and its subplots.
 _Avoid_: quest, mission, stage
 
 **Era**:
-One of the six tech tiers the campaign passes through in order.
+One of the five technological eras: Neolithic, Medieval, Industrial, Spacer or
+Ultra. The coda is the concluding campaign phase, not another research tier.
 _Avoid_: tier (which means a RimWorld `techLevel`), age
 
 **Leap**:
-A named capability jump _within_ an era. An era has several — fourteen across the
-campaign. [#5](https://github.com/cjd721/Rimworld-Archinity/issues/5)
+A named capability jump within an era. Exact Industrial and later partitions
+remain subject to the campaign and progression specifications.
 
 **The coda**:
-The Archotech stretch after transcendence. Not an era and not a leap: nothing new is
-researchable, and the campaign's last state is played rather than climbed.
+The concluding phase around transcendence and the threshold. Returning permits
+continued Ultra research and play. [Ending](docs/plot/ENDING.md)
 _Avoid_: the Archotech era, the endgame
 
 **Chapter close**:
-The end of a political era, where the cast is replaced — one or two factions climb
-forward with you and the rest fade. Two are structural: the end of M3 and the end of S1.
+The resolution of a political phase. The major planetary resolution occurs in
+early Spacer before orbit is revealed. [Spacer](docs/plot/SPACER.md)
+
+**Waystone**:
+The Archotech detector interpreted through Charting from the Star Table to the
+Sensory Array. At transcendence, it points out of the universe.
+
+**Reverence**:
+Adoption of the player's ideology among a faction's people. Persistent, slowly
+decaying and sustained by institutions; not spendable. [Religion](docs/specs/RELIGION.md)
+
+**Exaltation**:
+Church service currency whose thresholds unlock title rites and institutional
+privileges, independently of psychic rank.
+
+**Influence**:
+Spendable leverage earned through Schism operations and used in its anti-Church
+network. Ordered mission progress is separate.
+
+**Intel**:
+Spendable Glitterite technical intelligence used by advanced research and hacking;
+completed knowledge persists. [Glittertech](docs/specs/GLITTERTECH.md)
+
+**Trace**:
+How well the Glitterites can correlate, locate and hunt the colony. Visibility is
+an alternative UI name still under consideration.
 
 ### Era gating
 
@@ -222,7 +227,8 @@ _Avoid_: theory project, tech lock
 
 **Fade**:
 What happens to a faction the band has left behind. It stays alive, visible and raidable;
-it simply stops being eligible to raid, trade or send quests. Nothing else happens to it.
+it stops being eligible for ordinary contact. Authored political changes can still
+affect its holdings. [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)
 
 **Exposure** · **Supply**:
 The line the gate is drawn on. **Exposure** — seeing, mining, holding and using what you
