@@ -87,7 +87,7 @@ per faction, with institutional sustain/decay and derived attention bands.
 Title and favor catalogs, conversion propagation amounts, decay, institutional
 effects, tolerance, revolt success and UI thresholds still need design or tuning.
 Friendly submission and hostile revolt are distinct routes. [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)
-specifies their obligations and tithes. [#43](https://github.com/cjd721/Rimworld-Archinity/issues/43)
-maps the political systems onto Empire/Deserters machinery.
+specifies their obligations and tithes. [#52](https://github.com/cjd721/Rimworld-Archinity/issues/52), [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55) and [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) each map one
+of the political systems onto its candidate Empire/Deserters machinery.
 
 Final volunteer alignment is defined in [the ending](../plot/ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly).

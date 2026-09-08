@@ -4,9 +4,12 @@
 state ownership, conversion hooks, persistence, synchronization, UI integration, the
 existing machinery we reuse and the new code we must write.
 
-This directory holds **resolved technical designs**, organized by coherent system. It is
-not a place for fiction and not a place for gameplay rules; those are `docs/plot/` and
-`docs/requirements/` respectively.
+This directory holds the technical designs, organized by coherent system — including ones
+still in progress. A spec may record a **verified available mechanism** long before that
+mechanism is selected; the Status section is where that distinction is kept.
+
+It is not a place for fiction (`docs/plot/`), for gameplay rules (`docs/requirements/`),
+or for what becomes available and when (`docs/progression/`).
 
 ## Organize by system, not by mod or by ticket
 

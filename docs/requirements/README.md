@@ -62,6 +62,30 @@ Include explicit exclusions only where they prevent a plausible misreading.
 What has not been decided, linked to the owning issues.
 ```
 
-The four documents here predate the template and sit at uneven levels of detail. Migrate a
-document to the template when the owning requirements ticket next touches it; do not
-reformat one for its own sake.
+## Migrating the four existing documents
+
+They predate the template and sit at uneven levels of detail. Migrate one when the owning
+requirements ticket next touches it; do not reformat a document for its own sake.
+
+Each currently closes with a `## Saved state and remaining work` section, which the
+template has no slot for because it holds three different things. Split it on migration:
+
+- **State enumerations** — what must be saved, and per what — go to the system's technical
+  spec, under *Persistence and multiplayer*.
+- **Undecided rules** stay here, under *Open questions*, linked to the owning issue.
+- **"Remains to be verified"** goes to the spec, under *Status* or *Verification*.
+
+**Known technical material to move out**, identified but deliberately not yet moved — each
+belongs to `docs/specs/` and to the capability ticket named:
+
+- `CHARTING.md` — the *Implementation pattern* paragraph (the Long-Range Mineral Scanner
+  grammar) and the Deserters-style world-state cursor. [#57](https://github.com/cjd721/Rimworld-Archinity/issues/57), [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40).
+- `RELIGION.md` — "an Empire-like scale" / "the Church's Honor-equivalent" ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53));
+  "Influence is the Schism's equivalent of Deserters Intel" ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)); the commitment
+  to a bespoke political UI ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)); the storyteller incident-selection hook
+  ([#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)).
+- `GLITTERTECH.md` — "the Ultra counterpart to Deserters Intel" ([#55](https://github.com/cjd721/Rimworld-Archinity/issues/55)); deferring
+  the Trace/Visibility name to whatever implementation reads better ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)).
+
+In each case the **requirement** is the observable behavior; the named carrier is the
+mechanism and does not belong here.

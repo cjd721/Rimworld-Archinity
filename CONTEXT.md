@@ -100,7 +100,7 @@ The second gate — whether a failure announces itself or happens silently.
 
 ### The campaign
 
-Campaign sequence: [PLOT.md](docs/PLOT.md). Shared mechanics: [requirements](docs/requirements/).
+Campaign sequence: [PLOT.md](docs/PLOT.md). Shared system requirements: [requirements](docs/requirements/).
 
 **The founders**:
 The two player pawns the Archons marked. Protagonists and progress bar both.

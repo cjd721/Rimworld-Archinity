@@ -22,7 +22,7 @@ simulation create the events around that spine.
 | [Ultra](plot/ULTRA.md) | Raids, captured exemplars, Intel and hacking expose the Glitterites' capabilities and their failure to transcend. |
 | [Ending](plot/ENDING.md) | The founders claim themselves, complete the altar rite, meet the Administrator and choose whether to leave or return. |
 
-Shared mechanics: [Charting](requirements/CHARTING.md),
+Shared system requirements: [Charting](requirements/CHARTING.md),
 [religion and politics](requirements/RELIGION.md), [the altar](requirements/ALTAR.md),
 [Glittertech and pursuit](requirements/GLITTERTECH.md).
 [Cosmology](COSMOLOGY.md) explains the fictional mechanisms behind the discoveries.
