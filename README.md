@@ -8,7 +8,9 @@ worth beating.
 
 - [Campaign overview](docs/PLOT.md) — the complete arc and links to era chapters.
 - [Cosmology](docs/COSMOLOGY.md) — how anima, devotion and selfhood work.
-- [System specifications](docs/specs/) — Charting, religion, the altar and Glittertech.
+- [System requirements](docs/requirements/) — what Charting, religion, the altar and Glittertech must do.
+- [Technical specifications](docs/specs/) — how those requirements get satisfied.
+- [Progression grids](docs/progression/) — what becomes available, and when.
 - [Wayfinder](https://github.com/cjd721/Rimworld-Archinity/issues/2) — remaining design and specification work.
 - [Glossary](CONTEXT.md), [coding standards](CODING_STANDARDS.md) and [technical findings](docs/technical-findings.md).
 

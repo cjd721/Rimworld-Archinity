@@ -7,7 +7,7 @@ Previous: [Neolithic](NEOLITHIC.md) · [Overview](../PLOT.md) · Next: [Industri
 Medieval is the first fully authored political act. Organized civilization notices the founders. The dominant Church recognizes them as sacred proof, teaches them something real, offers extraordinary rewards, uses their notoriety to grow its own power and eventually fears the possibility that worship will bypass the institution and flow directly into the founders’ ideology.
 
 The Church's Exaltation/title ladder and the Schism's spendable Influence are
-defined in [religion and politics](../specs/RELIGION.md). They coexist with
+defined in [religion and politics](../requirements/RELIGION.md). They coexist with
 Goodwill, Reverence and the independent psychic ladder.
 
 ## Medieval I — The Forge / Seduction

@@ -3,7 +3,7 @@
 The project's glossary. What the words mean, and nothing else.
 
 Campaign: [overview](docs/PLOT.md), [era chapters](docs/plot/),
-[systems](docs/specs/) and [cosmology](docs/COSMOLOGY.md).
+[systems](docs/requirements/) and [cosmology](docs/COSMOLOGY.md).
 Engineering: [coding standards](CODING_STANDARDS.md) and
 [verified findings](docs/technical-findings.md).
 
@@ -100,7 +100,7 @@ The second gate — whether a failure announces itself or happens silently.
 
 ### The campaign
 
-Campaign sequence: [PLOT.md](docs/PLOT.md). Shared mechanics: [specs](docs/specs/).
+Campaign sequence: [PLOT.md](docs/PLOT.md). Shared mechanics: [requirements](docs/requirements/).
 
 **The founders**:
 The two player pawns the Archons marked. Protagonists and progress bar both.
@@ -108,7 +108,7 @@ _Avoid_: the chosen ones, the mains, the player characters
 
 **The mark**:
 The founders' direct Archon inheritance and the key to core vectors. A head start,
-not a cosmological requirement for transcendence. [Altar](docs/specs/ALTAR.md)
+not a cosmological requirement for transcendence. [Altar](docs/requirements/ALTAR.md)
 
 **The altar**:
 The one machine that turns lives into power. One machine, one philosophy.
@@ -124,7 +124,7 @@ _Avoid_: meditation, training
 
 **The rite**:
 An altar ceremony. Willing-devotion rites advance psychic capacity; the final
-rite combines Life, aligned Devotion and Self. [Altar](docs/specs/ALTAR.md)
+rite combines Life, aligned Devotion and Self. [Altar](docs/requirements/ALTAR.md)
 
 **Core vector** · **Augment vector**:
 The two named-gene classes. **Core** is the path-to-divinity set and is mark-locked;
@@ -137,7 +137,7 @@ _Avoid_: archite capsule (the **inert** pre-conversion item)
 
 **The Chronicle**:
 The ordered campaign discoveries from the first Archon gift to transcendence.
-[Charting](docs/specs/CHARTING.md)
+[Charting](docs/requirements/CHARTING.md)
 _Avoid_: the questline, the main quest
 
 **Plot line**:
@@ -177,7 +177,7 @@ Sensory Array. At transcendence, it points out of the universe.
 
 **Reverence**:
 Adoption of the player's ideology among a faction's people. Persistent, slowly
-decaying and sustained by institutions; not spendable. [Religion](docs/specs/RELIGION.md)
+decaying and sustained by institutions; not spendable. [Religion](docs/requirements/RELIGION.md)
 
 **Exaltation**:
 Church service currency whose thresholds unlock title rites and institutional
@@ -189,7 +189,7 @@ network. Ordered mission progress is separate.
 
 **Intel**:
 Spendable Glitterite technical intelligence used by advanced research and hacking;
-completed knowledge persists. [Glittertech](docs/specs/GLITTERTECH.md)
+completed knowledge persists. [Glittertech](docs/requirements/GLITTERTECH.md)
 
 **Trace**:
 How well the Glitterites can correlate, locate and hunt the colony. Visibility is

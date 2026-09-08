@@ -303,7 +303,9 @@ checked.
 - `docs/technical-findings.md` owns verified facts, so they are never
   re-litigated.
 - `docs/PLOT.md` summarizes the campaign and links its era chapters in `docs/plot/`.
-- `docs/specs/` carries the shared system details needed by implementation.
+- `docs/requirements/` states what each campaign system must do; `docs/specs/`
+  states how it will do it, and is what implementation reads.
+- `docs/progression/` carries the domain grids: what becomes available, and when.
 - `docs/COSMOLOGY.md` explains the fictional mechanisms for writers.
 
 A diff that files a rule in the wrong one of these is misfiled, even when the rule

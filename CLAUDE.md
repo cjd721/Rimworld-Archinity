@@ -11,8 +11,9 @@ code never is. See `docs/PLOT.md`.
 Two modes. Know which one you are in.
 
 **Design** — start with `docs/PLOT.md` for the campaign overview and chapter
-links. The relevant era chapter in `docs/plot/` carries its events; `docs/specs/`
-contains Charting, religion, altar and Glittertech mechanics. For fictional
+links. The relevant era chapter in `docs/plot/` carries its events;
+`docs/requirements/` states what Charting, religion, the altar and Glittertech must
+do, and `docs/specs/` states how. For fictional
 mechanisms, read `docs/COSMOLOGY.md`. Writing tone and revelation are in the
 overview. The current campaign reflects the final September 2026 map; older
 ticket comments and archived drafts may describe superseded designs.
@@ -57,7 +58,9 @@ are in, and where the real instructions live. Everything else is filed elsewhere
 - Verified facts, so they are never re-litigated → `docs/technical-findings.md`
 - The plot: what happens, in what order → `docs/PLOT.md`
 - Era narratives → `docs/plot/`
-- Shared campaign mechanics → `docs/specs/`
+- What campaign systems must do → `docs/requirements/`
+- How they will do it → `docs/specs/`
+- What is available, and when → `docs/progression/`
 - How anima, the channel and the price work → `docs/COSMOLOGY.md`
 
 Anything in `docs/archive/` is history, not authority — including `STORY-CANON.md`

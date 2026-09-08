@@ -45,6 +45,6 @@ Friendly highly reverent factions can become candidates for vassalage. Hostile h
 The gravship arrives before the planetary political/religious story is fully resolved, allowing early Spacer to use it to finish wars rather than artificially concluding everything at the Industrial border.
 
 The exact leap boundaries remain to be fitted to the available progression rather
-than inherited from an older I1–I4 outline. [The altar](../specs/ALTAR.md) defines
-genetic democratization; [religion and politics](../specs/RELIGION.md) carries
+than inherited from an older I1–I4 outline. [The altar](../requirements/ALTAR.md) defines
+genetic democratization; [religion and politics](../requirements/RELIGION.md) carries
 institution, vassalage and revolt mechanics.

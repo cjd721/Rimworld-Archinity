@@ -345,7 +345,7 @@ against the campaign's refusal of a parallel world simulation — the stated rea
 mods are perpetually beta is that they maintain a parallel world model, and this is
 one, ticking synced or not. Against that: it is the only thing in the bin that
 already implements treaties, vassalage, tribute and a humiliating peace, which is
-close to what [religion and politics](../specs/RELIGION.md#political-pressure) asks the political board to do.
+close to what [religion and politics](../requirements/RELIGION.md#political-pressure) asks the political board to do.
 
 ### Range Finder — the one place this batch touches the bar **[V]**
 

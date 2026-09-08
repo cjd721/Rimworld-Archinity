@@ -6,7 +6,7 @@ Previous: [Spacer](SPACER.md) · [Overview](../PLOT.md) · Next: [Ending](ENDING
 
 Ultra is a deliberately manufactured post-vanilla era. The founders do not simply unlock a higher research bench and wait. They raid a civilization stronger than themselves, steal examples, steal technical knowledge, learn the language of its machines and gradually turn the enemy’s own systems against it. Archotech remains categorically different: it is never researched or manufactured, only found, captured or used.
 
-[Glittertech and pursuit](../specs/GLITTERTECH.md) defines the exemplar, Intel,
+[Glittertech and pursuit](../requirements/GLITTERTECH.md) defines the exemplar, Intel,
 hacking and Trace loop. These are the activities through which the evidence below
 is encountered. Lore is primarily found at sites; spending Intel buys capability,
 not erasure or replacement of what the colony has learned.

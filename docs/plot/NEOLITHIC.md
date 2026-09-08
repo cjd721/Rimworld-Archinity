@@ -67,5 +67,5 @@ to select, and the deathless-plus-brain-destruction behavior needs verifying
 against 1.6 rather than assuming; the post-transcendence gene is described in
 [the ending](ENDING.md#the-transcendent-archogene).
 
-Discovery mechanics are in [Charting](../specs/CHARTING.md); founder rewards and
-the altar's separate progression tracks are in [the altar specification](../specs/ALTAR.md).
+Discovery mechanics are in [Charting](../requirements/CHARTING.md); founder rewards and
+the altar's separate progression tracks are in [the altar specification](../requirements/ALTAR.md).
