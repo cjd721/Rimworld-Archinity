@@ -4,13 +4,13 @@
 
 Archinity deliberately reuses RimWorld’s existing political grammar rather than replacing it with one universal currency. Each number answers a different question and appears only where it has a clear job.
 
-| System | How it is earned | What it means / does |
-| --- | --- | --- |
-| Goodwill | Normal faction diplomacy, gifts and quests. | The government’s relationship with you. It remains the ordinary spend lever for normal faction favors. |
-| Reverence | Conversion and religious propagation; public deeds; selected quest outcomes. | How deeply the player’s ideology has penetrated that faction’s population. Persistent but slowly decaying; gates religious/political possibilities rather than being spent. |
-| Exaltation → Church Titles | Church service and Church quests. | The Church’s Honor-equivalent. Thresholds unlock rites and titles; titles grant permanent institutional privileges, requisitions and authority. |
-| Influence | Schism operations and anti-Church missions. | Spendable leverage inside and around the Church: favors, defections, covert access, political pressure and aid. It is not a global diplomacy currency. |
-| Psychic Rank | Willing-devotion rites and later campaign breakthroughs. | Actual channel/psylink capability. Independent of Church title. Ends in the unresolved “?” that becomes the self-authored final title in Ultra. |
+| System                     | How it is earned                                                             | What it means / does                                                                                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Goodwill                   | Normal faction diplomacy, gifts and quests.                                  | The government’s relationship with you. It remains the ordinary spend lever for normal faction favors.                                                                      |
+| Reverence                  | Conversion and religious propagation; public deeds; selected quest outcomes. | How deeply the player’s ideology has penetrated that faction’s population. Persistent but slowly decaying; gates religious/political possibilities rather than being spent. |
+| Exaltation → Church Titles | Church service and Church quests.                                            | The Church’s Honor-equivalent. Thresholds unlock rites and titles; titles grant permanent institutional privileges, requisitions and authority.                             |
+| Influence                  | Schism operations and anti-Church missions.                                  | Spendable leverage inside and around the Church: favors, defections, covert access, political pressure and aid. It is not a global diplomacy currency.                      |
+| Psychic Rank               | Willing-devotion rites and later campaign breakthroughs.                     | Actual channel/psylink capability. Independent of Church title. Ends in the unresolved “?” that becomes the self-authored final title in Ultra.                             |
 
 ## Reverence — Religious Penetration, Not Goodwill++
 
@@ -64,25 +64,28 @@ Influence can buy anti-Church actions that Goodwill cannot: compromised access, 
 
 ## Political pressure
 
-Relationships form through encounters. Factions have interests involving each
-other, so helping one can antagonize another. Demands should ask for specific
-capabilities: a specialist on loan, a protected route, supplies for an army or
-military intervention. Refusal remains viable, with a visible consequence.
-Distinct enemy doctrines and non-raid hostility can change what the colony needs
-to build. A manageable number of live diplomatic situations prevents notification
-fatigue; defeat needs a route back through peace, tribute or subordination.
+Moved to [faction politics](POLITICS.md), settled on
+[#13](https://github.com/cjd721/Rimworld-Archinity/issues/13). Demands, refusal,
+the goodwill ripples along rivalries and alliances, what standing buys, and the
+ally-aid battle are faction-generic — they apply to raiders and Glitterites as much
+as to the Church — so they are no longer filed here.
 
-These are design intentions for [#13](https://github.com/cjd721/Rimworld-Archinity/issues/13),
-not a commitment to a continuous background war simulation. Era/capability threat
-and Reverence attention must be coordinated by [#9](https://github.com/cjd721/Rimworld-Archinity/issues/9).
+What stays religion's business is the **input**: a faction whose population
+increasingly follows the founders' ideology reacts politically to that, whether or
+not it is allied. Reverence and Goodwill are separate axes and neither substitutes
+for the other.
+
+Era/capability threat and Reverence attention are coordinated by
+[#9](https://github.com/cjd721/Rimworld-Archinity/issues/9) and [`PRESSURE.md`](PRESSURE.md).
 Glitterites instead use [Trace](GLITTERTECH.md#trace--the-glitterites-learn-you-back).
 
 ## Saved state and remaining work
 
 Church state includes Exaltation, title, privileges and tolerance/threat. Schism
 state includes contact, ordered mission progress, Influence and hierarchy targets.
-Politics tracks wars, alliances, Goodwill and vassal/revolt outcomes. Reverence is
-per faction, with institutional sustain/decay and derived attention bands.
+Reverence is per faction, with institutional sustain/decay and derived attention
+bands. Wars, alliances, Goodwill and vassal/revolt outcomes are tracked by
+[faction politics](POLITICS.md).
 
 Title and favor catalogs, conversion propagation amounts, decay, institutional
 effects, tolerance, revolt success and UI thresholds still need design or tuning.
