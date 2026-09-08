@@ -79,9 +79,10 @@ template has no slot for because it holds three different things. Split it on mi
 **Known technical material to move out**, identified but deliberately not yet moved — each
 belongs to `docs/specs/` and to the capability ticket named:
 
-- `CHARTING.md` — the *Implementation pattern* paragraph (the Long-Range Mineral Scanner
-  grammar), and "a small persistent world-state cursor, Deserters-style".
-  [#57][57], [#40][40].
+- ~~`CHARTING.md`~~ — **done.** Migrated onto the template by
+  [#39](https://github.com/cjd721/Rimworld-Archinity/issues/39); the Long-Range Mineral
+  Scanner grammar, the Deserters-style cursor and the state enumeration now live in
+  `docs/specs/CHARTING.md` as available-but-unselected mechanisms. [#57][57], [#40][40].
 - `RELIGION.md` — "an Empire-like scale" and "the Church's Honor-equivalent"
   ([#53][53]); "Influence is the Schism's equivalent of Deserters Intel"
   ([#54][54]); the commitment to a bespoke political UI ([#61][61]); the

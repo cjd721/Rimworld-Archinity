@@ -189,7 +189,27 @@ early Spacer before orbit is revealed. [Spacer](docs/plot/SPACER.md)
 
 **Waystone**:
 The Archotech detector interpreted through Charting from the Star Table to the
-Sensory Array. At transcendence, it points out of the universe.
+Sensory Array. At transcendence, it points out of the universe. Colony-level
+state, never a hauled item. [Charting](docs/requirements/CHARTING.md)
+
+**Charting**:
+Discovery as labor. One activity at one apparatus doing two jobs at once —
+surveying the region by ordinary means, and interpreting the Waystone's returns.
+[Charting](docs/requirements/CHARTING.md)
+_Avoid_: scanning, exploration
+
+**The survey pool** · **The return pool**:
+The two pools Charting's two jobs feed, and they accrue separately. **Survey** is
+the repeatable optional content — ruins, resource sites, faction places — ours and
+vanilla's alike. **Return** is the Archon spine and the finite set of named
+campaign rewards. The split is by **role**, never by who authored it.
+_Avoid_: tier 3 / tiers 1–2 (the priority ordering, not the pools)
+
+**Search band**:
+A minimum and maximum tile distance bounding where a discovery may be placed. The
+era ceiling decides which bands the world offers; the apparatus decides which it
+accepts. Not **the band**, which is the era gate's faction-contact range.
+_Avoid_: the band, range, radius
 
 **Reverence**:
 Adoption of the player's ideology among a faction's people. Persistent, slowly
@@ -231,6 +251,7 @@ Which factions may _contact_ you — your tier and one below, and nobody else.
 **This is a configuration we must write, not a default.** Ignorance Is Bliss ships
 `numTechsAhead 1` / `numTechsBehind 1` and `empireIsAlwaysEligible true`, and the repo's
 settings file sets none of the three. [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)
+Not a **search band**, which is Charting's placement distance.
 _Avoid_: the tech range, the faction filter
 
 **The advance**:

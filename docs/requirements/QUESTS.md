@@ -38,8 +38,9 @@ names the presentation, never the content.
   to move forward. Nice-to-haves, neat stuff, and everything else is an ordinary quest or event, however
   Archon-flavoured it is.
 - A nested beat that is a quest may be declined or dismissed once it has arrived.
-  Declining must not soft-lock a plot line; recovery is owned by
-  [how a beat arrives](https://github.com/cjd721/Rimworld-Archinity/issues/39).
+  Declining must not soft-lock a plot line. Recovery is settled in
+  [Charting](CHARTING.md): a beat is consumed by resolution rather than attendance, and a
+  beat that loses its site never loses its place in the chain.
 
 Nesting is the entire mechanism for telling necessary from optional. It replaces the
 bespoke Archon marking required by
@@ -125,8 +126,10 @@ choice per quest, not a property left to whatever a def happened to ship with.
   relationship is a verified available mechanism; selecting it, and writing the generator
   it needs, belongs to
   [the Chronicle's authoring mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/40).
-- **Whether auto-accept is forced on beats by the presentation** rather than chosen. See
-  the capability findings on
+- **Whether auto-accept is forced on beats by the presentation** rather than chosen. The
+  requirement is settled — discoveries auto-accept blanket, and declining is walking away
+  ([Charting](CHARTING.md)) — so this is now only a question of whether the mechanism
+  leaves us a choice. See the capability findings on
   [#12](https://github.com/cjd721/Rimworld-Archinity/issues/12).
 - **Ownership of the quest board under Multiplayer.** Either founder can accept any quest
   and choose its rewards, and there is no faction-level ownership to restore. Whether that
