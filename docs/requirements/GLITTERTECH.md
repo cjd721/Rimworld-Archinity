@@ -28,7 +28,7 @@ The reward curve should repeatedly add new verbs. A mission that once required k
 
 ## Trace — The Glitterites Learn You Back
 
-The Glitterites do not care about Reverence. It does not parse for a civilization that no longer participates in ordinary human belief, persuasion or diplomacy. Their pressure variable is Trace—working name, with “Visibility” still acceptable if implementation reads better. Trace means how complete a picture the Glitterites have assembled of the founders, their gravship, intrusion signatures and current location.
+The Glitterites do not care about Reverence. It does not parse for a civilization that no longer participates in ordinary human belief, persuasion or diplomacy. Their pressure variable is Trace. Trace means how complete a picture the Glitterites have assembled of the founders, their gravship, intrusion signatures and current location.
 
 The Deserters tradeoff remains: faster/deeper extraction of useful Intel and more aggressive intrusion create more Trace. Simple local hacks—such as a basic isolated door—need not matter. Network-level hacks of mechanoids, reactors, command systems, defenses or androids do. Repeated raids, deep analysis and detectable access patterns teach the Glitterites who is attacking them.
 
@@ -51,9 +51,10 @@ implementation remain to be verified against the available mods.
 
 The exact exemplar and technical-artifact catalogs, protocol rewards, hacking
 targets, project costs and pressure-stat name remain implementation/authoring work.
-The rule for evasion is still required: what relocation or concealment changes,
-how pursuit regains contact, and how the player sees the risk before an intrusion.
-No permanent ratchet or automatic reset on movement is assumed by this document.
+The pursuit rules are settled in [difficulty and pursuit](PRESSURE.md#glitterite-pursuit):
+Trace continuously controls search speed; sufficient relocation resets search
+progress without reducing Trace. The pursuit quest reveals the countdown, and
+detection starts repeated raids until the colony escapes.
 
 Defensive loot and research access also need an acquisition pass so the intended
 raid-and-recover loop remains useful. The pressure rule belongs to [#9](https://github.com/cjd721/Rimworld-Archinity/issues/9); the

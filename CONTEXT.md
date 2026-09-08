@@ -136,9 +136,11 @@ An Archon capsule converted by Industrial research into something usable.
 _Avoid_: archite capsule (the **inert** pre-conversion item)
 
 **The Chronicle**:
-The ordered campaign discoveries from the first Archon gift to transcendence.
-[Charting](docs/requirements/CHARTING.md)
-_Avoid_: the questline, the main quest
+The ordered campaign discoveries from the first Archon gift to transcendence — the main
+plot line's chain of beats. It is the content; the **main quest** is how that content is
+presented. [Charting](docs/requirements/CHARTING.md) ·
+[Quests](docs/requirements/QUESTS.md)
+_Avoid_: the questline
 
 **Plot line**:
 A sequence of motives, pressures and developments in the world, with a beginning,
@@ -148,10 +150,24 @@ spine the player is expected to engage with; a **subplot** is any other. Some cl
 _Avoid_: arc (which is the whole story's shape), thread, storyline
 
 **Beat**:
-One step of the Chronicle, **derived from a plot line** — the point at which a plot
-line touches the player and becomes an event they interact with. **Main beats
-and sub beats**, mirroring the main plot line and its subplots.
-_Avoid_: quest, mission, stage
+One step of a plot line — the point at which it touches the player and becomes something
+they interact with. **Main beats and sub beats**, mirroring the main plot line and its
+subplots. Every beat appears in its plot line's chain, whatever type it is.
+[Quests](docs/requirements/QUESTS.md)
+_Types_: quest beats, event beats, mission beats, etc.
+
+**Quest** · **Event**:
+RimWorld ships **events** — everything the world does. An event that can be accepted or
+declined is a **quest**. [Quests](docs/requirements/QUESTS.md)
+
+**Parent quest**:
+The standing heading that presents one plot line, with its beats beneath it. Auto-accepted
+and never expiring. Membership is decided by **necessity**, never by flavour.
+_Avoid_: quest chain, questline
+
+**Channel** · **Payload** · **Theatre**:
+The three independent axes any quest is described by: how it arrived, what it is, and
+where it happens. [Quests](docs/requirements/QUESTS.md)
 
 **Era**:
 One of the five technological eras: Neolithic, Medieval, Industrial, Spacer or
@@ -192,8 +208,12 @@ Spendable Glitterite technical intelligence used by advanced research and hackin
 completed knowledge persists. [Glittertech](docs/requirements/GLITTERTECH.md)
 
 **Trace**:
-How well the Glitterites can correlate, locate and hunt the colony. Visibility is
-an alternative UI name still under consideration.
+How well the Glitterites can correlate and hunt the colony, distinct from their
+progress toward finding its current location. [Pressure](docs/requirements/PRESSURE.md)
+
+**Search progress**:
+How close the Glitterites are to locating the colony at its current position.
+Distinct from Trace, which determines how quickly that search advances.
 
 ### Era gating
 
@@ -270,22 +290,22 @@ which is why one feature can demand several capabilities.
 
 **Capability**:
 Something the game must be able to do, stated as observable behavior and
-independent of what carries it. *Maintain a persistent measure of religious
-adoption for each faction.* A mod is a possible provider of a capability, never
+independent of what carries it. _Maintain a persistent measure of religious
+adoption for each faction._ A mod is a possible provider of a capability, never
 the definition of one.
 
 **Requirement**:
 The condition a capability must satisfy — its meaning, its behavior, its
 constraints and what the player can see, choose or refuse. Requirements are
 derived from the campaign arc and live in `docs/requirements/`. Gameplay rules
-are requirements: *Reverence decays; Intel is spent; Charting prioritizes the
-ordered discoveries.*
+are requirements: _Reverence decays; Intel is spent; Charting prioritizes the
+ordered discoveries._
 
 **Technical specification**:
 How a system will satisfy its requirements — state ownership, hooks,
 persistence, synchronization, integration boundaries and the code we must write.
-Lives in `docs/specs/`, organized by system. A spec may record a *verified
-available mechanism* long before that mechanism is selected.
+Lives in `docs/specs/`, organized by system. A spec may record a _verified
+available mechanism_ long before that mechanism is selected.
 
 **Progression grid**:
 A domain charted as rows against era columns, each cell naming what is available

@@ -24,7 +24,8 @@ simulation create the events around that spine.
 
 Shared system requirements: [Charting](requirements/CHARTING.md),
 [religion and politics](requirements/RELIGION.md), [the altar](requirements/ALTAR.md),
-[Glittertech and pursuit](requirements/GLITTERTECH.md).
+[Glittertech](requirements/GLITTERTECH.md), [quests](requirements/QUESTS.md) and
+[difficulty and pursuit](requirements/PRESSURE.md).
 [Cosmology](COSMOLOGY.md) explains the fictional mechanisms behind the discoveries.
 
 ## Campaign in play

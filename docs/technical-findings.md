@@ -163,6 +163,54 @@ There is no `ThingSetMaker_Fixed`. VEF adds no reward nodes.
 
 ---
 
+## Quest presentation
+
+Read against **1.6.4871**. Full evidence and file/line citations on
+[#12](https://github.com/cjd721/Rimworld-Archinity/issues/12#issuecomment-5588065933).
+
+### A standing parent quest with nested sub-quests is native
+
+`Quest.parent` (`Quest.cs:33`) is Scribe'd, and `MainTabWindow_Quests.cs:262-285` draws
+children recursively **indented 10px under their parent**, with "Has subquest" /
+"Subquest of" hyperlinks in the detail pane. A quest with `isRootSpecial`, `autoAccept`,
+no `expireDaysRange` and no end part stands forever — nothing in `QuestManagerTick` ever
+removes a quest. Odyssey's `GravEngine` and Ideology's `RelicHunt` are the two shipped
+precedents.
+
+> **Gotcha:** the indent only renders when parent and child are on the **same tab**.
+> `ShouldListNow` splits by `QuestState`, so a `NotYetAccepted` child draws flat on
+> Available while its `Ongoing` parent sits on Active. Every Odyssey `Gravcore_*` def sets
+> `autoAccept true` to avoid this.
+
+`QuestPart_SubquestGenerator` is **abstract**, with no generic XML-drivable concrete
+class — all three vanilla subclasses are C# and each is reached only from a bespoke
+`QuestNode_Root_*`. Using this costs a subclass plus a root node.
+
+**Multiplayer does not reference quest parentage at all**, and the generator's RNG runs
+inside `DoSingleTick`. Under async time a subquest-generator parent is not on
+`MultiplayerAsyncQuest`'s map-binding whitelist, so it ticks at world speed.
+
+### The quest tab offers no per-quest icon, colour or tag
+
+`Quest.tags` is never read by the UI. What the row gives you for free is the
+challenge-rating stars (unbounded) and, on a generator parent, a `3 / 9` progress
+readout. A custom `LetterDef` per quest is authorable in XML.
+
+### 13 vanilla quests are events wearing the quest carrier
+
+They ship `defaultHidden true` and never appear in the tab — `WandererJoins`,
+`RefugeePodCrash`, `PollutionRaid`, `Bossgroup`, `DelayedRewardDropPods` and others. The
+quest system is the engine's event scheduler as much as its quest board.
+
+### A quest's sender is often decided at generation, not in the def
+
+`Util_DecideRandomAsker` makes dozens of quests roll for whether they have an asker at
+all. `OpportunitySite_ItemStash` carries both an intercepted-comms description and a
+faction-leader description; `BuildMonument`'s no-asker branch is commented *"fictionally,
+an archotech"*. Any classification of quests by their fiction cannot be read off the def.
+
+---
+
 ## Decay — what survives being acquired centuries early
 
 | Thing | Decays? | Notes |
