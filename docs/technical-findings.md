@@ -6,6 +6,12 @@ assumption. Recorded so we never re-litigate it.
 
 Game version 1.6.4871. Verify again after any major RimWorld update.
 
+**What belongs here, and what does not.** This file takes facts worth knowing *outside*
+the system that turned them up. A system's own mechanism, its constraints and the design
+that follows belong in that system's document under `docs/specs/`; the investigation
+itself stays on the issue. Link, do not copy. A fact recorded here is a *verified
+available mechanism*, not a commitment to use it — selection happens in the spec.
+
 ---
 
 ## Pacing and gating

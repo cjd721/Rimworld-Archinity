@@ -30,7 +30,7 @@ manufacture a document for every hook someone investigates.
 
 An investigation can establish that a mechanism exists without settling the design. Say
 **"verified available mechanism"**. It becomes an implementation commitment only once that
-choice is made, and the Status section is where that distinction is recorded.
+choice is made.
 
 ## Template
 

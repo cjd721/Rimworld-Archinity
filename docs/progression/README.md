@@ -25,12 +25,16 @@ authored, off the beats in `docs/plot/`. A beat says *the founders reach a place
 from it a method that makes the altar spend less blood, and a gift of strength*; the cell
 then says which exact items, which research node, and in what order.
 
-**A cell waits on the beat that supplies it. The grid does not wait on the acts.** The
-domains, the row vocabulary and the era columns are scaffolding and come first; where a
-finer subdivision genuinely depends on an unauthored encounter, leave that column at era
-resolution and let the era fill ticket refine it. The faction grid is the clearest case:
-its worldgen column is read off `docs/requirements/RELIGION.md` and settled world rules,
-not off any beat, and it has a real deadline.
+**Scaffolding first, fill after.** Enumerating the domains, the row vocabulary, the era
+columns and each domain's checks does **not** wait on the acts; those are the shape of the
+grid, and they have to exist before anything can be written into one. Filling an era's
+column *does* wait on the acts that supply that era's content, which is why every era fill
+ticket is blocked by its act and the scaffolding ticket is blocked by neither.
+
+The faction grid is the exception worth knowing: its worldgen column is read off
+`docs/requirements/RELIGION.md` and the settled world rules rather than off any beat, and
+it has a real deadline — the `FactionDef` set freezes silently the instant the world
+generates.
 
 Each domain defines its own checks — meaningful intermediate choices, staggered upgrades,
 manageable unlock groups, deliberate ceilings. A flat row is not automatically a defect.

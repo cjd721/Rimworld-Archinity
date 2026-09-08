@@ -25,7 +25,7 @@ read them when the topic overlaps:
 - `docs/PLOT.md` — campaign overview, tone and links to era chapters.
 - `docs/plot/` — Neolithic through the ending, one chapter per phase.
 - `docs/requirements/` — what Charting, religion, altar progression and Glittertech/pursuit must do.
-- `docs/specs/` — the resolved technical designs that satisfy them.
+- `docs/specs/` — the technical designs that satisfy them, including ones still in progress.
 - `docs/progression/` — the domain grids: what becomes available, and when.
 - `docs/COSMOLOGY.md` — anima, the channel and selfhood, for writers.
 - `docs/technical-findings.md` — verified engine and mod behavior; coding rules are in `CODING_STANDARDS.md`.

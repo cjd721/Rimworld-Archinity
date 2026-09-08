@@ -12,10 +12,11 @@ Two modes. Know which one you are in.
 
 **Design** — start with `docs/PLOT.md` for the campaign overview and chapter
 links. The relevant era chapter in `docs/plot/` carries its events;
-`docs/requirements/` states what Charting, religion, the altar and Glittertech must do,
-and `docs/specs/` states how. For fictional mechanisms, read `docs/COSMOLOGY.md`. Writing tone and revelation are in the
-overview. The current campaign reflects the final September 2026 map; older
-ticket comments and archived drafts may describe superseded designs.
+`docs/requirements/` states what Charting, religion, the altar and Glittertech
+must do, and `docs/specs/` states how. For fictional mechanisms, read
+`docs/COSMOLOGY.md`. Writing tone and revelation are in the overview. The
+current campaign reflects the final September 2026 map; older ticket comments
+and archived drafts may describe superseded designs.
 
 **Implementation** — defs, code, diffs, integrations, tooling. Read
 `CODING_STANDARDS.md` before touching a def or a `.cs` file. It carries the hard

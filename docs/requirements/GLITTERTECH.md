@@ -56,7 +56,8 @@ how pursuit regains contact, and how the player sees the risk before an intrusio
 No permanent ratchet or automatic reset on movement is assumed by this document.
 
 Defensive loot and research access also need an acquisition pass so the intended
-raid-and-recover loop remains useful. These questions belong to
-[#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) and
-[#9](https://github.com/cjd721/Rimworld-Archinity/issues/9).
+raid-and-recover loop remains useful. The pressure rule belongs to [#9](https://github.com/cjd721/Rimworld-Archinity/issues/9); the
+research carrier to [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) and the hacking unlocks to [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58). Act V
+([#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)) authors the encounters inside those answers and does not own the
+questions.
 The civilization and its final revelation are in [Ultra](../plot/ULTRA.md).

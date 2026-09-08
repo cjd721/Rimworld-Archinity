@@ -335,7 +335,7 @@ will blanket the map in devilstrand on the first planting day of year two. He kn
 devilstrand exists, knows it grows slowly, knows it is the ceiling.
 
 That anticipation exists **only because the future is legible in advance**. Which
-promotes the menu and research-tab legibility problem ([#26](https://github.com/cjd721/Rimworld-Archinity/issues/26))
+promotes the menu and research-tab legibility problem ([#87](https://github.com/cjd721/Rimworld-Archinity/issues/87))
 from a comfort complaint to a **precondition for the strategic layer this campaign
 most wants**. An opaque tree does not merely annoy — it deletes the mode of play where
 you build cheap now because you can see what is coming.
@@ -477,5 +477,5 @@ tangled:
    check against the live bin.
 2. **Second sighting of the legibility problem.** Even correctly gated, there is no
    way to find out *where*. Same disease as
-   [#26](https://github.com/cjd721/Rimworld-Archinity/issues/26), and it will keep
+   [#87](https://github.com/cjd721/Rimworld-Archinity/issues/87), and it will keep
    surfacing as "why can't I do X" until a per-era view exists.

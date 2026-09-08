@@ -2,7 +2,8 @@
 
 **What a requirements document owns:** the intended experience, meaning, behavior and
 constraints of a campaign system. It establishes what must be delivered. It does **not**
-establish that the implementation exists — that is `docs/specs/`.
+establish that the implementation exists — that is `docs/specs/`, where a mechanism is
+verified and, separately, selected.
 
 A requirement states the conditions a **capability** must satisfy. A capability is
 something the game must be able to do, defined by observable behavior, independently of
@@ -79,13 +80,35 @@ template has no slot for because it holds three different things. Split it on mi
 belongs to `docs/specs/` and to the capability ticket named:
 
 - `CHARTING.md` — the *Implementation pattern* paragraph (the Long-Range Mineral Scanner
-  grammar) and the Deserters-style world-state cursor. [#57](https://github.com/cjd721/Rimworld-Archinity/issues/57), [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40).
-- `RELIGION.md` — "an Empire-like scale" / "the Church's Honor-equivalent" ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53));
-  "Influence is the Schism's equivalent of Deserters Intel" ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)); the commitment
-  to a bespoke political UI ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)); the storyteller incident-selection hook
-  ([#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)).
-- `GLITTERTECH.md` — "the Ultra counterpart to Deserters Intel" ([#55](https://github.com/cjd721/Rimworld-Archinity/issues/55)); deferring
-  the Trace/Visibility name to whatever implementation reads better ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)).
+  grammar), and "a small persistent world-state cursor, Deserters-style".
+  [#57][57], [#40][40].
+- `RELIGION.md` — "an Empire-like scale" and "the Church's Honor-equivalent"
+  ([#53][53]); "Influence is the Schism's equivalent of Deserters Intel"
+  ([#54][54]); the commitment to a bespoke political UI ([#61][61]); the
+  storyteller incident-selection hook ([#60][60]).
+- `GLITTERTECH.md` — "the Ultra counterpart to Deserters Intel" ([#55][55]);
+  deferring the Trace/Visibility name to whatever implementation reads better
+  ([#56][56]); "the research carrier and remote hacking implementation remain to be
+  verified against the available mods" ([#67][67], [#58][58]).
+- `ALTAR.md` — the research-gating mechanism that separates Industrial lottery access
+  from earlier deterministic rewards ([#31][31] for the placement, [#59][59] for
+  the machinery). This document cites no capability ticket at all; #59 owns whether the
+  altar can author a gene from the pawn standing in it, and belongs in its open questions.
 
-In each case the **requirement** is the observable behavior; the named carrier is the
-mechanism and does not belong here.
+**Cut the carrier, keep the behavior.** In each case the requirement is the observable
+behavior and only the named mechanism moves. Charting's Tier 1/2/3 priority table and its
+selection rule are requirements and stay. So does *per-faction Reverence is visible beside
+Goodwill and the bands are legible* — only "the custom political UI" is the mechanism.
+
+[31]: https://github.com/cjd721/Rimworld-Archinity/issues/31
+[40]: https://github.com/cjd721/Rimworld-Archinity/issues/40
+[53]: https://github.com/cjd721/Rimworld-Archinity/issues/53
+[54]: https://github.com/cjd721/Rimworld-Archinity/issues/54
+[55]: https://github.com/cjd721/Rimworld-Archinity/issues/55
+[56]: https://github.com/cjd721/Rimworld-Archinity/issues/56
+[57]: https://github.com/cjd721/Rimworld-Archinity/issues/57
+[58]: https://github.com/cjd721/Rimworld-Archinity/issues/58
+[59]: https://github.com/cjd721/Rimworld-Archinity/issues/59
+[60]: https://github.com/cjd721/Rimworld-Archinity/issues/60
+[61]: https://github.com/cjd721/Rimworld-Archinity/issues/61
+[67]: https://github.com/cjd721/Rimworld-Archinity/issues/67

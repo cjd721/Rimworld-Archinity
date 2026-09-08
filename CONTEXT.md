@@ -258,6 +258,41 @@ The wayfinder issue tracking the road to a locked design spec —
 [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2). Its children are
 **tickets**, each one question.
 
+**System**:
+A coherent area of campaign behavior — religion, Charting, the altar, Glittertech.
+A system contains many capabilities and gets one document in each of
+`docs/requirements/`, `docs/specs/` and `docs/progression/` as it needs them.
+
+**Feature**:
+One named thing inside a system. Reverence is a feature of religion, and it
+needs persistence, propagation, decay, a readout and downstream reactions —
+which is why one feature can demand several capabilities.
+
+**Capability**:
+Something the game must be able to do, stated as observable behavior and
+independent of what carries it. *Maintain a persistent measure of religious
+adoption for each faction.* A mod is a possible provider of a capability, never
+the definition of one.
+
+**Requirement**:
+The condition a capability must satisfy — its meaning, its behavior, its
+constraints and what the player can see, choose or refuse. Requirements are
+derived from the campaign arc and live in `docs/requirements/`. Gameplay rules
+are requirements: *Reverence decays; Intel is spent; Charting prioritizes the
+ordered discoveries.*
+
+**Technical specification**:
+How a system will satisfy its requirements — state ownership, hooks,
+persistence, synchronization, integration boundaries and the code we must write.
+Lives in `docs/specs/`, organized by system. A spec may record a *verified
+available mechanism* long before that mechanism is selected.
+
+**Progression grid**:
+A domain charted as rows against era columns, each cell naming what is available
+at that point, its prerequisites and its acquisition route. Lives in
+`docs/progression/`.
+_Avoid_: ladder, tier list
+
 **The freeze**:
 World creation — the campaign's only true one-way door. Before it nearly every
 decision is free to change; after it, some are a new world rather than a patch.
