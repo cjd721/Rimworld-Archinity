@@ -101,7 +101,7 @@ dll for each of 1.4/1.5/1.6 — reading its source is reading 1.4.
 | ATH's Styleable Framework | `anthitei.athsstyleableframework.style` | — | yes | root | root | workshop | 2026-08-25 |
 | ATH's styles Norse | `anthitei.athsstylenorse.style` | — | yes | — | — | workshop | 2026-08-25 |
 | Auto-Cast Specialist Commands | `linnun.autocastspecialistcommands` | — | yes | 1.6 | 1.5, 1.6 | workshop | 2026-08-28 |
-| Better Architect Menu | `ferny.betterarchitect` | — | yes | 1.6 | 1.6 | workshop | 2026-08-31 |
+| Better Architect Menu | `ferny.betterarchitect` | — | yes | 1.6 | 1.6 | workshop | 2026-09-08 |
 | Better Workbench Management | `falconne.bwm` | — | yes | — | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, root | workshop | 2026-08-28 |
 | Dark Ages : Beasts and Monsters | `van.beasts` | — | yes | — | 1.5, 1.6 | workshop | 2026-08-24 |
 | Dark Ages : Crypts and Tombs | `van.dacrypts` | — | yes | root | 1.5, 1.6, root | workshop | 2026-08-24 |
