@@ -12,40 +12,12 @@ the player may see or refuse is requirements and stays there.
 relationship; [the Chronicle's authoring mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/40)
 owns which def carries an individual beat.
 
-## Status
+## The build
 
-**Nothing here is verified against 1.6, and nothing is selected.** This document exists to
-hold the technical material carried out of the requirements document when
-[how a beat arrives](https://github.com/cjd721/Rimworld-Archinity/issues/39) settled the
-rules. It is a starting point for
-[the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57),
-not a design it has produced.
-
-The scanner grammar below is a *proposed* implementation. It is not evidence that the
-Chronicle already exists in the build.
-
-## Available mechanisms
-
-**The Long-Range Mineral Scanner supplies the right grammar.** Vanilla already ships the
-shape the requirements describe:
-
-> operator labor → `ResearchSpeed`-scaled work → probabilistic success → guaranteed pity
-> timer → root-special auto-accepted quest → world object
-
-Archinity's change is to the payload selector: from *"a precious lump"* to *"what is
-currently eligible to be discovered?"* The auto-accept, the pity guarantee and the
-work-scaled uncertainty are all already there.
-
-**A small persistent world-state cursor, Deserters-style**, is the candidate carrier for
-the Archon Spine's ordering — beat *n+1* not becoming discoverable until beat *n* succeeds.
-
-Both are *available mechanisms* on the strength of how the vanilla and Deserters systems
-are described, not on a read of 1.6 source. #57 verifies or replaces them.
-
-## Technical approach
-
-Not yet designed. #57 owns it. The requirements it must satisfy, in the order they are
-most likely to constrain the implementation:
+**Not yet designed, and this section says so rather than implying otherwise.**
+[The Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57) owns
+it and has not run. What follows is the constraint set any build must satisfy, in the order
+the constraints are most likely to bite — read it as the brief, not the answer.
 
 1. **Two independent work accumulators** — the survey pool and the return pool — each with
    its own uncertainty and its own guaranteed-find threshold. If two accumulators are not
@@ -59,6 +31,18 @@ most likely to constrain the implementation:
    apparatus accepts every band and work speed degrades to unusable beyond its tier.
 4. **Deduplication by beat, not by site.**
 5. **Skill scales find count, never find quality.**
+6. **The reach band** — how far the colony can look, scaling with transportation and sensing
+   rather than calendar time. #57 owns this outright; roads
+   ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68)) and vehicles
+   ([#69](https://github.com/cjd721/Rimworld-Archinity/issues/69)) report their input format
+   to it and do not design it.
+7. **Travel and outpost discovery** — whether a caravan crossing unexplored world or an
+   outpost standing in a region can surface a site, and which pool it feeds. Absorbed into
+   #57 from #89, under #39's constraint that a find must correspond to the colony having
+   actually been somewhere.
+
+**Cost is unknown** because the carrier is unchosen. The scanner grammar under *Available
+mechanisms* is the leading candidate and is unverified against 1.6.
 
 ## Persistence and multiplayer
 
@@ -93,6 +77,36 @@ a corresponding technical guarantee:
   as an optimisation reintroduces the softlock.
 - A player who techs past an undone near beat must still be able to find it.
 
+## Status
+
+**Nothing here is verified against 1.6, and nothing is selected.** This document exists to
+hold the technical material carried out of the requirements document when
+[how a beat arrives](https://github.com/cjd721/Rimworld-Archinity/issues/39) settled the
+rules. It is a starting point for
+[the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57),
+not a design it has produced.
+
+The scanner grammar below is a *proposed* implementation. It is not evidence that the
+Chronicle already exists in the build.
+
+## Available mechanisms
+
+**The Long-Range Mineral Scanner supplies the right grammar.** Vanilla already ships the
+shape the requirements describe:
+
+> operator labor → `ResearchSpeed`-scaled work → probabilistic success → guaranteed pity
+> timer → root-special auto-accepted quest → world object
+
+Archinity's change is to the payload selector: from *"a precious lump"* to *"what is
+currently eligible to be discovered?"* The auto-accept, the pity guarantee and the
+work-scaled uncertainty are all already there.
+
+**A small persistent world-state cursor, Deserters-style**, is the candidate carrier for
+the Archon Spine's ordering — beat *n+1* not becoming discoverable until beat *n* succeeds.
+
+Both are *available mechanisms* on the strength of how the vanilla and Deserters systems
+are described, not on a read of 1.6 source. #57 verifies or replaces them.
+
 ## Verification
 
 Everything. Specifically, in the order #57 would want it:
@@ -103,13 +117,13 @@ Everything. Specifically, in the order #57 would want it:
 - Whether a world object's spawn distance can be bounded below as well as above.
 - Whether the Deserters cursor pattern is available to us at all, given the mod's
   admission status.
+- Whether anything vanilla, DLC or modded surfaces a world object as a consequence of
+  caravan travel or outpost tenure.
 - Whether any of it survives Multiplayer.
 
 ## Outstanding decisions
 
 - **The mundane table** — a Waystone-less apparatus feeding only the survey pool. Open in
   the requirements document; capability and narrative decide it together.
-- **Natural discovery** from caravans and scouting outposts —
-  [#89](https://github.com/cjd721/Rimworld-Archinity/issues/89).
 - **Which def carries a beat** —
   [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40).

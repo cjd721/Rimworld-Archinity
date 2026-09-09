@@ -151,6 +151,49 @@ and must therefore sit inside the same synced command — see
 
 ---
 
+## MP serialises the comms-console dialogue, options included
+
+Established on [Reverence, end to end](https://github.com/cjd721/Rimworld-Archinity/issues/98),
+and it constrains anyone adding an option to a faction dialogue.
+
+`Multiplayer.Client.PersistentDialog_NodeTreeWithFactionInfo` scribes every `DiaNode` and
+`DiaOption` — text, `resolveTree`, `disabled`, `disabledReason`, `clickSound` — and
+reconstructs each option's `action` delegate through a `FieldSave` that walks the closure's
+captured fields and picks a scribe mode **per field type**: `ParseHelper`-handled values,
+`Def`, `ILoadReferenceable`, `IExposable`, or a plain-object fallback [V].
+
+**The binding constraint is not the field types — it is a hardcoded whitelist of declaring
+types, and it will reject our code.** Delegate reconstruction runs
+`DelegateSerialization.CheckMethodAllowed`, which walks to the delegate method's outermost
+declaring type, walks up its base chain, and requires a member of this fixed array [V]:
+
+> `Ability`, `AbilityComp`, `Command`, `ThingComp`, `Dialog_BeginRitual`, `LordToil`,
+> `Precept`, `SocialCardUtility`, `Letter`, `FactionDialogMaker`, `GenGameEnd`,
+> `IncidentWorker`, `QuestPart`, `ResearchManager`, `ShipUtility`
+
+Anything else throws `"Delegate deserialization: method not allowed"` **on load**. A closure
+compiled into a display class nested in one of our own patch classes resolves to *our* type,
+base `object`, and is refused. Vanilla's own dialogue options work because
+`FactionDialogMaker` is on the list.
+
+**So an option added by a postfix on `FactionDialogMaker.FactionDialogFor` reaches both clients
+and survives save/load only if its action's method is hosted on a type deriving from one of
+those 15** — `QuestPart`, `Command`, `Letter` and `ThingComp` are the realistic hosts — or MP
+Compatibility is persuaded to extend the array.
+
+The field-type rule still applies on top of that: capture the `Faction` (which is
+`ILoadReferenceable`) and primitives. Capturing something outside the five modes is not a quiet
+no-op either — plain-object mode throws
+`"Persistent dialog field deserialization: Unsupported plain object type"` unless the type is
+compiler-generated [V]. **Both failures are loud and both happen at load, not at click.**
+
+`DiaOption.Disable(reason)` is safe by all of this — `disabled` and `disabledReason` are
+scribed as plain values with no delegate involved — which makes the disabled-with-reason idiom
+the cheap way to show a gate before it opens, and the only half of a gated option that carries
+no delegate risk at all.
+
+---
+
 ## Presentational separation between the two players
 
 Verified during [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) and

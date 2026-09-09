@@ -34,6 +34,32 @@ An investigation can establish that a mechanism exists without settling the desi
 **"verified available mechanism"**. It becomes an implementation commitment only once that
 choice is made.
 
+## Lead with the build
+
+**The first thing a reader meets is what we are going to do.** The survey — what exists,
+what does not, which donor was ruled out and why — is the *support* for that answer and sits
+below it.
+
+This is not a style preference. `RELIGION.md`'s first draft opened on a Status section whose
+headline was a confirmed negative, followed by a catalogue of absences, with the actual
+answer — a `WorldComponent` holding the number — buried four screens down. The document was
+accurate about what it had read and could not answer the question it was written for. **A spec
+that opens on what does not exist reads as a dead end.**
+
+Worse, the buried answer was *also* partly wrong, and burying it is why nobody caught that: its
+display half pointed at `WorldFactionsUIUtility`, which is the world-**creation** faction screen,
+and at a `GoodwillSituationDef`, which is visible only when it moves goodwill. Both survived
+review because the section a reader gives up before reaching is the section nobody checks.
+
+A negative survey is still worth writing down; it belongs under *Available mechanisms*, where
+it explains why the build looks the way it does.
+
+**The build section owes six things** — mechanism, where state lives, how it persists, what
+changes it, where the player sees it, and the cost in XML / patch / new C#. That is the same
+list `docs/agents/capability-research.md` puts on the resolution, because the spec section is
+where it lands. A blank among the six is either another ticket (name it by number, and check
+that it exists) or a gap.
+
 ## Template
 
 ```markdown
@@ -43,19 +69,13 @@ choice is made.
 Which requirements this implements, linked to their source.
 What this document owns and where adjacent systems take over.
 
-## Status
-What is verified, what is selected, and what remains proposed.
-Links to the capability issues that established these answers.
-
-## Available mechanisms
-Relevant vanilla, DLC and mod support.
-What each provides, its limitations, and the evidence.
-Include alternatives only where they explain the selection.
-
-## Technical approach
-How the selected mechanisms satisfy the requirements.
+## The build
+What we are going to do, stated first and in full. Four of the six:
+the mechanism, where state lives, what changes it, where the player sees it.
+(The fifth — how it persists — goes in the next section; the sixth is the cost table below.)
 State ownership, transitions, defs, hooks and integration boundaries.
-Distinguish existing behavior from changes we must build.
+Distinguish existing behavior we reuse from new code we must write.
+Close with the cost table — per piece, XML / patch / new C#, with an estimate.
 
 ## Persistence and multiplayer
 Save/load behavior, shared versus colony-specific state,
@@ -65,6 +85,16 @@ Include only the concerns that apply to this system.
 ## Failure and recovery
 What can fail, how failure is detected, and how play recovers.
 Include campaign softlocks and silent integration failures where relevant.
+
+## Status
+What is verified, what is selected, and what remains proposed.
+The evidence class, and links to the capability issues that established it.
+
+## Available mechanisms
+Relevant vanilla, DLC and mod support — the survey behind the build.
+What each provides, its limitations, and the evidence.
+What does not exist, where that shaped the build.
+Include alternatives only where they explain the selection.
 
 ## Verification
 What evidence supports the mechanism.

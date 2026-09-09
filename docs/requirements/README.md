@@ -87,7 +87,8 @@ belongs to `docs/specs/` and to the capability ticket named:
   ([#53][53]); "Influence is the Schism's equivalent of Deserters Intel"
   ([#54][54]); the commitment to a bespoke political UI ([#61][61]); the
   storyteller incident-selection hook ([#60][60]).
-- `GLITTERTECH.md` — "the Ultra counterpart to Deserters Intel" ([#55][55]);
+- `GLITTERTECH.md` — "the Ultra counterpart to Deserters Intel" ([#54][54], which carries
+  Influence and Intel together);
   deferring the Trace/Visibility name to whatever implementation reads better
   ([#56][56]); "the research carrier and remote hacking implementation remain to be
   verified against the available mods" ([#67][67], [#58][58]).
@@ -105,7 +106,6 @@ Goodwill and the bands are legible* — only "the custom political UI" is the me
 [40]: https://github.com/cjd721/Rimworld-Archinity/issues/40
 [53]: https://github.com/cjd721/Rimworld-Archinity/issues/53
 [54]: https://github.com/cjd721/Rimworld-Archinity/issues/54
-[55]: https://github.com/cjd721/Rimworld-Archinity/issues/55
 [56]: https://github.com/cjd721/Rimworld-Archinity/issues/56
 [57]: https://github.com/cjd721/Rimworld-Archinity/issues/57
 [58]: https://github.com/cjd721/Rimworld-Archinity/issues/58

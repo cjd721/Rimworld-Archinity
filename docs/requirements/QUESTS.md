@@ -135,6 +135,5 @@ choice per quest, not a property left to whatever a def happened to ship with.
   and choose its rewards, and there is no faction-level ownership to restore. Whether that
   is accepted as design or arbitrated is a capability question with no ticket yet.
 - **What a purchasable quest catalogue requires**, for the Schism's Influence and for
-  Glitterite Intel. [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) and
-  [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55) carry the currencies; the
-  catalogue itself has no owner.
+  Glitterite Intel. [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) carries
+  both currencies; the catalogue itself has no owner.

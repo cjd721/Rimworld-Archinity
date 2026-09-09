@@ -90,7 +90,11 @@ bands. Wars, alliances, Goodwill and vassal/revolt outcomes are tracked by
 Title and favor catalogs, conversion propagation amounts, decay, institutional
 effects, tolerance, revolt success and UI thresholds still need design or tuning.
 Friendly submission and hostile revolt are distinct routes. [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)
-specifies their obligations and tithes. [#52](https://github.com/cjd721/Rimworld-Archinity/issues/52), [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55) and [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) each map one
-of the political systems onto its candidate Empire/Deserters machinery.
+specifies their obligations and tithes. [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98)
+(Reverence, end to end — superseding closed #52),
+[#53](https://github.com/cjd721/Rimworld-Archinity/issues/53) (Exaltation),
+[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) (Influence and Intel together)
+and [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) (Trace) each deliver one of
+the political systems, starting from its candidate Empire/Deserters machinery.
 
 Final volunteer alignment is defined in [the ending](../plot/ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly).

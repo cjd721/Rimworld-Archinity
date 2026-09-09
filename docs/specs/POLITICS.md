@@ -11,6 +11,147 @@ It does not own Reverence, which is a second per-faction axis and belongs to
 is a quest outcome and belongs to
 [the faction demand](https://github.com/cjd721/Rimworld-Archinity/issues/91).
 
+## The build
+
+The capability is two pieces, and the second is the one that was missing.
+
+**1. Seed the edges.** A one-time pass at game start writing designed rivalry and alliance
+goodwill between the campaign's hand-authored factions. This is where the NPC↔NPC write
+machinery actually earns its keep. Because both drift functions short-circuit on non-player
+pairs, **whatever is seeded stays exactly as written, forever, and is serialised for free**
+by `Faction.relations` [V]. Zero maintenance, zero new saved state. `requirements/POLITICS.md`
+notes "only a handful of hand-authored factions carry the campaign" — exactly the scale at
+which a hand-authored seed table beats a procedural one.
+
+**2. Run the ripple.** Read edges, write player↔X.
+
+**Reading the graph: no cache, no reflection.** `Faction.relations` is private, but
+`RelationWith(Faction, allowNull)` plus `FactionManager.AllFactionsListForReading` is enough.
+Every ally/enemy helper on `FactionManager` filters on `PlayerRelationKind` and is therefore
+player-relative and useless for an arbitrary A [V]. The enumeration is O(n²) in **faction
+count** — vanilla's world-creation UI caps at 12 — so at n≈20 that is ~400 reference
+comparisons, cheaper than one pathfinding call, and it runs per political act, not per tick.
+Vanilla does the same shape in `SettlementDefeatUtility.CheckDefeated` [V].
+**Do not cache**: a cache would need invalidating from `Notify_RelationKindChanged`, and a
+stale per-client cache feeding simulation is **T-20** exactly.
+
+**Where the rules live: Harmony postfixes on the `Faction.Notify_*` act hooks.** The options
+the ticket named are ruled out [V]:
+
+- **A `HistoryEventDef` listener does not exist.** `HistoryEventsManager.RecordEvent`
+  dispatches to exactly one place and has no listener registry. Worse,
+  `TryAffectGoodwillWith` only records a `HistoryEvent` when the player is a party, so a
+  `RecordEvent` postfix cannot see NPC↔NPC changes at all.
+- **A `QuestPart`** is right for quest-scoped consequences and wrong as the home of a standing
+  rule — it exists only while its quest does.
+- **A `WorldComponent`** is tick-safe but the ripple is event-driven; nothing needs polling.
+
+The act hooks are already vanilla's convergence point, and several carry the actor [V]:
+
+| Hook | Carries the actor? |
+|---|---|
+| `Notify_MemberCaptured(Pawn, Faction violator)` | **Yes** — `violator` |
+| `Notify_MemberStripped(Pawn, Faction violator)` | **Yes** — `violator` |
+| `Notify_MemberTookDamage(Pawn, DamageInfo)` | via `dinfo.Instigator.Faction` |
+| `Notify_MemberDied(...)` | via `dinfo` |
+| `Notify_BuildingTookDamage(Building, DamageInfo)` | via `dinfo` |
+
+**Compounding is bounded structurally, not by a budget.** The runaway exists only if the hook
+listens to the *effect*. **Do not postfix `TryAffectGoodwillWith`** — every ripple write is
+one, so a postfix re-enters on its own output, unbounded [V]. **Postfix the act hooks**: a
+ripple write is not an arrest, a death or a strip, so it raises no act hook and cannot
+re-enter. One hop becomes a property of the design rather than a counter someone has to get
+right [I].
+
+Two residual paths, named rather than ignored:
+
+- **The gameplay loop is real but is the game working** — a ripple crossing −75 flips kind,
+  lords re-evaluate, someone gets shot, `Notify_MemberTookDamage` fires. It is mediated by
+  simulated combat over many ticks [V on the mechanism, I on the assessment].
+- **Hysteresis makes negative ripples sticky.** `CheckKindThresholds` goes Hostile at ≤−75 but
+  returns to Neutral only at ≥0 — a 75-point climb back [V]. That argues for a per-faction
+  ripple cooldown, and for hostility crossings being authored rather than accumulated.
+
+**Observing the acts** [V]: kidnap, harm, kill and strip are **free** — the hooks exist and
+carry both operands. "Built something noxious" needs new detection, but
+`SettlementProximityGoodwillUtility.AppendProximityGoodwillOffsets` is `public static` and
+takes an arbitrary tile, so the distance maths is reusable and only the trigger needs
+authoring. "Served a faction" is a quest outcome and belongs to #91.
+
+**What the player sees**: VEF's queue already sends a letter naming the faction and the
+magnitude, on the tick the impact lands — see *Available mechanisms*. That is the display half,
+and it ships.
+
+⚠ **One vanilla quirk to not inherit** [V]: `Notify_MemberCaptured` hardcodes `OfPlayer` as
+the offender **regardless of `violator`**. If an NPC faction arrests another faction's pawn,
+vanilla charges the player. Harmless today; live the moment we seed NPC hostility and their
+lords start taking prisoners. **A ripple built on this hook must read `violator` itself.**
+
+### Cost
+
+| Piece | Cost |
+|---|---|
+| Ripple tunables, seed table | **XML** — two new Def types |
+| `permanentEnemy` audit on our own faction defs | **XML**, but **T-07** — before world creation, not patchable after |
+| Reading the graph | **New C#**, ~20 lines |
+| Applying the ripple, with letter, delay and persistence | **Free** — VEF carries it |
+| Observing kidnap / harm / kill / strip | **Patch** — 4 Harmony postfixes |
+| Seeding the edges at game start | **New C#**, ~30 lines |
+| Persistence | **Free**, except a cooldown ledger |
+| Multiplayer | **Free**, if the constraints below hold |
+
+**Aggregate: two new Def types, ~80–100 lines of C# in the existing `ArchinityAltar.dll`,
+four Harmony postfixes.** No new assembly — `Archinity.Altar` already ships a Harmony
+instance and references `Assembly-CSharp` and `0Harmony` [V].
+
+**The expensive item is not code: authoring the seed table.** A rivalry graph that reads as
+politics rather than noise is design work over the campaign's hand-authored factions.
+
+## Persistence and multiplayer
+
+**Multiplayer syncs no goodwill at all** — `Multiplayer.dll` syncs exactly two `Faction`
+members, `allowRoyalFavorRewards` and `allowGoodwillRewards`, and there is no `SyncMethod` for
+`TryAffectGoodwillWith` [V]. Confirmed from the other direction: zero hits across every
+assembly in the Multiplayer and MP-Compat folders.
+
+**No explicit synced command is needed for the ripple**, and the requirement to wrap every
+write in one is stricter than the real rule. `docs/engine/determinism.md` § *Why `Rand` inside
+a synced tick is safe*: the hazard is a mod consuming the shared stream a different number of
+times per client. The ripple is **already downstream of a synced action** — an arrest is
+simulated identically on both clients, so `Notify_MemberCaptured` fires on both at the same
+tick in the same order [V on the model, I that this ripple qualifies].
+
+What must hold:
+
+1. **No `Rand` in the ripple path.** `TryAffectGoodwillWith`, `CheckKindThresholds` and
+   `Notify_RelationKindChanged` consume none [V].
+2. **No `ModSettings` read during simulation** — **T-18**. Every tunable is a Def.
+3. **Deterministic iteration order.** `AllFactionsListForReading` is insertion-ordered.
+   **Never iterate a `Dictionary` or `HashSet` of factions** to build the ripple set [I].
+4. **No cached ally/enemy set** — T-20 exactly.
+5. **A player-facing "run the ripple" button would need a synced command**, because a UI click
+   is not a simulated event. That is the case the "every write is synced" rule is actually
+   about [I].
+
+One shared player faction means one goodwill number per NPC faction, so letters are shared and
+any per-player filtering is draw-time only (**T-21**).
+
+## Failure and recovery
+
+- **The alliance ripple silently does nothing until edges are seeded.** This is the failure
+  mode most likely to ship: the mechanism reads as green, and produces a feature that never
+  fires. Seeding is a prerequisite, not a polish step.
+- **Gate E swallows writes silently.** A ripple that reports "−6 with B" in a letter while
+  `TryAffectGoodwillWith` returned `false` is a lie to the player. **Check the `bool` before
+  writing the letter** — the requirement's legibility clause depends on it [V]. VEF's
+  `DoImpact` gets this wrong and must be overridden.
+- **Magnitudes are not applied literally.** `CalculateAdjustedGoodwillChange` amplifies any
+  change moving toward natural goodwill by 25% of the remaining gap; a −6 ripple can land as
+  more than −6 [V]. And `GoodwillWith` is clamped by `GetMaxGoodwill`, so a positive ripple
+  into a faction already at its situation cap is a silent no-op [V].
+- **Two of our own factions cannot participate**, by their own defs, and it is **T-07** — not
+  patchable after worldgen.
+
 ## Status
 
 **Verified available mechanism. Not an implementation commitment.**
@@ -119,143 +260,6 @@ return.
 - **Faction Territories' `AffectAlliedFactionGoodwill` is not a graph walk** — it resolves one
   stored ally id [V]. Recorded because the name is misleading enough to catch the next agent.
 
-## Technical approach
-
-The capability is two pieces, and the second is the one that was missing.
-
-**1. Seed the edges.** A one-time pass at game start writing designed rivalry and alliance
-goodwill between the campaign's hand-authored factions. This is where the NPC↔NPC write
-machinery actually earns its keep. Because both drift functions short-circuit on non-player
-pairs, **whatever is seeded stays exactly as written, forever, and is serialised for free**
-by `Faction.relations` [V]. Zero maintenance, zero new saved state. `requirements/POLITICS.md`
-notes "only a handful of hand-authored factions carry the campaign" — exactly the scale at
-which a hand-authored seed table beats a procedural one.
-
-**2. Run the ripple.** Read edges, write player↔X.
-
-**Reading the graph: no cache, no reflection.** `Faction.relations` is private, but
-`RelationWith(Faction, allowNull)` plus `FactionManager.AllFactionsListForReading` is enough.
-Every ally/enemy helper on `FactionManager` filters on `PlayerRelationKind` and is therefore
-player-relative and useless for an arbitrary A [V]. The enumeration is O(n²) in **faction
-count** — vanilla's world-creation UI caps at 12 — so at n≈20 that is ~400 reference
-comparisons, cheaper than one pathfinding call, and it runs per political act, not per tick.
-Vanilla does the same shape in `SettlementDefeatUtility.CheckDefeated` [V].
-**Do not cache**: a cache would need invalidating from `Notify_RelationKindChanged`, and a
-stale per-client cache feeding simulation is **T-20** exactly.
-
-**Where the rules live: Harmony postfixes on the `Faction.Notify_*` act hooks.** The options
-the ticket named are ruled out [V]:
-
-- **A `HistoryEventDef` listener does not exist.** `HistoryEventsManager.RecordEvent`
-  dispatches to exactly one place and has no listener registry. Worse,
-  `TryAffectGoodwillWith` only records a `HistoryEvent` when the player is a party, so a
-  `RecordEvent` postfix cannot see NPC↔NPC changes at all.
-- **A `QuestPart`** is right for quest-scoped consequences and wrong as the home of a standing
-  rule — it exists only while its quest does.
-- **A `WorldComponent`** is tick-safe but the ripple is event-driven; nothing needs polling.
-
-The act hooks are already vanilla's convergence point, and several carry the actor [V]:
-
-| Hook | Carries the actor? |
-|---|---|
-| `Notify_MemberCaptured(Pawn, Faction violator)` | **Yes** — `violator` |
-| `Notify_MemberStripped(Pawn, Faction violator)` | **Yes** — `violator` |
-| `Notify_MemberTookDamage(Pawn, DamageInfo)` | via `dinfo.Instigator.Faction` |
-| `Notify_MemberDied(...)` | via `dinfo` |
-| `Notify_BuildingTookDamage(Building, DamageInfo)` | via `dinfo` |
-
-**Compounding is bounded structurally, not by a budget.** The runaway exists only if the hook
-listens to the *effect*. **Do not postfix `TryAffectGoodwillWith`** — every ripple write is
-one, so a postfix re-enters on its own output, unbounded [V]. **Postfix the act hooks**: a
-ripple write is not an arrest, a death or a strip, so it raises no act hook and cannot
-re-enter. One hop becomes a property of the design rather than a counter someone has to get
-right [I].
-
-Two residual paths, named rather than ignored:
-
-- **The gameplay loop is real but is the game working** — a ripple crossing −75 flips kind,
-  lords re-evaluate, someone gets shot, `Notify_MemberTookDamage` fires. It is mediated by
-  simulated combat over many ticks [V on the mechanism, I on the assessment].
-- **Hysteresis makes negative ripples sticky.** `CheckKindThresholds` goes Hostile at ≤−75 but
-  returns to Neutral only at ≥0 — a 75-point climb back [V]. That argues for a per-faction
-  ripple cooldown, and for hostility crossings being authored rather than accumulated.
-
-**Observing the acts** [V]: kidnap, harm, kill and strip are **free** — the hooks exist and
-carry both operands. "Built something noxious" needs new detection, but
-`SettlementProximityGoodwillUtility.AppendProximityGoodwillOffsets` is `public static` and
-takes an arbitrary tile, so the distance maths is reusable and only the trigger needs
-authoring. "Served a faction" is a quest outcome and belongs to #91.
-
-⚠ **One vanilla quirk to not inherit** [V]: `Notify_MemberCaptured` hardcodes `OfPlayer` as
-the offender **regardless of `violator`**. If an NPC faction arrests another faction's pawn,
-vanilla charges the player. Harmless today; live the moment we seed NPC hostility and their
-lords start taking prisoners. **A ripple built on this hook must read `violator` itself.**
-
-### Cost
-
-| Piece | Cost |
-|---|---|
-| Ripple tunables, seed table | **XML** — two new Def types |
-| `permanentEnemy` audit on our own faction defs | **XML**, but **T-07** — before world creation, not patchable after |
-| Reading the graph | **New C#**, ~20 lines |
-| Applying the ripple, with letter, delay and persistence | **Free** — VEF carries it |
-| Observing kidnap / harm / kill / strip | **Patch** — 4 Harmony postfixes |
-| Seeding the edges at game start | **New C#**, ~30 lines |
-| Persistence | **Free**, except a cooldown ledger |
-| Multiplayer | **Free**, if the constraints below hold |
-
-**Aggregate: two new Def types, ~80–100 lines of C# in the existing `ArchinityAltar.dll`,
-four Harmony postfixes.** No new assembly — `Archinity.Altar` already ships a Harmony
-instance and references `Assembly-CSharp` and `0Harmony` [V].
-
-**The expensive item is not code: authoring the seed table.** A rivalry graph that reads as
-politics rather than noise is design work over the campaign's hand-authored factions.
-
-## Persistence and multiplayer
-
-**Multiplayer syncs no goodwill at all** — `Multiplayer.dll` syncs exactly two `Faction`
-members, `allowRoyalFavorRewards` and `allowGoodwillRewards`, and there is no `SyncMethod` for
-`TryAffectGoodwillWith` [V]. Confirmed from the other direction: zero hits across every
-assembly in the Multiplayer and MP-Compat folders.
-
-**No explicit synced command is needed for the ripple**, and the requirement to wrap every
-write in one is stricter than the real rule. `docs/engine/determinism.md` § *Why `Rand` inside
-a synced tick is safe*: the hazard is a mod consuming the shared stream a different number of
-times per client. The ripple is **already downstream of a synced action** — an arrest is
-simulated identically on both clients, so `Notify_MemberCaptured` fires on both at the same
-tick in the same order [V on the model, I that this ripple qualifies].
-
-What must hold:
-
-1. **No `Rand` in the ripple path.** `TryAffectGoodwillWith`, `CheckKindThresholds` and
-   `Notify_RelationKindChanged` consume none [V].
-2. **No `ModSettings` read during simulation** — **T-18**. Every tunable is a Def.
-3. **Deterministic iteration order.** `AllFactionsListForReading` is insertion-ordered.
-   **Never iterate a `Dictionary` or `HashSet` of factions** to build the ripple set [I].
-4. **No cached ally/enemy set** — T-20 exactly.
-5. **A player-facing "run the ripple" button would need a synced command**, because a UI click
-   is not a simulated event. That is the case the "every write is synced" rule is actually
-   about [I].
-
-One shared player faction means one goodwill number per NPC faction, so letters are shared and
-any per-player filtering is draw-time only (**T-21**).
-
-## Failure and recovery
-
-- **The alliance ripple silently does nothing until edges are seeded.** This is the failure
-  mode most likely to ship: the mechanism reads as green, and produces a feature that never
-  fires. Seeding is a prerequisite, not a polish step.
-- **Gate E swallows writes silently.** A ripple that reports "−6 with B" in a letter while
-  `TryAffectGoodwillWith` returned `false` is a lie to the player. **Check the `bool` before
-  writing the letter** — the requirement's legibility clause depends on it [V]. VEF's
-  `DoImpact` gets this wrong and must be overridden.
-- **Magnitudes are not applied literally.** `CalculateAdjustedGoodwillChange` amplifies any
-  change moving toward natural goodwill by 25% of the remaining gap; a −6 ripple can land as
-  more than −6 [V]. And `GoodwillWith` is clamped by `GetMaxGoodwill`, so a positive ripple
-  into a faction already at its situation cap is a silent no-op [V].
-- **Two of our own factions cannot participate**, by their own defs, and it is **T-07** — not
-  patchable after worldgen.
-
 ## Verification
 
 READ-class throughout, from decompiled 1.6 assemblies at the pinned versions. The wide pass
@@ -272,10 +276,11 @@ RimPacts' method bodies are [I] — identified from metadata names, not read.
 
 1. **Whether Reverence modulates the ripple.** `requirements/POLITICS.md` says Reverence is
    "an input to this system, not a part of it", asserting a coupling without specifying it.
-   **Unowned by both #90 and #52** — a requirements question, handed to POLITICS.md and
+   **Unowned by both #90 and #98** — a requirements question, handed to POLITICS.md and
    RELIGION.md. The boundary that *is* settled: #90 owns propagation along the relationship
-   graph, writing Goodwill; #52 owns Reverence as a quantity; #74 owns observing the acts that
-   change it.
+   graph, writing Goodwill; [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) owns
+   Reverence as a quantity, the events that change it and its display, with
+   [`RELIGION.md`](RELIGION.md) as its spec. It supersedes #52 and #74.
 2. **The seed table's content** — which faction hates or loves which, and by how much. Design
    work, and the real cost of this capability.
 3. **The `permanentEnemy` audit**, before world creation. T-07.

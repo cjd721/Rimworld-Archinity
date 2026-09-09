@@ -288,6 +288,53 @@ faction. The only Starjacks on the planet come from Odyssey's own Traders Guild
 
 ---
 
+## Two faction UIs, and they are not the same one
+
+Established on [Reverence, end to end](https://github.com/cjd721/Rimworld-Archinity/issues/98).
+The names are close enough to swap by accident, and an earlier spec did — pointing a whole
+display design at a screen that exists only before a game does.
+
+- **`RimWorld.Planet.WorldFactionsUIUtility`** is the **world-creation faction-selection
+  screen**. It takes a `List<FactionDef>`, offers Add and Delete buttons, and warns about
+  disabled content [V]. Its `MaxVisibleFactions = 12` guard is the *UI* cap described under
+  *The 12-faction cap is a UI guard only*, above — not an engine limit. VEF's three patches —
+  `…_CanAddFaction_Patch`, `…_DoRow_Patch`, `…_DoWindowContents_Patch` — are all on this
+  screen. It has no faction *instances* in scope, only defs.
+- **`RimWorld.FactionUIUtility.DrawFactionRow`** is the **in-game Factions tab row**: icon,
+  name, leader, info-card button, ideo icons, the goodwill number with its relation-kind label,
+  the natural-goodwill column, and the enemy-faction icon strip [V]. It is `private static`, so
+  a Harmony patch cannot reach it by `nameof`. Column widths are declared `private const` —
+  basics 300, info 40, ideos 60, relations 70, natural goodwill 54, over a fixed 80px row — but
+  **the method body uses inlined literals rather than the consts**, so a postfix must hardcode
+  them too. **The ideo column is 0 wide when Ideology is inactive or
+  `Find.IdeoManager.classicMode` is on** — any postfix computing an x-offset must replicate
+  that branch or draw in the wrong place.
+
+**The row is crowded, and three mods are already in it** [V]:
+
+| Mod | What it does to the row |
+|---|---|
+| **VFE Classical** (`VFEC.dll`) | prefix `SenatorUIUtility.DoSenatorInfoButton`, registered from a **static constructor** via `AccessTools.Method` rather than an annotated patch class |
+| **RimPacts** (`RimPacts.dll`) | `Patch_FactionTabWarRow` — prefix + finalizer resolving the method through `TargetMethod()`, paired with a postfix on `FactionRelationKindUtility.GetLabelCap` that **rewrites the relation-kind label** |
+| **Faction Territories** (`FactionTerritories.dll`) | prefix shrinks `fillRect.width` by 80 and a postfix draws a vassalage button in the freed strip — **the right edge is taken** |
+
+Two more **fork** it rather than patching it, so a postfix on vanilla never reaches them: **Rim
+War** and **Faction Customizer** each copy the whole method into their own faction window [V].
+
+**Vertical space inside the columns is not free either.** The relation-kind and goodwill labels
+are drawn into two 80px-tall rects at `rowY - 10` and `rowY + 10` with
+`TextAnchor.MiddleCenter`, so their glyphs land at `rowY + 30` and `rowY + 50`; and the natural
+goodwill column draws a black rect at exactly `rowY + 30` [V]. Anything added to this row needs
+its own horizontal strip, and the obvious one is already Faction Territories'.
+
+**The faction info card cannot be extended through the def's stat hook.**
+`StatsReportUtility.StatsToDraw(Faction)` yields exactly one entry —
+`DescriptionEntry(faction)` — and it is the *caller*, `DrawStatsReport(Rect, Faction)`, that
+adds `faction.def.SpecialDisplayStats(StatRequest.ForEmpty())` [V]. The faction instance is in
+scope in both; what is def-level is `FactionDef.SpecialDisplayStats`, which is handed an empty
+`StatRequest`. So a per-faction number cannot arrive through the def hook, but postfixing
+`DrawStatsReport` before `FinalizeCachedDrawEntries` is a real patch point.
+
 ## Smaller faction facts
 
 - **`VFET_WildMen` is a *player* faction** (`isPlayer true`). The NPC def is

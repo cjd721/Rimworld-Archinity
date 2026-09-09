@@ -1,13 +1,96 @@
 # Working a capability research ticket
 
-How the evidence gets gathered. Where the answer lands is `docs/specs/README.md`'s
-business, and the ticket footer already carries it.
+How the answer gets built and how the evidence gets gathered. Where the answer lands is
+`docs/specs/README.md`'s business, and the ticket footer already carries it.
 
-A capability ticket asks: **does the game already do this, what carries it, at what
-cost, and is it multiplayer-safe?** It answers with a mechanism and its constraints.
-Naming the provider mod is part of that — the sourcing ledger (#14) consumes exactly
-that verdict, and "XML, a patch, or new C#" is unanswerable without it. Writing the
-patch belongs to whoever implements.
+## The question
+
+A capability ticket asks:
+
+> **Does the game already do this? If it does, what carries it, at what cost, and is it
+> multiplayer-safe? If it does not, what is the cheapest thing we can build — using which
+> levers, which donors and which workarounds — and what does that cost?**
+
+Both halves are the ticket. Naming the provider mod is part of the first — the sourcing
+ledger (#14) consumes exactly that verdict, and "XML, a patch, or new C#" is unanswerable
+without it. Writing the patch belongs to whoever implements; **saying what to write belongs
+here.**
+
+### A negative is half an answer
+
+**"Nothing carries this" does not resolve a ticket.** It is a finding on the way to one.
+A resolution whose headline is a confirmed negative is **unfinished** until it also proposes
+a build, and the proposal answers all six of these:
+
+| | |
+|---|---|
+| **Mechanism** | What the thing actually is — a `WorldComponent`, a Def plus a worker, a Harmony postfix on a named method. |
+| **State** | Where the number, the flag or the record lives, and what owns it. |
+| **Persistence** | How it is scribed, and what happens when it is added to a save that predates it. |
+| **Change** | What increments, decrements or writes it, and from which already-existing hook. |
+| **Display** | Where the player sees it. A number the player cannot see is not a feature. |
+| **Cost** | XML, a patch, or new C# — with a line estimate and the file it lands in. |
+
+If one of the six genuinely belongs to another ticket, say which ticket **by number**, and
+check that it exists. #52 wrote *"the UI half is a separate ticket"* about a ticket that had
+never been created, and the resulting spec could not answer the question that had been asked.
+**A deferral to a ticket that does not exist is a gap, not a hand-off.**
+
+If one of the six is a *requirement* rather than a mechanism, hand it back — see
+**Requirements stay where they live**, below. That is a different move from deferring it to
+a capability ticket, and it is also written down rather than left implicit.
+
+### Propose the build even when it is ugly
+
+The point is not an elegant design; it is a *priced* one. "Reimplement ~40 lines of the mod
+we are not shipping", "one `GoodwillSituationDef` and a `workerClass`", "four Harmony
+postfixes in the assembly we already ship" are all complete answers. **"It would need custom
+code" is not** — every negative would need custom code, which is why saying so adds nothing.
+
+Where two builds are plausible, name both, recommend one, and say what separates them.
+Where the build is genuinely blocked by an engine fact, that fact **is** the answer: state
+it, and bring the conflict back rather than inventing a weaker substitute quietly.
+
+## Scoping: a ticket is a behavior, not a seam
+
+**A capability is something the game must be able to do, defined by observable behavior**
+(map #2). The corollary is the rule that is easy to get wrong:
+
+> **Split by behavior. Never split by implementation seam.**
+> Storage, hooks, persistence and UI are *sections of a spec*. They are not tickets.
+
+One behavior, one ticket, **however many clauses its resolution needs**.
+
+**What actually caused the splitting, stated accurately, because the obvious culprit is not
+it.** Map #2 used to carry a sizing rule — *"a ticket whose resolution comment would need more
+than one clause is the wrong size"* — and it has been replaced. But it was added on
+2026-09-08 at 01:50Z, *after* #52, #54, #55, #57 and #61 already existed, so it cannot have
+caused those. The rule that did the work is the anti-bundling one: *"every capability gets its
+own ticket… none may be bundled with another capability."* #74's own body cites exactly that —
+*"Every capability gets its own ticket, so this is not left inside #52 as a bullet."*
+
+**Read as written it is correct. Read as "anything separable is a separate capability" it
+shreds behaviors**, because storage, hooks and UI are always separable. Nothing said they were
+not capabilities, so they became tickets. The rule above is the missing half.
+
+**The worked failure.** Reverence — *"faction ABC has 57 Devotion, so their Reverence is
+57/100, and I can see it"* — was cut into three: the number (#52), the events that move it
+(#74), and a UI ticket that was never created. #52 resolved honestly and its spec still could
+not answer the question, because two thirds of the behavior lived elsewhere and one third
+lived nowhere. When it was re-run whole as #98, the same method found the apostle hook vanilla
+already ships **and corrected two load-bearing claims** the seam-split version had left
+standing.
+
+**The worked success, same doc and same method.** #90 was scoped to a behavior — *goodwill
+ripples along the faction graph* — and came back with a build: read NPC↔NPC edges, write
+player↔X, seed the empty edge set, reuse VEF's delayed-goodwill queue, four Harmony postfixes,
+~80–100 lines in the assembly we already ship. **The difference was the scope, not the
+research.**
+
+**Before starting, check the ticket's own shape.** If it asks about one seam of a behavior
+whose other seams sit on sibling tickets, say so in the resolution and name the siblings.
+Re-scoping the map is Conrad's call, not the agent's — but an unreported seam is how the spec
+ends up unanswerable.
 
 ## Who writes what
 
@@ -16,6 +99,11 @@ the evidence in working memory; nobody else will ever be as cheap to write it. O
 session produces all three outputs the footer names — the resolution comment, the
 `docs/specs/` section, and any `docs/engine/` or `docs/TRAPS.md` entry — and reports a
 short summary upward.
+
+**The spec section leads with the build.** `docs/specs/README.md` carries the section order;
+follow it. The proposed mechanism comes first and the survey evidence supports it — not the
+other way round. A reader must not have to descend past a catalogue of absences to find out
+what we are going to do.
 
 **An orchestrator running several of these reviews and merges; it does not re-derive.**
 Pulling four full resolutions back through one context to write four specs from them is
@@ -72,10 +160,12 @@ Search wide, read narrow. Grepping 155 mod folders takes seconds; reading them t
 days. The asymmetry that follows:
 
 > A **positive** answer may stop the moment it is found.
-> A **negative** answer is not finished until the wide pass has run.
+> A **negative** answer is not finished until the wide pass has run — and then it is still
+> not finished until it proposes a build.
 
 "Empire Honor carries this" — done, go read Empire. "Nothing carries this" — only
-worth something if you looked everywhere first.
+worth something if you looked everywhere first, and only *finished* once you have said what
+we build instead.
 
 Four tiers, and most tickets stop at the second:
 
@@ -97,6 +187,11 @@ Ushanka's Hacking Expansion ships full 1.6 C# for exactly the mechanism #58 asks
 about. It appears in no repo doc and is inactive, so tiers 1 and 2 both miss it and
 tier 3 finds it in one grep.
 
+**A fifth pass, when the answer is negative: read the nearest donor anyway.** Vanilla's
+`GoodwillSituationManager` carries no stored per-faction value and is still the architecture
+Reverence copies. The mechanism you build is almost always a shipped mechanism with one piece
+replaced — find that mechanism and say which piece.
+
 ### Searching what the mods actually ship
 
 **Most of the corpus is compiled assemblies with no source.** A plain `rg` over `.cs`
@@ -116,6 +211,15 @@ tickets in a row independently rediscovered this; it is written down now.
   Grep the bare name (`Random`), then narrow. Ticket #88 filtered 1,057 dlls to 276
   on the null-terminated ASCII name, deduped by SHA-1, collapsed to one 1.6-loading
   copy per mod, and depth-read the surviving 71.
+- **Four mods vendor a publicised copy of `Assembly-CSharp.dll`** — six files across
+  `2836791007`, `2990596478`, `3241944893` and `3563882422`. A `.dll` wide pass reads
+  **vanilla's entire metadata** back as a hit and attributes it to whichever mod ships the
+  copy, so the sweep reports a mod carrying the mechanism when what it carries is a build
+  artifact. #98's passes were polluted by this until they were fixed.
+  **The one reliable filter is `-g '!**/obj/**'`, not the path**: the six sit under
+  `Source/obj/Debug/…`, `Source/obj/Release/…` *and* `Source/RimFantasy/obj/Debug/…`, and 18
+  mods ship some `.dll` under an `obj/` directory. Exclude `obj/` from every sweep — nothing
+  the game loads lives there.
 - **Generic instantiations are invisible to text search.** A
   `Dictionary<Faction, float>` field lives in the `#Blob` heap as a type signature,
   not as a readable string. No grep will find it. Bound this class of question by
@@ -177,6 +281,11 @@ PARTS-BIN's convention, and it governs every claim in a resolution:
 
 Mark every claim one or the other. An unmarked claim reads as [V] and gets built on.
 
+**A proposed build is marked too.** The mechanisms it composes are [V] — you read
+`WorldComponent.ExposeData`, you read the `workerClass` instantiation. The claim that they
+compose into the thing we want is **[I]** until something is built. Say which is which; a
+design presented at [V] is the expensive kind of confidence.
+
 **Cite a stable anchor, never a line number.** A trap is `docs/TRAPS.md` T-14; an
 engine fact is its file and heading in `docs/engine/`. Line numbers rot — the
 citations into the old `technical-findings.md` had already drifted ~53 lines before
@@ -204,6 +313,11 @@ Open the resolution with one of:
 reduced to a one-client log check for a single absent warning string, because the
 mechanism had already been read end to end. A RUN that says "needs testing" without
 saying exactly what to observe has not done tier 2's work.
+
+**The evidence class grades the survey, not the build.** A READ ticket still owes a
+proposed build; the build is [I] by construction and that is fine. Do not downgrade a
+resolution to RUN because the *design* is unproven — RUN is for questions reading cannot
+answer, not for designs nobody has compiled.
 
 ## Conflicts are cargo, not verdicts
 
@@ -233,6 +347,10 @@ method exists in 1.6. #52's ticket asserted two donor mechanisms that the 1.6
 assemblies contradict. **Re-verify any premise your answer rests on**, and correct it
 in the resolution.
 
+**A prior ticket's resolution is an inherited claim like any other.** When a ticket
+supersedes or absorbs a closed one, its findings are [I] until re-read — sound work, but
+work you are now building on rather than filing beside.
+
 ## Requirements stay where they live
 
 What a system must do lives in `docs/requirements/`. Finding a requirement missing is
@@ -245,6 +363,11 @@ designing an era filter and found instead that no requirements document owns men
 legibility at all, and that `docs/progression/` (where the filter's key would live)
 is empty.
 
+**This is not a licence to hand back the build.** A missing *number* — what the decay rate
+is, where the band thresholds sit — is a requirement. A missing *mechanism* — what holds
+the number at all — is yours. Propose the build with the requirement stated as an open
+parameter, and say which ticket sets it.
+
 ## Known tooling hazards
 
 - **`corpus.py --which` attributes a whole wide pass in one call.** It takes a mod
@@ -253,7 +376,7 @@ is empty.
   stale-source flags already applied:
 
   ```bash
-  rg -a -l "TryAffectGoodwillWith" <both roots> -g '*.dll' \
+  rg -a -l "TryAffectGoodwillWith" <both roots> -g '*.dll' -g '!**/obj/**' \
     | python tools/corpus.py --which -
   ```
 

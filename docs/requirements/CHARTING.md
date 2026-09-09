@@ -240,6 +240,7 @@ announcements and nobody is in a position to tell the colony about them.
   capability and narrative decide together whether it ships.
 - **Natural discovery.** Whether a travelling caravan or a scouting outpost surfaces sites
   on its own, alongside the apparatus.
-  [Discovery through travel and outposts](https://github.com/cjd721/Rimworld-Archinity/issues/89).
+  Absorbed into [the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57),
+  which also owns the reach band.
 - **The significant-site catalogue**, search band distances, effort formulas and
   presentation values. Balance and authoring, after the structure is built.
