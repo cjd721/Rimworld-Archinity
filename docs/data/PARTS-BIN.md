@@ -29,11 +29,18 @@ carries **zero weight** and was deliberately ignored throughout.
 > provenance notes remain — read them as facts about a mod, never as an argument
 > against using it.
 
-**Scope.** 108 Workshop mods (`C:\Program Files (x86)\Steam\steamapps\workshop\content\294100\`)
-plus the 4 local Archinity mods (symlinked into
+**Scope.** The 108 Workshop mods present when this survey ran
+(`C:\Program Files (x86)\Steam\steamapps\workshop\content\294100\`) plus the local
+Archinity mods (symlinked into
 `C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\`). Roughly 45 got a
 depth pass — folder opened, defs and patches read, assemblies decompiled with
 `ilspycmd`. The rest are bookmarked at index level in §11.
+
+> **The corpus has grown since.** 145 Workshop mods and 5 local Archinity mods are on
+> disk as of 2026-09-08, so the counts below (108, "36 of 108", "~40 of the 108")
+> describe *this survey's population*, not the full set — a mod absent from these
+> counts may simply postdate the pass rather than have been rejected. The live roster
+> is `docs/data/MOD-SNAPSHOT.md`; the duplicate-copies hazard is `docs/TRAPS.md` T-22.
 
 **How to read a claim.** **[V]** = someone read the def, the patch or the decompiled
 code and cites the path. **[I]** = inferred from a name, a blurb or structure. Every
@@ -41,7 +48,7 @@ verdict is one of **PULL** (ship it) / **RESTAT** (ship it but rebalance and
 repoint) / **REBUILD** (lift the technique, write our own) / **BLOCK** (must
 actively suppress its content). Split verdicts are common and expected.
 
-**Read alongside** `docs/technical-findings.md`, which already carries the verified
+**Read alongside** `docs/engine/` and `docs/TRAPS.md`, which already carry the verified
 internals of TechBlock, Ignorance Is Bliss, More Realistic Research, VQE Ancients,
 KCSG, Medieval Overhaul's settings traps, facility linking and the research-rate
 maths. This document does not repeat those; it extends them and cites them.
@@ -477,7 +484,7 @@ Cleanest of the era cluster on RNG: no `Rand.`, no `System.Random`, no threading
 upstream, an **undeclared and unguarded Anomaly coupling**, runtime ThingDef comp
 injection, and a transposed `Mathf.Clamp(num, 20, 0)` that silently discards the
 Intellectual-skill term. **[V]** Its `Devilstrand` entry is circular — already
-recorded in `technical-findings.md`, already patched around by
+recorded in `docs/engine/research-and-tech-tiers.md`, already patched around by
 `Archinity.Pacing/Patches/Fix_MoreRealisticResearch.xml`.
 
 **Verdict: REBUILD.** The gate is ~40 lines of the mod's ~1,500.
@@ -515,18 +522,19 @@ Its economy is the project's named refusal case three times over: **`VFEC_Bronze
 **`VFEC_BlocksConcrete`** (a second stone-block noun plus a dedicated 83-hour press),
 and **`VFEC_Tyrian`** (Cloth ×150 → Tyrian ×150 over ~20 in-game days, whose only
 property is market value — literally converting a resource so you can convert it
-again). **[V]** `technical-findings.md` already records that it contributes **zero**
-Medieval research projects.
+again). **[V]** `docs/engine/research-and-tech-tiers.md` already records that it
+contributes **zero** Medieval research projects.
 
 **Verdict: BLOCK the code, BLOCK the economy, PULL the art (193 PNGs incl. 24
 hand-drawn perk icons), REBUILD the architecture.**
 
 ### 5.6 Medieval Overhaul `3219596926` — the chains, enumerated
 
-`technical-findings.md` already carries MO's settings-menu trap, the schematic-cache
-desync, `metalChain` vs `vanillaMine`, the 395-ThingDef `component_replace`, the four
-electric successors, the iron-locked items and the measured tier totals. What this
-pass adds is the full production-chain enumeration and the accept/refuse call.
+`docs/engine/mods/medieval-overhaul.md` already carries `metalChain` vs `vanillaMine`,
+the four electric successors and the iron-locked items; `docs/TRAPS.md` T-19, T-20 and
+T-26 carry the settings-menu trap, the schematic-cache desync and the 395-ThingDef
+`component_replace`; and `docs/engine/research-and-tech-tiers.md` carries the measured
+tier totals. What this pass adds is the full production-chain enumeration and the accept/refuse call.
 
 **Supplies. [V]** 1,279 ThingDefs (~1,197 concrete), 226 RecipeDefs, **54
 ResearchProjectDefs** (6 Neolithic + ~47 Medieval, 200–4000), **81
@@ -600,7 +608,7 @@ at 16 per garment, 89 KCSG structure layouts, 143 symbols, 10 keeps, 170 backsto
 > NotesStack, ResearchBoard, SurgicalTools, AilmentsShelf, MannequinStand. Build a
 > thing next to a bench, the bench gets better. **Pure surface, zero procedure, no new
 > resource.** **[V]** This is how to fill medieval build-out time without inventing a
-> noun. (`technical-findings.md` records that its `GenRecipe` patch is the working
+> noun. (`docs/engine/facilities-and-recipes.md` records that its `GenRecipe` patch is the working
 > precedent for facility-driven quality, and that facilities are additive-only.)
 
 **Cut on sight:** `VFEM2_Must` (grapes → must → wine; "must" was never a need),
@@ -891,7 +899,7 @@ Counted from `techLevel` tags. **[V]**
 | Vanilla Armour Expanded `1814988282` | 12 | 60 | 60 | 46 |
 | VWE Tribal `2454918552` | 30 | – | – | – |
 
-`technical-findings.md` already records the binding constraint: the Neolithic armour
+`docs/engine/items-and-materials.md` already records the binding constraint: the Neolithic armour
 rung count is **1** for leather and **0** for steel, because the only Neolithic apparel
 venue is `CraftingSpot`.
 
@@ -901,7 +909,7 @@ venue is `CraftingSpot`.
 
 ### 6.1 Races and containment
 
-`technical-findings.md` already records that neither VRE Starjack nor VRE Archon
+`docs/engine/factions-and-worldgen.md` already records that neither VRE Starjack nor VRE Archon
 injects xenotypes into vanilla factions. This pass adds the inventory and the
 bleed audit.
 
@@ -1089,8 +1097,8 @@ be visible before it becomes a crisis"* — Archinity could ship its own `MapMod
 subclasses (era reach, faction standing, threat pressure) on this framework.
 **PULL.**
 
-**Faction Customizer `3336572602`** — `technical-findings.md` already records that it
-cannot remove factions and is pre-landing use only. Adding: its
+**Faction Customizer `3336572602`** — `docs/engine/factions-and-worldgen.md` already
+records that it cannot remove factions and is pre-landing use only. Adding: its
 `Dialog_ModifyFactionRelation.SaveChanges` sets `relation.kind` **without calling
 `Faction.Notify_RelationKindChanged`**, skipping hostility letters, lord re-evaluation
 and every downstream listener. **[V]** Its edits persist without it. **PULL as a
@@ -1100,8 +1108,8 @@ world-setup tool, disabled before the run.**
 interiors, ~30 room workers, rotating traders, entrenched defenders, two quests, two
 scenarios. Requires Odyssey. **Actively hostile to the premise:** orbital bases and
 shuttles from day one is a vending machine parked in the sky. Client-local settings
-feed **map generation**. `technical-findings.md` already records its `SpaceSettlement`
-patch-sequence trick as a reusable template. **DEFER to Spacer tier, or drop.**
+feed **map generation**. `docs/engine/world-time-and-layers.md` already records its
+`SpaceSettlement` patch-sequence trick as a reusable template. **DEFER to Spacer tier, or drop.**
 
 **Milky Way `3773448562`** — miscategorised. It is a **GUI widget toolkit**;
 `grep -c "Faction"` = 0, no `Defs/` folder at all. **[V]** Keep only if something
@@ -1129,7 +1137,7 @@ contains zero C#. **[V]**
 
 `QuestNode_GenerateThing` + `QuestNode_AddItemsReward` is the **named, deterministic
 reward that does not fail**, in pure XML, with no mod dependency. **[V]** This extends
-the `QuestNode_SetItemStashContents` precedent already in `technical-findings.md`.
+the `QuestNode_SetItemStashContents` precedent already in `docs/engine/quests.md`.
 
 ### 7.2 The chain primitive — VEF `QuestChainExtension`
 
@@ -1150,8 +1158,8 @@ questChainDef                      groups the chain, gives it a UI icon
 `GameComponent_QuestChains` re-evaluates on new game, load, **every quest completion,
 every quest expiry, and every research project finishing** (a Harmony postfix on
 `ResearchManager.FinishProject`). State is scribed. **[V]**
-`technical-findings.md` already records `requiredResearch` and its TechBlock tier-lock
-mapping; this is the rest of the surface.
+`docs/engine/research-and-tech-tiers.md` already records `requiredResearch` and its
+TechBlock tier-lock mapping; this is the rest of the surface.
 
 **The reference implementation is on disk and is ~40 lines.**
 `…\3618306875\1.6\Defs\Quests\` — a `QuestChainDef` plus six `QuestScriptDef`s whose
@@ -1245,7 +1253,7 @@ map, in pure XML.** Requires Odyssey. Covered by the compat layer. One confirmed
 def refs). **PULL.**
 
 **Vanilla Base Generation Expanded `3209927822`** — 100% XML, zero assemblies, zero
-textures. **[V]** `technical-findings.md` already records its 634 layouts and that its
+textures. **[V]** `docs/engine/mods/kcsg.md` already records its 634 layouts and that its
 faction patch covers only Empire, Tribals, Outlanders and Pirates. Adding: **it is the
 cleanest removal in the bin** — its layouts are built from vanilla ThingDefs at map-gen
 time and nothing is scribed, so removing it changes only *future* map generation.
@@ -1432,9 +1440,10 @@ def appears in its `Defs/Storyteller/`. **[V]**
 > **This makes Ignorance Is Bliss the *only* thing standing between a neolithic
 > Archinity colony and industrial gunmen — not a backstop, the sole gate.** Which
 > raises the stakes on TechBlock's desync considerably, since
-> `technical-findings.md` already records that IIB's `useActualTechLevel` depends on
-> TechBlock writing the player faction's tech level, and that its empty-pool behaviour
-> is **fail-open and fail-quiet**.
+> `docs/engine/research-and-tech-tiers.md` already records that IIB's
+> `useActualTechLevel` depends on TechBlock writing the player faction's tech level,
+> and `docs/TRAPS.md` T-17 that its empty-pool behaviour is **fail-open and
+> fail-quiet**.
 
 **And it is fixable in pure XML.** Neither mod uses `VEF.Factions.FactionDefExtension`
 or `VEF.Storyteller.IncidentDefExtension`, and neither patches the wealth calculation —
@@ -1498,14 +1507,15 @@ hediffs. **[V]**
 `VFES_CavalrySpikes`, `VFES_BarbedWire` and the `VFES_SiegeEquipment` research —
 **all vanilla classes, copyable straight into Archinity,
 loading none of `VFESecurity.dll`.** Drop the one `VEF.Weapons.AutoRefuelMannedTurrets`
-modExtension. **BLOCK the assembly.** `technical-findings.md` already records the
+modExtension. **BLOCK the assembly.** `docs/engine/mods/kcsg.md` already records the
 complementary finding that `VFEM2_Turret_WallMountedArbalest` and `_Arquebus` exist and
 are never placed anywhere.
 
 ### 8.5 Threat content
 
-`technical-findings.md` already records that raid faction choice has no tech weighting
-and that Ignorance Is Bliss gates it via a `FactionCanBeGroupSource` postfix.
+`docs/engine/factions-and-worldgen.md` already records that raid faction choice has no
+tech weighting and that Ignorance Is Bliss gates it via a `FactionCanBeGroupSource`
+postfix (`docs/TRAPS.md` T-17 for the fail-open half).
 
 **Alpha Mechs `2973169158`** — 664 PNGs, 212 def files, covered by the compat layer.
 Already in the load order specifically so the Glitterites can field `AM_*` kinds, with
@@ -2053,7 +2063,7 @@ from `KCSG.dll`, `MVCF.dll`, `Outposts.dll`, `PipeSystem.dll` too. **[V]** What 
 *does* have, and it matters for tier compatibility, is
 `VEF.Buildings.AffectedByFacilitiesExtension` (`copyLinksFrom`) and
 `RecipeInheritanceExtension` (`inheritRecipesFrom`, `allowedRecipes`,
-`disallowedRecipes`) — both already in `technical-findings.md`, both ~30 lines to
+`disallowedRecipes`) — both already in `docs/engine/facilities-and-recipes.md`, both ~30 lines to
 reimplement, which avoids deepening the dependency.
 
 **The closest architectural template is VVE-Upgrades `3302208420`** — pure XML on

@@ -28,7 +28,8 @@ read them when the topic overlaps:
 - `docs/specs/` — the technical designs that satisfy them, including ones still in progress.
 - `docs/progression/` — the domain grids: what becomes available, and when.
 - `docs/COSMOLOGY.md` — anima, the channel and selfhood, for writers.
-- `docs/technical-findings.md` — verified engine and mod behavior; coding rules are in `CODING_STANDARDS.md`.
+- `docs/engine/` — verified engine and mod behavior, filed by subject.
+- `docs/TRAPS.md` — the register of behaviour that fails silently. Coding rules are in `CODING_STANDARDS.md`.
 
 Superseded, and kept in `docs/archive/` as history rather than authority:
 `VISION.md`, `MAP.md`, `PROGRESSION-MAP.md`, `HANDOFF.md`, `STORY-CANON.md`,

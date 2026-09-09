@@ -28,7 +28,7 @@ prioritizes ordered discoveries.* Those are requirements, not fiction.
 - `docs/plot/` — the particular events through which the player encounters the system.
 - `docs/specs/` — how the system will satisfy these requirements.
 - `docs/progression/` — what becomes available and when.
-- `docs/technical-findings.md` — cross-cutting engine and mod facts.
+- `docs/engine/` — cross-cutting engine and mod facts; `docs/TRAPS.md` for what fails silently.
 
 ## Template
 

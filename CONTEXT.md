@@ -4,8 +4,8 @@ The project's glossary. What the words mean, and nothing else.
 
 Campaign: [overview](docs/PLOT.md), [era chapters](docs/plot/),
 [systems](docs/requirements/) and [cosmology](docs/COSMOLOGY.md).
-Engineering: [coding standards](CODING_STANDARDS.md) and
-[verified findings](docs/technical-findings.md).
+Engineering: [coding standards](CODING_STANDARDS.md), the
+[trap register](docs/TRAPS.md) and the [engine reference](docs/engine/).
 
 ## Language
 

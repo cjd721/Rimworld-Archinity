@@ -49,13 +49,20 @@ The five canonical roles, used verbatim as label strings. See
 Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root, both created
 lazily. See `docs/agents/domain.md`.
 
+### Capability research
+
+Resolving a capability ticket — the corpus, the wide pass, stale source, and how a
+claim gets marked. The active mod set is **not** the corpus, and every other tool in
+`tools/` narrows to it. See `docs/agents/capability-research.md`.
+
 ## What earns a slot in this file
 
 This file is the map, not the manual. It says what Archinity is, which mode you
 are in, and where the real instructions live. Everything else is filed elsewhere:
 
 - How code and defs get written → `CODING_STANDARDS.md`
-- Verified facts, so they are never re-litigated → `docs/technical-findings.md`
+- Behaviour that fails **silently**, as a cited register → `docs/TRAPS.md`
+- Verified engine and mod mechanisms, by subject → `docs/engine/`
 - The plot: what happens, in what order → `docs/PLOT.md`
 - Era narratives → `docs/plot/`
 - What campaign systems must do → `docs/requirements/`

@@ -23,8 +23,10 @@ manufacture a document for every hook someone investigates.
 - **The issue** retains the investigation, the evidence and the resolution.
 - **The system's spec** retains the supported mechanism, its constraints, the unresolved
   questions and the resulting design.
-- **`docs/technical-findings.md`** retains broadly reusable engine and mod facts worth
-  knowing outside the system, with a link rather than a copied investigation.
+- **`docs/engine/`** retains broadly reusable engine and mod facts worth knowing
+  outside the system, filed by subject, with a link rather than a copied
+  investigation. If the finding is a behaviour that fails **silently**, it goes to
+  the register at **`docs/TRAPS.md`** instead and is cited by ID.
 
 ## Verified is not selected
 

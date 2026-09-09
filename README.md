@@ -12,7 +12,8 @@ worth beating.
 - [Technical specifications](docs/specs/) — how those requirements get satisfied.
 - [Progression grids](docs/progression/) — what becomes available, and when.
 - [Wayfinder](https://github.com/cjd721/Rimworld-Archinity/issues/2) — remaining design and specification work.
-- [Glossary](CONTEXT.md), [coding standards](CODING_STANDARDS.md) and [technical findings](docs/technical-findings.md).
+- [Glossary](CONTEXT.md) and [coding standards](CODING_STANDARDS.md).
+- [Trap register](docs/TRAPS.md) — behaviour that fails silently. [Engine reference](docs/engine/) — verified engine and mod mechanisms.
 
 ## Mods
 
