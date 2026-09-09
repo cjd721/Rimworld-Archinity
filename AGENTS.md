@@ -32,6 +32,10 @@ asked.
 `research/*` branches, no worktrees. One dev, one repo, no review gate — a
 branch buys nothing here and costs a merge.
 
+**Every mod on disk is in play, active or not.** The enabled set is an accident of the
+last playtest, not a design input. Counts and evidence come from the whole bin — an
+active-mod number in a verdict is wrong even when its arithmetic is right.
+
 ## Agent skills
 
 ### Issue tracker

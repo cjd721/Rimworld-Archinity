@@ -79,18 +79,50 @@ as the id-overlap between the two roots: 145 folders under
 `workshop/content/294100`, 83 under `Mods/`, of which 77 collide and 6 are ours
 (the five `Archinity.*` mods plus Steam's placeholder file).
 
-These are real copies, not junctions — VEF (`2023507013`) is 13 MB in both. Five
-were diffed and are byte-identical; the rest were not. Which one loads is not
-something the mod list tells you, and byte-identity between machines is not
-established by matching workshop IDs.
+These are real copies, not junctions — VEF (`2023507013`) is 13 MB in both. Which
+one loads is not something the mod list tells you, and byte-identity between
+machines is not established by matching workshop IDs.
+
+**All 77 have now been diffed, and six of them differ.** The earlier reading —
+five sampled, all byte-identical — did not generalise. Comparing every `.dll` and
+`.xml` under both roots:
+
+| Diverged `packageId` | |
+|---|---|
+| `oskarpotocki.vanillafactionsexpanded.core` | `VEF.dll` md5 `04a732e9…` local vs `c8b454bc…` workshop |
+| `andromeda.milkyway` · `ferny.betterarchitect` · `mrk.architectmenuoptimizer` · `sbz.neatstoragefridge` · `vanillaexpanded.vexploratione` | |
+
+**VEF is the worst possible member of that list** — 57 of the 150 mods in the bin
+declare it under `modDependencies`, and quest chaining, KCSG site generation and the
+goodwill queue all live in the assembly that differs.
+
+**The two copies are not a pin and must not be read as one.** Nothing has been
+pinned; `Mods/` holds an incidental second copy of 77 workshop mods, and the
+instruction below still stands unmet. Workshop auto-updates and `Mods/` does not,
+so the divergence set grows on its own every time Steam updates something — which
+is why a duplicate that was byte-identical when sampled is no evidence about it
+today.
+
+**`corpus.py --check` cannot see any of this and reports the corpus clean.** It
+keys by `packageId`, first base wins, and its base order is `(DATA, WORKSHOP,
+LOCAL)` — so it records one row per mod, attributes VEF's origin as **workshop**,
+and never compares the two copies. Its `scan()` docstring asserts *"First base
+wins, as RimWorld does"*, and **that claim is unverified**. If it is wrong, every
+finding this project has cited "against the version on disk" was read from the copy
+the game does not load. Only a launch-log check separates the two readings —
+[which copy of 77 duplicated mods the game actually
+loads](https://github.com/cjd721/Rimworld-Archinity/issues/99) owns it.
 
 **Resolve this before the mod set is pinned**; the vendoring decision in
 [#3](https://github.com/cjd721/Rimworld-Archinity/issues/3) has to say which root
-wins. The same hazard applies inside a mod: TechBlock ships both a `1.6/` and a
+wins, and a pin taken over an unresolved duplicate pins the wrong copy half the
+time. The same hazard applies inside a mod: TechBlock ships both a `1.6/` and a
 `1.0/` assembly, and decompiling the wrong one yields different code and a wrong
-conclusion.
+conclusion. §14's open `RangeFinder.dll` item is the same shape again.
 
-*Disk survey 2026-09; overlap re-counted against both roots 2026-09-08.*
+*Disk survey 2026-09; overlap re-counted against both roots 2026-09-08; all 77
+diffed and the six divergences found 2026-09-09, against the build on disk that
+day.*
 
 ### T-33 — KCSG generates settlements from an unseeded `System.Random`
 
