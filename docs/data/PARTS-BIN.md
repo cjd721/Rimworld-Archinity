@@ -378,8 +378,11 @@ strong property is the XML surface — `ResearchFoundationExtension`,
 **Coexistence, from code on both sides. [V] on the reads, [I] on the consequence:**
 - The two `CanStartNow` postfixes stack harmlessly — both only narrow to false.
 - **WTL's UI filter silently dies under Node Research.** WTL hangs its visual
-  filtering off `MainTabWindow_Research.GetVisibleResearchProjects`, which Node
-  Research's replacement window never calls. Over-level projects **render as
+  filtering off the **property getter** `MainTabWindow_Research.VisibleResearchProjects`
+  — patched as `[HarmonyPatch("VisibleResearchProjects", MethodType.Getter)]`; there is
+  no `GetVisibleResearchProjects` method in 1.6, and WTL's own Better Research Tabs shim
+  spells it `get_VisibleResearchProjects` (re-verified in #87, **[V]**). Node
+  Research's replacement window never calls it. Over-level projects **render as
   available and refuse to start, with no message.** WTL ships compat shims for
   ResearchPal, ResearchPowl, Better Research Tabs, Dubs Mint Menus, Realistic
   Planets, RealRuins and VFECore — and none for Node Research. **[V]**
@@ -1260,7 +1263,9 @@ time and nothing is scribed, so removing it changes only *future* map generation
 **[V]** And one MP hazard that lives in KCSG, not here:
 `SettlementGenUtils.Sampling.Sample` constructs an **unseeded `System.Random`** to pick
 building placement points, on the path taken by every `SettlementLayoutDef`. **Two
-clients generate structurally different bases from the same seed.** **[V]** The
+clients generate structurally different bases from the same seed.** **[V]** This is now
+**`docs/TRAPS.md` T-33** — cite the ID, and note the fix already ships in Multiplayer
+Compatibility and only needs enabling ([#88](https://github.com/cjd721/Rimworld-Archinity/issues/88)). The
 `tiledStructures` / `structureLayoutDefs` paths of `GenStep_CustomStructureGen` do
 *not* go through it — **so authoring your own quest sites with KCSG is MP-safe; letting
 VBGE regenerate faction settlements is not.**

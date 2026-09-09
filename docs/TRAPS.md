@@ -50,6 +50,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-20 | MO's schematic cache is unkeyed and UI-poisoned — a live desync bug |
 | T-21 | Filter at draw time, never at list-membership time |
 | T-22 | 77 workshop mods have a second copy on disk under the same `packageId` |
+| **T-33** | **KCSG generates settlements from an unseeded `System.Random` — two clients get different maps, and MP's checksum cannot see it** |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 

@@ -123,5 +123,41 @@ work speed, maxDist 3.9). MO's
 `Mods/VanillaExpandedMedieval/Patches/Add_Linkables.xml` already cross-links
 them. **Neither gates a recipe.**
 
+## The add-bill menu has no search and no era concept
+
+Verified in [#87](https://github.com/cjd721/Rimworld-Archinity/issues/87) against
+vanilla 1.6.9642.18666.
+
+`ITab_Bills.OptionsMaker()` walks `SelTable.def.AllRecipes`, gates each on
+`AvailableNow && AvailableOnNow(SelTable)`, and returns a `List<FloatMenuOption>`
+ordered only by `-recipe.displayPriority`. `BillStack.DoListing` hands that straight to
+a `FloatMenu`, and `Verse.FloatMenu` contains **zero** occurrences of "search" [V].
+No search, no grouping, no filter — by construction, which is why a bench with eighty
+recipes is unreadable.
+
+**`RecipeDef.AvailableNow` keys on `researchPrerequisite(s)`, memes and faction tags —
+never on `techLevel`** [V]. There is no vanilla era concept on this surface at all.
+This is the same shape as § *A RecipeDef CANNOT be gated on a linked facility*:
+`AvailableOnNow` is the one hook, it is UI-only, and it does not stop a standing bill.
+
+Near miss worth knowing: `Dialog_BillConfig` **does** own a
+`thingFilterState.quickSearch` [V] — a quick-search over the *ingredient* filter. The
+engine ships the widget; it is simply not wired to the recipe list.
+
+**The configuring complaint is a defaults complaint, not a missing mechanism** [V].
+Every field wanted already exists on `Bill_Production`; the vanilla initialisers are
+`repeatMode = RepeatCount`, `targetCount = 10`, `hpRange = ZeroToOne`,
+`qualityRange = All`. And `Dialog_BillConfig.DoWindowContents` draws the `hpRange` and
+`qualityRange` sliders **inside the `repeatMode == TargetCount` branch**, so the mode
+must be switched before they render at all. The injection point for a hard default is
+proven and already in use by a mod: a postfix on `BillUtility.MakeNewBill`.
+
+**An era filter over this menu is the MP-safe kind (T-21).** `OptionsMaker` builds a
+fresh list on each click, never serialises it, and nothing in the tick path reads it —
+so a filter applied there is draw-time by construction. The unsafe variant mutates
+`def.AllRecipes` or patches `AvailableOnNow` to a per-player value; `AvailableOnNow` is
+also consulted on the paste-validation path, so that would diverge what a client can
+*do* rather than what it sees [V].
+
 See also `docs/engine/mods/medieval-overhaul.md` and
 `docs/engine/research-and-tech-tiers.md`.

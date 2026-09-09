@@ -25,12 +25,23 @@ anything here. It answers the two questions grep cannot:
 
     which mod is this hit in, and is it active?
 
+Note that ripgrep must be told to search binaries (-a) and that most of the
+corpus ships assemblies rather than source, so a wide pass over `.cs` files
+alone covers roughly a fifth of it. See docs/agents/capability-research.md.
+
 Run:
   python tools/corpus.py                     # table to stdout
   python tools/corpus.py --write             # rewrite docs/data/MOD-SNAPSHOT.md
   python tools/corpus.py --check             # diff disk against the snapshot
-  python tools/corpus.py --which <path>      # attribute a file path to its mod
+  python tools/corpus.py --which <path>...   # attribute paths to their mods
   python tools/corpus.py --inactive          # only the mods the tools cannot see
+
+--which takes a mod root, a file, or many of either, and reads paths from stdin
+with `-` so a whole wide pass is attributed in one call. It accepts raw ripgrep
+output (`path:line:match`), and collapses many hits to one row per mod:
+
+  rg -a -l "TryAffectGoodwillWith" <roots> -g '*.dll' \
+    | python tools/corpus.py --which -
 
 --write commits a *version pin*. Workshop mods update themselves; a finding
 cited against "the version on disk in September" is unreconstructable later,
@@ -233,15 +244,76 @@ def scan():
 
 
 def which(path, mods):
-    """Attribute a file path to the mod that owns it. The longest root wins."""
+    """Attribute a file path to the mod that owns it. The longest root wins.
+
+    The mod root itself attributes to that mod — a wide pass hands us directories
+    as often as files. A `rg` hit of the form `path:line:text` is trimmed to the
+    path, so the output of a grep can be piped straight in.
+    """
+    path = path.strip().strip('"').strip("'")
+    if not path:
+        return None
+    # rg emits "path:line:match"; keep chopping trailing :field until a path exists.
+    while not os.path.exists(path) and ":" in path:
+        head = path.rsplit(":", 1)[0]
+        if head == path or (len(head) <= 2 and head.endswith(":")):
+            break                       # bare drive letter, e.g. "C:"
+        path = head
     path = os.path.abspath(path)
     best = None
     for mod in mods.values():
         root = os.path.abspath(mod["path"])
-        if path.lower().startswith(root.lower() + os.sep):
+        if path.lower() == root.lower() or \
+           path.lower().startswith(root.lower() + os.sep):
             if best is None or len(root) > len(best["path"]):
                 best = mod
     return best
+
+
+def which_many(paths, mods):
+    """Attribute a batch of paths — the output of a wide pass — to their mods.
+
+    One row per mod, not per hit: a grep with forty hits in three mods is a
+    three-line answer. Unattributed paths are reported, never silently dropped,
+    because a path that belongs to no mod is usually a broken sweep.
+    """
+    hits, orphans = {}, []
+    for p in paths:
+        mod = which(p, mods)
+        if mod is None:
+            orphans.append(p)
+            continue
+        hits.setdefault(mod["packageId"], {"mod": mod, "n": 0})["n"] += 1
+
+    rows = sorted(hits.values(),
+                  key=lambda h: (h["mod"]["active"], -h["n"],
+                                 h["mod"]["name"].lower()))
+    print("%d path(s) → %d mod(s)" % (len(paths), len(rows)))
+    print()
+    for h in rows:
+        mod, flags = h["mod"], []
+        if not mod["active"]:
+            flags.append("INACTIVE — invisible to defdb/patch_check/inventory")
+        if not mod["supports"]:
+            flags.append("does not load under %s" % VERSION)
+        if mod["stale_source"]:
+            flags.append("⚠ source is %s only — STALE, decompile the dll"
+                         % ", ".join(mod["source"]))
+        elif not mod["source"]:
+            flags.append("no source — decompile the dll")
+        print("%4d  %s  (`%s`)" % (h["n"], mod["name"], mod["packageId"]))
+        for f in flags:
+            print("      %s" % f)
+    if orphans:
+        print()
+        print("%d path(s) attributed to no mod:" % len(orphans))
+        for p in orphans[:10]:
+            print("      %s" % p)
+        if len(orphans) > 10:
+            print("      ... and %d more" % (len(orphans) - 10))
+        print("      A path owned by no mod usually means the sweep is wrong,")
+        print("      not that the corpus is empty. Check the roots.")
+    return 0
 
 
 def render(mods, inactive_only=False):
@@ -354,16 +426,27 @@ def main():
                     help="rewrite docs/data/MOD-SNAPSHOT.md")
     ap.add_argument("--check", action="store_true",
                     help="diff the disk against the committed snapshot")
-    ap.add_argument("--which", metavar="PATH",
-                    help="which mod owns this file path, and is it active")
+    ap.add_argument("--which", metavar="PATH", nargs="*",
+                    help="which mod owns these paths, and are they active. "
+                         "Pass '-' (or no argument) to read paths from stdin, so a "
+                         "wide pass can be attributed in one call: "
+                         "rg -a -l Foo <roots> | python tools/corpus.py --which -")
     ap.add_argument("--inactive", action="store_true",
                     help="only mods the other tools cannot see")
     args = ap.parse_args()
 
     mods = scan()
 
-    if args.which:
-        mod = which(args.which, mods)
+    if args.which is not None:
+        paths = [p for p in args.which if p != "-"]
+        if not paths or any(p == "-" for p in args.which):
+            paths += [ln for ln in (l.strip() for l in sys.stdin) if ln]
+        if not paths:
+            print("Nothing to attribute. Pass paths, or pipe them with --which -")
+            return 1
+        if len(paths) > 1:
+            return which_many(paths, mods)
+        mod = which(paths[0], mods)
         if not mod:
             print("No mod owns that path.")
             return 1

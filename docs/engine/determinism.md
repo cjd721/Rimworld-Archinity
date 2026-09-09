@@ -105,6 +105,43 @@ Mod settings drive both def-load and runtime, so a settings mismatch is a def
 mismatch and often a live `Rand` mismatch as well. See `docs/TRAPS.md` T-18, with
 T-19 and T-20 as the worked Medieval Overhaul cases.
 
+## Map generation is seeded by vanilla, not by Multiplayer
+
+Verified in [#88](https://github.com/cjd721/Rimworld-Archinity/issues/88) against the
+1.6 assemblies. Recorded because the natural assumption — that MP must be seeding map
+generation, and that a gap there would be reported — is wrong twice over.
+
+**Vanilla seeds itself, at two levels** [V]:
+
+- `MapGenerator.GenerateMap` — `Rand.PushState()`, then
+  `Rand.Seed = Gen.HashCombineInt(Find.World.info.Seed, parent?.Tile.GetHashCode() ?? 0)`
+  (pocket maps substitute `parent?.ID`), with `Rand.PopState()` in the `finally`.
+  `parent?.PostMapGenerate()` is called **inside** that `try`, so it is covered.
+- `MapGenerator.GenerateContentsIntoMap` — a second `Rand.PushState()` /
+  `Rand.Seed = HashCombineInt(seed, GetSeedPart(...))` around **each** GenStep.
+
+Both seed inputs are cross-client identical: `World.info.Seed` is world state and
+`PlanetTile.GetHashCode()` is value-based. **`Site.PostMapGenerate` running unseeded
+cannot happen** — the older inferred hazard in `scratch/recon-factional-war.md` is
+refuted for `Verse.Rand` and upheld only for `System.Random` (**T-33**).
+
+**Multiplayer therefore patches nothing here**, and none is missing: it carries exactly
+two Harmony patches on `MapGenerator.GenerateMap` (`MapSetup`, `CleanupTileFactionContext`)
+and neither touches `Rand`; `PostMapGenerate` appears zero times in the assembly [V]. MP
+seeds the paths vanilla leaves loose and only those — `Game.LoadGame`, `Map.ExposeData`,
+`Map.FinalizeLoading`, `CaravanEnterMapUtility.Enter`, `LongEventHandler.QueueLongEvent`.
+
+**The consequence that matters: map generation is invisible to MP's desync detector.**
+`ClientSyncOpinion.CheckForDesync` compares FP round mode, map IDs, per-map
+`randomStates`, `worldRandomStates` and `commandRandomStates` — and because
+`GenerateMap` pushes and pops its *own* `Rand` state, the number of draws made during
+generation does not perturb the enclosing command's state at all [V]. A fresh map even
+starts with matched state on both clients. **Two clients can begin ticking a
+structurally different map from an identical RNG state, and MP reports nothing.** The
+divergence surfaces later, as a desync whose stack trace names a pawn rather than the
+map generator — and permanently through `thingIDNumber`, since different structure
+counts offset every subsequent ID, which MP's own seeding then consumes.
+
 ## What is not synced for free
 
 Nothing is covered by default. For the faction-mutation case specifically —

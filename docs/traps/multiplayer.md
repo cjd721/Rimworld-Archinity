@@ -92,4 +92,46 @@ conclusion.
 
 *Disk survey 2026-09; overlap re-counted against both roots 2026-09-08.*
 
+### T-33 — KCSG generates settlements from an unseeded `System.Random`
+
+`KCSG.SettlementGenUtils.Sampling.Sample` opens with `random = new Random();` — a
+parameterless `System.Random`, read by `random.Next(int)` and `random.NextDouble()`.
+**`Verse.Rand` never touches it**, so vanilla's map-generation seeding
+(`docs/engine/determinism.md` § *Map generation is seeded by vanilla*) does not reach
+it and `Rand.PushState` cannot. Every `SettlementLayoutDef` takes this path — every
+faction stronghold, every KCSG-authored site.
+
+Two clients walking into the same site generate **different maps**, and nothing
+reports it: map generation is outside MP's desync checksum by construction. The
+failure surfaces minutes later as a desync whose stack trace names a pawn.
+
+**The fix is not ours to write.** Multiplayer Compatibility
+(`rwmt.multiplayercompatibility`) carries it: `VanillaExpandedFramework.PatchKCSG`
+transpiles `newobj System.Random::.ctor()` into a `RandRedirector` routing into
+`Verse.Rand`. A transpiler is the only shape that works — `Sampling.random` is a
+`public static` field that `Sample` reassigns as its **first statement**, so a prefix
+that seeds the field is overwritten before the first draw. Do not author a second
+transpiler on the same method.
+
+The transpiler logs `"No System RNG was patched for method: …"` if it fails to bind,
+so wherever it is in the load order this trap fails **loudly** — which is the one
+thing it otherwise does not do.
+
+Two carve-outs worth keeping [V]: the `structureLayoutDefs` and `tiledStructures`
+branches of `GenStep_CustomStructureGen.Generate` **never reach `Sampling`**, so sites
+we author that way are safe even with the compat layer off. That is a design lever for
+[#57](https://github.com/cjd721/Rimworld-Archinity/issues/57) and
+[#66](https://github.com/cjd721/Rimworld-Archinity/issues/66) — belt-and-braces, not a
+substitute, since faction strongholds take the `SettlementLayoutDef` path regardless.
+
+**MP Compat's protection is a hardcoded per-mod allowlist, not a general mechanism.**
+It covers 21 of the mods on disk by name; anything else in the shipping set, and
+anything we write ourselves, gets no coverage. That is a standing condition on
+sourcing, not a one-off.
+
+*[#88](https://github.com/cjd721/Rimworld-Archinity/issues/88). `KCSG.dll`,
+`Multiplayer.dll`, `Multiplayer_Compat.dll` 1.6, decompiled at the MOD-SNAPSHOT pin.
+Corpus-wide sweep of 1,057 assemblies: this is the only unseeded `System.Random` on a
+map-generation path.*
+
 ---
