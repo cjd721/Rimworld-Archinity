@@ -10,21 +10,48 @@
            Core   Surface : radius 100, subdivisions 10
            Odyssey Orbit  : radius 130, subdivisions 5
 
-       Tile count scales with ~4^subdivisions, so orbit has orders of
-       magnitude fewer tiles than the surface. Since PlanetLayerDef.Orbit
-       sets settlementsPer100kTiles to 1000~1000 (one settlement per ~100
-       tiles), a small tile count also means very few orbital settlements,
-       asteroids and points of interest.
+       Tile count is EXACTLY 12 + 10 * (3^subdivisions - 1). It scales with
+       ~3^subdivisions, not 4^. PlanetLayer.Subdivide emits one new vertex
+       per triangle and one triangle per (vertex, adjacent-triangle) pair,
+       so triangles triple each pass and the surviving degree-5/6 vertices
+       are the tiles. Verified against 1.6.4871 rev590.
 
-       Raising subdivisions by 1 multiplies tile count by roughly 4, and
+           subdivisions 5 :  2,432 tiles
+           subdivisions 6 :  7,292 tiles
+           subdivisions 7 : 21,872 tiles
+
+       Orbit therefore has orders of magnitude fewer tiles than the surface.
+       Since PlanetLayerDef.Orbit sets settlementsPer100kTiles to 1000~1000
+       (one settlement per ~100 tiles), a small tile count also means very
+       few orbital settlements, asteroids and points of interest: roughly
+       9 at subdivisions 5, roughly 27 at 6.
+
+       Raising subdivisions by 1 multiplies tile count by roughly 3, and
        scales settlements/sites/travel distance with it.
 
        COST: worldgen time and orbit mesh vertex count grow with the same
-       factor. 5 -> 6 is the conservative step. 7 is a 16x jump; try it only
-       after confirming 6 generates in acceptable time.
+       factor. 5 to 6 is the conservative step. 6 to 7 is another ~3x, NOT
+       the 16x an earlier draft of this comment claimed, which came from the
+       wrong scaling law. Try it only after confirming 6 generates in
+       acceptable time.
 
        MULTIPLAYER: this is a def, so both clients get an identical value
        as long as they run the same mod version.
+
+       WORLDGEN-ONLY. See docs/TRAPS.md T-45. PlanetLayer.ExposeData scribes
+       subdivisions/radius/viewAngle/viewCenter, and InitializeLayer()
+       rebuilds the icosphere from the SCRIBED values, not from the def.
+       Editing this patch after a world exists is a silent no-op; it must be
+       right before world creation, alongside the faction roster (T-07).
+
+       NOTE the leading slash on the xpath below. tools/defdb.py currently
+       evaluates a leading-"Defs/" xpath relative to the Defs element and
+       matches nothing while still reporting success (issue #102), so the
+       absolute "/Defs/..." form here is the one that verifies correctly.
+
+       NOTE ALSO: no double hyphen anywhere in this comment. Two hyphens in
+       a row terminate an XML comment early and RimWorld drops the whole
+       file with no error. That is T-01, and this comment tripped it once.
        ==================================================================== -->
 
   <Operation Class="PatchOperationReplace">

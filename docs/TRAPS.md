@@ -24,6 +24,9 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-04 | Unresolvable cross-references are omitted, not nulled — a stripped prerequisite reads as "none" |
 | T-05 | `XmlInheritance` appends list children rather than replacing them |
 | T-06 | `Def.GetModExtension` returns the FIRST match; a second is inert |
+| T-37 | `Verse.DefMap<D,V>` scribes positionally — adding or removing a def mid-save rebinds every value to the wrong key |
+| T-40 | `requiredAnalyzed` is nulled without Biotech; the gate ceases to exist and the project becomes free |
+| **T-50** | **A budget computed from un-patched def values is wrong once mods merge — the compat patch one mod ships *for another* is the copy that wins** |
 
 ## World creation and factions — [`docs/traps/world-creation.md`](traps/world-creation.md)
 
@@ -40,6 +43,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-15 | `VFET_OpportunitySite_WildMen` generates a faction at runtime, unguarded — breaks T-07 |
 | T-16 | `RaidStrategyDef` / `QuestScriptDef` have no `minTechLevel` field at all |
 | T-17 | Raid faction selection is fail-open and fail-quiet |
+| T-36 | Swapping `Faction.def` freezes the title ladder — `royalTitleTags`, `royalFavorLabel` and `categoryTag` do not follow |
+| T-45 | `PlanetLayer` geometry rebuilds from *scribed* values, so a layer-size patch after worldgen is a silent no-op |
+| T-49 | `Find.RandomSurfacePlayerHomeMap` returns null once the only home is in orbit, taking three quest nodes with it |
+| **T-54** | **World Tech Level silently strips factions from the worldgen roster and gensteps from the map** |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -51,6 +58,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-21 | Filter at draw time, never at list-membership time |
 | **T-22** | **77 mods have a second copy on disk under one `packageId`; six have drifted apart — VEF among them — and `corpus.py --check` reports the corpus clean** |
 | **T-33** | **KCSG generates settlements from an unseeded `System.Random` — two clients get different maps, and MP's checksum cannot see it** |
+| T-39 | `QuestScriptDef.CanRun` draws on the shared `Rand` stream and memoises per tick — calling it from render code desyncs |
+| **T-51** | **MP Compat's Unity-RNG transpiler rewrites 4 members and half-fixes the rest in silence — unlike its `System.Random` sibling, it is not all-or-nothing** |
+| T-52 | `Dialog_Rename<T>.OnRenamed` runs client-locally, ahead of the synced setter |
+| T-53 | `Window.forcePause` does not pause a Multiplayer session |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -61,7 +72,13 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-25 | Genepacks decay in 20 days and roofs give zero protection |
 | T-26 | An unscoped `PatchOperationSetName` reaches 395 ThingDefs |
 | T-27 | `MeditationFocusDef` gates are *backstory* gates; a failed gate looks like nothing |
-| T-28 | `RoyalTitleDef.Awardable` is believed to derive from `favorCost > 0` |
+| T-28 | `RoyalTitleDef.Awardable` is `favorCost > 0` — a title with no favour cost is invisible to every award path |
+| T-34 | Editing a `HediffDef`'s `comps` list drops the comp; its fields read as defaults on the next load |
+| T-35 | The Permits tab is gated on `Faction.OfEmpire`, and the switcher that would fix it is drawn inside the gated card |
+| T-38 | A `CompScanner` find that generates no quest still zeroes the guaranteed-find timer |
+| T-41 | `analysisID` is a hand-picked int with no uniqueness check — a duplicate silently merges two Analysis gates |
+| T-46 | Substructure cells past `SubstructureSupport` are silently dropped on launch, outermost first |
+| T-47 | Only five stuffs are `isAirtight`; a stone, wood or obsidian room never pressurises |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 
@@ -71,6 +88,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-30 | `defenseOptions` is dead below Industrial |
 | T-31 | `DankPyon_MedievalSiege` cannot fire as shipped — empty intersection |
 | T-32 | Rotated KCSG symbol variants are runtime-generated and cannot be patched |
+| T-42 | All five vanilla `RoadDef`s share `movementCostMultiplier 0.5` — upgrading a road is a silent no-op |
+| T-43 | A downgrade through `WorldGrid.OverlayRoad` returns silently; only a null `RoadDef` logs |
+| T-44 | A road in an `allowRoads = false` biome is drawn but inert |
+| T-48 | On an orbit layer the pool collapses to 18 of 91 incidents and 18 of 139 quests, unannounced |
 
 ---
 
@@ -86,6 +107,12 @@ loudness is the whole selection criterion.
   earlier draft said…" under superseded text.
 - Every entry carries the build it was verified against.
 
+**Allocate the ID against the working tree, not just this index.** T-34 was claimed
+independently by six specs in one parallel batch because each agent read this file,
+saw it end at T-33, and took the next number. If several tickets are in flight, the
+orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
+
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole.
+read whole. **`world-creation.md` (14) and `content-and-buildings.md` (12) are both
+over that line now.**

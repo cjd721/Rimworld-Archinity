@@ -147,7 +147,12 @@ transpiler on the same method.
 
 The transpiler logs `"No System RNG was patched for method: …"` if it fails to bind,
 so wherever it is in the load order this trap fails **loudly** — which is the one
-thing it otherwise does not do.
+thing it otherwise does not do. **That reassurance is specific to `System.Random` and
+does not generalise**: `FixRNG` rewrites `newobj` on *both* of that type's constructors
+(`SystemRandConstructor`, `SystemRandSeededConstructor`), so a method either has every
+construction redirected or trips the warning, whereas the Unity-side sibling
+`FixUnityRNG` enumerates a hand-written subset of members under the same
+`!anythingPatched` guard and half-fixes a method in silence — **T-51**.
 
 Two carve-outs worth keeping [V]: the `structureLayoutDefs` and `tiledStructures`
 branches of `GenStep_CustomStructureGen.Generate` **never reach `Sampling`**, so sites
@@ -164,6 +169,211 @@ sourcing, not a one-off.
 *[#88](https://github.com/cjd721/Rimworld-Archinity/issues/88). `KCSG.dll`,
 `Multiplayer.dll`, `Multiplayer_Compat.dll` 1.6, decompiled at the MOD-SNAPSHOT pin.
 Corpus-wide sweep of 1,057 assemblies: this is the only unseeded `System.Random` on a
-map-generation path.*
+map-generation path. The `FixRNG` / `FixUnityRNG` contrast re-read from
+`Multiplayer.Compat.PatchingUtilities` (`Multiplayer_Compat.dll` 1.6) 2026-09-12.*
+
+### T-39 — `QuestScriptDef.CanRun` draws on the shared `Rand` stream and memoises per tick
+
+The name reads as a pure predicate. It is not one. `CanRun(Slate, IIncidentTarget)`
+answers by **running the quest**: its body is
+
+```csharp
+lastCanRunResult = target != null && CanQuestOccurOnTile(target.Tile)
+                   && root.TestRun(slate.DeepCopy());
+```
+
+The copied slate keeps the walk from writing anything back, but it does not keep it off
+`Verse.Rand`. Any script whose tree reaches `QuestNode_GetSiteTile` reaches
+`TileFinder.TryFindNewSiteTile`, whose success path ends in
+
+```csharp
+tile = list.RandomElement();
+```
+
+— a draw on the **shared** stream, plus a second `RandomElement()` on the layer fallback
+and whatever `TryFindRandomPlayerTile` spends before it. The number of draws depends on
+how the query lands, so it is not even a fixed cost.
+
+**The memoisation makes this worse, not safer.** Three fields carry the cache —
+
+```csharp
+[Unsaved(false)] private int  lastCheckCanRunTick;
+[Unsaved(false)] private int  lastCheckCanRunPoints;
+[Unsaved(false)] private bool lastCanRunResult;
+```
+
+— keyed on `Find.TickManager.TicksGame` **and** the slate's `points`. The first caller in
+a tick at a given points value pays the draws; every later caller in that tick pays none.
+So the stream position after a tick is a function of *who called first*, not of what the
+simulation did.
+
+**Render code renders on one client only, and on selection.** An inspect string, a gizmo
+label or tooltip, a custom `ITab`, a left-open dev window — all of these run on the
+machine whose player is looking, at the moment they look. Call `CanRun` from one and that
+client pulls the shared stream while the other does not. **The canonical shape of this bug
+is an inspect string previewing eligibility** — a readout answering *"is any beat eligible
+right now?"* on the apparatus's inspect pane is exactly the tempting, wrong thing to
+build. The desync surfaces later, in a trace naming whatever drew next.
+
+**The safe pattern: compute such a readout from declared def data and condition workers,
+never from `CanRun`.** Read the fields the def already states — the band, the research
+gates, the beat's own declared conditions — and evaluate them with workers you wrote,
+which draw nothing. A preview owes the player an answer, not the engine's answer.
+
+Vanilla's own `QuestPart_SubquestGenerator_ArchonexusVictory.GetNextSubquestDef` calls
+`CanRun` and is fine, which is the distinction that matters: it runs from **synced
+quest-part code** on the ticked path, where both clients execute it in the same order and
+spend the same draws. Calling `CanRun` is not the error. Calling it from a path only one
+client walks is.
+
+*[#57](https://github.com/cjd721/Rimworld-Archinity/issues/57).
+`RimWorld.QuestScriptDef.CanRun`, `RimWorld.Planet.TileFinder.TryFindNewSiteTile` and
+`RimWorld.QuestPart_SubquestGenerator_ArchonexusVictory.GetNextSubquestDef`, all read from
+`Assembly-CSharp.dll` 1.6.4871 rev590 with `ilspycmd` 8.2.0, 2026-09-12.
+`docs/engine/determinism.md` § *Presentational separation between the two players* is the
+general rule this is a case of.*
+
+### T-51 — MP Compat's `FixUnityRNG` half-fixes in silence, unlike its `System.Random` sibling
+
+`Multiplayer.Compat.PatchingUtilities.FixUnityRNG` — the transpiler behind
+`PatchUnityRand(...)` — walks the instruction stream and, on an `OpCodes.Call` whose
+operand is a `MethodInfo`, rewrites **exactly six targets**:
+`UnityEngine.Random.Range(int,int)` and `Range(float,float)`, the obsolete `RandomRange`
+spelling of each, `Random.value`, and `Random.insideUnitCircle`. That is the whole list;
+the fields backing it are the whole list too. Every other member of the type —
+`insideUnitSphere`, `onUnitSphere`, `rotation`, `ColorHSV`, `state`, `InitState` — is
+passed through untouched.
+
+Then the warning:
+
+```csharp
+if (!anythingPatched)
+    Log.Warning("No Unity RNG was patched for method: " + …);
+```
+
+It fires only when the transpiler matched **nothing at all**. A method holding one
+`Random.Range` and one `Random.insideUnitSphere` matches something, so `anythingPatched`
+is true, so the log stays quiet — and the second draw still reads a process-global stream
+that was never equal between two clients to begin with. The mod is on the allowlist, the
+patch applied, and the method is **half-fixed with no signal**.
+
+**Its `System.Random` sibling is a different shape.** `FixRNG` carries the identical
+`!anythingPatched` guard, but what it rewrites is `newobj` on *both* of that type's
+constructors — `SystemRandConstructor` and `SystemRandSeededConstructor` — which is every
+way to construct one. Per method it is therefore all-or-nothing: either the draws are
+redirected or the warning means what it says. **That is why T-33 closes by saying its trap
+fails "loudly", and that claim does not carry over to the Unity side.** A static class has
+no constructor to hijack, so the Unity facility has to enumerate members by hand, and it
+silently passes over the ones it was not told about.
+
+**This entry needs no live instance to justify it.** It is a standing condition on any
+assembly we ship and on anything the sourcing ledger
+([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)) adds later — neither gets
+allowlist coverage by default, because as T-33 records the coverage is a hardcoded per-mod
+list. The corpus sweep behind that judgement, and the reason `UnityEngine.Random` is worse
+than `System.Random` to start with, are in `docs/engine/determinism.md`
+§ *`UnityEngine.Random` is a third stream*; not restated here.
+
+Two consequences for us. Do not read "MP Compat patches that mod" as "that mod's Unity
+draws are handled" — check the member. And do not reach for `UnityEngine.Random` in
+Archinity code at all: there is no seeded escape hatch on that stream, so `Verse.Rand` is
+the only correct choice.
+
+*[#94](https://github.com/cjd721/Rimworld-Archinity/issues/94).
+`Multiplayer.Compat.PatchingUtilities` read from `Multiplayer_Compat.dll` 1.6 with
+`ilspycmd` 8.2.0, 2026-09-12; both on-disk copies of `1629973374` are byte-identical
+(md5 `471a7221…`), so T-22 does not bite here. `Verse.Rand` and the corpus result:
+`docs/engine/determinism.md`.*
+
+### T-52 — `Dialog_Rename<T>.OnRenamed` runs client-locally, ahead of the synced setter
+
+`Verse.Dialog_Rename<T>` accepts inside `DoWindowContents`, and the two lines that matter
+are adjacent:
+
+```csharp
+if (renaming != null) { renaming.RenamableLabel = curName; }
+OnRenamed(curName);
+```
+
+**Only one of them is synced.** `Multiplayer.Client.SyncMethods` registers the declared
+`RenamableLabel` property setter of every `IRenameable` implementor its serializer can
+handle — enumerated from `typeof(IRenameable).AllImplementing()` after mods load — so the
+first line does not write anything on the clicking machine. The sync prefix intercepts it,
+dispatches a command and returns; the write lands on both clients later, when the command
+replays.
+
+`OnRenamed(curName)` on the very next line is intercepted by nothing. It runs
+**immediately, on the clicking client, and nowhere else** — and it runs *before* the setter's
+write has landed even locally, so it can also read the old value. There is no error, no
+warning, and on a single-player playtest no symptom at all.
+
+The default body is empty:
+
+```csharp
+protected virtual void OnRenamed(string name) { }
+```
+
+which is exactly why this is easy to walk into. It reads as the hook the base class provides
+for your side-effects, and vanilla gives you no hint that it is the wrong side of the sync
+boundary.
+
+**Multiplayer had to work around this in vanilla's own code**, which is the corroborating
+evidence that it bites in practice — right after the `IRenameable` loop, in the same
+initialiser:
+
+```csharp
+SyncMethod.Register(typeof(Dialog_RenameBuildingStorage_CreateNew), "OnRenamed")
+    .TransformTarget<Dialog_RenameBuildingStorage_CreateNew, IStorageGroupMember>(…);
+```
+
+A `Window` is not serialisable, so they needed a target transformer that sends the dialog's
+`building` and reconstructs the dialog on the far side. Nobody writes that unless the
+straightforward thing was observably broken.
+
+**The rule for us: leave `OnRenamed` empty.** The synced setter is the entire write, so
+every effect of a rename — recording the string, setting a flag, mirroring to a display
+field — goes inside `RenamableLabel`'s setter, where it is one command applied identically
+on both clients. If an effect genuinely cannot live there, it needs its own registered sync
+method, and then it needs the transformer too.
+
+*[#50](https://github.com/cjd721/Rimworld-Archinity/issues/50).
+`Verse.Dialog_Rename<T>.DoWindowContents` and `.OnRenamed` from `Assembly-CSharp.dll`
+1.6.4871 rev590; `Multiplayer.Client.SyncMethods` from `Multiplayer.dll` 1.6
+(`2606448745/1.6/AssembliesCustom`, both on-disk copies byte-identical, md5 `2032ec31…`).
+`ilspycmd` 8.2.0, 2026-09-12.*
+
+### T-53 — `Window.forcePause` does not pause a Multiplayer session
+
+Vanilla honours `forcePause` through a chain that Multiplayer removes.
+`Verse.TickManager.ForcePaused` reads `Find.WindowStack.WindowsForcePause`,
+`TickManager.Paused` consults
+`ForcePaused`, and `TickManager.TickManagerUpdate` returns early when paused. In a session
+**none of that executes**: `Multiplayer.Client.TickPatch` is
+`[HarmonyPatch(typeof(TickManager), "TickManagerUpdate")]` and its `Prefix()` returns `true`
+— *run the original* — only when `Multiplayer.Client == null`. With a session live it
+returns `false` and MP drives ticking from its own tickables and the server's time vote. The
+whole `Paused` → `ForcePaused` → `WindowsForcePause` path is skipped.
+
+Swept the whole of `Multiplayer.dll`: `WindowsForcePause` is read in **exactly one place**,
+`Multiplayer.Client.AsyncTime.TimeControlPatch.DoTimeControlsHotkeys` — and even there it
+only suppresses the four *speed-change* hotkeys, with the pause hotkey handled above the
+guard and still firing. `TickPatch` does not mention it at all.
+
+So a modal window stops nothing. One player typing into a dialog does not stop the other
+player's colony, and does not stop their own. `WindowStack` is per-client UI state and was
+never going to be shared; `forcePause` is a single-player affordance that keeps compiling.
+
+`Dialog_Rename` sets `forcePause = true` in its constructor, and there it is **harmless** —
+a rename is instantaneous and nothing hinges on the clock. The trap is anywhere a design
+leans on a modal window stopping the world: a timed choice, a "the colony waits while you
+decide" beat, any dialog whose correctness assumes nothing ticks while it is open. Build
+those to hold their own state and be driven from the synced tick, and treat `forcePause` as
+a courtesy to the local player rather than a guarantee.
+
+*[#50](https://github.com/cjd721/Rimworld-Archinity/issues/50).
+`Verse.TickManager.ForcePaused` and `Verse.Dialog_Rename<T>`'s constructor from
+`Assembly-CSharp.dll` 1.6.4871 rev590; `Multiplayer.Client.TickPatch` and the
+single-hit full-assembly sweep for `WindowsForcePause` against `Multiplayer.dll` 1.6
+(`2606448745/1.6/AssembliesCustom`, md5 `2032ec31…`). `ilspycmd` 8.2.0, 2026-09-12.*
 
 ---

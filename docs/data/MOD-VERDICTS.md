@@ -520,6 +520,49 @@ Recorded here only because Conrad has said so — the rule above still holds.
 
 ---
 
+## What the 2026-09-11 capability batch found
+
+Nine capability tickets resolved in parallel, then each re-verified against the 1.6
+assemblies by an independent adversarial pass. Recorded here only where a finding bears on
+a **verdict** — the mechanisms themselves live in `docs/specs/` and `docs/engine/`, and the
+silent failures in `docs/TRAPS.md`. Nothing below changes a bar or a decline.
+
+**One mod on disk has no entry in this file at all.**
+
+| Mod | packageId | Why it now needs one |
+|---|---|---|
+| **Mechanoids: Total Warfare** | `nyar.nclvstw` (`3555799437`, snapshot row 121) | `NCLWorm.Verb_WormDeathRay.BurstingTick` draws `UnityEngine.Random.Range` **on the synced tick, in combat simulation** [V], and it is **not** on MP Compat's `PatchUnityRand` allowlist — so the divergence is real and, per **T-51**, the transpiler will not report it. No threads, so it does not touch the bar; the price is one `PatchUnityRand` entry or a ~10-line transpiler if the mod ships. It also holds the corpus's lowest `analysisID` (`007`), which is **T-41** territory. ([#94](https://github.com/cjd721/Rimworld-Archinity/issues/94), [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)) |
+
+**Three notes against mods already tiered.**
+
+- **VFE Settlers** — `VFE_Settlers.JobGivers.JobDriver_PlayFiveFingerFillet.WatchTickAction`
+  draws `UnityEngine.Random` on the synced tick and, on the random branch, calls
+  `TakeDamage` and `skills.Learn` [V]. It **is** covered by MP Compat
+  (`Multiplayer.Compat.VanillaFactionsSettlers` binds that exact method). Recorded because
+  it is the corpus's only covered Unity-RNG site, and therefore the evidence that
+  `rwmt.MultiplayerCompatibility` is load-bearing for more than T-33.
+  ([#94](https://github.com/cjd721/Rimworld-Archinity/issues/94))
+- **VFE Empire** — `VFEEmpire.WorldComponent_Hierarchy` reads `Settings.noblesPerTitle`
+  inside `WorldComponentTick` → `RefreshPawns` → `FillTitles` → `MakePawnFor` →
+  `PawnGenerator.GeneratePawn` [V]. A mod setting steering **pawn generation on the synced
+  tick** is a heavier instance of the settings-surface cost than anything in the QoL batch —
+  this is the shape point 4 above is about, at its worst. **T-18.**
+  ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
+- **Vehicle Framework** — `Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier`
+  takes `RoadDef.movementCostMultiplier` as a base and lets
+  `VehicleDef.properties.customRoadCosts` undercut it per road def, lower winning [V]. Not a
+  bar question; it means any road-tier ladder we ship is silently bypassable per vehicle.
+  Handed to [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69).
+  ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68))
+
+**A method caveat that touches every negative in this file.** The wide-pass technique this
+repo prescribes for the UTF-16LE half — `rg -a --encoding utf-16le` — **silently misses
+strings that are provably present**, non-uniformly. Two auditors reproduced it
+independently on different files. Every negative in the 2026-09-11 batch survived
+re-derivation by a null-interleaved byte scan, but the *stated* validation was false in at
+least three tickets, and negatives recorded here before that date were swept the same way.
+[#103](https://github.com/cjd721/Rimworld-Archinity/issues/103).
+
 ## Open
 
 - **`rwmt.MultiplayerCompatibility` is a required member of the shipping set, not a

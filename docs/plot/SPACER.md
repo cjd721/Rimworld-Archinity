@@ -6,7 +6,9 @@ Previous: [Industrial](INDUSTRIAL.md) · [Overview](../PLOT.md) · Next: [Ultra]
 
 Early Spacer begins with the planet still active. The gravship has enough range and capacity to make the founders the decisive mobile power in wars that Industrial civilization set in motion. Tertiary factions enter full-scale conflict; Church obligations become increasingly naked feats of strength; the Schism closes on the Church hierarchy; independent players finish the board through Reverence, diplomacy, revolt, vassalage and conquest.
 
-The political/religious outcome must resolve before the player reveals orbit because the orbital world must be instantiated with the institutions and settlements that will exist there. This is a real implementation constraint that becomes a useful story gate: the planet answers who is coming with the founders before the curtain opens on the larger world.
+The political/religious outcome must resolve before the player reveals orbit, because the reveal is what puts the surviving institution into the sky. The planet answers who is coming with the founders before the curtain opens on the larger world.
+
+The implementation constraint is real but runs the other way from what this chapter used to claim, and the difference matters to the world roster: **the orbital powers themselves are created when the world is created, and cannot be added afterwards.** What is deferred is not their existence but their *visibility and their territory* — orbit generates empty, the view-orbit button sits greyed with "No discovered orbital locations.", and the reveal is what places the stations. The institution that came up with the founders needs no creating at all; it is already a faction on the planet, and the reveal simply gives it orbital ground. See `docs/specs/ORBIT.md`.
 
 The causal concept is locked even though the exact flavor is not: the final planetary power structure controls, inherits or can seize the last infrastructure/knowledge needed for sustained orbital access. Church route receives it through institutional authority; Schism route inherits or captures it when the old hierarchy falls; independent route obtains it through planetary supremacy. The exact device/owner can be authored around the signal-jammer/orbital-access mechanic.
 
@@ -36,7 +38,7 @@ The point is not that Spacer immediately leaves the planet. The point is that th
 
 The gravship crosses a qualitative line from vehicle to civilization. It gains reliable oxygen, gravity, food production, cooking, habitation, storage, defenses, shields and enough capacity that the colony can permanently leave the electrified castle behind. The old base becomes history rather than the center of play.
 
-Once the planetary outcome is resolved and the orbital-access gate is obtained, orbit is revealed for the first time. Only then does the game instantiate the offworld political board with the terrestrial institution that actually survived the player’s choices.
+Once the planetary outcome is resolved and the orbital-access gate is obtained, orbit is revealed for the first time. Only then does the offworld political board become visible and occupied — the spacer powers take their stations, and the terrestrial institution that actually survived the player’s choices takes ground among them.
 
 ## Orbit — Small Again
 
@@ -79,7 +81,19 @@ with no authority owed to planetside rulers. They can be allies or enemies.
 Their people and the Archons do not bleed into ordinary planetside faction rosters.
 
 The orbital gate's exact device and owner, the new Spacer powers' names and
-doctrines, and the first heist's site remain authoring work. The requirement to
-instantiate orbit after planetary resolution is the intended architecture;
-its engine implementation still needs verification. Faction roster and save-state
-work must account for it rather than treating it as already built.
+doctrines, and the first heist's site remain authoring work — but the powers'
+**names are now on a deadline**, because they cannot be added after the world is
+generated.
+
+The architecture is verified and is not the one this chapter originally described
+([#70](https://github.com/cjd721/Rimworld-Archinity/issues/70), `docs/specs/ORBIT.md`).
+Orbit is **generated at world creation and revealed later**: every orbital power is
+created with the world, hidden, holding nothing; the reveal unhides them and places
+their stations. Deferring the *creation* of an orbital faction is impossible and fails
+silently (`docs/TRAPS.md` T-07). Deferring their *appearance* is what vanilla already
+does, and the greyed view-orbit button is Odyssey's own.
+
+So the faction roster work must name every orbital power before worldgen. The
+save-state work is small but not nothing: the reveal writes one already-scribed field
+and places ordinary world objects, and one small new component remembers that it
+happened.

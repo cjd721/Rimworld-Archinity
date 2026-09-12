@@ -221,16 +221,26 @@ announcements and nobody is in a position to tell the colony about them.
 - **The mix of small and large discoveries in the spine is an authoring instruction**, not
   machinery. A run of five gruelling beats is a mistake made in `docs/plot/`, and no
   selection rule can correct a fixed order. Survey-pool variety is balance.
-- **This document selects no mechanism.** The Long-Range Mineral Scanner grammar and the
-  Deserters-style world-state cursor are recorded in
-  [`docs/specs/CHARTING.md`](../specs/CHARTING.md) as available mechanisms, neither
-  verified against 1.6 nor selected.
+- **This document selects no mechanism.** The machinery lives in
+  [`docs/specs/CHARTING.md`](../specs/CHARTING.md), where
+  [the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57)
+  verified it against 1.6. The Long-Range Mineral Scanner grammar is confirmed and its
+  payload selector is an abstract method; the Deserters-style cursor was **replaced** by
+  vanilla's own derived subquest cursor, which stores nothing.
 
 ## Open questions
 
-- **Whether two accumulators are expressible**, and whether a hard search-band filter is.
-  Both carry named fallbacks above.
-  [The Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57).
+- **Neither of this document's named fallbacks is needed.** Two independent accumulators
+  *are* expressible, and a hard search-band filter *is* expressible — `siteDistRange` is an
+  `IntRange` honoured as both a minimum and a maximum. Capability does not force either
+  degradation, so neither is expected to be used; **both remain accepted fallbacks and stay
+  live**, because retiring an accepted degradation is this document's decision and nothing has
+  asked it to. [The Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57).
+- **Vanilla's scanner readout shows an estimate this document forbids.**
+  `CompScanner.CompInspectStringExtra` emits an average-interval line alongside the progress
+  bar, so *"never shows a probability or an estimate"* is satisfied by overriding the
+  readout rather than by adopting it. Recorded so the requirement is not quietly lost to
+  reuse.
 - **Which def carries a beat**, and how the return pool's finds nest under a parent quest.
   [The Chronicle's authoring mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/40).
 - **The mundane table.** A Waystone-less apparatus, buildable by ordinary research, that
@@ -238,9 +248,35 @@ announcements and nobody is in a position to tell the colony about them.
   founders detect* — a distinction the fiction already makes — and it is what a second
   colony or a settlement without the Waystone would need. Nothing requires it yet;
   capability and narrative decide together whether it ships.
-- **Natural discovery.** Whether a travelling caravan or a scouting outpost surfaces sites
-  on its own, alongside the apparatus.
-  Absorbed into [the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57),
-  which also owns the reach band.
+- **Natural discovery — the mechanism is settled, the rules are not, and they are missing
+  from this document.** [The Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57)
+  established that both hooks exist: a `WorldObjectComp` on the vanilla `Caravan` def for
+  travel, and `Outposts.Outpost.Produce()` for tenure, both feeding the survey pool. It also
+  established that **no per-tile "the colony has been here" state exists anywhere in the game
+  or the corpus**, so the presence record is ours to write. What this document does not state
+  — and must — is the *rules*: discovery probability per tile entered and per tenure cycle,
+  whether re-entering a known tile re-rolls, and whether travel discovery is band-limited at
+  all. [How a beat arrives](https://github.com/cjd721/Rimworld-Archinity/issues/39) is
+  closed; this needs a successor requirements ticket.
+- **The road clause was lost from § *Reach* and should come back.** At commit `71e66b1` this
+  document read *"primitive travel keeps discoveries local, **maintained roads and vehicles
+  widen the region**, aircraft make continental intervention practical, and the gravship
+  collapses distance"*. The word *road* now appears nowhere in this file, and the loss was not
+  a decision anyone recorded — it dropped out in an edit. It matters because the reach band is
+  built as a rung registry that roads are expected to feed: see § *The reach band* in
+  [`docs/specs/CHARTING.md`](../specs/CHARTING.md), and
+  [roads and travel time](https://github.com/cjd721/Rimworld-Archinity/issues/68), which owns
+  what a road can actually contribute. **A caution for whoever restores it:** road *presence*
+  is a real signal — a road edge halves travel cost — but road *tier* currently changes
+  nothing at all, so *"maintained roads"* must not be written as a ladder of road qualities
+  until that is fixed. The distances themselves belong to
+  [how long should travel take](https://github.com/cjd721/Rimworld-Archinity/issues/105).
+  Noted as a regression, not repaired here.
+- **Nothing in `docs/requirements/` states that map generation must be cross-client
+  identical.** Named by
+  [seeded map generation under Multiplayer](https://github.com/cjd721/Rimworld-Archinity/issues/88)
+  and now owned by
+  [must both clients generate the same map](https://github.com/cjd721/Rimworld-Archinity/issues/104).
+  It is load-bearing for every site Charting produces.
 - **The significant-site catalogue**, search band distances, effort formulas and
   presentation values. Balance and authoring, after the structure is built.

@@ -1,8 +1,9 @@
 # Determinism, ticks and `Rand`
 
 What Multiplayer actually synchronizes, why `Rand` on a synced tick is safe, and
-what the real hazard class is. This is the evidence under the **Divergence gate**
-in `CODING_STANDARDS.md` — the gate is the rule, this file is why it is the rule.
+what the real hazard class is. This is the evidence under the **Divergence** gate —
+`CODING_STANDARDS.md` § *The two gates* — the gate is the rule, this file is why it
+is the rule.
 
 Verified against `Assembly-CSharp.dll` (1.6.4871) and Multiplayer 0.11.5's
 `Multiplayer.dll`, not from memory and not from a mod's behaviour. Underpins the
@@ -141,6 +142,135 @@ structurally different map from an identical RNG state, and MP reports nothing.*
 divergence surfaces later, as a desync whose stack trace names a pawn rather than the
 map generator — and permanently through `thingIDNumber`, since different structure
 counts offset every subsequent ID, which MP's own seeding then consumes.
+
+## `UnityEngine.Random` is a third stream, and nothing on a map-gen path touches it
+
+Swept in [#94](https://github.com/cjd721/Rimworld-Archinity/issues/94), the follow-up to
+#88's `System.Random` pass. The **corpus result** is a clean zero and lives here, because
+there is no live instance to trap. The **silent half** of the same finding does not need
+one: MP Compat's `FixUnityRNG` half-fixes a method and says nothing, which is a standing
+condition on our own code and on anything the sourcing ledger adds later. That half is
+registered as **T-51** — read it alongside **T-33**, whose reassurance it does *not*
+inherit.
+
+**Three independent RNG streams exist in a running RimWorld, and there is no fourth** [V]:
+
+| Stream | State | Seeded by map gen? |
+| --- | --- | --- |
+| `Verse.Rand` | `private static uint seed` + `iterations`, `Stack<ulong> stateStack` | **Yes** — `MapGenerator` pushes and seeds it |
+| `System.Random` | per-instance, in the instance | No — **T-33** |
+| `UnityEngine.Random` | process-global, inside the Unity engine | No |
+
+The enumeration was **tested, not assumed** [V]: `Unity.Mathematics.Random` is **zero**
+corpus-wide, and `RandomNumberGenerator` / `RNGCryptoServiceProvider` appear in 24 and 2
+assemblies respectively — every one of them `0Harmony.dll` or Multiplayer's
+`RestSharp.dll`, no mod game code.
+
+**`Rand.PushState` cannot reach `UnityEngine.Random`, and this is read from the code, not
+inferred from `System.Random`'s case** [V]. `Verse.Rand` (decompiled from
+`Assembly-CSharp.dll`) is closed over its own two fields: `PushState()` pushes
+`StateCompressed` — `seed | ((ulong)iterations << 32)` — and `PopState()` assigns it back;
+`Rand.Seed`'s setter writes `seed` and zeroes `iterations`; every draw is
+`MurmurHash.GetInt(seed, iterations++)`. The type contains **no** reference to
+`UnityEngine.Random` and **no** call to `Random.InitState`. An IL scan of the whole of
+`Assembly-CSharp.dll` finds `UnityEngine.Random` called from exactly two methods —
+`RimWorld.Planet.WorldDrawLayer_Clouds.Regenerate` (a shader seed) and
+`RimWorld.GravshipRenderer.EmitSmoke` — and neither is `Verse.Rand`.
+
+**It is structurally worse than `System.Random`, not equivalent.** A `System.Random`
+hazard needs a *fresh unseeded instance*; a mod that writes `new Random(syncedValue)` is
+safe. `UnityEngine.Random` has one process-global state, and **RimWorld never calls
+`Random.InitState`** — nor does any of the 155 mods, nor is `Random.state` ever read or
+written [V]. (MemberRef enumeration across all 55 TypeRef-carrying assemblies plus vanilla:
+the only members referenced anywhere in the corpus are `Range`, `value`, `insideUnitSphere`
+and `ColorHSV`.) Unity seeds that global from system entropy at process start, so it is
+different on each client in every session — **[I]**, inferred; Unity's native engine was not
+read. **The conclusion survives either way**: whatever seeds it, nothing re-seeds it to a
+synced value, so it cannot be assumed equal across two clients. Every draw is
+client-divergent by default and there is no seeded-constructor escape. One on a map-gen path
+would be strictly worse than KCSG's.
+
+**Vanilla draws the line deliberately, and it is the line to copy** [V]:
+`WorldDrawLayer_Satellites.Regenerate` wraps its generation in
+`Rand.PushState(); Rand.Seed = Find.World.info.Seed; … Rand.PopState();`, while its sibling
+`WorldDrawLayer_Clouds.Regenerate` reaches for `UnityEngine.Random.value` — because clouds
+are allowed to differ between clients and satellites are not.
+
+**The corpus result** [V]: across all 155 mods on both roots plus vanilla, **seven live 1.6
+call sites in six mods** touch `UnityEngine.Random`, and **none is on a map-generation
+path** — no `GenStep`, no `SymbolResolver`, no `GenStepDef` worker, no `PostMapGenerate`, no
+`MapComponent.MapGenerated`. They are a settings window, a `JobDriver` tick action, an
+animation-editor colour, a texture generator, a `Verb` tick, a pre-game xenotype pick and a
+`Fleck` emitter. (The five DLC add nothing to search: they ship **no assemblies of their
+own** — all DLC code is in `Assembly-CSharp.dll`. Five further assemblies carry the TypeRef
+and call no member of it, including `UnityEngine.UnityWebRequestModule.dll`, where it is
+inert.)
+
+**Two of the seven are simulation, not one** [V]:
+
+- `VFE_Settlers.JobGivers.JobDriver_PlayFiveFingerFillet.WatchTickAction` (VFE — Settlers)
+  runs on the synced tick, and on the `Random.Range(0, 100) > 80` branch calls
+  `pawn.TakeDamage(new DamageInfo(DamageDefOf.Cut, …))` and
+  `pawn.skills.Learn(SkillDefOf.Melee, 50f)` — damage and skill XP, both sim state. It is
+  also the corpus's **only `PatchUnityRand`-covered site**: MP Compat patches precisely this
+  method, 1:1 with the mod's single call site. That is what makes it safe, and it is safe
+  only because someone else wrote the patch.
+- `NCLWorm.Verb_WormDeathRay.BurstingTick` (Mechanoids: Total Warfare) is **uncovered** —
+  that mod appears nowhere in `Multiplayer_Compat.dll`. A `Verb` tick runs inside
+  `DoSingleTick`, so the draw is a live desync source. It is a *combat* divergence and
+  whether the mod ships is [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s
+  call; carried as cargo, not resolved here.
+
+**Neither is map generation**, which is the question the sweep was run to answer.
+
+**The count is version-conditional** [I]. Range Finder (`brrainz.rangefinder`, workshop
+`1332119637`) ships **two different** `RangeFinder.dll`s, and its `LoadFolders.xml` puts
+both `/` and `1.6` in the v1.6 path. The two builds disagree on this exact symbol:
+`1.6/Assemblies/RangeFinder.dll` (21,504 B) carries the `UnityEngine.Random` TypeRef, and
+root `Assemblies/RangeFinder.dll` (36,352 B) carries none [V]. So the corpus figure is
+**seven-in-six or six-in-five**, and `RangeFinder.RangeFinderSettings.DoWindowContents` is a
+**conditional** site until the launch-log check already listed as open in
+`docs/data/MOD-VERDICTS.md` § *Range Finder* settles which build loads. It is a mod-settings
+window under either build, so no conclusion above moves — but the number does, and a sweep
+that reports a bare count without pinning the build is reporting a number it did not verify.
+
+**Multiplayer core carries no handling for it** [V]: `Multiplayer.dll` 1.6 holds a
+`UnityEngine.Random` TypeRef but calls no member of it. As with `System.Random`, the compat
+layer is the only carrier.
+
+**MP Compat's coverage of this corpus is one mod** [V]. `PatchUnityRand` is invoked at
+**11 call sites across 10 compat classes**, which between them declare **12** package IDs
+(`RimNauts2` also claims `rimfridge.kv.rw`; `VanillaRacesFungoid` also
+`vanillaracesexpanded.lycanthrope`). Exactly one of the twelve is on disk —
+`OskarPotocki.VanillaFactionsExpanded.SettlersModule` — covering that mod's only call site.
+Two of the corpus's seven sites use members the facility could not rewrite even with an
+allowlist entry (VGE's `insideUnitSphere`, Vehicle Framework's `ColorHSV`). **What it does
+and does not rewrite, and why its warning does not mean what T-33's means, is T-51.**
+
+**The build this negative owes has not landed** [I]. #94 priced it as one line of prose in
+`CODING_STANDARDS.md` § *The two gates*, under **Divergence**: *`UnityEngine.Random` is
+banned in Archinity assemblies; use `Verse.Rand`.* **That line is not there.** The gate
+today names `ModSettings`, camera and viewport state, `Find.CurrentMap`, selection, `Prefs`,
+wall-clock time and unkeyed static caches, and carves `Rand` out; it says nothing about the
+Unity stream. It is a review-time rule rather than code, because the section above
+establishes there is no correct way to use that stream in synced code — so it needs no
+carve-out, no reviewer judgement and no exception path. Until it is written, this file is
+the only place the prohibition exists. The priced fallback — our own member-complete
+transpiler, ~60–80 lines, *if* #14 ever ships an offender — is in #94 §7 and is not owed yet.
+
+**The requirement underneath it now has an owner.** Nothing in `docs/requirements/` states
+that map generation must be cross-client identical; #88 raised the gap and #94 depended on
+it. It is
+[#104](https://github.com/cjd721/Rimworld-Archinity/issues/104). The prohibition above is
+justified *by* that requirement, so it is conditional on #104 answering yes.
+
+**The seam this enumeration does not cover.** Three RNG streams are accounted for;
+**non-RNG map-generation divergence is not.** A modded `GenStep` that branches on a
+reference `GetHashCode()`, iterates an unordered collection in hash order, or reads
+`DateTime.Now` / `Environment.TickCount` diverges between clients with no RNG involved at
+all — and per the section above, MP's checksum would not see it either. **That sits on no
+ticket.** #88 examined `PlanetTile.GetHashCode()` alone, and only far enough to confirm it
+is value-based.
 
 ## What is not synced for free
 
