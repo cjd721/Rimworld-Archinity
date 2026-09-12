@@ -21,6 +21,38 @@ extension and the theory defs it keys on.
 
 ---
 
+## The `Quest.`-prefixed global signal is the only way XML can hear a world event
+
+Two independent halves compose into one bridge [V on both halves, **[I]** on the
+composition]:
+
+- `QuestGenUtility.HardcodedSignalWithQuestID` returns a signal string **verbatim**
+  when it starts with `Quest` and contains a `.`; every other form is stamped
+  `Quest{id}.` and is therefore private to one quest instance.
+- `Quest.Notify_SignalReceived` accepts any signal whose `global` flag is set,
+  whatever its prefix, and drops any non-`global` tag that does not start with the
+  quest's own prefix.
+
+So a signal broadcast as `new Signal("Quest.SomethingHappened", args, global: true)`
+is the **one shape** an arbitrary `QuestScriptDef` can put in an `<inSignal>` and
+actually receive. That is the general bridge from a Harmony-observed act to XML, and
+it is also why **cross-quest exclusion is structurally impossible in pure XML**: quest
+A cannot hear quest B, because every in-quest signal is `Quest{id}.`-namespaced.
+`signalListenMode` still gates the receiving part.
+
+**Vanilla ships exactly four global signal names** — `MonolithLevelChanged`,
+`EntityDiscovered`, `ThingStudied`, `ResearchCompleted` — and reaches them only
+through bespoke C# nodes.
+
+### `QuestScriptDef.CanRun` has 16 non-debug vanilla callers
+
+Not two, as an earlier draft claimed. The useful fact is not the count: it is that
+**VEF's quest-chain path is not among them**. A chain-granted quest runs `root.Run()`
+without `TestRun`, so every XML gate living in a `TestRunInt` is inert on that path.
+That is `docs/TRAPS.md` **T-71**.
+
+---
+
 ## Quest rewards
 
 ### Fixed rewards ARE possible in pure XML

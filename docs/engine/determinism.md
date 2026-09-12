@@ -65,16 +65,28 @@ times per client depending on camera, sound, and frame timing. **This is the
 authoritative statement of the hazard class**, and it is why viewport-gated RNG
 (`if (GenView.ShouldSpawnMotesAt(...)) { Rand.Value; }`) is the canonical bug.
 
-## Why threads are the one thing that bars a mod
+## Why leaving the tick is the one thing that bars a mod
 
-A background thread runs outside `DoSingleTick` entirely. It cannot be ordered
-relative to the tick, so any `Rand` it consumes or sim state it writes is
-non-deterministic by construction — and there is no XML or settings fix, because the
-scheduling is not data. That is the whole content of the bar: **a world simulation
-only bars if it runs off the synced tick, so in practice the bar reduces to *does it
-create threads*.** A `WorldComponent` grinding through heavy world state inside
-`WorldComponentTick` is deterministic; disliking it is a design objection about
-shadow worlds, not a safety one.
+Work that runs outside `DoSingleTick` cannot be ordered relative to the tick, so any
+`Rand` it consumes or sim state it writes is non-deterministic by construction — and
+there is no XML or settings fix, because the scheduling is not data. That is the whole
+content of the bar. A `WorldComponent` grinding through heavy world state inside
+`WorldComponentTick` is deterministic; disliking it is a design objection about shadow
+worlds, not a safety one.
+
+**State the bar as *does any simulation path leave the tick*, never as *does it create
+threads*.** The narrow form fails on real code. `Task.Run` constructs no named thread,
+has no lifecycle and has no switch, so it is invisible to a sweep for thread-creation
+vocabulary — and `SmashTools.TaskManager.Run(Action, CancellationToken)` is a bare
+`Task.Run` behind a fire-and-forget awaiter [V]. Vehicle Framework carries both shapes,
+and it is the `Task.Run` half that neither its own kill switch nor Multiplayer
+Compatibility reaches; the worked case is **T-74**, and its sibling, VF's second
+uncovered exit, is **T-75**.
+
+So the census sweeps for `Task.Run`, `ThreadPool.QueueUserWorkItem`, `async void` and
+`Parallel.ForEach` alongside `new Thread`. **Fan-out is not the hazard; fire-and-forget
+is** — VF's `Parallel.ForEach` in `GenerateRegionsParallel` blocks until every partition
+completes, so the tick sees a finished result and it is safe [V].
 
 ## Worked example — TechBlock, the shape to recognise
 

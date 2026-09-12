@@ -4,10 +4,13 @@
 
 How the discovery system in [`docs/requirements/CHARTING.md`](../requirements/CHARTING.md)
 will be built: the apparatus, the two work accumulators, search-band placement, spine
-ordering, travel- and tenure-based discovery, and the persistence they need.
+ordering, travel- and tenure-based discovery, the inspectable lore inside the sites it places,
+and the persistence they need.
 
 This document owns the machinery. What a discovery *is*, when it becomes eligible and what
 the player may see or refuse is requirements and stays there.
+[Currencies](CURRENCIES.md) owns the Intel that reading site lore pays out; §10 supplies the
+object that calls `Credit` and does not duplicate the store.
 [Quests](../requirements/QUESTS.md) owns quest presentation and the parent/sub-quest
 relationship; [the Chronicle's authoring mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/40)
 owns which def carries an individual beat and the parent quest's root node;
@@ -22,6 +25,9 @@ is not stored at all.** Established on
 [the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57),
 evidence class READ. Mechanisms are **[V]**; the claim that they compose into Charting is
 **[I]** until something compiles.
+
+**§10 adds one more subclass and it is VEF's, not vanilla's** — `StudiableBuilding`, for the
+lore a site contains once the player is standing in it. Still no Harmony.
 
 **Neither of the requirements document's named fallbacks is needed.** Two independent
 accumulators are expressible, and a hard min/max search band is expressible. Capability
@@ -370,6 +376,7 @@ both supported; each beat chooses"* lands for a non-quest find.**
 | Per-tile colony presence | `WorldComponent_Charting`, `Dictionary<PlanetTile,int>` | Nothing shipped carries it |
 | Caravan's last tile + cooldown | `Comp_ChartingPresence.PostExposeData` | The one place Faction Territories got wrong |
 | Waystone presence | `WorldComponent_Charting`, `bool` | Requirements: colony-level, not a hauled item |
+| **Lore records already read** | `WorldComponent_Charting`, `HashSet<string>` of `loreKey` | **World-scoped, not per-`Thing`** — a re-entered site regenerates its map and its murals; see §10 |
 | Current reach | **Nowhere — derived**, cached `[Unsaved]` | A stored band is how a stale band strands a beat |
 
 ### 7. What changes it
@@ -386,6 +393,7 @@ Every writer runs from a hook that already exists. **Zero Harmony patches on thi
 | The cursor | **nothing** — it is `GetSubquests(EndedSuccess).Count()` | **[V]** |
 | Travel presence | `Comp_ChartingPresence.CompTickInterval` compares `parent.Tile` to `lastTile` | **[V]** `WorldObject.TickInterval` loops `comps[i].CompTickInterval` |
 | Outpost tenure | `Outpost_Charting.Produce()` → `base.Produce()`, then offer a find | **[V]** `public virtual`; cadence is XML × a mod setting, see the T-18 note in §5 |
+| Site lore read | `JobDriver_StudyBuilding.MakeNewToils`'s `tickIntervalAction` → `StudiableBuilding.Study(Pawn)` | **[V]** VEF's shipped job driver; the override is ours. See §10 |
 | Recovery | `QuestNode_WorldObjectTimeout` + `QuestNode_NoWorldObject`, both already in the lump script | **[V]** both end the quest non-success, so the cursor does not advance |
 
 **The requirements' *"skill scales find count, never find quality"* needs no code.** **[V]**
@@ -436,6 +444,9 @@ Three further surfaces, all required and all cheap:
   `QuestUtility.SendLetterQuestAvailable(quest, discoveryMethod)` takes free text landing in
   the letter body; Odyssey passes `"QuestDiscoveredFromOrbitalScanner"`. One translation key
   satisfies QUESTS.md's *"a quest states plainly why it is happening"*.
+- **Site lore, once the player goes and reads it** — an archived letter and a read-variant
+  `<description>`, plus VEF's pulsing overlay, which marks *designated*, not *unread*. That
+  is §10's business and is priced there.
 - **The band itself, if wanted** — **[V]**
   `CompPilotConsole.StartChoosingDestination_NewTemp` draws
   `GenDraw.DrawWorldRadiusRing(tile, radius, mat)` twice with different materials. A min/max
@@ -479,6 +490,11 @@ table sums to that, and the arithmetic is worth stating because the previous hea
 | Two-ring band display | +25 | optional, #61's call |
 | `QuestNode_Root_Chronicle` | +25 | **not ours** — #40 |
 
+**§10 adds ~50 to the committed figure, taking it to ~555.** Its rows are tabled in that
+section rather than folded in here, because the lore verb is separable from the discovery
+engine — it is what a site *contains*, not how a site is *found* — and a reader pricing the
+engine alone should be able to stop at this table.
+
 So: **~505 committed, ~530 with the ring, ~555 counting #40's root node**, of which ~120 is
 the travel/outpost half that could be deferred. Every figure is an estimate **[I]**; the
 mechanisms they price are **[V]**.
@@ -488,6 +504,236 @@ XML field — `LongRangeScan` and `GroundPenetratingScan` differ in exactly that
 tier is one `ThingDef` + one `WorkGiverDef` + one `ResearchProjectDef`, with
 `scanFindMtbDays`, `scanFindGuaranteedDays` and `maxAcceptedBand` carrying everything that
 changes. **One building line, three defs, one comp class.**
+
+### 10. Inspectable site lore
+
+Absorbed from [#80](https://github.com/cjd721/Rimworld-Archinity/issues/80). Its cost rows
+are additive to §9's table and are stated at the end of this section.
+
+**The verb has a carrier we already depend on. The readout has none, and the readout is the
+feature** — so this is a build, and it is one override. `docs/requirements/GLITTERTECH.md`
+asks that *"Glitterite sites contain murals, terminals, persona records, strange writings,
+conversations and environmental evidence that the player can inspect if interested"*, and
+that *"optional investigation can provide Intel progress/bonuses"*. The first half is a
+**readout**; a mechanism that consumes a pawn-hour and shows the player nothing has not
+implemented it. What VEF supplies and what it does not is surveyed below the build.
+
+#### The build — one `Study` override, and the readout is ours
+
+**Mechanism.** `Archinity.Sites.LoreRecord : VEF.Buildings.StudiableBuilding`, overriding the
+`public virtual void Study(Pawn)` seam, plus a `LoreRecordExtension : DefModExtension` carrying
+`string loreKey`, `int intelAmount`, `string signalTag` and `bool letterOnRead`.
+
+**[V] Existence proof, shipped and 1.6.** `VanillaQuestsExpandedAncients.Building_BroadcastingStation
+: VEF.Buildings.StudiableBuilding` (`3618306875/1.6/Assemblies/VanillaQuestsExpandedAncients.dll`)
+overrides `Study(Pawn)`, resolves `Map.Parent` as a `Site` — falling back through
+`PocketMapParent.sourceMap.Parent` exactly as `LootableBuilding.Open` does — sends
+`QuestUtility.SendQuestTargetSignals(site.questTags, "VQE_BroadcastingStationIntercepted", …)`,
+then calls `base.Study(pawn)`. **Copy its shape, but copy `LootableBuilding.Open`'s signal
+*pair*:** VQE Ancients sends only the quest-target half, so a plain
+`Find.SignalManager` listener would still miss it.
+
+The override, in order: resolve the site `MapParent`; send both signals under
+`<signalTag>`; if `loreKey` is unread, `Credit` the Intel and mark it read; raise the readout;
+remove the instance from `studiables_InMap` — **T-59**, and still required even though this
+build never designates anything, because the base class's own leak is what it closes; then
+`base.Study(pawn)` for the `buildingLeft` swap and the sound.
+
+**State, and why it is world-scoped rather than per-`Thing`.** The requirement is *"a
+re-visited site does not pay twice."* A scribed `bool` on the building does not deliver that:
+a site whose map has been abandoned is **regenerated** on re-entry, and the mural that comes
+back is a new `Thing` with a fresh `false`. The one-shot therefore lives in
+`WorldComponent_Charting` as `HashSet<string> readLore`, keyed on `loreKey` — the component
+§6 already establishes, and the same component the Waystone `bool` sits in. `<buildingLeft>`
+handles *"this mural, in this map, is now read"* for free and needs no state at all.
+
+**Persistence.** `Scribe_Collections.Look(ref readLore, "readLore", LookMode.Value)` —
+**strings, not `LookMode.Def`**, per the T-04 note in *Persistence and multiplayer*. Added to a
+save that predates it, the set loads empty: every record reads unread, which is the safe
+default, because the failure direction is "the player may read a mural again" and not "the
+player is silently charged twice."
+
+**Change.** `JobDriver_StudyBuilding.MakeNewToils`'s `tickIntervalAction` calls
+`Building.Study(pawn)` once `totalTimer > 1200` **[V]** — an already-existing hook on the
+synced tick.
+
+**The job arrives by the player's right-click order, and that is the only path that works
+for this object.** **[V]** `WorkGiver_StudyBuilding.HasJobOnThing` returns **false when
+`t.Faction != pawn.Faction`**, and a mural on a Charting site carries a null or hostile
+faction, so the work-giver never issues the job no matter what is designated — **T-62**.
+`StudiableBuilding.GetFloatMenuOptions`' `TryTakeOrderedJob` path is unaffected by that test
+and is also the path Multiplayer already synchronises (*Persistence and multiplayer*). Two
+consequences for `LoreRecord`, and the cheap one is sufficient: **drop VEF's designation
+gizmo in our `GetGizmos` override**, since it can only produce a designation that is never
+worked and scribed state that is never synced. Keeping the gizmo instead means shipping
+*both* an MP registration **and** our own `WorkGiver` subclass without the faction test —
+roughly ~40 further lines **[I]**, and not costed below, because the build does not take it.
+
+**The Intel itself is not ours.** It is `WorldComponent_Currencies.Credit(CurrencyDef, int,
+string)`, owned by [`docs/specs/CURRENCIES.md`](CURRENCIES.md) — its establishing ticket
+[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) is **closed**, so the spec,
+not the ticket, is the destination. That document's *Credit C* names this caller: **a
+`Study` override calling `Credit` directly, not `CompUseEffect_GainCurrency`**, which fires
+only from `CompUsable` / `JobDriver_UseItem` and is never reached from
+`StudiableBuilding.Study` **[V]**. This section supplies the studiable object; it does not
+duplicate the store.
+
+**Display — and `StudiableBuilding` supplies none of it.** An earlier draft counted the
+pulsing overlay as a free "unread" marker. It is not one: `StudiableBuilding.DrawAt` draws
+the `<overlayTexture>` `MetaOverlay` **only while the thing sits in `studiables_InMap`**
+**[V]**, which is a *designated-for-study* marker — the player sees it only after acting on
+an object they have already noticed, and never before. **The Display leg therefore stands on
+the two surfaces that are ours anyway**, the archived letter and the read-variant
+`<description>`; both persist, and neither depends on the overlay. A genuine unread marker,
+if #61 wants one, is a `DrawAt` override on `LoreRecord` keyed on `readLore` rather than on
+the designated set — ~10 lines **[I]**, optional, and not in the committed figure below.
+
+- **The passage itself — an archived letter.** `Find.LetterStack.ReceiveLetter(label, text,
+  LetterDefOf.NeutralEvent, this)`. **[V]** `Verse.LetterStack.ReceiveLetter(Letter, …)` calls
+  `Find.Archive.Add(let)`, so the passage is permanently re-readable from the History tab, by
+  **both** players, and is scribed with the game. It is the only surface that survives the
+  colony leaving the site, and `lookTargets` jumps back to the object. Raised from the synced
+  tick, so both clients receive it identically and it needs no `[SyncMethod]`.
+  > This is not the mandatory-letter exposition the requirements exclude. That doctrine
+  > constrains *"the mandatory research/completion messages"*; this letter exists only because
+  > a player ordered a pawn to go and read something. **Which surface carries the passage is
+  > nonetheless a requirements question, not a capability one** — see *Outstanding decisions*.
+- **The permanent in-world record — `<buildingLeft>`, zero code.** The spent mural is replaced
+  by a "read" `ThingDef` whose `<description>` carries the lore and renders in the inspect pane
+  and the info card. **[V]** VQE Ancients ships exactly this idiom:
+  `VQEA_AncientBroadcastingStation` → `VQEA_AncientBroadcastingStation_Off`, whose description
+  reads *"Seems that whatever information it stored is long gone."* One extra `ThingDef` per
+  record, no C#.
+- **The designated marker — free, and it is not the unread marker.** `<overlayTexture>`
+  pulses a `MetaOverlay` over any object sitting in `studiables_InMap` **[V]**. That reads as
+  *"a pawn has been told to read this"*, not *"there is something here you have not read"*.
+  Worth having; it is not the surface the requirement asks for.
+- **A progress line while reading — free.** `<showProgressBar>true</showProgressBar>`.
+
+Optionally, and cheaply: `readLore.Count` against the count of `loreKey`s declared in the
+`DefDatabase` is an "N of M records recovered" line for whatever surface
+[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) settles on. ~5 lines. It reads
+only defs and a scribed set, so unlike the Waystone readout it is safe from client-local code
+(**T-39** does not apply — no `CanRun` on this path).
+
+**Cost, additive to §9.**
+
+| Piece | Kind | Lines | Lands in |
+|---|---|---|---|
+| `LoreRecord : StudiableBuilding` + `LoreRecordExtension` | new C# | ~45 | `ArchinityAltar.dll` |
+| `GetGizmos` override dropping VEF's designation gizmo (see *Persistence and multiplayer*) | new C# | ~5 | same |
+| `readLore` set on `WorldComponent_Charting` | new C# | ~5 | **counted in §9's `WorldComponent_Charting` row, not added again here** |
+| Per record: the `ThingDef`, its read variant, the extension block | XML | ~35 each | authoring, [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
+| An unread-before-designation marker (`DrawAt` override) | new C# | +10 | optional, #61's call |
+| "N of M records recovered" | new C# | +5 | optional, #61's call |
+
+**~50 lines of new C# on the committed route — the first two rows — taking this document's
+committed total from ~505 to ~555. [I]** on the estimate; the mechanisms are **[V]**. The
+previous headline of ~55 / ~560 double-counted the `readLore` row, which is marked as living
+inside §9's `WorldComponent_Charting` row and must not also be added to this one. Neither
+optional row is in the ~555.
+
+**If VEF leaves in [#15](https://github.com/cjd721/Rimworld-Archinity/issues/15), the
+replacement is ~120 lines and is understood.** What would have to be rewritten is
+`JobDriver_StudyBuilding` (~50), `WorkGiver_StudyBuilding` (~40) and the map component that
+holds the designated set (~30) — all five types were read for this section and none of them is
+subtle. The `Study` override, the extension, the world-scoped key and every display surface
+above are ours already and do not change. **This capability is therefore a soft VEF
+dependency, not one of the four hard ones.**
+
+#### The survey behind it: what `StudiableBuilding` supplies, and what it does not
+
+**[V]** Read end to end in
+`steamapps/workshop/content/294100/2023507013/1.6/Assemblies/VEF.dll` —
+`VEF.Buildings.StudiableBuilding`, `StudiableBuildingDetails`, `JobDriver_StudyBuilding`,
+`WorkGiver_StudyBuilding` and `MapComponent_InteractableBuildingsInMap`. **The root is named
+because it has to be:** VEF is one of the six mods whose two 1.6 copies on disk are not
+byte-identical (**T-22** — `VEF.dll` differs by md5 between the workshop root and
+`steamapps/common/RimWorld/Mods/`), so a bare `2023507013/…` path is ambiguous about which
+file was decompiled. **Every claim in this section was checked against both copies and holds
+in both.** Had any of them differed, this section would owe the reader a statement of which
+copy the game actually loads — which, per T-22, the mod list does not tell you.
+
+| Wanted | Supplied | Anchor |
+|---|---|---|
+| A pawn spends time at the object | **yes, on the ordered-job path** — walk, face, effecter, optional progress bar. **Not on the work-giver path for our object**: `HasJobOnThing` returns false when `t.Faction != pawn.Faction` — **T-62** | `JobDriver_StudyBuilding.MakeNewToils`; `WorkGiver_StudyBuilding.HasJobOnThing` |
+| Optional and player-initiated | **yes** — nothing happens until the player orders it by right-click, or designates it by gizmo. **Only the gizmo adds to `studiables_InMap`**; the float-menu path makes the job directly and touches the set not at all | `StudiableBuilding.GetGizmos`, `.GetFloatMenuOptions` |
+| An "unread" marker in the world | **no — a *designated-for-study* marker.** `DrawAt` draws the overlay only while the thing is in `studiables_InMap`, so nothing is visible before the player designates | `StudiableBuilding.DrawAt` |
+| The spent object becomes a different object | **yes** — `<buildingLeft>`, pure XML | `StudiableBuilding.Study` |
+| Skill matters | **XP only** — `skills.Learn(skillForStudying, 0.025f * delta)`; the duration does not scale | `JobDriver_StudyBuilding.MakeNewToils` |
+| One-shot per instance | **by destruction, not by state** | `StudiableBuilding.Study` |
+| **A quest signal** | **no** — **T-60** | below |
+| **Any lore text, anywhere** | **no** | — |
+| **Any reward but `Inspired_Creativity`** | **no** | `StudiableBuilding.Study` |
+| **A configurable duration** | **no** — `public const int totalTime = 1200`, compared against a literal `1200` | `JobDriver_StudyBuilding` |
+
+> **[V] T-62, stated once because it is the row that changes the build.** A site mural with a
+> null or hostile faction **can** be designated — the gizmo appears, the overlay draws, the
+> thing enters the scribed set, and under Multiplayer the two clients disagree about it — and
+> is then **never worked**, because the work-giver refuses every thing whose faction is not
+> the pawn's. The failure is visible action followed by silence, with no error and no log
+> line. It is why the build routes on `TryTakeOrderedJob` and drops the gizmo.
+
+**[V] No Anomaly coupling — the worry that sank the Analysis carrier does not apply here.**
+Nothing in those five types references `ModsConfig.AnomalyActive`, `KnowledgeCategoryDef` or
+`anomalyKnowledge`. The Anomaly carrier is a *different and unrelated* class,
+`RimWorld.CompStudiable`, whose `AnomalyKnowledge` and `KnowledgeCategory` properties both
+return early on `!ModsConfig.AnomalyActive` and whose entire payload is
+`anomalyKnowledgeGained`. VEF's studiable is not a reskin of it and inherits none of
+[#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)'s problem.
+
+> **[V] The signal split is real, and it is worse than `LootableBuilding_Custom`'s — T-60.**
+> `StudiableBuilding.Study(Pawn)` is `public virtual` and is, in full: spawn `buildingLeft`,
+> play `deconstructSound`, optionally
+> `TryStartInspiration(InspirationDefOf.Inspired_Creativity)`, `DeSpawn`. It sends
+> **neither** `Find.SignalManager.SendSignal` **nor** `QuestUtility.SendQuestTargetSignals`,
+> where `LootableBuilding.Open()` sends **both**. A beat authored with
+> `<inSignal>site.SomethingStudied</inSignal>` fires never, with no error. This confirms the
+> hazard `docs/data/PARTS-BIN.md` §7.3 records for the lootable pair and extends it to the
+> studiable, which that section currently describes only as *"the 'spend time at the site'
+> verb, also XML."*
+
+#### The other half: a record taken home
+
+*Persona records* and *encrypted archives* are the requirements' own words, and they are
+objects the colony carries away rather than murals read in place. The carrier for those is
+**vanilla, not VEF**, and it is worth naming here because it is core, is not Anomaly-gated,
+and needs no site at all:
+
+**[V] `Verse.Book` is core.** `title` and `description` are **scribed per-instance strings —
+and both fields are `private`** (a public `Title` getter exists; there is no setter for
+either);
+`DescriptionDetailed` renders them in the info card; `GenerateBook(Pawn, long?)` is
+`public virtual`; `OnBookReadTick` runs every `BookOutcomeDoer` scaled by
+`StatDefOf.ReadingSpeed`; vanilla ships `BookOutcomeProperties_GainResearch` and
+`BookOutcomeProperties_GiveQuest`. Only its mental-break branch consults
+`ModsConfig.AnomalyActive`. `VanillaBooksExpanded.Newspaper : Book`
+(`2193152410/1.6/Assemblies/VanillaBooksExpanded.dll`) is the shipped 1.6 subclassing
+precedent, overriding `Tick`, `GetInspectString` and `ExposeData`.
+
+> **[V] The trap on that route, and it costs code.** `Book.PostPostMake` and
+> `Book.PostQualitySet` both call `GenerateBook()`, which overwrites `title` and
+> `description` from the grammar packs. An authored string assigned to a `Book` instance is
+> silently replaced — and **the obvious escape hatch does not work**: overriding
+> `GenerateBook` suppresses the overwrite but cannot supply the text, because a subclass
+> **cannot write its base class's `private` fields**. Authoring a book's prose therefore
+> takes **reflection (`AccessTools.FieldRefAccess`) or a Harmony patch**, in addition to the
+> subclass or instead of it. No mod in the corpus authors book text — Medieval Overhaul's
+> `CompProperties_DefinableBook` only adds a `qualityRange`, and its `Book_GenerateBook_Patch`
+> sets the *author*, not the prose — which is consistent with the fields being closed.
+
+A `Book` def in a `LootableBuilding`'s `<contents>` list is therefore an authored record that
+is looted (with the signal), hauled home, read for research or Intel, and kept — **but not at
+zero C#.** An earlier draft priced the item itself at nothing; the private fields make it
+**~20 lines [I]**: a `Book` subclass whose `GenerateBook` override stops the grammar pass,
+plus a reflected write of `title` and `description` from a `DefModExtension`. Once written,
+persistence is free — both fields are scribed per instance **[V]**. **That ~20 is not in this
+document's committed ~555**: this half is flagged, not designed. What those records say is
+[#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)'s (open); whether Intel arrives
+from reading rather than from decoding is [`CURRENCIES.md`](CURRENCIES.md)'s *Credit B*
+`CompUseEffect_GainCurrency` route — valid **here**, because a carried book is used through
+`CompUsable`, unlike the studiable object in the build above. Its ticket
+[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) is closed; the spec owns it.
 
 ### Alternatives, and what separates them
 
@@ -571,7 +817,45 @@ subclass's gizmos inherit nothing.** Any gizmo, float menu or tab control on the
 that writes state must be registered through the Multiplayer API, and a miss is silent and
 persistent because it writes scribed state.
 
-> **The build has no state-writing gizmo, deliberately.** There is no target to select,
+**[V] §10's lore route breaks that "no state-writing gizmo" rule, and it is inherited rather
+than ours.** `VEF.Buildings.StudiableBuilding.GetGizmos` builds a `Command_Action` whose
+`action` calls `MapComponent_InteractableBuildingsInMap.AddStudiablesToMap(this)`, and that
+`HashSet<Thing>` is scribed — `Scribe_Collections.Look(ref studiables_InMap, "studiables_InMap",
+LookMode.Reference)`. **No Multiplayer Compat patch registers it — T-61.** Every ASCII and
+UTF-16 string literal in 1.6's `Multiplayer_Compat.dll` and `Multiplayer_Compat_Referenced.dll`
+was extracted byte-exactly, in **both** encodings, from the **md5-identical** copies under both
+corpus roots: **65 distinct `VEF.*` names are present — 11 of them `VEF.Buildings.*`** — while
+`StudiableBuilding`, `LootableBuilding`, `AddStudiablesToMap` and
+`MapComponent_InteractableBuildingsInMap` are all **absent**. (An earlier draft said
+"forty-odd", which understated the control set and therefore the strength of the negative.)
+Unsynced, one client designates a mural and the other's colonists never see it, and the
+divergence is in the save.
+
+Two consequences, and the first is the cheap one:
+
+- **[V] The right-click path is already safe and the gizmo is not.**
+  `StudiableBuilding.GetFloatMenuOptions` ends in
+  `selPawn.jobs.TryTakeOrderedJob(JobMaker.MakeJob(InternalDefOf.VFE_StudyBuilding, this), …)`,
+  and `Multiplayer.Client.SyncMethods` registers
+  `SyncMethod.Register(typeof(Pawn_JobTracker), "TryTakeOrderedJob").SetContext(...).ExposeParameter(0)`.
+  Ordering a pawn to read a mural is synced by Multiplayer generically; *designating* one is not.
+- **We drop the gizmo on our own subclass, rather than register it.** **[V]** Registration is
+  per **concrete type** by lambda ordinal — the same fact this document already records for
+  `CompLongRangeMineralScanner` — so **a subclass inherits nothing**, and `GetGizmos` on
+  `LoreRecord` has to be overridden either way. Registering it would be the fix **if the
+  designation did anything**; for a site mural it does not, because `WorkGiver_StudyBuilding`
+  refuses a thing whose faction is not the pawn's (**T-62**, §10). So the override removes the
+  command instead: no unsynced scribed write, no designation that is never worked, and the
+  right-click order above remains the one path — already synced, already working.
+  Multiplayer Compat *does* register such a gizmo for a third-party studiable —
+  `MpCompat.RegisterLambdaMethod("VanillaQuestsExpandedTheGenerator.Building_Genetron_Studiable",
+  "GetGizmos", 0)`, at **lambda ordinal 0** and notably **without** `.SetDebugOnly()`, so MP
+  treats a study designation as a real sync surface — which is the evidence that leaving VEF's
+  gizmo live and unregistered is a genuine desync, not a theoretical one. **[I]** that that
+  type derives from VEF's `StudiableBuilding`; the mod is not on disk and the inference is from
+  the name and the registration shape.
+
+> **The build has no *other* state-writing gizmo, deliberately.** There is no target to select,
 > because the pool is chosen by eligibility rather than by the player. **Keeping it that way
 > is a design constraint, not an accident** — it is the difference between zero MP work and a
 > sync surface. Medieval Overhaul is the cautionary case: its quest-select and mineral-select
@@ -609,6 +893,41 @@ register:
   string. The first two are on the synced tick and are fine; the constraint on the third is
   stated at the readout in §8.
 
+**Four more this build inherits from VEF, all found on
+[#80](https://github.com/cjd721/Rimworld-Archinity/issues/80) and all now in the register as
+T-59 to T-62.**
+
+- **T-59 — `StudiableBuilding.Study` leaks its own entry out of the designated set.** **[V]** `Study`
+  ends in `DeSpawn(DestroyMode.Vanish)`, and only the `Destroy` and `Kill` overrides call
+  `RemoveStudiablesFromMap`. `Thing.Destroy` calls `DeSpawn`, never the reverse, so a *studied*
+  building is never removed: it stays in a `HashSet<Thing>` scribed with `LookMode.Reference`,
+  `WorkGiver_StudyBuilding.ShouldSkip` never short-circuits again on that map, and the set
+  accumulates references to things no `ThingOwner` saves. **[V]** VQE Ancients'
+  `Building_BroadcastingStation` inherits it by calling `base.Study(pawn)`. No error, no log
+  line. **Fix in our override: call `InteractablesMapComp?.RemoveStudiablesFromMap(this)`
+  explicitly**, which `LoreRecord` must do anyway because it does not always want the despawn.
+- **T-60 — `StudiableBuilding.Study` sends no quest signal**, where `LootableBuilding.Open`
+  sends both. Covered in §10; it is listed here because the failure is a beat that never
+  completes, with nothing on screen and nothing in the log.
+- **T-61 — VEF's study-designation gizmo writes scribed `MapComponent` state that no
+  Multiplayer Compat patch covers.** **[V]** on the write — `AddStudiablesToMap` puts the
+  thing into `studiables_InMap`, scribed `LookMode.Reference`, from a `Command_Action`. The
+  absence is a full literal extraction of both compat assemblies rather than a sweep hit,
+  with 65 `VEF.*` names as its control. The right-click path is safe only
+  because MP registers `Pawn_JobTracker.TryTakeOrderedJob` generically. See *Persistence and
+  multiplayer*; the build drops the gizmo.
+- **T-62 — `WorkGiver_StudyBuilding.HasJobOnThing` returns false when
+  `t.Faction != pawn.Faction`.** **[V]** A designation on a null- or hostile-faction building
+  — which is every mural on a Charting site — succeeds visibly and is never worked. Gizmo,
+  overlay and scribed set all behave; no pawn ever comes, and nothing is logged. This is the
+  trap that decides §10's job path.
+
+**One authoring hazard, not a code failure.** A lore record's `<loreKey>` is the identity the
+one-shot rests on. Renaming a key between saves re-opens that record for a second payment;
+reusing a key across two different records silently makes the second one unreadable. Keys are
+strings by design (**T-04**), so nothing validates them — the same class of author-time hazard
+as a removed `ChartingBeatDef` in the table above.
+
 **One softlock this build could reintroduce.** `QuestPart_SubquestGenerator.CanGenerateSubquest`
 gates on a single **global** `maxActiveSubquests` **[V]**. Left at the default of 2, a
 standing spine site plus a standing significant side discovery jam the whole return pool. The
@@ -642,6 +961,19 @@ What changed relative to this document's previous draft:
   against an earlier draft that claimed otherwise; the requirements' optional weighting wish
   is unmet, not satisfied.
 
+§10 was added on [#80](https://github.com/cjd721/Rimworld-Archinity/issues/80), evidence class
+**READ**, against `VEF.dll`, `VanillaQuestsExpandedAncients.dll`, `VanillaBooksExpanded.dll`,
+`MedievalOverhaul.dll`, `Multiplayer.dll`, `Multiplayer_Compat{,_Referenced}.dll` and
+`Assembly-CSharp.dll`. **It corrects its own ticket on one load-bearing point:** #80 held that
+*"a carrier exists and is already a dependency… so this reduces to a verification rather than a
+build."* The carrier exists for the verb only. It sends no quest signal, awards nothing but
+`Inspired_Creativity`, and displays no text anywhere — so the half of the requirement that is
+actually a readout has no carrier at all, and this is a build of ~50 lines rather than a
+verification. The audit of that section additionally established that VEF's designation path
+is **inert** for a site mural (**T-62**) and that its pulsing overlay marks *designated*, not
+*unread* — so the readout's own surfaces, the archived letter and the read variant, are all
+of it.
+
 ## Available mechanisms
 
 Everything above cites its carrier inline. The survey behind the build, condensed to what
@@ -657,6 +989,15 @@ world-object spawn with expiry); `Outposts.Outpost.Produce()` (tenure); `WorldOb
 `Caravan` (travel); `GenDraw.DrawWorldRadiusRing` (band display);
 `GravshipUtility.MaxDistForFuel` (the one vanilla "how far can we travel").
 
+**Positives, §10.** `VEF.Buildings.StudiableBuilding` (the study verb, player-initiated,
+XML-configured, `<buildingLeft>` swap, a pulsing *designated* overlay, no Anomaly coupling —
+but an inert work-giver path for a non-player-faction thing, **T-62**);
+`Verse.LetterStack.ReceiveLetter` → `Find.Archive.Add` (a permanently re-readable passage);
+`Verse.Book` (per-instance scribed `title`/`description`, `ReadingSpeed`-scaled
+outcome doers, core rather than Anomaly — **but both fields `private`, so authoring the prose
+costs reflection or a Harmony patch**); `Multiplayer.Client.SyncMethods`'
+`Pawn_JobTracker.TryTakeOrderedJob` registration (the right-click study order is synced free).
+
 **Existence proofs.** `MedievalOverhaul.CompQuestFinder : CompScanner`;
 `VanillaGravshipExpanded.CompScannerCluster` with research-gated pluggable modules declaring
 `scanFindMtbDaysOverride` / `scanFindGuaranteedDaysOverride` — **question 6's apparatus
@@ -670,6 +1011,24 @@ with `-a -g '*.dll' -g '!**/obj/**'`, repeated under `--encoding utf-16le`, attr
 1. **No per-tile colony-presence state exists anywhere** — the travel half's whole cost.
 2. **No tech-level → world-distance coupling exists anywhere** — the reach band's whole cost.
 3. **Nobody drives `siteDistRange` from code** — zero assemblies, either encoding.
+
+**A fourth, for §10, swept with the null-interleaved form rather than the broken one.**
+**Nothing in the corpus carries an authored-lore readout on a site object.** `StudiableBuilding`
+appears in exactly two mods — VEF, which defines it, and VQE Ancients, which subclasses it once
+for a quest signal (`3618306875`); both roots and `Data/` searched, `-g '!**/obj/**'`, and the
+sweep validated against `LootableBuildingOpened` as a control hit in both encodings.
+`CompLore`, `LoreDef`, `CompDatalog` and `CompTerminal` return nothing at all. `CompReadable`
+returned three mods and **evaporated on decompilation** — neither Vanilla Books Expanded nor
+Medieval Overhaul defines such a type, which is the *metadata hit is [I], not [V]* rule paying
+for itself. Vanilla's `Book` is the nearest shipped mechanism and is a carried item, not a site
+fixture; see §10.
+
+**Ruled out for §10.** `RimWorld.CompStudiable` / `CompAnalyzable` — Anomaly, per
+[#6](https://github.com/cjd721/Rimworld-Archinity/issues/6) and the same coupling that sank
+[#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)'s candidate.
+`Verse.Dialog_NodeTree` — a real authored-passage window shipped by ten mods, but a per-client
+`Window` whose options run client-local code; usable only with a single read-only Close option,
+at which point the archived letter is strictly better because it persists.
 
 > **Caveat on the sweep, not on the conclusions.** The wide pass above used
 > `rg -a --encoding utf-16le`, and that form is now known to miss strings provably present in
@@ -689,12 +1048,17 @@ nothing for discovery.
 
 ## Verification
 
-**One narrow RUN item remains**, and it is a confirmation rather than an open question:
+**Two narrow RUN items remain**, and both are confirmations rather than open questions:
 
 1. **That the two-accumulator override behaves.** With no eligible return-pool beat,
    `daysWorkingSinceLastFinding` must stay at zero while `surveyDaysWorking` climbs at the
    full rate; a return find must zero only the return accumulator. This is the one place the
    design leans on `Used`'s internal ordering rather than on a documented contract.
+2. **That a `LoreRecord` on a real site is readable at all (§10).** Right-click a mural on a
+   generated Charting site with a colonist selected, confirm the pawn walks, reads and that
+   the letter and the read variant appear. **T-62** says the work-giver path cannot do this
+   for a non-player-faction thing; this check confirms the ordered-job path can, which is the
+   whole of the build's job routing.
 
 It is a one-client check. The two-client Multiplayer test belongs to
 [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16), the standing regime.
@@ -739,6 +1103,23 @@ It is a one-client check. The two-client Multiplayer test belongs to
   does not exist** — no ticket has been opened for these rules. Saying "a successor ticket
   owns it" would be a hand-off to nothing; it is flagged here rather than invented, and the
   mechanism half is built and waiting for numbers.
+- **Where a lore passage actually appears to the player, and whether reading one is worth
+  Intel at all.** `docs/requirements/GLITTERTECH.md` says the player *"can inspect if
+  interested"* and that investigation *"can provide Intel progress/bonuses"*, and never says
+  which surface carries the text or what the bonus is. §10 builds the archived letter plus the
+  read-variant description because something must be chosen and those two are the surfaces that
+  persist; the choice is a requirement and the amount is a balance number.
+  **This is a gap with no owner.** [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)
+  is open and authors *what the lore says*; the currency is
+  [`CURRENCIES.md`](CURRENCIES.md)'s, its ticket
+  [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) being **closed**. Neither
+  owns the surface — which is the same shape of hole
+  [#52](https://github.com/cjd721/Rimworld-Archinity/issues/52) fell into, so it is written down
+  here rather than deferred to a ticket that does not exist. The mechanism does not wait on it.
+- **Whether a lore record may be read more than once for no further reward, or should become
+  inert.** §10 assumes the former — the passage stays readable, the payment does not repeat —
+  because *"the richer history remains in the places being raided"* reads as a standing
+  invitation rather than a consumable. A requirement, one line, currently unwritten.
 - **Whether map generation must be cross-client identical.** Nothing in `docs/requirements/`
   states it, [#88](https://github.com/cjd721/Rimworld-Archinity/issues/88) named the hole, and
   it is now owned by

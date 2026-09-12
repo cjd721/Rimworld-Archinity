@@ -51,32 +51,76 @@ Colonists plus wealth/10000. Ignores research entirely. Vanilla gates sit at
 
 ---
 
+## Cost and completion, in the engine
+
+Vanilla, 1.6.4871, and the whole enforcement — and the whole failure mode — of a
+tiered arc. Every claim [V].
+
+- **`ResearchManager.FinishProject` recursively completes `prerequisites`** before
+  it does anything else, and **never `hiddenPrerequisites`**. One free Spacer
+  project therefore completes that project's Theory lock and every Theory lock
+  beneath it. A single grant shatters several eras at once; the recursion, not
+  the grant, is the ranking criterion for how bad a research bypass is.
+- **`ResearchProjectDef.Cost` is `baseCost` only when `baseCost > 0`** — otherwise
+  it is `knowledgeCost`. **`CostFactor` is display-only**: four readers, one of
+  them `MainTabWindow_Research`. It never moves `Cost` and never moves
+  `IsFinished`, so a completion test read off a displayed number is wrong by
+  exactly that factor.
+- **`ResearchManager.progress` is scribed**
+  `Scribe_Collections.Look(ref progress, "progress", LookMode.Def, LookMode.Value)`,
+  and **no patch can retract a granted project.** Completion is a saved dictionary
+  entry, not derived state. Once a bypass has written it the only cure is to have
+  prevented the write — which is why the bypass census is a load-time question
+  rather than a runtime one.
+
 ## TechBlock
 
 TechBlock is settings-driven, and mod settings are part of the Multiplayer sync
 surface — see `docs/TRAPS.md` T-18.
 
-### Two projects per tier
+### The era lock is an ordinary `prerequisites` injection
 
-- `TB_<Era>TechLock` — cost = `(tier's total research points × requiredPoints<Era>) − points already researched in that tier`. Shrinks as you research normally.
+There is no special gating mechanism. `TechBlocker.BlockTechs` walks every
+`ResearchProjectDef` and **appends `GetBlock(allDef.techLevel)` to its
+`prerequisites`** — creating the list when null, skipping only a project that
+already carries a prerequisite at its own `techLevel` [V]. Everything vanilla
+does with a prerequisite it therefore also does with the lock, including the
+recursive completion in § *Cost and completion, in the engine* above.
+
+**`GetBlock` returns a `TB_<Era>Theory` def** — the six tabulated under *Quests can
+be gated on tech tier* above, held internally as `neo`/`med`/`ind`/`spa`/`ult`/`arc`
+`Theory` [V]. **The `TB_*TechLock`
+defs are never the prerequisite of anything.** They are prerequisites *of* the
+Theory defs, and TechBlock only rewrites their cost. Anything gating on the arc
+— `requiredResearch` above included — must key on the **Theory** def.
+
+**The injection is indexed `techLevel - 2`, so Animal-tier projects get no lock
+at all** [V]. Never write "every project".
+
+### Two projects per tier, and the defNames are era-shifted
+
+- `TB_<Era>TechLock` — `baseCost = SnapToMult(tierTotal × requiredPoints<Era> −
+  alreadyResearched, 100)`. Shrinks as you research normally.
 - `TB_<Era>Theory` — cost = the flat `<era>BaseCost` setting.
 
 So advancing a tier costs a *fraction of the tier's value* plus a flat toll. It
 is **not** "complete X% of the tree." Currently set to 0.75 across all tiers.
 
-### The def names are offset one tier from the settings names
+**Each `TB_*` defName sits one era above the era it is actually about**, which is
+the reading trap. `TB_SpacerTechLock` is labelled *"Industrial Understanding"*
+and declares `<techLevel>Industrial</techLevel>` [V]. Confirmed in
+`BlockTechs()`, where `switch (techLevel - 1)` puts **Medieval** costs into
+`indCount`.
 
-Confirmed in `BlockTechs()`: `switch (techLevel - 1)` puts **Medieval** costs
-into `indCount`.
-
-| Def | Actually gates | Label |
+| Def | Era it is about | Label |
 |---|---|---|
-| `TB_NeolithicTechLock` | Animal | costs **1**, since we have no Animal research |
 | `TB_MedievalTechLock` | **Neolithic** | "Neolithic Understanding" |
 | `TB_IndustrialTechLock` | **Medieval** | "Medieval Understanding" |
+| `TB_SpacerTechLock` | **Industrial** | "Industrial Understanding" |
 
-`baseCost = SnapToMult(tierTotal x requiredPoints<Era> - alreadyResearched, 100)`.
-`TB_MedievalTheory` is 500 baseCost x `CostFactor` 1.5 = **750 effective**.
+`TB_MedievalTheory` is `baseCost` 500 with `CostFactor` 1.5, which the research
+tab draws as **750**. The 500 is the number that decides completion — see
+§ *Cost and completion, in the engine*.
 
 ### It writes the player faction's techLevel, but only on load
 
@@ -98,7 +142,10 @@ from, the silent revert-on-load trap in `docs/TRAPS.md` T-11.
 
 While researching a block tech, every 25 points grants 25 (`randomInsightRate 1`)
 to a random unfinished same-tier project **and adds 25 back to the block's cost**
-(`randomInsightProgressBlock 1`).
+(`randomInsightProgressBlock 1`). **The pool is filtered on `CanStartNow`** —
+`GetPossibleTechs` is `!IsFinished && !IsHidden && CanStartNow && techLevel ==
+<current tier> && !IsBlockTech` [V] — so the draw cannot cross a tier lock and
+cannot reach an analysis-gated project.
 
 > **Net spend = tierTotal x requiredPoints - alreadyFinished.**
 

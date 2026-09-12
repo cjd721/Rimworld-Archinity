@@ -216,7 +216,16 @@ psyset switching is left unsynced deliberately.
 6. `adaptive.storage.framework` is covered *and* natively MP-aware;
    `Adaptive.PrimitiveStorage` is a different, uncovered mod.
 7. Vehicles split — VVE covered, VVE-Upgrades not, though `SmashPhil.VehicleFramework`
-   underneath both is covered.
+   underneath both is covered. **The split is not a hazard, and this line previously
+   read as though it were — inverted, and corrected here.** *Vanilla Vehicles Expanded –
+   Upgrades* (`OskarPotocki.VanillaVehiclesExpandedUpgrades`, `3302208420`) **ships zero
+   assemblies**: 32 XML files plus one `.txt` and one `.md`, and the XML resolves to **28
+   defs — 14 of them the same defs duplicated across the 1.5 and 1.6 folders** — plus 2
+   comp patches, `About.xml` and `LoadFolders.xml`. **[V]** There is no code for a compat
+   patch to cover, so *"no compat coverage"* is not a finding about it at all. The entire
+   multiplayer surface under it belongs to Vehicle Framework — see `MOD-VERDICTS.md`,
+   Real tier, whose row is itself corrected by the same ticket.
+   ([#69](https://github.com/cjd721/Rimworld-Archinity/issues/69))
 8. `rwmt.Multiplayer`, `brrainz.harmony` and `zetrith.prepatcher` appear uncovered by
    construction; the real uncovered count is ~69.
 
@@ -490,6 +499,16 @@ Intellectual-skill term. **[V]** Its `Devilstrand` entry is circular — already
 recorded in `docs/engine/research-and-tech-tiers.md`, already patched around by
 `Archinity.Pacing/Patches/Fix_MoreRealisticResearch.xml`.
 
+> **One property of the gate that only shows up next to another mod, and it cuts against
+> MRR. [V]** MRR's requirements live in `GameComponent_ResearchLegs.ProjectPoints`, **not on
+> the `ResearchProjectDef`**, so `ResearchProjectDef.CanStartNow` cannot see them. Vanilla's
+> own `requiredAnalyzed` gate *is* on the def and *is* inside `CanStartNow`. Any random-grant
+> mechanism that filters on `CanStartNow` — `Profectus` is the shipped example (§5.5) —
+> therefore **walks straight past an MRR gate and is blocked by a vanilla `requiredAnalyzed`
+> one**. That is an argument for the vanilla carrier over MRR that the original comparison did
+> not contain; the full disposition is in `docs/specs/RESEARCH.md`.
+> ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83))
+
 **Verdict: REBUILD.** The gate is ~40 lines of the mod's ~1,500.
 
 ### 5.5 The best era-gating idea in the bin — VFE Classical `2787850474`
@@ -510,9 +529,22 @@ republics grants a capstone perk and the letter *"You have now become Emperor."*
 > is maybe 80 lines.
 
 **Two hard warnings.** **`Profectus`** (Eastern Republic capstone) completes a
-**random research project** every `(5 + n) × 60000` ticks, forever, excluding only
-techprint/analysis/mechanitor/anomaly projects. **It will hand you industrial and
-spacer research for free**, unilaterally destroying the era arc. **[V]** And **MP:
+**random research project** every `(5 + n) × 60000` ticks — `(5 + n)` *days* — forever,
+excluding techprint, analysis, mechanitor and anomaly projects. **[V]**
+
+> **Correction: it does not destroy the era arc.** This line used to read *"it will hand
+> you industrial and spacer research for free, unilaterally destroying the era arc"*, and
+> that claim was quoted onward into a ticket before it was checked. **It is wrong.**
+> `VFEC.Perks.Workers.Profectus.CanResearch` ends `return proj.CanStartNow;` **[V]**
+> (read from `2787850474\1.6\Assemblies\VFEC.dll`), so the draw is taken only from
+> projects the player could have started by hand that tick — every prerequisite, tier
+> lock and era filter still applies. What it actually is: a **fast in-era accelerator**,
+> on the order of 40+ free projects over a twenty-year run. That is a real pacing
+> problem and it is not a breach. The bypass census and the disposition are in
+> `docs/specs/RESEARCH.md`.
+> ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83))
+
+And **MP:
 BLOCK, not "use with care."** `Dialog_SenatorInfo` generates a quest and adds it to
 `Find.QuestManager`, consumes **global `Rand` from a UI window**
 (`if (Rand.Chance(0.15f))`), destroys caravan silver, and calls `GainFavorOf` — which
@@ -1194,8 +1226,17 @@ pocket map. Working template at
 > `LootableBuilding_Custom` (the gizmo/hack-timer variant) **does not** — it only
 > dispenses loot. **[V]**
 
-Sibling: `VEF.Buildings.StudiableBuilding` — the "spend time at the site" verb, also
-XML.
+**Sibling, and the signal warning above extends to it — worse.**
+`VEF.Buildings.StudiableBuilding` is the "spend time at the site" verb, also XML. Where
+`VEF.Buildings.LootableBuilding.Open` sends **both** the global `Signal` and
+`QuestUtility.SendQuestTargetSignals`, `VEF.Buildings.StudiableBuilding.Study` sends
+**neither**. **[V]** A study beat cannot advance a quest on its own, and nothing reports
+the omission — `docs/TRAPS.md` **T-60**. Two further costs ride with it, both silent:
+`Study` **leaks its target** (**T-59**), and the study **work giver refuses any building
+whose faction differs from the pawn's** (**T-62**), so a site building spawned under a
+hostile or null faction is invisible to the work path and **only the right-click path
+works**. Budget for all three before authoring a Chronicle beat on `StudiableBuilding`.
+([#80](https://github.com/cjd721/Rimworld-Archinity/issues/80))
 
 ### 7.4 The authoring pattern — VFE Deserters `3025493377`
 
@@ -2500,3 +2541,87 @@ client's.
 That is the **loudness** gate failing while the **divergence** gate passes, and it is worth
 keeping as the bin's clearest worked example of the two coming apart. A desync announces
 itself and gets fixed in an evening. This would go unnoticed for a campaign.
+
+---
+
+## 17. Carriers the 2026-09-11 capability batch surfaced
+
+**These three are not new arrivals — they were on disk and this document simply never
+covered them.** The scope note at the top is the reason: the depth pass surveyed **108**
+mods against **145** on disk, so **a mod's absence from the bin is silence, not
+rejection**, and a capability sweep that runs the whole corpus finds carriers the bin
+never looked at. Recorded here so the bin stays the single index of what is on disk and
+what it supplies. Mechanisms live in `docs/specs/`, silent failures in `docs/TRAPS.md`,
+collisions in `docs/data/MOD-VERDICTS.md`.
+
+### 17.1 Ushanka's Hacking Expansion `3573344880` — the sole carrier of hacking
+
+`Ushanka.HackingExpansion`, **1.6-only**, `1.6\Assemblies\HackingExpansion.dll`,
+namespace `USH_HE`, hard dependencies on Harmony and **VEF**. **[V]** Nothing else in
+the corpus carries `RemoteHack`, `Hackset` or `ICEBreaker` — it is the only carrier, and
+it is the answer to [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) rather
+than a donor for one.
+
+**Supplies. [V]**
+
+- **Tiered hack targets.** `USH_HE.HacksetDef` is a plain `Def` — `minDefense`, `weight`,
+  `stealthMultiplier`, a list of `HackingOutcomeDef`. Four ship (outdated firewall,
+  ICE, core-command ICE, black ICE). New bands are pure XML.
+- **Learnable verbs on VEF abilities.** `USH_HE.Ability_Cyber` subclasses ride VEF's
+  ability system; `USH_HE.Hediff_LearningAbility` is how a pawn acquires them.
+- **Mid-map faction flip.** Vanilla `RimWorld.CompHackable` is the target state machine;
+  Ushanka subclasses it four ways (`CompProperties_TurretHackable`,
+  `CompProperties_MechanoidHackable`, `CompProperties_DataSourceProtected` and the
+  data-source base), so a live turret or mechanoid changes hands on the map.
+- **A data-extraction economy.** `USH_HE.CompDataSource` / `CompDataSourceProtected`
+  hold the extractable outputs, the guarding hackset and the installed ICE breaker.
+- **Remote operation.** `USH_HE.Building_Cyberpod` plus `MapComponent_CyberpodManager`
+  is unlimited-range hacking **on the pod's own map**; `USH_RemoteHackingDistance` is
+  the per-pawn stat radius.
+
+**The cost is in how the comps arrive, not in what they do. [V]** They are **injected in
+code, not by XML patch**: `USH_HE.Patch_DefOfHelper_RebindAllDefOfs` postfixes
+`Verse.DefOfHelper.RebindAllDefOfs` and appends the hackable comps to every qualifying
+turret `ThingDef` and mechanoid `PawnKindDef.race` at that point. Three traps follow, all
+in `docs/TRAPS.md`: **T-67**, **T-68**, **T-69**. Read them before writing anything that
+patches, inspects or depends on a hackable def, because none of the three announces
+itself.
+
+`docs/specs/HACKING.md` carries the mechanism, the tiering defect in
+`USH_HE.CyberUtils.GetHacksetDef`, and the priced build on top.
+
+### 17.2 Mechanoids: Total Warfare `3555799437` — a transpiler on the threat curve
+
+`nyar.nclvstw`. Already carried in `MOD-VERDICTS.md` for its Unity-RNG site; what the bin
+needs to know is a **second, structural** fact about it.
+
+**`NCL_Storyteller.Patch_StorytellerUtility` transpiles
+`RimWorld.StorytellerUtility.DefaultThreatPointsNow`. [V]** It injects an additive term
+into the returned points and **replaces the hardcoded `10000f` ceiling** that vanilla
+clamps the curve at. Both edits are inside the method body, not around it.
+
+**Why it belongs in the bin rather than only in a verdict:** `DefaultThreatPointsNow` is
+the single most attractive seam in the game for era pacing, and §8.1's
+`fixedWealthMode` finding sits directly upstream of it. **A transpiler and a postfix on
+the same method are a live collision risk** — a postfix reading a value this transpiler
+has already rewritten is reading a different number than the one it was designed against,
+with nothing logged either way. Recorded as cargo in `MOD-VERDICTS.md`.
+([#60](https://github.com/cjd721/Rimworld-Archinity/issues/60))
+
+### 17.3 Better Traders Guild — orbital settlements, in production
+
+`shunter.bettertradersguild` (`3684587591`), already tiered Cheap + settings and already
+assessed in §6.2 — where the call was **DEFER to Spacer tier, or drop**, on design
+grounds that still stand. What the batch adds is orthogonal to that call: it is **the
+working reference for custom-faction orbital settlements**, and it builds them with the
+*vanilla* pattern rather than a bespoke one. **[V]**
+
+- **19 `LayoutRoomDef`s** of its own — the largest orbital room set in the corpus outside
+  vanilla Odyssey.
+- **2 of its 3 platform `GenStepDef`s use the bare vanilla `GenStep_OrbitalPlatform`
+  class** with a `StructureLayoutDef`; only CargoVault substitutes its own class.
+
+The precedent is the point: a **third-party faction** getting a real orbital settlement
+out of `GenStep_OrbitalPlatform` + `StructureLayoutDef` + `LayoutRoomDef` with **no new
+generator class**, shipped and in production. Copy the pattern, not the rooms — which
+also leaves §6.2's design objection intact, since nothing here requires taking the mod. ([#66](https://github.com/cjd721/Rimworld-Archinity/issues/66))

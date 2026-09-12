@@ -15,6 +15,13 @@ the Glitterite loop in
 [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) § *Acquire → Analyze →
 Research → Manufacture*.
 
+It also owns **research bypasses** — every route in the bin that advances or completes a
+research project without the colony spending research points at a bench, and the shutoff for
+each ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83)). That half starts at
+[*Bypasses — the build*](#bypasses--the-build); a reader who came for it should jump there
+rather than read the Analysis gate first. The two halves meet in one place: a bypass that
+ignores `CanStartNow` also ignores `requiredAnalyzed`, and one such route ships in **Core**.
+
 It does **not** own the Intel balance
 ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)) — the interface between the two
 is stated in *The build* § **The seam with Intel** and nothing more. It does not own whether
@@ -23,9 +30,8 @@ Analysis is *priced* in Intel, which is a requirements question
 exemplar **catalogue** — which artifact gates which branch is authoring work and belongs to
 [Act V](https://github.com/cjd721/Rimworld-Archinity/issues/47). It does not own research
 **pacing**, tier totals or the era ladder
-([`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md),
-[#5](https://github.com/cjd721/Rimworld-Archinity/issues/5),
-[#7](https://github.com/cjd721/Rimworld-Archinity/issues/7)), the research **menu surface**
+([`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md); **#5 and #7
+are closed and pacing has no owning ticket today**), the research **menu surface**
 ([#96](https://github.com/cjd721/Rimworld-Archinity/issues/96)), or research that unlocks work
 types ([#72](https://github.com/cjd721/Rimworld-Archinity/issues/72)).
 
@@ -51,8 +57,13 @@ reimplemented in `Archinity.Core`.
 
 **Mechanism.** `Verse.ResearchProjectDef` ships `public List<ThingDef> requiredAnalyzed` [V].
 `ResearchProjectDef.CanStartNow` conjoins `AnalyzedThingsRequirementsMet` alongside
-`PrerequisitesCompleted`, `TechprintRequirementMet`, `PlayerHasAnyAppropriateResearchBench`,
-`PlayerMechanitorRequirementMet` and `InspectionRequirementsMet` [V].
+`PrerequisitesCompleted`, `TechprintRequirementMet`, `PlayerMechanitorRequirementMet`,
+`!IsHidden`, `InspectionRequirementsMet` and — **only when `requiredResearchBuilding` is
+non-null** — `PlayerHasAnyAppropriateResearchBench` [V]. An earlier draft listed the bench test
+as unconditional and omitted `!IsHidden`; the corrected conjunction is
+`!IsFinished && PrerequisitesCompleted && TechprintRequirementMet && (requiredResearchBuilding ==
+null || PlayerHasAnyAppropriateResearchBench) && PlayerMechanitorRequirementMet &&
+AnalyzedThingsRequirementsMet && !IsHidden && InspectionRequirementsMet` [V].
 `AnalyzedThingsRequirementsMet` is `AnalyzedThingsCompleted >= RequiredAnalyzedThingCount`,
 and `AnalyzedThingsCompleted` walks `requiredAnalyzed`, reads each entry's
 `CompProperties_CompAnalyzableUnlockResearch.analysisID`, and counts the ones whose
@@ -190,6 +201,218 @@ against it:
 
 ---
 
+## Bypasses — the build
+
+**One XML lockout file and one corpus-wide audit script. No C#, no Harmony, nothing in
+`Archinity.Core`.** The era arc is not defended by writing code; it is defended by deleting the
+player's access to seventeen specific things, in the pattern
+[`Archinity.Pacing/Patches/Lockout_AlphaMechs.xml`](../../Archinity.Pacing/Patches/Lockout_AlphaMechs.xml)
+already establishes — keep the def, remove the route to it.
+
+### 0. The test that sorts the bin
+
+**The era arc is enforced by `ResearchProjectDef.prerequisites`.** TechBlock's
+`TechBlocker.BlockTechs` walks every `ResearchProjectDef` at def-load and appends
+`GetBlock(allDef.techLevel)` to `prerequisites` **wherever that lookup yields a def** — creating
+the list if it is null, and skipping projects that already carry a prerequisite at their own
+`techLevel` [V,
+`1970774610/1.6/Assemblies/TechBlock 1.2.1.dll`]. **The def it appends is `TB_<Era>Theory`**, not
+`TB_<Era>TechLock`: `GetBlock` returns one of `neoTheory` / `medTheory` / `indTheory` /
+`spaTheory` / `ultTheory` / `arcTheory` [V]. The injected Theory def is therefore an ordinary
+prerequisite, and the whole ladder reduces to one predicate.
+
+**Two precisions, because an earlier draft of this section named the wrong def and overstated the
+reach.**
+
+- **The `TB_*TechLock` defs are never a prerequisite of anything.** They are prerequisites *of*
+  the `TB_*Theory` defs, and TechBlock only rewrites their cost [V]. Their naming is also
+  era-shifted and must not be read as a tier label: `TB_SpacerTechLock` carries
+  `<label>Industrial Understanding</label>` and `<techLevel>Industrial</techLevel>` [V]. Cite the
+  Theory def whenever you mean the lock a project actually carries.
+- **Not "every project" receives one.** `GetBlock` indexes at **`techLevel - 2`**, so `Undefined`
+  and **`Animal`** fall off the bottom of the table and get no injected prerequisite at all [V].
+  The ladder starts at Neolithic; an Animal-tier project is outside it by construction, which is
+  why VFE Tribals' Animal-tier catch-up (below) is not an era breach.
+
+**So a bypass breaks the era arc if and only if it can advance a project whose
+`PrerequisitesCompleted` is false.** Everything else is a pacing question, not an era question.
+That single test does more work than a mod-by-mod survey, and it is why the shutoff list below is
+seventeen entries long rather than three.
+
+Two vanilla facts make it sharp, and both are load-bearing [V, decompiled 1.6
+`Assembly-CSharp`]:
+
+- **`ResearchManager.FinishProject` recursively finishes every unfinished prerequisite** before
+  doing anything else. One free Spacer project therefore completes the Spacer `TB_*Theory` def
+  and every Theory def beneath it, free, in one call. **This is the mechanism by which a single
+  grant shatters several eras**, and it is why the `FinishProject` callers below rank above the
+  `AddProgress` ones. **The recursion walks `prerequisites` only — it never touches
+  `hiddenPrerequisites`** [V], so hidden prerequisites survive a cascade that completes every
+  visible one.
+- **`ResearchProjectDef.IsFinished` is `ProgressReal >= Cost`, and `Cost` is `baseCost` only when
+  `baseCost > 0`** — otherwise it returns `knowledgeCost` [V], which is the anomaly-knowledge
+  path. `CostFactor` is not one of `Cost`'s inputs at all: it has four readers — `CostApparent`,
+  `ProgressApparent`, the divisor inside `ResearchPerformed`, and a fourth, **display-only** read
+  in `MainTabWindow_Research` [V]. A mod that writes `progress[proj] = proj.baseCost` by
+  reflection has finished the project outright, prerequisites unread, and `ReapplyAllMods` then
+  applies its unlocks. No `FinishProject` call is needed and none happens.
+
+### 1. Mechanism — one lockout file
+
+`Archinity.Pacing/Patches/Lockout_ResearchBypasses.xml`, one `PatchOperationFindMod` block per
+mod so every clause is inert when its mod is not in the final set, and the vanilla clauses
+unguarded. Ordered the way `Lockout_AlphaMechs.xml` is ordered — neuter the referencing def
+first, delete last — for the same reason: an unresolved cross-reference is **omitted**, not
+nulled.
+
+**Class A — advances a project whose prerequisites are unmet. These break the arc.**
+
+| Carrier | Anchor | Shutoff |
+|---|---|---|
+| **VPE `VPE_ReverseEngineer`** | `VanillaPsycastsExpanded.Technomancer.Ability_ReverseEngineer.Cast` | `PatchOperationRemove` the `VEF.Abilities.AbilityDef` `VPE_ReverseEngineer` **and** its `AbilityExtension_Psycast` slot on the `VPE_Technomancer` path. Coordinate with [#33](https://github.com/cjd721/Rimworld-Archinity/issues/33), which owns the surviving path set |
+| **Mechanoids: Total Warfare, on vanilla `CerebrexCore`** | `NCL.CompUnlockResearch.UnlockResearch` | `PatchOperationRemove` `/Defs/ThingDef[defName="CerebrexCore"]/comps/li[@Class="NCL.CompProperties_UnlockResearch"]`. **Archinity.Pacing must load after MTW** or the node is not there to remove |
+| **VFE Classical senator favours** | `VFEC.Senators.WorldComponent_Senators.GainFavorOf` | `PatchOperationReplace` the `senatorResearch` entries and `finalResearch` with projects already inside the era. **Do not remove them** — `FactionExtension_SenatorInfo.ConfigErrors` requires `senatorResearch.Count == numSenators` and a non-null `finalResearch` and `finalPerk` [V] |
+| **VFE Classical `Profectus` perk** | `VFEC.Perks.Workers.Profectus.DoResearch` | `PatchOperationReplace` `finalPerk` with any other `PerkDef`. It is Class B on the era test (below); it is listed here because the disposition lands in the same file |
+| **VFE Tribals one-shot catch-up** | `VFETribals.GameComponent_Tribals.ResearchAllAnimalProjects` | none needed — it completes only the mod's own `TribalResearchProjectDef`s at techLevel Animal [V] |
+| **RimPacts tech-steal** | `RimPacts.WorldComponent_RimPacts.ResolveSpyOpSuccess` | **no def to remove** — the grant lives in a `WorldComponent` reached from the mod's spy system, throttled only by a **30-day per-faction cooldown** [V], which bounds the rate and not the tier. If RimPacts ships, the spy op has to go or the mod does; the verdict is [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s |
+| **Vanilla `Schematic` book** | `ReadingOutcomeDoerGainResearch.OnReadingTick` | § *The `Schematic` book* below — one XML line |
+
+**Class B — picks only from a `CanStartNow` pool. Cannot cross a tier lock; accelerates inside
+one.** Left alone unless pacing wants them gone, and none of them is an era-arc question:
+`VFEC.Perks.Workers.Profectus.CanResearch` [V], `TechBlock_Component.GetPossibleTechs` [V],
+`VFEInsectoids.HordeModeManager.CompleteWave` [V, gated on storyteller `VFEI_HanHordeMode`],
+`VFETribals.RitualOutcomeEffectWorker_TribalGathering.Apply` [V, Animal/Neolithic only].
+
+**Class C — produces research points into the player-selected project from a non-bench source.**
+A rate breach, not a gate breach: the project had to pass `CanStartNow` to be selected. These
+belong to pacing, and **pacing currently has no owning ticket** — #5 and #7, the two this survey
+was written to hand them to, are both closed and nothing has replaced them. The gap is stated
+here and left to be routed; the top two rows are large enough that whoever picks pacing up needs
+to see them.
+
+| Def | Anchor | Rate |
+|---|---|---|
+| `MAG_AutoResearcher`, `ArchoDecipherAI` | `MoreArchotechGarbage.CompSpawnerResearchMK2.AddResearchPoints1` | 5,000–15,000 points per 30k–90k ticks, per building, stacking [V] |
+| a Vanilla Quests Expanded – Ancients gene | `VEF.AnimalBehaviours.HediffComp_PassiveResearch.CompPostTickInterval` — the comp ships in VEF with **no VEF def using it**; the only corpus consumer is VQE-Ancients, at 50 points / 6000 ticks [V] | **500/day** per carrier |
+| `USH_ResearchProbe` | `USH_GE.CompPassiveRes.ConductResearch` | ≈180/day [V]. **Keep** — it is the Glittertech tree's own facility and this document already leans on it |
+| `Outpost_Science` | `VOE.Outpost_Science.Tick` | one garrison's research speed, in-game hours 9–15 [V] |
+| `Joy_ModernComputer` | `VanillaFurnitureEC.JobDriver_ExtendedSitFacingBuilding.ModifyPlayToil` | 10 points per completed joy session [V] |
+| `USH_Cyberdata`, `USH_AdvancedCyberdata`, `USH_BrokenExecData` | `USH_HE.JobDriver_ApplyResearchGiver.MakeNewToils` | 15 / 100 / 150 points per item consumed [V] |
+| vanilla `TechprofSubpersonaCore` | `CompUseEffect_FinishRandomResearchProject.DoEffect` | finishes the **current** project instantly [V]. `tradeability Sellable` and `thingSetMakerTags: RewardStandardCore`, so acquisition is quest rewards and loot. Strip `thingSetMakerTags` — exactly `Lockout_AlphaMechs.xml` § 3 |
+
+**Class D — currency substitution, not a bypass.** Vanilla Gravship Expanded reroutes **11**
+projects (4 Odyssey + 7 of its own) into a gravdata track:
+`VanillaGravshipExpanded.MainTabWindow_Research_DoBeginResearch_Patch.Prefix` swallows the click
+and `GravshipResearchUtility.ResearchPerformed` feeds them from `JobDriver_CollectGravdata`
+instead [V]. It is **not** a free-research route — `MainTabWindow_Research.DrawStartButton` gates
+the button on `CanStartNow` before `DoBeginResearch` is ever reached [V], and
+`SetGravshipResearch` re-checks `PrerequisitesCompleted` [V]. It does force
+`PlayerHasAnyAppropriateResearchBench` true and `CostFactor` to 1 for those 11 [V]. Leave it; see
+*Bypasses — available mechanisms* § *The census* for why the ticket's framing of it is withdrawn.
+
+### 2. The `Schematic` book
+
+The one shutoff the Analysis gate itself depends on, and the only one in **Core**.
+
+`ReadingOutcomeDoerGainResearch.OnBookGenerated` picks one project — two with 25 % chance — from
+projects that are `PrerequisitesCompleted && !IsFinished && TechprintCount == 0 &&
+generalRules != null` and sit in an allowed `ResearchTabDef`; vanilla's `Schematic` allows `Main`
+and excludes the three gravtech and four mechtech projects by name [V].
+
+**Two paths through that picker drop the `PrerequisitesCompleted` test entirely** [V]: the
+`Props.include` path, which takes an authored list as given, and the fallback taken when the
+filtered list comes back empty. Either can name a project whose prerequisites — and so whose
+injected TechBlock Theory def — are unpaid. **The `usesHiddenProjects` remedy below is unaffected
+by both**: its xpath resolves to exactly one node, and the gate it restores applies at
+`OnReadingTick`, which is where the progress actually lands.
+
+`OnReadingTick` then
+calls `AddProgress` for each at 0.008–0.032 points per tick by book quality — **20–80 points per
+hour of reading** [V, `BookUtility.QualityResearchExpTick`]. Nothing on that path consults
+`CanStartNow`. `IsProjectVisible` does, but **only when `Props.usesHiddenProjects` is true, and
+it defaults false** [V].
+
+**The fix is one line:**
+
+```xml
+<Operation Class="PatchOperationAdd">
+  <xpath>/Defs/ThingDef[defName="Schematic"]/comps/li[@Class="CompProperties_Book"]/doers/li[@Class="BookOutcomeProperties_GainResearch"]</xpath>
+  <value><usesHiddenProjects>true</usesHiddenProjects></value>
+</Operation>
+```
+
+That routes `IsProjectVisible` through `CanStartNow`, restoring the techprint, mechanitor, bench,
+hidden **and `requiredAnalyzed`** gates on the book's grant, while leaving books tradeable and
+useful. The display half is free: `GetBenefitsString` already prints a greyed
+*"(when discovered)"* for a project the reader cannot currently advance [V]. Removing the doer
+outright is the alternative and is worse — it deletes the item's entire purpose.
+
+**Five mods widen the pool by adding their own tabs to the same doer** — Medieval Overhaul,
+Vanilla Cooking Expanded, VFE Tribals, Vanilla Vehicles Expanded, and VEF, whose
+`VEF.Research.ResearchProjectUtility.AutoAssignRules` adds the `VanillaExpanded` tab to vanilla
+`Schematic` at startup [V]. The one-line fix covers all five, because it changes the *test*, not
+the pool.
+
+### 3. State, persistence and change
+
+**We own no state.** Every bypass writes vanilla `ResearchManager.progress` / `techprints`, which
+this document does not touch. The lockout is def-load-time `PatchOperation`s: no runtime hook, no
+`GameComponent`, nothing to scribe.
+
+**The one persistence consequence is a hard ordering constraint.** `ResearchManager.progress`
+persists across loads and no `PatchOperation` can retract a project already granted. **The
+lockout must be in before world creation** ([#18](https://github.com/cjd721/Rimworld-Archinity/issues/18),
+**T-07**); applied to a live save it stops future grants and leaves past ones standing.
+
+**Multiplayer:** nothing here is a sync surface of ours. Three carriers are worth noting rather
+than acting on — RimPacts' spy resolution and TechBlock's random-insight draw both consume `Rand`
+off paths this repo has already flagged (`docs/engine/determinism.md`), and
+`Ability_ReverseEngineer.Cast` opens a `Dialog_NodeTree` directly, which is client-local UI
+raised from a synced cast.
+
+### 4. Where the player sees it
+
+Nowhere, deliberately — a removed reward pool, a missing comp and a psycast that is not on the
+path are all invisible, which is correct for a lockout and is exactly why § 5 exists instead. Two
+exceptions are vanilla and free: the `Schematic` benefits string greys out projects the reader
+cannot advance [V], and `TechprofSubpersonaCore` keeps its `CompProperties_Usable` gizmo and its
+own *"no active research project to finish"* refusal [V].
+
+### 5. The standing check — `tools/audit_bypasses.py`
+
+This class of breach reappears whenever the mod set moves, and the re-run must not be another
+active-set tool. `defdb.py`, `patch_check.py`, `audit_research.py` and `inventory.py` all narrow
+to `config/ModsConfig.xml` before they start, and a bypass sitting in an inactive mod is exactly
+the false negative that costs months.
+
+Build it on `tools/corpus.py` instead — both roots, `Data/` included, `-g '!**/obj/**'` — with
+two passes and a committed baseline, the idiom `tools/audit_research_baseline.txt` already
+establishes:
+
+1. **Assemblies.** ASCII `.dll` sweep for `FinishProject`, `AddProgress`, `ResearchPerformed`,
+   `ApplyTechprint`, `ApplyKnowledge`; attributed with `corpus.py --which`.
+2. **XML-only carriers**, which pass 1 cannot see because they ride vanilla code:
+   `CompUseEffect_FinishRandomResearchProject`, `BookOutcomeProperties_GainResearch`,
+   `ScenPart_StartingResearch`.
+
+Diff against `tools/audit_bypasses_baseline.txt`; a new row is a new carrier to classify by the
+§ 0 test. ~120 lines of Python.
+
+### Cost
+
+| Piece | Kind | Estimate | Lands in |
+|---|---|---|---|
+| The per-mod shutoffs, each inside a `PatchOperationFindMod` | XML patch | ~130 lines | `Archinity.Pacing/Patches/Lockout_ResearchBypasses.xml` |
+| The `Schematic` one-liner | XML patch, unguarded (Core) | 4 lines | same file |
+| Corpus-wide bypass audit plus its baseline | Python | ~120 lines and a generated baseline | `tools/audit_bypasses.py`, `tools/audit_bypasses_baseline.txt` |
+| **New C#** | **none** | **0** | — |
+
+**[I] on the composition.** Every mechanism above was read [V]; the claim that these operations
+leave the era arc intact is inferred until the lockout is written and `patch_check.py` confirms
+every xpath matches.
+
+---
+
 ## Persistence and multiplayer
 
 **Persistence.** `Game.ExposeData` does `Scribe_Deep.Look(ref analysisManager, "analysisManager")`
@@ -282,19 +505,25 @@ simply ceases to exist and the project becomes free. Two precisions worth statin
 Biotech is in the floor ([#6](https://github.com/cjd721/Rimworld-Archinity/issues/6)), so this is
 a floor dependency to record rather than a bug to fix.
 
-**`AddProgress` does not consult the gate, and one mod in the bin calls it at random.**
-`ResearchManager.AddProgress` never checks `CanStartNow` — the §1 claim that "enforcement is at
-project selection" is a claim about the *player's* route, not about every route. TechBlock's
-random-insight mechanic takes the other one: while a block tech is being researched, every 25
-points grants 25 to a **random unfinished same-tier project**
-([`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md)
-§ *The random-insight mechanic cancels visible progress*) [V]. A gated Glittertech project
-sitting unfinished at the same tier can therefore accumulate progress and, with enough draws,
-finish — and `ResearchManager.FinishProject` then force-completes its analyses, so the gate is
-not merely bypassed but retroactively marked satisfied. Whether TechBlock is in the final load
-order is [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s call; if it is, the
-Glittertech roots must sit outside its tier pool or the gate is decorative. **[I]** on the
-interaction — the two mechanisms were read separately and have not been observed together.
+**`AddProgress` does not consult the gate — and the mod this spec accused of exploiting that
+does not.** `ResearchManager.AddProgress` checks `PrerequisitesCompleted` before auto-finishing
+and never checks `CanStartNow` [V], so the §1 claim that "enforcement is at project selection"
+is a claim about the *player's* route, not about every route. **An earlier draft named
+TechBlock's random-insight mechanic as the route that takes the other one. That is wrong and is
+withdrawn.** `TechBlock_Component.GetPossibleTechs` builds its candidate pool from
+`!IsFinished && !IsHidden && CanStartNow && techLevel == <current tier> && !IsBlockTech` [V,
+`1970774610/1.6/Assemblies/TechBlock 1.2.1.dll`], and `CanStartNow` carries
+`AnalyzedThingsRequirementsMet` [V]. **TechBlock cannot touch an analysis-gated project**, the
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) "keep the Glittertech roots out of
+its tier pool" caveat is retired, and the *Outstanding decisions* row that carried it is struck.
+
+**Two routes in the bin genuinely do it, and one of them is vanilla.** `Find.ResearchManager`
+`.AddProgress` is reached with no `CanStartNow` test by `ReadingOutcomeDoerGainResearch`
+`.OnReadingTick` — the **`Schematic`** book, `Core/Defs/Books/BookDefs.xml` — and by RimPacts'
+tech-steal spy operation. The book's project pool excludes techprint projects but **not**
+`requiredAnalyzed` ones [V]. So a schematic bought from a trader can carry a Glittertech branch
+root to full progress behind the exemplar gate. The shutoff is one XML line and is specified at
+[*Bypasses — the build*](#bypasses--the-build) § *The `Schematic` book*.
 
 **`ResearchManager.FinishProject` dereferences the comp props without a null check** when
 force-completing analysis [V]. A `requiredAnalyzed` entry carrying some *other* `CompAnalyzable`
@@ -336,6 +565,36 @@ the vanilla mechanism delivers the Glitterite loop is **[I]** until something is
 **Open parameters, not mechanisms:** how many analyses per exemplar, the duration, which branch
 roots carry a gate, which artifact gates which branch, and whether Analysis costs Intel. Named
 in *Outstanding decisions*.
+
+### Bypasses ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83))
+
+**Evidence class: READ.** Settled by decompiled 1.6 assemblies — `Assembly-CSharp`, `VFEC.dll`,
+`VanillaPsycastsExpanded.dll`, `VanillaGravshipExpanded.dll`, `TechBlock 1.2.1.dll`, `NCLvsTW.dll`,
+`VEF.dll`, `VFETribals.dll`, `VFEInsectoids.dll`, `RimPacts.dll`, `HackingExpansion.dll`,
+`GlittertechExpansion.dll`, `VanillaFurnitureEC.dll`, and the More Archotech Garbage and Vanilla
+Outposts assemblies — plus vanilla and mod XML. No stub and no launch.
+
+**Verified survey; the disposition is [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.**
+Every carrier in *Bypasses — available mechanisms* § *The census* is [V], and each row implies a
+per-mod verdict — *restat*, *art only*, *block* — which this document does not make. Two rows
+carry a recommendation and nothing more: `USH_ResearchProbe` should be **kept** and restatted
+because the Glittertech tree needs it, and the vanilla `Schematic` one-liner should be **taken**
+because the Analysis gate in the first half of this document is otherwise open.
+
+**Three of the ticket's own claims are corrected** in *Bypasses — available mechanisms* § *Three
+claims on the ticket that the assemblies contradict*, and two of this document's own claims about
+`Profectus` and TechBlock are withdrawn in place.
+
+- [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83) — this survey and the lockout.
+- [#33](https://github.com/cjd721/Rimworld-Archinity/issues/33) — owns the surviving VPE path set;
+  `VPE_ReverseEngineer` sits inside it.
+- [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) — owns every per-mod verdict, and
+  the revalidation cadence § 5's audit script serves.
+- **The Class C rate question has no owner.** #5 and #7, the pacing tickets this survey was
+  written against, are both closed and nothing has replaced them. Recorded as a gap, not handed
+  off.
+- [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) — the freeze the lockout must
+  precede.
 
 ---
 
@@ -401,9 +660,19 @@ it is written down so nobody assumes one removal did both jobs.
 
 VFE Classical's **`Profectus`** (Eastern Republic capstone) completes a **random research
 project** every `(5 + n) × 60000` ticks, forever, **excluding techprint, analysis, mechanitor and
-anomaly projects** ([`docs/data/PARTS-BIN.md`](../data/PARTS-BIN.md) § 5.5) [V]. It never
-consults `CanStartNow`; it filters on the def's own fields, and `requiredAnalyzed` is one of the
-fields it filters on.
+anomaly projects** ([`docs/data/PARTS-BIN.md`](../data/PARTS-BIN.md) § 5.5) [V]. It filters on
+the def's own fields, and `requiredAnalyzed` is one of the fields it filters on:
+`VFEC.Perks.Workers.Profectus.CanResearch` rejects any project with `TechprintCount > 0`,
+`RequiredAnalyzedThingCount > 0`, `requiresMechanitor`, or a non-null `knowledgeCategory` [V].
+
+**Correction to an earlier draft of this section, which said *"it never consults
+`CanStartNow`"*. It does** — `CanResearch`'s last statement is `return proj.CanStartNow;` [V],
+read from `2787850474/1.6/Assemblies/VFEC.dll`. The conclusion above survives, and is now
+belt-and-braces: an analysis-gated project is excluded by the explicit
+`RequiredAnalyzedThingCount` test *and* by `CanStartNow`'s own
+`AnalyzedThingsRequirementsMet`. But the withdrawn sentence mattered for a different reason —
+it is what made `Profectus` look like an era-arc breach, and it is not one. See
+[*Bypasses — the build*](#bypasses--the-build) § *The census*.
 
 **That is the strongest in-repo argument for the vanilla carrier over More Realistic Research,
 and it was not part of the original comparison.** A `requiredAnalyzed` gate is *structurally
@@ -584,6 +853,117 @@ the end of this investigation.
 
 ---
 
+## Bypasses — available mechanisms
+
+### The census
+
+**Seventeen distinct mod carriers across fourteen mods, plus two in vanilla — not three.** The
+table below has **nineteen** rows. Exactly two are **Core** —
+`ReadingOutcomeDoerGainResearch.OnReadingTick` and
+`CompUseEffect_FinishRandomResearchProject.DoEffect`; `RitualOutcomeEffectWorker_TribalGathering`
+is VFE Tribals', not vanilla, and an earlier draft's count of three vanilla carriers contradicted
+this document's own table. 19 − 2 = **17** mod carriers, resolving to **14** distinct mods. The
+ticket's catalogue was one pass's worth, and the three it names are not the three that matter.
+Classified by the § 0 test; every anchor read from the 1.6 assembly the game loads.
+
+| Carrier | Class | What it does |
+|---|---|---|
+| `Ability_ReverseEngineer.Cast` (VPE) | **A** | `AccessTools.FieldRefAccess<ResearchManager, Dictionary<ResearchProjectDef,float>>("progress")`, then `progress[proj] = proj.baseCost` for every project that is a `researchPrerequisite` of the targeted thing or of a recipe producing it; then destroys the target [V] |
+| `NCL.CompUnlockResearch.UnlockResearch` (MTW) | **A** | `FinishProject` the moment any awake colonist comes within 8 cells of vanilla Odyssey's `CerebrexCore` — no line of sight, no gizmo, no cost. Grants Spacer `NCL_CerebrexCore_Rebuild`, baseCost 5000 [V] |
+| `WorldComponent_Senators.GainFavorOf` (VFEC) | **A** | `FinishProject` one named project per senator favoured, plus a `finalResearch` when a republic is complete — 18 named projects across three republics [V] |
+| `GameComponent_Tribals.ResearchAllAnimalProjects` (VFE Tribals) | **A** | `FinishProject` over the mod's own Animal-tier defs, once [V] |
+| `WorldComponent_RimPacts.ResolveSpyOpSuccess` (RimPacts) | **A** | `AddProgress` of `Cost`, or `Rand.RangeInclusive(300, Cost)`, on a random unfinished project at the target faction's tech level; 1500 silver a go, repeatable on a **30-day per-faction cooldown** [V] |
+| `ReadingOutcomeDoerGainResearch.OnReadingTick` (**Core**) | **A** | 20–80 points/hour into one or two projects picked at book generation, with no `CanStartNow` test [V] |
+| `Profectus.DoResearch` (VFEC) | **B** | `FinishProject` a random `CanStartNow` project every `(5 + n) × 60000` ticks, forever [V] |
+| `TechBlock_Component.AddRandomProgress` | **B** | 25 × `randomInsightRate` into a random `CanStartNow` same-tier project per 25 real points [V] |
+| `HordeModeManager.CompleteWave` (VFE Insectoids 2) | **B** | one whole `CanStartNow` project per wave, unbounded, under storyteller `VFEI_HanHordeMode` [V] |
+| `RitualOutcomeEffectWorker_TribalGathering.Apply` (VFE Tribals) | **B** | 2/4/8/12 × participants into a `CanStartNow` Animal-or-Neolithic project, by outcome band [V] |
+| `CompSpawnerResearchMK2.AddResearchPoints1` (More Archotech Garbage) | **C** | 5,000–15,000 points per 30k–90k ticks per building [V] |
+| `HediffComp_PassiveResearch.CompPostTickInterval` (VEF) | **C** | 50 points / 6000 ticks via the VQE-Ancients gene [V] |
+| `CompPassiveRes.ConductResearch` (Ushanka Glittertech) | **C** | ≈180/day from `USH_ResearchProbe` [V] |
+| `Outpost_Science.Tick` (VOE) | **C** | off-map garrison research, hours 9–15 [V] |
+| `JobDriver_ExtendedSitFacingBuilding.ModifyPlayToil` (VFE Core) | **C** | 10 points per joy session at `Joy_ModernComputer` [V] |
+| `JobDriver_ApplyResearchGiver.MakeNewToils` (Ushanka Hacking) | **C** | 15/100/150 per consumed data item [V] |
+| `CompUseEffect_FinishRandomResearchProject.DoEffect` (**Core**) | **C** | `TechprofSubpersonaCore` finishes the current project [V] |
+| `TechBlocker.RecalculateBlockValues` (TechBlock) | **A**, by design | `FinishProject` the `TB_*Theory` defs when player faction techLevel outruns them [V]. This *is* the era ladder's catch-up; it becomes a bypass only if something else raises `FactionDef.techLevel` |
+| `GravshipResearchUtility` (VGE) | **D** | currency substitution over 11 projects [V] |
+
+**Ruled out on a read, listed so nobody re-reads them:** Vanilla Books Expanded (its
+`FinishProject` hits are all in its **1.1, 1.3 and 1.4** assemblies and **1.6 ships none**, so
+the build the game loads carries no research API at all), World Tech Level, Ignorance Is Bliss, Architect Menu Optimizer, Better Architect Menu
+(all `FinishProject` postfixes that only invalidate caches or recompute a tech level), VFE
+Medieval 2 (`ResearchManager_ResearchPerformed_Patch` *divides* the incoming amount), Tribal
+Furniture (a reimplementation of the vanilla bench toil), Vanilla Landmarks Expanded (its
+`AddProgress` is `CompSpawnSubplant`'s, unrelated), More Realistic Research (gates, does not
+grant — read in full above) [all V].
+
+### Three claims on the ticket that the assemblies contradict
+
+1. **`VFEC_Profectus` does not "unilaterally destroy the era arc."** `PARTS-BIN.md` § 5.5, quoted
+   in the ticket, says it "will hand you industrial and spacer research for free."
+   `Profectus.CanResearch` ends `return proj.CanStartNow;` [V], so under TechBlock it cannot draw
+   a project whose tier lock is unpaid. It is a fast in-era accelerator — roughly 40+ free
+   projects over a twenty-year run, since the interval is `(5 + n)` **days** — and that is a real
+   pacing problem, but it is not an era breach.
+2. **`GravshipResearchUtility` is not an 18-project parallel track, and is not a bypass.** The
+   track is **11** projects — `BasicGravtech`, `StandardGravtech`, `AdvancedGravtech`,
+   `OrbitalTech` moved into the `VGE_Gravtech` tab by `1.6/Patches/ResearchProjects.xml`, plus VGE's
+   own seven `VGE_*` defs [V]. And the Harmony prefix it names sits on `DoBeginResearch`, which
+   `DrawStartButton` only reaches for a project that already passes `CanStartNow` [V].
+3. **VPE's `Reverse Engineer` is def-removable, as the ticket says — but it is not "the single
+   worst breach."** `NCL.CompUnlockResearch` is, because it goes through `FinishProject`, which
+   **recursively completes every unfinished prerequisite** [V]; `Ability_ReverseEngineer` writes
+   `progress` directly and so completes exactly the projects it names, with no cascade. The
+   direct write has its own consequence: because `FinishProject` never runs, the
+   `ResearchCompleted` signal never fires, `requiredAnalyzed` entries are never force-completed,
+   and every mod postfixing `FinishProject` — TechBlock's lock recalculation, VEF's quest chains,
+   both architect-menu caches — never learns the project finished [V].
+
+### Bypasses — the wide pass
+
+Both roots plus `common/RimWorld/Data/`, `obj/` excluded throughout, attributed with
+`tools/corpus.py --which`. `python tools/corpus.py --check` reported the corpus matching the
+snapshot at the start and the end.
+
+- **`.dll`, ASCII** — `FinishProject` → 13 mods, `AddProgress` → 7, `ResearchPerformed` → 7,
+  `ApplyTechprint` → **0**. Every one was depth-read; the results are the census table.
+- **`.dll`, ASCII**, for two of `ResearchManager`'s private fields — `techprints` →
+  **`NiceBillTab.dll` only**; `anomalyKnowledge` → **zero files**. **An earlier draft filed this
+  row under the UTF-16LE pass**, and it is an ASCII result. Nothing is lost by the correction —
+  `NiceBillTab.dll` references no research API — so the conclusion stands; the labelling did not.
+- **`.dll`, UTF-16LE**, for reflection into `ResearchManager`'s private fields — `currentProj` →
+  **TechBlock only**. `progress` intersected with an ASCII `ResearchManager` reference → 11 mods, of which
+  six were not already read. **All six resolve to one shared library**, `AchievementsExpanded.dll`,
+  redistributed byte-identically under `<mod>/1.4/Assemblies/`; its
+  `AchievementsExpanded.ResearchTracker.Trigger` calls `AccessTools.Field(..., "progress")
+  .GetValue(...)` and nothing in the assembly calls `SetValue`, `FieldRefAccess`, `Traverse` or
+  `GetField` [V]. None of the six loads it under 1.6 at all.
+- **XML**, for the three carriers that ride vanilla code and so are invisible to a `.dll` sweep —
+  `CompUseEffect_FinishRandomResearchProject` → **Core only**;
+  `BookOutcomeProperties_GainResearch` → Core plus five mods widening its tab list;
+  `ScenPart_StartingResearch` → Core, Biotech, Odyssey, VRE-Android, Better Traders Guild.
+
+**Method note, because it cost an hour and will cost the next agent one.** The UTF-16LE half was
+first run by building the null-interleaved pattern in a command substitution. **Bash strips null
+bytes from command substitution** — with a warning that scrolls past — so the pattern silently
+degraded to plain ASCII and the "UTF-16" pass was an ASCII pass wearing its name. Both forms
+return hits, which is what makes it invisible. Write the escape out literally
+(`rg -a -l 'p\x00r\x00o\x00g\x00r\x00e\x00s\x00s\x00' …`) and never construct it in a
+substitution. This is a second, distinct defect from the one
+[#103](https://github.com/cjd721/Rimworld-Archinity/issues/103) records. **It did not become a
+numbered trap** — it is a sweep-construction defect in our own method, not a silent game
+behaviour, so it is folded into #103 and into
+[`docs/agents/capability-research.md`](../agents/capability-research.md) instead. **None of
+[#83](https://github.com/cjd721/Rimworld-Archinity/issues/83)'s trap proposals were allocated an
+ID**, and this document cites none.
+
+**Sweep validated before any negative was trusted.** `ResearchMakesSense` ASCII returned More
+Realistic Research; `Profectus` ASCII returned VFE Classical across both roots; the UTF-16LE
+literal `progress` returned Vanilla Psycasts Expanded, which is where it is known to be, and the
+same pattern on the same roots returned zero in the mods reported clean.
+
+---
+
 ## Verification
 
 **Settled by reading** [V]: the gate chain (`CanStartNow` → `AnalyzedThingsRequirementsMet` →
@@ -616,6 +996,32 @@ technology from nothing"*: with no glitterheart ever recovered,
 `USH_GlittertechFabrication` cannot be selected in the research tab and the tab says why; after
 one analysis it can; and the heart is still owned and still spendable on building the fabricator.
 
+### Bypasses
+
+**Settled by reading** [V]: `TechBlocker.BlockTechs`'s injection of the `TB_<Era>Theory` def into
+`prerequisites` at `techLevel - 2`; `FinishProject`'s recursive prerequisite completion, over
+`prerequisites` and never `hiddenPrerequisites`; `Cost == baseCost` whenever `baseCost > 0` —
+`knowledgeCost` otherwise — and so `IsFinished` from a bare `progress` write; `DrawStartButton`'s `CanStartNow` gate ahead of
+`DoBeginResearch`; and every anchor in the census table.
+
+**Needs a prototype or an in-game check** [I]:
+
+1. **`patch_check.py` on the written lockout.** Every xpath must match a non-zero node count. A
+   `PatchOperation` matching nothing is loud under the tool and **silent in game** — which is the
+   whole failure mode this lockout exists to prevent, so the check is not optional.
+2. **Load-order proof for the `CerebrexCore` clause.** `Archinity.Pacing` must resolve after
+   Mechanoids: Total Warfare or the comp is not yet on the def. Confirm with `xpath.py` against
+   the merged tree, not by reading `ModsConfig.xml`.
+3. **One reading pass on a schematic** after the `usesHiddenProjects` line, confirming the
+   benefits string greys an analysis-gated project and that reading it adds no progress.
+4. **One `Profectus` interval measurement**, if VFE Classical survives sourcing. `(5 + n) × 60000`
+   ticks was read, not observed, and the free-project count over a campaign follows from it.
+
+**Observable check that demonstrates the requirement.** With the lockout in and TechBlock's
+Neolithic lock unpaid, no route in the load order completes or fills a Medieval project: no
+schematic advances one, no reward pool offers a `TechprofSubpersonaCore`, and no psycast, perk,
+wave, ritual or proximity trigger finishes one.
+
 ---
 
 ## Outstanding decisions
@@ -629,4 +1035,9 @@ one analysis it can; and the heart is still owned and still spendable on buildin
 | **Our reserved `analysisID` block** | Collision with a third-party mod is silent (**T-41**). Pick a block, record it here when the first exemplar is authored | this document |
 | **Whether `requiredResearchFacilities` also gates the Glittertech tree** | Ushanka already imposes `MultiAnalyzer` on all 18 and `USH_ResearchProbe` on 14. Composing a second facility gate on top is a pacing choice, not a capability question | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | **Analysis at Neolithic and Medieval** | Newly available: vanilla's gate has no tier filter — demonstrated, not merely permitted, by Industrial `WastepackAtomizer` on `NanostructuringChip` — where More Realistic Research exempted everything at or below Neolithic. *"Study the sword you took off a dead marauder"* is now buildable in the early campaign if the leaps want it | [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41), [#42](https://github.com/cjd721/Rimworld-Archinity/issues/42) |
-| **Whether TechBlock stays in the load order** | If it does, its random-insight `AddProgress` draws can complete a gated Glittertech project without the exemplar (*Failure and recovery*). Either keep the Glittertech roots out of its tier pool, or the gate is decorative | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
+| ~~**Whether TechBlock stays in the load order**~~ — **struck**. TechBlock's random-insight pool filters on `CanStartNow` [V], so it cannot touch an analysis-gated project. The risk was misattributed; see *Failure and recovery* | none | — |
+| **Whether the `Schematic` book's doer gets `usesHiddenProjects`** | Vanilla's schematic feeds `AddProgress` with no `CanStartNow` test, so it can carry an exemplar-gated branch root to full progress. One XML line closes it, and it is the only shutoff in this document that the Analysis gate itself depends on | [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83), this document |
+| **Does any bypass survive as an authored reward** | The ticket asks, and it is a gameplay rule, not a mechanism. A one-off free project as a Church title privilege is legitimate; an infinite generator is not. The lockout above assumes **none survives**; if one should, the cheapest carrier is vanilla `TechprofSubpersonaCore` with its `thingSetMakerTags` kept and a hand-placed quest reward instead | requirements gap, → [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) for the ledger, and the owning requirements ticket for the rule |
+| **Per-mod disposition for the seventeen mod carriers** | *restat*, *art only*, *block* — each row of the census implies one and this document makes none of them. Two recommendations only: keep and restat `USH_ResearchProbe`; take the vanilla `Schematic` one-liner | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
+| **Whether the Class C rate producers are a pacing problem** | `MAG_AutoResearcher` at 5,000–15,000 points a cycle and the VQE-Ancients gene at **500/day** both outrun the 213/day single-researcher baseline in [`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md) § *Research rate, reconstructed*. They cannot skip an era; they can collapse one | **no owner** — #5 and #7 are closed; the gap is stated and awaits routing |
+| **Whether `ScenPart_StartingResearch` is in scope** | Our own scenario grants starting research through the same vanilla `FinishProject` path, with its recursive prerequisite completion. Harmless if the grant is Neolithic; an era breach if anything above it is ever listed | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) |

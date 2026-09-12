@@ -241,6 +241,25 @@ read path (`PawnGenerator.cs:209-219`) is real, but the **only add site**
 never populated** (a vanilla inversion bug). Old-tier pawns cannot resurface in a
 climbed settlement unless the save is legacy or a mod populates the list.
 
+### `AttackTargetsCache` indexes hostility at registration, not at query
+
+The same shape one level down, on `Thing` rather than `WorldObject`, and reusable
+well beyond a faction climb.
+
+`Verse.AI.AttackTargetsCache.RegisterTarget` builds `targetsHostileToFaction` by
+evaluating `thing.HostileTo(faction)` **once per faction as the target registers**,
+and `GetPotentialTargetsFor` reads that dictionary back [V]. `UpdateTarget` is a
+deregister/re-register pair and is the **only** thing that refreshes the index for a
+live target.
+
+**`Thing.SetFaction` calls `UpdateTarget`; `Thing.SetFactionDirect` does not** [V] —
+`SetFaction` alone also raises the `ChangedFactionToPlayer` quest signal and
+`Map.events.Notify_ThingFactionChanged`. So any mid-map faction flip that wants the
+map's AI to notice must go through `SetFaction`, or call `UpdateTarget` itself. A
+building seized through `SetFactionDirect` stays in its old hostility bucket until
+something else refreshes it, and a save/load re-registers every target, so the symptom
+disappears on reload. That failure is silent and is `docs/TRAPS.md` **T-68**.
+
 ### Multiplayer
 
 **Nothing is covered for free.** `Multiplayer.dll` registers **no `SyncMethod`

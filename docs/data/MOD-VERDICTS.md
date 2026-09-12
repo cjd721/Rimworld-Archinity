@@ -308,7 +308,7 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 
 | Mod | The price |
 |---|---|
-| **Vehicle Framework** `SmashPhil.VehicleFramework` **[V]** | The only mod besides Rim War with real thread-creation machinery: `SmashTools.Performance.DedicatedThread` runs `new Thread(Execute){IsBackground=true}` + `Start()`, and `Vehicles.DeferredGridGeneration` enqueues **vehicle pathing-grid and region generation** onto it — simulation off the synced tick. **Saved by a switch:** `Vehicles.SectionDebug.debugUseMultithreading` is a scribed bool defaulting `true`; false ⇒ `ReleaseThread()` instead of `InitThread()` ⇒ `ThreadAvailable` false ⇒ every enqueue site takes its synchronous fallback. Price: one settings flag, treated as save-critical. Unverified residuals: the sync fallback is not confirmed deterministic, and single-threaded grid generation costs frame time. **This is what decides whether vehicles are available to the campaign at all. The lever exists and is confirmed in source; whether it is *sufficient* is not confirmed until the fallback is shown deterministic** — which is why that sits in Open below rather than being claimed here. |
+| **Vehicle Framework** `SmashPhil.VehicleFramework` **[V]** | The only mod besides Rim War with real thread-creation machinery: `SmashTools.Performance.DedicatedThread` runs `new Thread(Execute){IsBackground=true}` + `Start()`, and `Vehicles.DeferredGridGeneration` enqueues **vehicle pathing-grid and region generation** onto it — simulation off the synced tick. **Corrected in full by [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69): there is no flag to set, and the previous version of this row was wrong in three independent ways.** ① **"a scribed bool defaulting `true`" — false.** `Vehicles.SectionDebug.debugUseMultithreading` has its `Scribe_Values.Look` **behind `DebugProperties.Debug`, a `readonly bool = false`**, and the field has **no settings UI**. It never scribes and a player cannot reach it. **There is no lever.** **[V]** ② **The `ReleaseThread()` path, as this row described it — false.** **[V]** ③ **"every enqueue site takes its synchronous fallback" — false**, and this is the load-bearing one. `Vehicles.VehiclePathFollower.RequestNewPath` and `Vehicles.WorldVehiclePathGrid.RecalculateAllPathCostsAsync` reach **`SmashTools.TaskManager.Run` — a bare `Task.Run`** — **from the synced tick**. That path is not the `DedicatedThread` and is not gated by `ThreadAvailable` at all, so no setting of that flag would have covered it. MP Compat's `NoThreadInMp` transpiler covers only **3 of 8 `ThreadAvailable` readers**. **[V]** **A second, independent race:** `Vehicles.VehicleRegionCostCalculator.pathCostSamples` is a `private static int[11]` **written from the async task** — shared mutable static state reached off the synced tick, with no lock and no per-map instance. **[V]** Traps: `docs/TRAPS.md` **T-74** / **T-75**. **Price: a fork or real Harmony work in our own assembly, not a settings flag.** [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17) priced this mod on the struck row and that pricing is void; whether vehicles are available to the campaign at all is re-opened, not settled. |
 | **TechBlock** `fridgeBaron.TechBlock` **[V]** | Verified against `1.6/Assemblies/TechBlock 1.2.1.dll`, which is what actually loads — an earlier revision of this file read the `1.0` build by mistake. `TechBlock_Component.GameComponentUpdate()` runs **per frame** (`Game.UpdatePlay` → `GameComponentUtility.GameComponentUpdate`, confirmed in `Assembly-CSharp`), and inside it: `AddRandomProgress()` calls `GenCollection.RandomElement(techLevelProjects)` — **a draw from the shared `Rand` stream taken outside the synced tick** — then `Find.ResearchManager.AddProgress(val, 25f * settings.randomInsightRate)`, writing synced sim state scaled by a client-local setting, with the whole branch gated on client-local `settings.randomInsights`. **Correction to an earlier claim in this file:** it is *not* simply "progress diverges with frame rate" — the component accumulates `savedProgress` and only draws per 25 points, so the draw *count* tracks research, not frames. The decisive defect is the **interleaving position**: a `Rand` draw taken from a per-frame method enters the shared stream at a frame-dependent point, so two clients diverge even with identical settings and identical draw counts. Matching settings files therefore does **not** fix it. Fork-and-recompile, or a Harmony prefix. Owned by [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7). |
 
 ### RimPacts — the §14 open item, closed **[V]**
@@ -493,7 +493,11 @@ each is a specific thing to do when the mod ships.
    Conrad has stated it.
 2. **The bar reduces to one testable question: does it create threads.** A world sim
    on the synced tick is deterministic; disliking it is a decline, not a bar.
-3. **Vehicles are available**, at one settings flag. Previously this read as a hard block.
+3. ~~**Vehicles are available**, at one settings flag.~~ **STRUCK by
+   [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69).** The flag is not
+   settable and would not have covered the two `Task.Run` paths anyway — see the Real
+   tier row. **Vehicles are neither blocked nor cheap: they cost a fork or a real
+   Harmony patch**, and nothing here decides whether they ship.
 4. **The real cost of the set is its settings surface.** 65 of the 130 mods on disk carry
    one, so `config/ModSettings/` is save-critical across **exactly half** the build and
    [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) must snapshot it as a
@@ -555,13 +559,29 @@ silent failures in `docs/TRAPS.md`. Nothing below changes a bar or a decline.
   Handed to [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69).
   ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68))
 
+**Three collisions this batch tripped over.** Per `docs/agents/capability-research.md`,
+**conflicts are cargo, not verdicts** — they are filed against the mod here and change no
+tier and no bar. All three are the same shape: two pieces of code claiming the same seam,
+with nothing in the game reporting the overlap.
+
+| Collision | What it is | Why it is cargo |
+|---|---|---|
+| **Mechanoids: Total Warfare** — `NCL_Storyteller.Patch_StorytellerUtility` | **Transpiles `RimWorld.StorytellerUtility.DefaultThreatPointsNow`** [V], injecting an additive term into the returned points and **replacing the hardcoded `10000f` ceiling**. Both edits are inside the method body. | `DefaultThreatPointsNow` is the pacing seam the campaign is most likely to patch, and `PARTS-BIN.md` §8.1's `fixedWealthMode` finding feeds it. **A postfix of ours on that method would read a number this transpiler has already rewritten** — no error either way. If both ship, the two edits must be reconciled deliberately. ([#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)) |
+| **Ushanka's Hacking Expansion** — `USH_HE.Patch_CompHackable_CanHackNow` | A **postfix on `RimWorld.CompHackable.CanHackNow(Pawn)`** [V], which is how it lets a remote hacker past vanilla's `"NoPath"` refusal. | The research-gate build proposed for [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) postfixes **the same method**, so our refusal and its permission would sit side by side **with Harmony ordering unspecified**. Proven shape, shared seam — decide the order explicitly rather than discovering it. ([#58](https://github.com/cjd721/Rimworld-Archinity/issues/58)) |
+| **Mechanoids: Total Warfare** — `NCL.CompProperties_UnlockResearch` on vanilla `CerebrexCore` | Added to the **vanilla Odyssey `CerebrexCore` ThingDef by `PatchOperationAdd`** [V]. `NCL.CompUnlockResearch.UnlockResearch` calls `ResearchManager.FinishProject`, which **recursively completes every unfinished prerequisite**, and grants Spacer `NCL_CerebrexCore_Rebuild` — **`baseCost` 5000, no prerequisites**. | **A cascading research bypass attached to a def the campaign does not own.** It is not a defect in the mod and not a bar question; it is a collision between MTW's content and any era gate, and the disposition (a `PatchOperationRemove` of that `li`) is [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83)'s, recorded in `docs/specs/RESEARCH.md`. |
+
 **A method caveat that touches every negative in this file.** The wide-pass technique this
 repo prescribes for the UTF-16LE half — `rg -a --encoding utf-16le` — **silently misses
 strings that are provably present**, non-uniformly. Two auditors reproduced it
 independently on different files. Every negative in the 2026-09-11 batch survived
 re-derivation by a null-interleaved byte scan, but the *stated* validation was false in at
 least three tickets, and negatives recorded here before that date were swept the same way.
-[#103](https://github.com/cjd721/Rimworld-Archinity/issues/103).
+**And the replacement has its own failure mode:** a null-interleaved pattern built through a
+shell `$(…)` substitution degrades to a plain ASCII search, and its validator degrades with
+it, so a re-derivation is only as good as the bytes that reached ripgrep — which is why
+`docs/agents/capability-research.md` now requires a sweep's *construction* to be reported
+with its result. [#103](https://github.com/cjd721/Rimworld-Archinity/issues/103),
+[#83](https://github.com/cjd721/Rimworld-Archinity/issues/83).
 
 ## Open
 
@@ -572,7 +592,14 @@ least three tickets, and negatives recorded here before that date were swept the
   bound by checking the startup log for the **absence** of
   `"No System RNG was patched for method: KCSG.SettlementGenUtils+Sampling.Sample"`.
   ([#88](https://github.com/cjd721/Rimworld-Archinity/issues/88))
-- Confirm Vehicle Framework's synchronous fallback is deterministic, if vehicles ship.
+- ~~Confirm Vehicle Framework's synchronous fallback is deterministic, if vehicles ship.~~
+  **CLOSED, premise wrong.** There is no reachable switch to put it on the fallback path,
+  and `VehiclePathFollower.RequestNewPath` / `WorldVehiclePathGrid.RecalculateAllPathCostsAsync`
+  bypass the `ThreadAvailable` gate entirely via `SmashTools.TaskManager.Run` **[V]**. The
+  question that replaces it: **decide whether to own the patch** — the 5 `ThreadAvailable`
+  readers MP Compat's `NoThreadInMp` does not cover, plus the
+  `VehicleRegionCostCalculator.pathCostSamples` static. **T-74** / **T-75**.
+  ([#69](https://github.com/cjd721/Rimworld-Archinity/issues/69))
 - **Confirm which `RangeFinder.dll` the game loads**, and whether `MultiVersionModFix`'s
   patch on `ModMetaData.VersionCompatible` is live. Launch-log check, not a decompile.
 - ~~**Smoke-test Defensive Positions in a live MP session** — it is not covered by the

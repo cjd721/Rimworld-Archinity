@@ -158,4 +158,66 @@ by `docs/data/MOD-SNAPSHOT.md`. The audit of
 [#71](https://github.com/cjd721/Rimworld-Archinity/issues/71) found this exact error in
 the same document that proposed the trap. 1.6.4871.*
 
+### T-55 — `GenTypes` resolves short names from an ignored-namespace dictionary, last writer wins
+
+`Verse.GenTypes.TryGetTypeInIgnoredNamespace` builds
+`typesInIgnoredNamespacesByName[allType.Name] = allType` over **every loaded type whose
+namespace is null or listed in `IgnoredNamespaceNames`** — `RimWorld`, `Verse`, `LudeonTK`,
+`Verse.AI`, `Verse.AI.Group`, `Verse.Sound`, `Verse.Grammar`, `RimWorld.Planet`,
+`RimWorld.BaseGen`, `RimWorld.QuestGen`, `RimWorld.SketchGen`, `System` — and
+`GetTypeInAnyAssembly` consults that dictionary **before anything else**. Two consequences,
+both silent.
+
+**A bare XML node name always binds to the ignored-namespace type.** Two unrelated classes
+are called `StructureLayoutDef`: `RimWorld.StructureLayoutDef` and
+`KCSG.StructureLayoutDef`. `<StructureLayoutDef>` is always the vanilla one, and KCSG
+content has to write `<KCSG.StructureLayoutDef>` — which GTE does. Write the bare form for
+the vanilla class; never the qualified one.
+
+**And the assignment is unguarded, so the last writer wins.** There is no ambiguity check
+and no collision warning. A mod type declared in the `RimWorld` namespace — or in **no
+namespace at all** — that shares a short name with a vanilla type simply **replaces the
+vanilla type in the resolver, for every `workerClass`, `thingClass` and `Class=` lookup in
+the game**. Nothing is logged, and the symptom is a vanilla def quietly running someone
+else's code.
+
+**Vanilla's own `LayoutWorker`, `LayoutWorker_Structure` and `LayoutWorker_OrbitalPlatform`
+have no namespace at all**, which is exactly the bucket a new class with no `namespace`
+declaration falls into — and `docs/specs/ORBIT.md` has us authoring `LayoutWorker_*`
+subclasses. Declare every Archinity type in an `Archinity.*` namespace and reference it
+fully qualified from XML, as Better Traders Guild does
+(`BetterTradersGuild.LayoutWorkers.Settlement.LayoutWorker_Settlement`). A namespace is not
+house style here; it is the only thing keeping our type out of a dictionary vanilla writes
+to first.
+
+*[#66](https://github.com/cjd721/Rimworld-Archinity/issues/66).
+`Verse.GenTypes.TryGetTypeInIgnoredNamespace`, `.GetTypeInAnyAssembly`,
+`.IgnoredNamespaceNames`. 1.6.4871.*
+
+### T-69 — `AccessTools.Field(...)?.SetValue(...)` is a silent no-op after a rename
+
+The idiom reads as defensive and is the opposite. `HarmonyLib.AccessTools.Field` returns
+**null** on a miss rather than throwing, the null-conditional swallows the call, and a
+wrapping `try`/`catch` that logs on a throw never fires — because nothing throws. Reflection
+into a private field by string name therefore stops working the moment the field is renamed,
+with a clean log and no behaviour left behind.
+
+**The shipped instance is Ushanka's Hacking Expansion.**
+`USH_HE.CompHackableExtensions.ResetHackProgress` reflects into **ten** private fields of
+`RimWorld.CompHackable` in exactly this shape, inside exactly that `try`. It is correct
+against the build on disk; one vanilla rename retires it in silence, and the visible
+consequence is a seized turret stuck at `hacked == true` and permanently un-re-hackable,
+with nothing in the log to connect the two.
+
+**This one is not about a third party.** The pattern is what an agent reaches for when it
+needs a private field, and it fails the *Loudness* gate in `CODING_STANDARDS.md` outright:
+a Harmony patch against a missing *method* throws at startup, and this against a missing
+*field* does not. In Archinity code, resolve the `FieldInfo` once and fail loudly when it is
+null — `AccessTools.Field(...) ?? throw` — or use `AccessTools.FieldRefAccess`, which throws
+on a miss. Never `?.SetValue`.
+
+*[#58](https://github.com/cjd721/Rimworld-Archinity/issues/58).
+`USH_HE.CompHackableExtensions.ResetHackProgress` from `HackingExpansion.dll`
+(`3573344880/1.6/Assemblies/`); `HarmonyLib.AccessTools.Field`. 1.6.4871.*
+
 ---

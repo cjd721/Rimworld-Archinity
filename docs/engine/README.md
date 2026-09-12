@@ -15,15 +15,18 @@ any major RimWorld update.
 
 | File | Owns |
 |---|---|
-| `def-loading.md` | How the def database is assembled, and what that means for a patch |
-| `determinism.md` | Ticks, `Rand`, threads, and what Multiplayer actually syncs |
-| `factions-and-worldgen.md` | The roster, settlement allocation, and climbing a faction mid-campaign |
-| `research-and-tech-tiers.md` | Research pacing and the tech-gating mod stack |
-| `quests.md` | Quest rewards, presentation, and the quest system as event scheduler |
+| `def-loading.md` | How the def database is assembled, what that means for a patch, and why a def cannot be added later |
+| `determinism.md` | Ticks, `Rand`, leaving the tick, and what Multiplayer actually syncs |
+| `factions-and-worldgen.md` | The roster, settlement allocation, climbing a faction mid-campaign, and mid-map faction change |
+| `research-and-tech-tiers.md` | Research pacing, cost and completion, and the tech-gating mod stack |
+| `quests.md` | Quest rewards, presentation, signals, and the quest system as event scheduler |
+| `storyteller-and-incidents.md` | Selection weight, cadence and threat points, and where each is composed |
 | `facilities-and-recipes.md` | Bench augments, linkable facilities, recipe gating |
-| `items-and-materials.md` | Deterioration, armour maths and the stuff ladder |
+| `items-and-materials.md` | Deterioration, armour maths, the stuff ladder, recycling, and `Book` |
+| `health-and-death.md` | What decides a pawn is dead, and the three "cannot die" switches |
+| `ideology.md` | How the player faction's ideology changes, and what the believer count gates |
 | `world-time-and-layers.md` | The 60-day year, and the Odyssey orbit layer |
-| `gravship-and-substructure.md` | Affordances, what flies, and the cell budget |
+| `gravship-and-substructure.md` | Affordances, what flies, the cell budget, and the two pressurisation rules |
 | `mods/medieval-overhaul.md` | MO's settings surface, resource chains and licensing |
 | `mods/kcsg.md` | Settlement and structure layout authoring |
 | `mods/vqe-ancients.md` | Archite injection and its gates |

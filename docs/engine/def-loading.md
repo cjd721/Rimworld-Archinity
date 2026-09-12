@@ -23,6 +23,41 @@ Verified against RimWorld 1.6.4871.
 one of the five checks that reads the database the way the game does. See
 `tools/README.md`.
 
+## Adding a `Def` at runtime is impossible; parameterising the instance is not
+
+The only window for def generation is
+`DefGenerator.GenerateImpliedDefs_PreResolve` → `AddImpliedDef` →
+`DefDatabase<T>.Add`, which runs inside def load — **before any save is read**, and
+the database is rebuilt from XML on every load [V]. Vanilla's `GeneTemplateDef` +
+`GeneDefGenerator.GetFromTemplate` mint one `GeneDef` per `SkillDef` and per
+addictive `ChemicalDef` there, and VRE Hussars, VRE Starjack and VRE Android all
+postfix `GeneDefGenerator.ImpliedGeneDefs` to mint their own [V].
+
+Three facts close the door on anything later [V]:
+
+- **No short hash.** `ShortHashGiver.GiveAllShortHashes` has already run and
+  `Log.Error`s on a def that already has one; a later `DefDatabase<T>.Add` assigns
+  `index` and no hash.
+- **It does not survive a save cycle.** `Gene.ExposeData` stores the def as a
+  defName (`Scribe_Defs.Look`), and on load `ScribeExtractor.DefFromNode` logs
+  *"Could not load reference to … named X"* and returns **null**.
+- **We have watched it happen.** VRE Starjack's runtime-generated astrogenes orphan
+  genes saved on living pawns exactly this way when the modlist changes
+  (`docs/data/PARTS-BIN.md`).
+
+A per-pawn def would have to be re-minted with a byte-identical defName *before*
+the save is read, from information only the save contains.
+
+**The instance, by contrast, is fully authorable**, and this is the level a
+"generated" artifact actually lives at [V]. `GeneMaker.MakeGene` sets `pawn` before
+`PostMake`; `Pawn_GeneTracker.AddGene` calls `PostAdd()` last, after the gene is in
+the list; `Gene.ExposeData`, `PostAdd`, `LabelCap` and `TickInterval` are all
+`virtual`; and both gene lists scribe `LookMode.Deep`, so a subclass is saved with
+its `Class=` attribute and its own fields. The cost of that route is that **`PostAdd`
+does not run on load — only `ExposeData` does**, so side effects must be recorded
+and replayed rather than re-derived. One display consequence fails silently and is
+`docs/TRAPS.md` **T-63**.
+
 ## Patching happens before inheritance — step 2 precedes step 3
 
 This is the single most consequential property of the sequence. At patch time an

@@ -204,8 +204,24 @@ tickets in a row independently rediscovered this; it is written down now.
   ASCII. A normal `rg -a` finds these.
 - **String literals** — including every `Scribe` key, every `defName` looked up by
   string, every `AccessTools.TypeByName` argument — live in the `#US` heap as
-  **UTF-16LE**. An ASCII grep misses all of them. Run the pass a second time with
-  `--encoding utf-16le`. Ticket #52's only live hit came from that second pass.
+  **UTF-16LE**. An ASCII grep misses all of them, so the pass must be run a second time
+  for the `#US` half. **Do not run that second pass with `--encoding utf-16le`.** This
+  doc used to prescribe exactly that, and it **silently misses strings that are provably
+  present**, non-uniformly — two auditors reproduced it independently on different files
+  (#103). Sweep with `-a` over a **null-interleaved literal** instead: for `Foo`,
+  `rg -a -l "F\x00o\x00o\x00"`. It matches the UTF-16LE bytes where they actually sit
+  and does not ask ripgrep to decode a file that is not, as a whole, UTF-16. Ticket
+  #52's only live hit came from the `#US` half.
+- **Type the `\x00` escapes into the pattern yourself.** A null-interleaved pattern
+  **built through a shell command substitution `$(…)` silently degrades to an ASCII
+  search**, because the shell strips NUL bytes out of the substitution — the sweep runs,
+  returns cleanly, and has searched for `Foo`. **A validator run the same way "passes"
+  too**, since the known hit is found by the surviving ASCII half, so *Validate the
+  sweep before you trust its negative* below does **not** catch this one. Write the
+  escapes literally in the ripgrep pattern, or drive the sweep from a pattern file
+  (`rg -f`) or a Python reader that emits the bytes itself. And **report how a sweep was
+  constructed alongside its result**: a null-interleaved negative is only worth the bytes
+  that actually reached ripgrep, and nothing downstream can tell the two apart.
 - **A namespaced type is stored split.** `System.Random` is a TypeRef whose namespace
   and name are separate strings; grepping the literal `System.Random` finds nothing.
   Grep the bare name (`Random`), then narrow. Ticket #88 filtered 1,057 dlls to 276

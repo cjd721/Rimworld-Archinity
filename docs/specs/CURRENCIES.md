@@ -128,7 +128,11 @@ Template: `RimWorld.CompUseEffect_FinishRandomResearchProject`, a 25-line `CompU
 subclass overriding `DoEffect(Pawn)` and `CanBeUsedBy(Pawn)` to mutate global game state
 **[V]**. Once the comp exists, each new artifact is pure XML.
 
-**Credit C — optional site lore.** The same comp on a studiable object, or
+**Credit C — optional site lore.** A `Study` override calling `Credit(CurrencyDef, int,
+string)` directly, per [`CHARTING.md`](CHARTING.md) § 10 — **not** Credit B's comp.
+`CompUseEffect_GainCurrency` fires only from `CompUsable` / `JobDriver_UseItem`, and
+`VEF.Buildings.StudiableBuilding.Study` never reaches either **[V]**; a studiable object
+carrying that comp would simply never pay. The alternative on this route is
 `QuestPart_GrantCurrency` on a site-completion signal. This is the requirement that
 *"optional investigation can provide Intel progress"* — which is why Intel must be a
 number and not an item, since curiosity cannot spawn loot.

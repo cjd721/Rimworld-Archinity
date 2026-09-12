@@ -325,4 +325,146 @@ world, and the only way back is a post-hoc addition that carries no history.
 `Page_CreateWorldParams.ResetFactionCounts`. T-07, T-18.
 [#70](https://github.com/cjd721/Rimworld-Archinity/issues/70). 1.6.4871.*
 
+### T-68 — `SetFactionDirect` leaves a seized turret mis-indexed in the attack-target cache
+
+A mid-map faction flip written with `Thing.SetFactionDirect` skips three things
+`Thing.SetFaction` does: `Map.attackTargetsCache.UpdateTarget(t)` for an `IAttackTarget`, the
+`ChangedFactionToPlayer` quest signal, and `Map.events.Notify_ThingFactionChanged`. The first
+is the one that bites.
+
+`Verse.AI.AttackTargetsCache.RegisterTarget` builds `targetsHostileToFaction` by snapshotting
+`thing.HostileTo(faction)` **once per faction, at registration time**, and `UpdateTarget` — a
+deregister/re-register pair — is the **only** thing that refreshes it for a live target. So a
+turret seized through the direct setter **stays in the player's hostile bucket and stays out
+of the raiders'**: the map's AI keeps treating it as an enemy and the attackers keep ignoring
+it, with no log line.
+
+**Ushanka's `USH_HE.CompTurretHackable.OnHacked` uses `SetFactionDirect`** where its own
+sibling `Ability_HijackSubcore` and vanilla's `RimWorld.CompAncientSecurityTerminal.OnHacked`
+both use the full `SetFaction`. Repair is a prefix substituting the call, ~5 lines.
+
+**The reason this survives play-testing is that a reload cures it.** Loading a save
+re-registers every attack target from scratch, so the symptom vanishes and comes back only on
+the next seizure. Anything of ours that changes a `Thing`'s faction mid-map goes through
+`SetFaction`, or calls `UpdateTarget` itself.
+
+*[#58](https://github.com/cjd721/Rimworld-Archinity/issues/58), `docs/specs/HACKING.md`.
+`Verse.Thing.SetFaction` / `.SetFactionDirect`,
+`Verse.AI.AttackTargetsCache.RegisterTarget` / `.UpdateTarget`;
+`USH_HE.CompTurretHackable.OnHacked` from `HackingExpansion.dll`
+(`3573344880/1.6/Assemblies/`). T-12 is the same shape one cache over. 1.6.4871.*
+
+---
+
+## Incidents, quests and goodwill
+
+### T-65 — VEF's `forcedPointsRange` sentinel is `IntRange.One`, not its own default
+
+`VEF.Storyteller.IncidentDefExtension.forcedPointsRange` defaults to `IntRange.Zero`, but
+`IncidentWorker_RaidEnemySpecial.ResolveRaidPoints` falls through to vanilla point scaling
+only when the value **`== IntRange.One`**. The default and the sentinel are different values.
+
+So an `IncidentDef` using that `workerClass` **without** an explicit
+`<forcedPointsRange>1~1</forcedPointsRange>` — or with no `IncidentDefExtension` at all —
+gets `parms.points = 0 × threatScale = 0`. Not default scaling: a **zero-point raid**. No
+error, no warning, no log line, and a raid that arrives empty or does not arrive reads as
+ordinary storyteller variance.
+
+Every authored raid the campaign wants goes through this worker — the Glitterite detection
+raid, a demand's refusal raid, any Chronicle beat's fixed opposition — because it is the one
+XML-reachable way to pin faction, points band and strategy. **Write the `1~1` even when you
+want vanilla scaling.**
+
+*[#60](https://github.com/cjd721/Rimworld-Archinity/issues/60), `docs/specs/PRESSURE.md`.
+`VEF.Storyteller.IncidentWorker_RaidEnemySpecial.ResolveRaidPoints` and
+`VEF.Storyteller.IncidentDefExtension` from `VEF.dll`; verified in **both** on-disk copies of
+`2023507013`, which is the one place T-22's VEF divergence had to be checked. 1.6.4871.*
+
+### T-70 — `QuestNode_End` builds two parts and sets `signalListenMode` on one of them
+
+`RimWorld.QuestGen.QuestNode_End.RunInt` sets `signalListenMode` on the
+`QuestPart_QuestEnd` it builds, and **not** on the `QuestPart_FactionGoodwillChange` it
+builds alongside — which therefore keeps the `OngoingOnly` default. An author writing
+`<signalListenMode>NotYetAcceptedOnly</signalListenMode>` together with
+`<goodwillChangeAmount>` gets the quest ended and **no goodwill change at all**, with no
+error and nothing in the log.
+
+The combination looks sanctioned: shipped XML uses that `signalListenMode` value in three
+files — `Script_PawnLend.xml`, `Script_Hospitality_Worker.xml` and
+`Script_EndGame_RoyalAscent.xml`. It is exactly the shape a demand that must cost standing
+when it is refused before acceptance would reach for, and it is the shape that does nothing.
+Author the goodwill change as its own `QuestNode_ChangeFactionGoodwill`, or carry it on a
+`QuestPart` of ours whose listen mode we set.
+
+*[#91](https://github.com/cjd721/Rimworld-Archinity/issues/91), `docs/specs/POLITICS.md`.
+`RimWorld.QuestGen.QuestNode_End.RunInt`, `RimWorld.QuestPart_FactionGoodwillChange`,
+`RimWorld.QuestPart.signalListenMode`. 1.6.4871.*
+
+### T-71 — A chain-granted quest never runs `TestRun`, so every XML gate on it is inert
+
+VEF's `QuestUtils.CreateQuest` → `QuestUtility.GenerateQuestAndMakeAvailable` →
+`QuestGen.Generate` calls `root.Run()` and **never** `TestRun`, and `QuestScriptDef.CanRun` is
+never consulted on that path. Everything that lives in a `TestRunInt` is therefore dead for a
+quest granted through a chain: `QuestScriptDef.CanRun`, `QuestNode_QuestUnique` and
+`minRefireDays` all evaluate to nothing, and the quest generates anyway.
+
+Nothing reports it. The gates are still on the def, still correct, still read by the *other*
+callers — which is what makes this so easy to trust: a cap that works when the storyteller
+grants the quest quietly stops working when a chain does. A category cap of ours built as a
+`QuestNode` whose `TestRunInt` counts pending offers has the same problem, and must live
+somewhere the chain path actually executes.
+
+*(One claim the audit struck: it is **not** true that only two vanilla callers run `CanRun` —
+there are 16. The gates are inert on the chain path regardless; the narrow-caller framing was
+wrong and is not what this entry rests on.)*
+
+*[#91](https://github.com/cjd721/Rimworld-Archinity/issues/91), `docs/specs/POLITICS.md`.
+`VEF.QuestUtils.CreateQuest` and `VEF.GameComponent_QuestChains` from `VEF.dll`;
+`RimWorld.QuestGen.QuestGen.Generate`, `RimWorld.QuestScriptDef.CanRun`,
+`RimWorld.QuestGen.QuestNode_QuestUnique`. T-39 is the same method, read for a different
+hazard. 1.6.4871.*
+
+### T-72 — VEF's `conditionFailQuests` never matches an expired offer
+
+`VEF.GameComponent_QuestChains.QuestExpired` writes only `QuestInfo.tickExpired`. The
+matching predicate, `QuestIsCompletedAndFailed`, tests `outcome == QuestEndOutcome.Fail` —
+and `outcome` is written **only** by `QuestCompleted`. An offer that simply expires
+therefore never satisfies it.
+
+So a retaliation quest keyed on `conditionFailQuests` is dead on the refusal path, which is
+the exact path a faction demand needs: declining a demand in this engine *means* letting the
+offer expire, because refusal is not an act (`ChoiceLetter.Option_Reject` only removes the
+letter, and expiry emits no signal). The chain field reads as the supported way to say
+"and if they refuse, this happens", and it is the one case it cannot see. No error, no log
+line — the successor quest is simply never scheduled.
+
+Build the refusal consequence on `QuestPart.Cleanup()` instead, discriminating on
+`Quest.State == EndedOfferExpired`; `Quest.CleanupQuestParts()` is the single convergence
+point for every terminal transition and needs no signal.
+
+*[#91](https://github.com/cjd721/Rimworld-Archinity/issues/91), `docs/specs/POLITICS.md`.
+`VEF.GameComponent_QuestChains.QuestExpired` / `.QuestCompleted` /
+`.QuestIsCompletedAndFailed` from `VEF.dll`; `RimWorld.Quest.State`,
+`RimWorld.Quest.CleanupQuestParts`. 1.6.4871.*
+
+### T-73 — VEF's `grantAgainOnExpiry` is a unit mismatch, and never fires
+
+`VEF.GameComponent_QuestChains.TryGrantAgainOnExpiry` passes a **tick count**
+(`60000f × days`) into `ScheduleQuestMTB`'s **`mtbDays`** parameter, which
+`FutureQuestInfo.TryFire` hands to `Rand.MTBEventOccurs(mtbDays, 60000f, 60f)`. So
+`daysUntilGrantAgainOnExpiry = 5` becomes a mean time between events of **300,000 days**: the
+quest is not re-granted, ever, and nothing says so.
+
+Its two siblings give the field its air of correctness — `TryGrantAgainOnFailure` and
+`TryGrantAgainOnSuccess` both use `ScheduleQuestInTicks`, and both work. Only the expiry leg
+is wrong, and expiry is the leg a refusable demand runs on. Pairs with T-72: **both of VEF's
+expiry-path chain features are broken, in different ways, and both fail silently.** Treat
+`conditionFailQuests` and `grantAgainOnExpiry` as unavailable and re-schedule from our own
+`QuestPart.Cleanup()`.
+
+*[#91](https://github.com/cjd721/Rimworld-Archinity/issues/91), `docs/specs/POLITICS.md`.
+`VEF.GameComponent_QuestChains.TryGrantAgainOnExpiry` / `.TryGrantAgainOnFailure` /
+`.TryGrantAgainOnSuccess` / `.ScheduleQuestMTB` / `.ScheduleQuestInTicks` and
+`VEF.FutureQuestInfo.TryFire` from `VEF.dll`; `Verse.Rand.MTBEventOccurs`. 1.6.4871.*
+
 ---

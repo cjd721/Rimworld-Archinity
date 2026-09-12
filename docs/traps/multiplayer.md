@@ -376,4 +376,182 @@ a courtesy to the local player rather than a guarantee.
 single-hit full-assembly sweep for `WindowsForcePause` against `Multiplayer.dll` 1.6
 (`2606448745/1.6/AssembliesCustom`, md5 `2032ec31…`). `ilspycmd` 8.2.0, 2026-09-12.*
 
+### T-61 — VEF's study-designation gizmo writes scribed state and no compat patch covers it
+
+`VEF.Buildings.StudiableBuilding.GetGizmos` builds a `Command_Action` whose `action` calls
+`MapComponent_InteractableBuildingsInMap.AddStudiablesToMap(this)`, and that `HashSet<Thing>`
+is scribed — `Scribe_Collections.Look(ref studiables_InMap, "studiables_InMap",
+LookMode.Reference)`. **Nothing syncs it.** One client designates a mural; the other client's
+colonists never see it, and the divergence is written into the save rather than living in a
+cache.
+
+**The negative is byte-exact, not a metadata guess.** Every ASCII and null-interleaved UTF-16
+literal was extracted from both 1.6 compat assemblies (`Multiplayer_Compat.dll` and
+`Multiplayer_Compat_Referenced.dll`, the two on-disk copies md5-identical, so T-22 does not
+bite): **71 other `VEF.` strings are present**, and `StudiableBuilding`, `LootableBuilding`,
+`AddStudiablesToMap` and `MapComponent_InteractableBuildingsInMap` are **absent in both
+encodings**.
+
+**The right-click path is already safe, which is what makes this easy to miss.**
+`GetFloatMenuOptions` ends in `selPawn.jobs.TryTakeOrderedJob(…)`, and
+`Multiplayer.Client.SyncMethods` registers `Pawn_JobTracker.TryTakeOrderedJob` generically.
+*Ordering* a pawn to read a mural is synced; *designating* one is not. Play-testing the
+feature the obvious way exercises only the safe half.
+
+**Registration is per concrete type, by lambda ordinal, so a subclass inherits nothing** —
+the same fact `docs/specs/CHARTING.md` already records for `CompLongRangeMineralScanner`.
+Anything of ours deriving from `StudiableBuilding` must override `GetGizmos` and route the
+designation through one method we register ourselves against `Multiplayer.API`. MP Compat
+does exactly that for a third-party studiable —
+`MpCompat.RegisterLambdaMethod("VanillaQuestsExpandedTheGenerator.Building_Genetron_Studiable",
+"GetGizmos", 0)` — and notably **without** `.SetDebugOnly()`, so MP treats a study
+designation as a real sync surface.
+
+*[#80](https://github.com/cjd721/Rimworld-Archinity/issues/80), `docs/specs/CHARTING.md`.
+`VEF.dll` (`2023507013/1.6/Assemblies/`); `Multiplayer.Client.SyncMethods` from
+`Multiplayer.dll` 1.6; literal extraction over `Multiplayer_Compat.dll` and
+`Multiplayer_Compat_Referenced.dll` 1.6 (`1629973374/`). 1.6.4871.*
+
+### T-66 — A storyteller comp's list index is a `Rand` seed salt
+
+`RimWorld.IncidentCycleUtility.IncidentCountThisInterval(target, randSeedSalt, …)` seeds from
+`Gen.HashCombineInt(Find.World.info.persistentRandomValue, target.ConstantRandSeed,
+randSeedSalt, i)`, and **every scheduled comp passes
+`Find.Storyteller.storytellerComps.IndexOf(this)` as `randSeedSalt`**. The salt is therefore
+a position in a list, not an identity.
+
+Two ways that position moves without anybody intending it. Adding a comp to a
+`StorytellerDef` by `PatchOperationAdd` re-indexes every comp after it. And the runtime list
+is filtered by `StorytellerCompProperties.Enabled`, so **merely changing the active mod set
+moves the same indices** — a comp gated on a DLC or a mod that is switched off shifts
+everything below it.
+
+The effect is that every later comp's **pre-computed hit schedule is silently re-rolled**:
+cadence changes nobody authored, arriving mid-campaign, with nothing reported and nothing to
+compare against. This is a determinism trap before it is a Multiplayer one — the same save,
+reopened with a different mod set, generates a different schedule — but it is also T-18's
+shape at one remove, since two clients with different mod lists hold different index
+assignments.
+
+Consequence for `docs/specs/PRESSURE.md`: **ship our own `StorytellerDef`s rather than
+patching comps into the vanilla three**. A def of ours owns its own comp order and nothing
+inserts ahead of it. Worth keeping alongside this: `IncidentCycleUtility`'s schedule draws
+nothing from the shared `Rand` stream, which makes it the safest scheduler available under
+Multiplayer — the hazard is the salt, not the stream.
+
+*[#60](https://github.com/cjd721/Rimworld-Archinity/issues/60), `docs/specs/PRESSURE.md`.
+`RimWorld.IncidentCycleUtility.IncidentCountThisInterval`,
+`RimWorld.StorytellerCompProperties.Enabled`, `RimWorld.Storyteller.storytellerComps`.
+1.6.4871.*
+
+### T-67 — Hacking Expansion's settings change the def database, not just behaviour
+
+**Distinct from T-18, and worse than it.** T-18 is a setting read at runtime. This is a
+setting that **rewrites `ThingDef.comps` and `PawnKindDef.race.comps`** at
+`Verse.DefOfHelper.RebindAllDefOfs`: `USH_HE.Patch_DefOfHelper_RebindAllDefOfs` is a postfix
+that appends `CompProperties_TurretHackable` to every qualifying turret `ThingDef` only when
+`HE_Mod.Settings.EnableTurretsHacking`, and `CompProperties_MechanoidHackable` to every
+qualifying mechanoid/drone race only when `HE_Mod.Settings.EnableMechHacking`.
+
+Two clients with different values therefore hold **different comp lists on the same defs** —
+different derived `defence` values, different `ExposeData` shapes — and desync with no error
+message anywhere. Both settings must be pinned identical before a session, and a settings
+re-snapshot is mandatory after either is touched.
+
+**Pinning the two settings is not a complete mitigation.** The same postfix's
+`ShouldBeDataSource` branch appends `CompProperties_DataSourceProtected` to **every**
+`CompHackable` ThingDef, **ungated by any setting**. The def database this mod produces is
+never the one on disk, whatever the settings say — which is also why a `PatchOperation`
+written against `CompProperties_TurretHackable` or `CompProperties_MechanoidHackable` matches
+**zero** nodes (T-03), and why `tools/defdb.py`, `patch_check.py` and `xpath.py` cannot see
+the injected comps at all. Def-side work targets `CompHackable`, or runs after the injector.
+
+*[#58](https://github.com/cjd721/Rimworld-Archinity/issues/58), `docs/specs/HACKING.md`.
+`USH_HE.Patch_DefOfHelper_RebindAllDefOfs` from `HackingExpansion.dll`
+(`3573344880/1.6/Assemblies/`); `Verse.DefOfHelper.RebindAllDefOfs`. T-18, T-03.
+1.6.4871.*
+
+### T-74 — Vehicle Framework pathfinds on the thread pool, and nothing anyone has patched reaches it
+
+`SmashTools.TaskManager.Run(Action, CancellationToken)` is a bare `Task.Run` wrapped in a
+fire-and-forget awaiter. Two of its three call sites are simulation, both reached from the
+synced tick:
+
+```
+VehiclePawn.BaseTickOptimized → VehiclePathFollower.PatherTick → TryEnterNextPathCell
+  → RequestNewPath → TaskManager.Run(AsyncPathFindAction.Invoke)
+WorldVehiclePathGrid.WorldComponentTick → RecalculateAllPathCostsAsync → TaskManager.Run(…)
+```
+
+**Neither consults `VehiclePathingSystem.ThreadAvailable`**, which is the only thing VF's own
+`Vehicles.SectionDebug.debugUseMultithreading` (T-75) and Multiplayer Compat's `NoThreadInMp`
+can reach — and MP Compat's `ReplaceThreadAvailable` transpiler is applied to **3 of the 8
+`ThreadAvailable` readers** in the assembly, all three of them in `PathingHelper`. Reading
+only those eight call sites makes the mod look fixed. **The compat layer patched what it said
+it would patch**, and logged nothing, because nothing failed.
+
+What the escaped task does. `VehiclePathFinder.FindPath` walks
+`VehicleRegionCostCalculator.RegionMedianPathCost`, which runs `Rand.PushState()`,
+`Rand.Seed = …`, eleven `region.RandomCell` draws and `Rand.PopState()` **on `Verse.Rand`'s
+unlocked process-global state, from a pool thread**. The seed itself is derived from region
+geometry, so this is not an RNG-value bug: it is a **race on the shared stream**, and the
+damage lands on whatever the simulation thread drew next. MP checksums `Rand` state as
+simulation state, so this trips the desync detector while naming something else entirely.
+
+A second divergence needs no RNG at all. `TryEnterNextPathCell` opens with
+`if (RequestStatus == PathRequestStatus.Calculating) return;`, so **the tick a vehicle starts
+moving is a function of thread scheduling** — two clients' vehicles sit in different cells.
+And the world-map half is the mobility ladder's own cost function:
+`PerceivedMovementDifficultyAt` is an unlocked `pathGrids[vehicleDef.DefIndex][tile]` array
+read against a grid a pool thread rewrites once per in-game day.
+
+**A third, independent race sits one level down.**
+`Vehicles.VehicleRegionCostCalculator.pathCostSamples` is a `private static int[11]` shared
+across every instance and written from inside the async task. Two concurrent path requests
+overwrite each other's samples with no lock and no error.
+
+The fix is ours to write and nobody else's: three `MP.IsInMultiplayer`-gated Harmony prefixes
+(`VehiclePathingSystem.InitThread`, `VehiclePathFollower.RequestNewPath`,
+`WorldVehiclePathGrid.RecalculateAllPathCostsAsync`), ~60 lines. The first is the one that
+closes all five uncovered `ThreadAvailable` readers at once, by leaving `dedicatedThread`
+null. VF announces that configuration in the log — *"Loading map without DedicatedThread"* —
+which is the only positive confirmation available anywhere on this path.
+
+*[#69](https://github.com/cjd721/Rimworld-Archinity/issues/69),
+`docs/specs/WORLD-INFRASTRUCTURE.md`. `Vehicles.dll` and `SmashTools.dll`
+(`3014915404/1.6/Assemblies/`, workshop only — no `Mods/` copy, so T-22 does not bite);
+`Multiplayer.Compat.VehicleFramework` from `Multiplayer_Compat_Referenced.dll`
+(`1629973374/1.6/Referenced/`). Reader counts enumerated over a whole-assembly decompile, not
+sampled. `ilspycmd` 8.2.0, 2026-09-12.*
+
+### T-75 — `debugUseMultithreading` cannot be set; there is no flag to turn the threading off
+
+The field that every plan for T-74 reaches for **does not exist at runtime.**
+`Vehicles.SectionDebug.debugUseMultithreading` looks like a scribed bool and is not: its
+`Scribe_Values.Look` sits inside `if (DebugProperties.Debug)`, and
+`Vehicles.DebugProperties.Debug` is an `internal static readonly bool = false` in the shipped
+1.6 build. So it is **never written to `config/ModSettings/`, never read back, and resets to
+its field initialiser — `true` — on every launch**. A settings file edited by hand is
+discarded on load with no message.
+
+Three supporting facts, each enumerated over the whole assembly rather than sampled. **No
+settings UI draws it**: the identifier occurs four times in `SectionDebug` — the declaration,
+`ResetSettings`, the guarded `ExposeData` line and `RevalidateAllMapThreads` — and there is no
+`CheckboxLabeled` for it anywhere. **`SectionDebug.RevalidateAllMapThreads`, the only method
+that would act on the flag being false, is referenced from nowhere**; the string occurs
+exactly once in the assembly, at its own definition. And a null-interleaved UTF-16 sweep of
+both corpus roots plus `Data/` returns `Vehicles.dll` 1.4 and 1.6 and nothing else — **no mod
+sets it either**.
+
+The live gate is `VehiclePathingSystem.InitThread`'s own read of
+`VehicleMod.settings.debug.debugUseMultithreading`, and in the shipped build that read always
+returns `true`. The consequence for sourcing: **any plan priced as "one settings flag" against
+this field is priced against a field that does not exist**, and T-74's threading is not
+switchable from outside our own assembly.
+
+*[#69](https://github.com/cjd721/Rimworld-Archinity/issues/69). `Vehicles.dll`
+(`3014915404/1.6/Assemblies/`) decompiled whole; `Vehicles.SectionDebug`,
+`Vehicles.DebugProperties.Debug`, `Vehicles.VehiclePathingSystem.InitThread`. Corrects the
+Vehicle Framework row in `docs/data/MOD-VERDICTS.md` § *Real*. `ilspycmd` 8.2.0, 2026-09-12.*
+
 ---

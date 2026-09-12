@@ -158,10 +158,20 @@ flying back to the old map — and nothing at all if that map was abandoned.
 .isStuffableAirtight && Stuff.stuffProps.isAirtight)`. `Wall` and its kin set
 `isStuffableAirtight`, so the stuff decides — and across Core and all four DLC only
 **Steel, Plasteel, Silver, Gold and Uranium** set `stuffProps.isAirtight`. Stone
-blocks, `WoodLog`, `Jade` and every fabric do not. `VacuumUtility.IsRoomAirtight`
-walks `room.BorderCells` and rejects the room on the first edifice that is not
-airtight, the room equalises with vacuum, and pawns indoors take `VacuumExposure`
-with no error and no red text.
+blocks, `WoodLog`, `Jade` and every fabric do not. A room whose boundary is not
+airtight does not hold against space: it equalises, and pawns inside take
+`VacuumExposure` with no error and no red text.
+
+**`VacuumUtility.IsRoomAirtight` is not the test that decides that.** Breathability runs
+`Room.Vacuum` ← `Room.ExposedToSpace` ← `District.ExposedVacuumCount`, and that count
+asks exactly two
+things of a cell: is it unroofed, or does its terrain set `exposesToVacuum`.
+`IsRoomAirtight` is the **other** question — its inner `IsRoomDirectlyOpenToOutside`
+additionally demands `terrainGrid.FoundationAt(cell).IsSubstructure` on every cell, so
+it is false for **every orbital-platform room**, and those rooms are pressurised and
+breathable regardless. Read `IsRoomAirtight` as the gravship-hull question and never as
+*"will they breathe"*. What the two share is the wall half, which is what this entry is
+about.
 
 **`Obsidian` is the nastiest case.** Odyssey's
 `Odyssey/Defs/ThingDefs_Items/Items_Resource_Stuff.xml` gives it
@@ -175,7 +185,153 @@ care about stuff, or from steel/plasteel `Wall`. Never from local stone. The one
 place the game will tell you is the `Stat_Airtight` row in the info card, which
 nobody opens before laying a wall.
 
-*[#71](https://github.com/cjd721/Rimworld-Archinity/issues/71). 1.6.4871.*
+*[#71](https://github.com/cjd721/Rimworld-Archinity/issues/71);
+[#66](https://github.com/cjd721/Rimworld-Archinity/issues/66) for the separation of the
+two pressurisation rules, which `docs/engine/gravship-and-substructure.md`
+§ *Pressurisation* had filed under one heading.
+`Verse.Building.IsAirtight`, `RimWorld.Room.ExposedToSpace`,
+`RimWorld.District.ExposedVacuumCount`, `RimWorld.VacuumUtility.IsRoomAirtight` /
+`.IsRoomDirectlyOpenToOutside`. 1.6.4871.*
+
+### T-56 — `Thing.SmeltProducts` throws away its `efficiency` argument, and the info card advertises it anyway
+
+`Verse.Thing.SmeltProducts(float efficiency)` takes the argument and **never reads it**.
+The multiplier in the body is a literal `0.25f`. Its two siblings on the same class,
+`ButcherProducts` and `StoneBlockProducts`, both honour the identical argument — which is
+exactly what makes the field read as live.
+
+`GenRecipe.MakeRecipeProducts` computes `efficiency` from `RecipeDef.efficiencyStat` and
+`workTableEfficiencyStat` and passes it in, where it is discarded. So a bench augment
+expressed as `workTableEfficiencyStat`, or a recipe's own `efficiencyStat`, does **nothing
+at all** on any recipe whose `specialProducts` contains `Smelted`. No log line, no config
+error.
+
+**The display is worse than the silence.** `RecipeDef.SpecialDisplayStats` emits the
+`EfficiencyStat` line whenever `efficiencyStat != null`, so the info card prints a
+multiplier that has no effect — the one surface a player would check asserts the opposite
+of the truth. There is therefore no honest way to *show* the return fraction at all; it
+goes in the recipe `<description>` as prose.
+
+**The only XML lever on the fraction is repetition.** `MakeRecipeProducts` loops
+`for each specialProducts entry { for each ingredient { … } }`, and `specialProducts` is a
+`List<SpecialProductType>`, not a set — so `<li>Smelted</li>` twice is 50%, three times
+75%, and nothing between. Ushanka's Glittertech Expansion ships the same idiom on the
+`Butchery` case (`USH_DisassembleCorpseMechanoid`, commented *"doubled products"*). Any
+other fraction, or any dependence on hit points or quality, needs a Harmony postfix over
+the returned `IEnumerable<Thing>`.
+
+*[#82](https://github.com/cjd721/Rimworld-Archinity/issues/82), `docs/specs/ITEMS.md`.
+`Verse.Thing.SmeltProducts` / `.ButcherProducts` / `.StoneBlockProducts`,
+`RimWorld.GenRecipe.MakeRecipeProducts`, `RimWorld.RecipeDef.SpecialDisplayStats`.
+1.6.4871.*
+
+### T-57 — `RecipeDef.smeltingWorkAmount` is honoured by reference identity, on one def
+
+`RecipeDef.WorkAmountTotal` reads it behind
+`if (this == RecipeDefOf.SmeltOrDestroyThing && thing.Smeltable)` — a **reference-identity
+test against a single def**, not a null check on the field. Set `smeltingWorkAmount` on any
+recipe of ours and it is ignored: no error, no config warning, and a work amount that
+quietly falls back to `workAmount`. Same family as T-56, and the same shape — a field that
+exists on the type for one caller's benefit.
+
+*[#82](https://github.com/cjd721/Rimworld-Archinity/issues/82).
+`RimWorld.RecipeDef.WorkAmountTotal`, `RimWorld.RecipeDefOf.SmeltOrDestroyThing`.
+1.6.4871.*
+
+### T-58 — Any recipe with `specialProducts` silently loses "Do until you have X"
+
+`RimWorld.RecipeWorkerCounter.CanCountProducts` returns `false` whenever
+`recipe.specialProducts != null`. The consequence is not a disabled control or a refusal
+message — the **TargetCount repeat mode is simply omitted from the bill's repeat-mode
+button**, so a bill that ought to offer *"Do until you have 500 cloth"* offers Forever and
+Repeat-N and nothing else. Nothing says why.
+
+Vanilla hit this itself and left the evidence in its own XML: `ExtractMetalFromSlag`
+carries a commented-out `<specialProducts><li>Smelted</li></specialProducts>` above the
+note *"Switched to standard products so we can do 'do until you have X'"*. **That escape is
+closed to us** — a fixed `products` list is the intermediate noun `docs/PLOT.md` forbids for
+a reclaim recipe.
+
+**The supported fix is one XML field.** `RecipeDef.workerCounterClass` is a plain `Type`
+field, and vanilla ships `RimWorld.RecipeWorkerCounter_MakeStoneBlocks`, which overrides
+`CanCountProducts` to `true` and counts a whole `ThingCategoryDef` — the exact shape a
+reclaim recipe wants. ~30 lines of C# in the assembly we already ship, and optional: without
+it the bill is Forever / Repeat-N.
+
+*[#82](https://github.com/cjd721/Rimworld-Archinity/issues/82), `docs/specs/ITEMS.md`.
+`RimWorld.RecipeWorkerCounter.CanCountProducts`,
+`RimWorld.RecipeWorkerCounter_MakeStoneBlocks`, `RecipeDef.workerCounterClass`. 1.6.4871.*
+
+### T-59 — A studied `StudiableBuilding` leaks forever into a scribed `HashSet<Thing>`
+
+`VEF.Buildings.StudiableBuilding.Study(Pawn)` ends in `DeSpawn(DestroyMode.Vanish)`, and
+only the `Destroy` and `Kill` overrides call `RemoveStudiablesFromMap`. `Thing.Destroy`
+calls `DeSpawn`, never the reverse — so a building that is **studied**, the one path the
+feature exists for, is never removed from
+`MapComponent_InteractableBuildingsInMap.studiables_InMap`.
+
+That set is scribed, and scribed as
+`Scribe_Collections.Look(ref studiables_InMap, "studiables_InMap", LookMode.Reference)`. It
+therefore accumulates, in the save, references to things no `ThingOwner` holds:
+`WorkGiver_StudyBuilding.ShouldSkip` stops short-circuiting on that map, and the set grows
+for the life of the run. No error, no log line, and nothing a player can see.
+
+**VQE Ancients ships the bug**: `Building_BroadcastingStation` inherits it by calling
+`base.Study(pawn)`. Any subclass of ours inherits it the same way. *Fix:* call
+`InteractablesMapComp?.RemoveStudiablesFromMap(this)` explicitly in the override, before
+`base.Study`.
+
+*[#80](https://github.com/cjd721/Rimworld-Archinity/issues/80), `docs/specs/CHARTING.md`.
+`VEF.Buildings.StudiableBuilding.Study` and
+`VEF.Buildings.MapComponent_InteractableBuildingsInMap` from `VEF.dll`
+(`2023507013/1.6/Assemblies/`); `VanillaQuestsExpandedAncients.Building_BroadcastingStation`
+(`3618306875/1.6/Assemblies/`). 1.6.4871.*
+
+### T-60 — `StudiableBuilding.Study` sends no quest signal, where its sibling sends both
+
+`VEF.Buildings.LootableBuilding.Open()` sends **both** `Find.SignalManager.SendSignal` and
+`QuestUtility.SendQuestTargetSignals`. `StudiableBuilding.Study(Pawn)` sends **neither** —
+its whole body is spawn `buildingLeft`, play the sound, optionally start
+`Inspired_Creativity`, `DeSpawn`. A quest beat authored with `<inSignal>` against a
+studiable therefore never fires, and a quest gated on one never completes: no error, no
+warning, no log line.
+
+This is the `LootableBuilding` / `LootableBuilding_Custom` split extended to a third class,
+and `docs/data/PARTS-BIN.md` §7.3 records it for only two of the three.
+
+**Copy the signal *pair*, not the precedent.** VQE Ancients' `Building_BroadcastingStation`
+overrides `Study` to send `QuestUtility.SendQuestTargetSignals(site.questTags, …)` and
+stops there — so a plain `Find.SignalManager` listener still misses it. Send both, as
+`LootableBuilding.Open` does.
+
+*[#80](https://github.com/cjd721/Rimworld-Archinity/issues/80), `docs/specs/CHARTING.md`.
+`VEF.Buildings.StudiableBuilding.Study`, `VEF.Buildings.LootableBuilding.Open` from
+`VEF.dll` (`2023507013/1.6/Assemblies/`). 1.6.4871.*
+
+### T-62 — A study designation on a null- or hostile-faction building is accepted and never worked
+
+`VEF.Buildings.WorkGiver_StudyBuilding.HasJobOnThing` returns **false** when
+`t.Faction != pawn.Faction`. Nothing upstream of it agrees: `StudiableBuilding.GetGizmos`
+offers the designation button regardless of faction, `AddStudiablesToMap` accepts the
+thing, the pulsing `MetaOverlay` appears over it, and the entry is written into the scribed
+`studiables_InMap` set.
+
+So the player designates the object, sees every affordance confirm it, and **no colonist
+ever walks to it**. There is no refusal message, no disabled button and no log line — the
+work simply never appears in the queue, which reads as ordinary job-priority behaviour.
+
+**This is the common case for us, not the edge case.** Charting-site objects — a mural on
+an abandoned platform, a terminal in an ancient complex — carry a null faction or a hostile
+one almost by definition, which is the entire population of things a lore record would be
+attached to. Anything of ours deriving from `StudiableBuilding` needs its own `WorkGiver`,
+or a postfix on `HasJobOnThing`. The right-click path (`GetFloatMenuOptions` →
+`TryTakeOrderedJob`) is unaffected and works, which makes the gizmo path's silence harder
+to spot rather than easier.
+
+*[#80](https://github.com/cjd721/Rimworld-Archinity/issues/80), found in the resolution
+audit. `VEF.Buildings.WorkGiver_StudyBuilding.HasJobOnThing`,
+`VEF.Buildings.StudiableBuilding.GetGizmos` from `VEF.dll`
+(`2023507013/1.6/Assemblies/`). 1.6.4871.*
 
 ---
 
@@ -271,5 +427,53 @@ that no player will ever see. Reaching it needs code — a Harmony patch seeding
 the roster is not repairable after worldgen, so "add the Empire later" is not a fix.
 
 *[#53](https://github.com/cjd721/Rimworld-Archinity/issues/53). 1.6.4871.*
+
+### T-63 — Overriding `Gene.Label` reaches the tooltip header and nowhere else
+
+`Gene.Label` and `Gene.LabelCap` are `virtual`, which reads as the supported way to give a
+per-instance gene a per-instance name. It is not.
+`RimWorld.GeneUIUtility.DrawGene(Gene, …)` uses the instance's `LabelCap` for the tooltip
+**title** only. Everything a player actually looks at is typed on the **def**: the tooltip
+body is `gene.def.DescriptionFull`, the tile itself is drawn by
+`DrawGeneBasics(GeneDef, …)`, and clicking it opens `new Dialog_InfoCard(gene.def)`. An
+overridden label therefore appears in exactly one place, on hover, and nowhere in the gene
+tab, the info card or any list — with no error.
+
+**VRE Starjack ships a prefix on the private `GeneUIUtility.DrawSection` for exactly this
+reason**: it pulls its own genes out of the list and redraws them itself. That patch exists
+because the virtual property does not carry.
+
+This bites the altar directly. `docs/specs/ALTAR.md` authors the **instance**, not the def —
+founder A's Transcendent Archogene and founder B's are different objects with different
+stored contents — and the only free surface for that difference is the hover title. Every
+other readout of an authored gene is a patch we write, or it is the def's generic text.
+
+*[#59](https://github.com/cjd721/Rimworld-Archinity/issues/59), `docs/specs/ALTAR.md`.
+`RimWorld.GeneUIUtility.DrawGene` / `.DrawGeneBasics` / `.DrawSection`, `Verse.Gene.Label`;
+`VanillaRacesExpandedStarjack.dll`. 1.6.4871.*
+
+### T-64 — A `GeneVectorExtension` with `gene: null` spends the charge and grants nothing
+
+**Ours, and shipping.** `Archinity.Building_Altar.PerformRite` guards the grant with
+`if (ext.gene != null)` and then — outside that guard — **unconditionally destroys the
+vector, debits the charge and posts `Archinity_AltarRiteSucceeded`**, rendering the gene
+name as `ext.gene?.LabelCap ?? "?"`. A vector whose extension names no gene therefore
+consumes a rite, consumes the item, grants nothing, and tells the player it worked. The
+message reads `"?"` where the gene name would be, which is the only evidence anything went
+wrong.
+
+`gene: null` is not a malformed def. It is documented in our own source as *"Null means the
+lottery"* — and the lottery has no draw code: `GenePoolDef.Available()` and `EntryFor()`
+have zero call sites, and `categoryBias` and `extraOptions` are computed in
+`AltarModifiers.For` and never read. The data model exists, the draw does not, and the gap
+between them is a success message.
+
+Until the lottery is built, an extension with a null `gene` must be refused loudly at the
+rite, not honoured quietly.
+
+*[#59](https://github.com/cjd721/Rimworld-Archinity/issues/59); the lottery draw is
+unowned as of this entry. `Archinity.Building_Altar.PerformRite`,
+`Archinity.GeneVectorExtension`, `Archinity.GenePoolDef` in `ArchinityAltar.dll`.
+1.6.4871.*
 
 ---

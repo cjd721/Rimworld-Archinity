@@ -138,18 +138,37 @@ subscaffold and are not being charged.
 
 ## Pressurisation
 
-`VacuumUtility.IsRoomAirtight` → `IsRoomDirectlyOpenToOutside` fails the room if
-it touches the map edge, has any open roof cell, **or contains any cell whose
-`terrainGrid.FoundationAt` is not `IsSubstructure`**. So every interior cell of
-a pressurised room comes out of the same cell budget as the walls around it.
+**There are two rules, with different callers, and conflating them is how an
+orbital station gets declared vacuum.** [V]
+
+- **Breathability — `Room.Vacuum` / `Room.ExposedToSpace` →
+  `District.ExposedVacuumCount`.** `Room.ExposedToSpace` is
+  `Map.Biome.inVacuum && (TouchesMapEdge || ExposedCountStopAt(1) > 0)`, and
+  `District.ExposedVacuumCount` counts a cell only if it is **unroofed** or its
+  terrain sets `exposesToVacuum`. **Roof and terrain flag, nothing else.** This
+  is the rule that decides whether pawns take `VacuumExposure`, and it governs
+  orbital platforms, asteroid bases and every in-vacuum map. `TerrainDefOf.Space`
+  sets `exposesToVacuum`; Odyssey's `OrbitalPlatform` terrain does not.
+- **The gravship cell-budget question — `VacuumUtility.IsRoomAirtight` →
+  `IsRoomDirectlyOpenToOutside`.** It fails the room if it touches the map edge,
+  has any open roof cell, **and additionally** if it contains any cell whose
+  `terrainGrid.FoundationAt` is not `IsSubstructure`. `TerrainDef.IsSubstructure`
+  is `HasTag("Substructure")`, which orbital-platform terrain does not set, so
+  **`IsRoomAirtight` is false for every orbital-platform room — and that does not
+  mean the room is vacuum-exposed.** On a gravship the same clause is what makes
+  every interior cell of a pressurised room come out of the same cell budget as
+  the walls around it.
+
+The half the two rules share is the wall:
 
 `Building.IsAirtight` is `def.building.isAirtight ||
 (def.building.isStuffableAirtight && Stuff.stuffProps.isAirtight)`, and in the
 whole vanilla + DLC stuff table only **Steel, Plasteel, Silver, Gold and
 Uranium** set `stuffProps.isAirtight`. Stone, wood, jade, fabrics and — despite
 being in the `Metallic` stuff category — **`Obsidian`** do not. See
-`docs/TRAPS.md` **T-47**. `GravshipHull` sets `building.isAirtight` outright and
-sidesteps the question.
+`docs/TRAPS.md` **T-47**, which cites `IsRoomAirtight` for this wall half and is
+correct there. `GravshipHull` sets `building.isAirtight` outright and sidesteps
+the question.
 
 **A breach kills the crop; it does not merely stall it.**
 `Plant.GrowthPerTick` returns 0 outright when the plant's cell is at vacuum ≥ 0.5

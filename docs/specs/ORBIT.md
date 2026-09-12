@@ -11,6 +11,16 @@ gate state itself** — the saved "has the reveal fired, and for whom". It owns 
 consequences of `docs/plot/SPACER.md`'s *Departure* and *Orbit — Small Again* sections for
 the save file.
 
+It also owns **how an orbital location generates a playable map** — the platform genstep,
+the layout defs behind it, and the pressurisation and life-support rules the interior then
+obeys — stated in § *The build → 6*, and established on
+[#66](https://github.com/cjd721/Rimworld-Archinity/issues/66). It does
+**not** own what a Glitterite stronghold must *contain* — that is
+`docs/requirements/GLITTERTECH.md`, which states it in prose and never as a map
+requirement, and the flavour count comes from
+[#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) and
+[#47](https://github.com/cjd721/Rimworld-Archinity/issues/47).
+
 It does not own the political resolution that *decides* the reveal — that is
 [`POLITICS.md`](POLITICS.md) and `docs/requirements/POLITICS.md`. It **does** own the
 component that records the outcome's orbital consequence and fires the command; POLITICS.md
@@ -181,6 +191,173 @@ outcome. That outcome does not yet exist as a value the game can read —
 must produce one, and until it does, the component has a trigger with no argument. The beat
 itself is [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46).
 
+### 6. The stronghold interior — Odyssey generates it, and every knob is XML
+
+**Use `GenStep_OrbitalPlatform` with our own `StructureLayoutDef`. Do not put KCSG on the
+orbit layer.**
+
+`RimWorld.GenStep_OrbitalPlatform` paints a real floor, generates a procedural room graph,
+roofs it, sets room temperature, installs the life-support unit, adds landing docks or a
+ring, mounts cannons and scatters exterior debris — and **every one of its fields is set
+from XML** [V]: `factionDef`, `layoutDef`, `useSiteFaction`, `temperature`,
+`spawnSentryDrones`, `cannonDef`, `platformTerrain`, `orbitalDebrisDef`, `fogOfWarColor`,
+`exteriorPrefabs`.
+
+> **A `StructureLayoutDef` is a generator, not a floor plan.**
+
+`LayoutWorker_OrbitalPlatform.GetStructureLayout` calls
+`RoomLayoutGenerator.GenerateRandomLayout(rect, 10, 10, 0.1f, canRemoveRooms: true,
+generateDoors: false, maxMergeRoomsRange: 2~4, …, corridorExpansion: 2)`, and
+`GenStep_OrbitalPlatform.GeneratePlatform` picks `SizeRange 70~80` on both axes with
+`Rot4.Random` before it; `Generate` then rolls a ring (33 %), large docks or small docks
+[V]. `LayoutDef.roomDefs` is a weighted list with per-def `countRange`, drawn per map.
+**One layout def therefore yields a different stronghold every time**, so the campaign's
+cost is one layout per *flavour*, not per encounter.
+
+Two routes, same genstep, chosen by what the stronghold is on the world map.
+
+**A — the stronghold as a faction settlement.** `Settlement.MapGeneratorDef` has **three**
+branches, not two: `def.mapGenerator` when the `WorldObjectDef` sets one, else
+**`Base_Player` if the settlement's faction is the player's**, else `Base_Faction` [V]. The
+player branch does not arise for a Glitterite station, but it is the reason the property
+cannot be read as "the def or the faction default". `SpaceSettlement` sets
+`<mapGenerator>SettlementPlatform</mapGenerator>` and `<overrideMapSize>(200,1,200)</…>`
+[V]. So a per-faction platform is an Archinity `WorldObjectDef` whose `mapGenerator` names
+an Archinity `MapGeneratorDef` parented to `SpaceMapGenerator`, whose `genSteps` are our
+`GenStepDef` (order 200, `genStep Class="GenStep_OrbitalPlatform"`,
+`useSiteFaction: true`) and vanilla `SettlementPawnsLoot` (order 700). That is
+Odyssey's own `SettlementPlatform` block with two defNames changed [V].
+
+> **This saves a Harmony patch, and it is the seam with § *The build → 3*.** Vanilla
+> places settlements from `PlanetLayerDef.SettlementWorldObjectDef` — one type per layer —
+> so Better Traders Guild has to swap the generator with a Harmony patch on
+> `MapParent.MapGeneratorDef` for its faction's settlements. **`RevealOrbit` constructs the
+> world objects itself**, so it selects a per-faction `WorldObjectDef` instead of
+> `orbit.Def.SettlementWorldObjectDef`. One argument on a command we already cost.
+
+**B — the stronghold as a quest site.** `SitePartDef` plus a `GenStepDef` with
+`<linkWithSite>`, reached by a quest using `QuestNode_Root_Site` with
+`<layerWhitelist><li>Orbit</li></layerWhitelist>` and `<worldObjectDef>SpaceSite</…>`.
+`SpaceSite` sets `<mapGenerator>Space</mapGenerator>` and `Site.ExtraGenStepDefs` appends
+the site part's gensteps to it [V], so `GenStep_Space` voids the map at order 100 and our
+platform genstep builds on it at 200. This is `Opportunity_AbandonedPlatform` verbatim [V].
+
+**The layout def itself is ~40 lines**, parented to Odyssey's `OrbitalAncientPlatformBase`,
+which already supplies `workerClass LayoutWorker_OrbitalPlatform`, `terrainDef` and
+`surroundingTerrainDef OrbitalPlatform`, `wallDef OrbitalAncientFortifiedWall`,
+`exteriorDoorDef AncientBlastDoor`, `corridorDef`, `corridorShapes` and `wallLampDef` [V].
+It needs `roomDefs` (Odyssey's own shipped `LayoutRoomDef`s are usable unchanged), an
+`importantRoomDef` for the objective, a `LifeSupportUnit` wall attachment, and a `parts`
+entry if we want breaches.
+
+⚠️ **The roofs come from the room defs, not from a `roofs:` argument — and the argument is
+dead code.** An earlier draft credited `LayoutWorker.Spawn(…, roofs: true, …)` with roofing
+and therefore de-fogging the interior. It does not:
+**`LayoutWorker_Structure.Spawn` ignores its own `roofs` argument and calls
+`base.Spawn(…, roofs: false, …)` unconditionally**, and `LayoutWorker_OrbitalPlatform`
+inherits that override [V]. What roofs the interior is the sketch —
+`LayoutRoomDef.roofDef`, with `noRoof` to suppress it — applied per room as the layout
+spawns [V]. **A `roomDefs` entry that leaves `roofDef` unset, or sets `noRoof`, is an
+unroofed room; an unroofed room is `ExposedToSpace` and can never pressurise.** Check
+`roofDef` on every Odyssey room def before borrowing it into a layout, and read the fog
+behaviour below as *unproven* rather than settled: it follows from roofs existing, and the
+roofs are now known to arrive by a different route than the one the claim was built on.
+
+⚠️ **`<temperature>20</temperature>` on the genstep is mandatory.**
+`PostMapInitialized` calls `MapGenUtility.SetMapRoomTemperature(map, layoutDef, SpawnTemp)`
+and `SpawnTemp` is `temperature ?? -75f` [V]. Omit it and the interior generates at the
+biome's −75 °C with no error.
+
+⚠️ **Write `<StructureLayoutDef>`, never `<KCSG.StructureLayoutDef>`.** Two unrelated
+classes share the short name. `GenTypes.GetTypeInAnyAssembly` consults
+`TryGetTypeInIgnoredNamespace` first and `RimWorld` is an ignored namespace [V], so the
+bare node always binds to the vanilla class. The same dictionary is **last-writer-wins**
+over every type whose namespace is null or ignored, and vanilla's `LayoutWorker_*` classes
+have **no namespace at all** [V] — so any `LayoutWorker` subclass we author goes in an
+`Archinity.*` namespace and is referenced fully qualified. Registered as
+[`docs/TRAPS.md` T-55](../TRAPS.md).
+
+#### Pressurisation, stated exactly
+
+Two different rules exist in 1.6 and only one governs a station.
+
+| Rule | Tests | Governs |
+|---|---|---|
+| `Room.ExposedToSpace` → `District.ExposedVacuumCount` | a cell is exposed if **unroofed** *or* its terrain sets `exposesToVacuum` [V] | `Room.Vacuum`, and therefore `VacuumExposure` on pawns |
+| `VacuumUtility.IsRoomAirtight` → `IsRoomDirectlyOpenToOutside` | the above **plus** `terrainGrid.FoundationAt(cell).IsSubstructure` on every cell [V] | the gravship budget — **not** breathability |
+
+`TerrainDefOf.Space` sets `exposesToVacuum true`; `OrbitalPlatform` (`ParentName
+PlatformBase`) does not [V]. **That is why a KCSG structure on a space map can never
+pressurise**: its `.` cells stay `Space` inside the sealed room, `ExposedCountStopAt(1)`
+returns 1 on the first one, `Room.Vacuum` pins to 1 forever, and
+`Building_LifeSupportUnit.ComputeVacuum`'s `!Room.ExposedToSpace` guard makes the pump a
+no-op [V]. An orbital-platform room is pressurised and is **not** `IsRoomAirtight`;
+`OrbitalPlatform` carries no `Substructure` tag, and `TerrainDef.IsSubstructure` is
+`HasTag("Substructure")` [V].
+
+- **The hull is airtight by def, not by stuff.** `OrbitalAncientFortifiedWall` inherits
+  `AncientFortifiedWall`, which sets `<isAirtight>true</isAirtight>` outright [V], so
+  `docs/TRAPS.md` **T-47** does not bite the generated hull. It bites everything the player
+  builds afterwards: that wall is `neverBuildable: true`, `deconstructible: false` [V], so
+  repairs and extensions are steel or plasteel `Wall` or they leak.
+- **Life support ships in the layout.** `<wallAttachments><LifeSupportUnit>` appears on
+  `OrbitalSettlementPlatform`, `Opportunity_AbandonedPlatform` and BTG's platform alike
+  [V]. `Building_LifeSupportUnit.TickRare` drives its room toward 20 °C on a 30 J/s budget
+  and, when the room is sealed, subtracts `100/CellCount * 0.05 * 4.1667` vacuum per rare
+  tick [V]. Its `CompProperties_Power` is `compClass CompPowerPlant`,
+  `basePowerConsumption -3200`, `transmitsPower true` — it is the platform's **generator**,
+  not a drain, and `TickRare` checks no power flag [V].
+- **What the founders need outside.** `VacuumUtility.PawnVacuumTickInterval` applies
+  `VacuumExposure` at `0.02 * vacuum * max(1 - VacuumResistance, 0)` per 60 ticks, and only
+  above `vacuum >= 0.5` [V]. `Apparel_Vacsuit` is `0.32` and `Apparel_VacsuitHelmet` is
+  `0.69` [V] — the pair reads as designed to zero the term [I]. Vacuum **burns** are a
+  separate track gated on `IsProtectiveApparel` coverage per body part [V]. The exterior
+  deck between shuttle and airlock is always vacuum: **suit and helmet for everyone
+  boarding.**
+
+#### Whether a breach is wanted — per layout, one line, already shipped
+
+`RoomPartDef Breached` (`RoomPart_Breached`) blows a 2–4 cell hole in a room's outer wall,
+damages the flanking edifices to 40–80 % HP and scatters rubble [V]. It is applied per room
+through `LayoutDef.parts` as `LayoutPartParms{ def, chance = 1f }`, and Odyssey ships
+`<parts><Breached>0.25</Breached><Gore>0.25</Gore></parts>` on
+`Opportunity_AbandonedPlatform` [V]. `RoomPart_Breached.CanRemoveWalls` refuses the
+`importantRoomDef` and any room whose def sets `canRemoveBorderDoors` /
+`canRemoveBorderWalls` [V], so the objective room is never the one holed. `LayoutRoomDef.noRoof`
+is the second lever, for a deliberately open bay. **No blanket decision is needed.**
+
+#### The hacking seam
+
+`OrbitalAncientPlatformBase`'s `exteriorDoorDef` is `AncientBlastDoor`, whose `thingClass`
+is `Building_HackableDoor` [V]. **Every orbital stronghold's outer doors are hackable by
+vanilla default**, and `StructureLayoutDef.ensureOneDoorUnlocked` is the switch deciding
+whether a hack is required to get in at all. The lever is recorded here; the mechanism is
+[#58](https://github.com/cjd721/Rimworld-Archinity/issues/58)'s and lives in
+`docs/specs/HACKING.md`.
+
+#### State, change and display — the remaining three legs, all of them vanilla's
+
+**State: none.** The map half stores nothing of ours. The generated stronghold is an
+ordinary `Map`; no component, no scribed field, no def-keyed table. The reveal gate in
+§ *The build → 5* is this spec's only new state, and it belongs to the world half, not the
+map half. (How the map itself persists is the next section: `Map.layoutStructureSketches`
+is scribed by vanilla.)
+
+**Change: generation only, once, at first entry.** `GenStep_OrbitalPlatform.Generate` runs
+inside `MapGenerator.GenerateContentsIntoMap`, then `PostMapInitialized` sets room
+temperature [V]. Nothing re-runs it — `MapGenerator.GenerateMap` runs once per map. After
+generation the only quantity that moves is `Room.Vacuum`, driven by
+`Building_LifeSupportUnit.TickRare` and by whatever the players blow open [V]. There is no
+mid-game mutation path and no tick of ours.
+
+**Display: the map, and one building.** The stronghold is seen by being entered; the
+world-side presentation is the `WorldObjectDef`'s ordinary `expandingIconTexture` /
+`expandingIconColor`, shared with every other settlement. The piece worth naming is that
+**`Building_LifeSupportUnit` is the player-legible pressurisation control** — a physical
+object standing in a room, read against vanilla's vacuum overlay, which is why the
+pressurisation rules above need no UI of ours. **Nothing here adds a window, a gizmo or an
+alert.**
+
 ### The escape hatch, and why we are not using it
 
 `FactionGenerator.CreateFactionAndAddToManager` is public static and is a **legitimate
@@ -214,8 +391,20 @@ documented as available; do not build on it.
 | Lock the six orbital opportunity quests out of the pool, if #20 puts `OrbitalTech` before the resolution | XML patch | ~15 lines | `Archinity.Pacing/Patches/` (new) |
 | `RevealOrbit(List<Faction>, int)` synced command | **new C#** | **~60–80 lines** | the assembly we already ship |
 | Reveal-gate `WorldComponent` — two scribed fields, no tick | **new C#** | ~15 lines | the assembly we already ship, **owned by this spec** |
+| `StructureLayoutDef` per stronghold flavour, reusing Odyssey's `LayoutRoomDef`s | XML | ~40–60 lines each | `Defs/StructureLayoutDefs/` (new) |
+| `GenStepDef` wrapping `GenStep_OrbitalPlatform` | XML | ~15 lines each | `Defs/GenStepDefs/` (new) |
+| `MapGeneratorDef` + `WorldObjectDef` (route A), or `SitePartDef` + quest patch (route B) | XML | ~30 lines each | `Defs/` (new) |
+| Bespoke `LayoutRoomDef` — the vault, the archive | XML **content** | ~60–120 lines each | `Defs/LayoutRoomDefs/` (new) |
+| `TechLevelConfigDef` rows for every Archinity orbital `GenStepDef` | XML patch | ~10 lines | the same file as the faction exemption (**T-54**) |
+| Per-faction `WorldObjectDef` selection inside `RevealOrbit` | **new C#** | **~1 line** | inside the command already costed above |
 
-**~80–95 lines of new C#**, no new assembly. The component is new; nothing else provides it.
+**~76–96 lines of new C#** (60–80 + 15 + 1), no new assembly. The component is new; nothing
+else provides it. **Map generation adds no C# at all** — the genstep, the layout worker, the
+room generator and the life-support building are all vanilla. The ceiling, if we want Better
+Traders Guild's level of polish, is its actual shipped size: a 128-line
+`StructureLayoutDef`, ~1,500 lines of `LayoutRoomDef` across **19** rooms, and a
+`LayoutWorker` subclass for post-spawn decoration. That is content, and it is the maximum
+rather than the entry price.
 
 Zeroing `TradersGuild`'s worldgen count requires checking its `replacesFaction`
 first — the prune runs over defs you excluded (**T-10**).
@@ -255,6 +444,26 @@ ours.
 inside the one synced command, so both clients walk the same sequence.
 `docs/engine/determinism.md` owns the general model.
 
+**Map generation stores nothing of ours and is MP-safe by construction.** The generated
+map is an ordinary `Map`; `Map.ExposeData` already scribes the room graph
+(`Scribe_Collections.Look(ref layoutStructureSketches, "layoutStructureSketches",
+LookMode.Deep)`) [V], which is what lets `SetMapRoomTemperature` and the debug room views
+survive a reload. Added to an existing save these are defs only: nothing is retroactive,
+and an orbital map already generated keeps what it was generated with, because
+`MapGenerator.GenerateMap` runs once per map.
+
+`GenStep_OrbitalPlatform`, `RoomLayoutGenerator`, `LayoutWorker`, `LayoutWorker_Structure`
+and `PrefabUtility` contain **zero** `System.Random` constructions [V] — everything is
+`Verse.Rand`, inside `MapGenerator.GenerateContentsIntoMap`'s per-genstep
+`Rand.PushState(); Rand.Seed = Gen.HashCombineInt(seed, GetSeedPart(…))`, itself seeded
+from `Gen.HashCombineInt(Find.World.info.Seed, parent.Tile.GetHashCode())`, both
+cross-client identical ([#88](https://github.com/cjd721/Rimworld-Archinity/issues/88), [V]).
+**This route is immune to `docs/TRAPS.md` T-33 outright** rather than relying on
+Multiplayer Compatibility's `PatchKCSG` allowlist entry, and it removes VEF from this
+spec's dependency set entirely. #88 recommended authoring the strongholds as
+`structureLayoutDefs`/`tiledStructures` rather than `settlementLayoutDefs`; not touching
+KCSG at all is the stronger form of the same move.
+
 ## Failure and recovery
 
 ### World Tech Level deletes the orbital roster at world creation
@@ -262,8 +471,11 @@ inside the one synced command, so both clients walk the same sequence.
 **Registered as [`docs/TRAPS.md` T-54](../TRAPS.md).** It earns its own ID rather than a line
 on T-07 because a reader who has obeyed T-07 in full — authored the roster, frozen it before
 worldgen — is still completely exposed: the defs are correct and a third-party postfix removes
-them anyway. T-54 also carries the second leg, `GenStepDef` filtering, which has no settings
-escape hatch at all.
+them anyway. T-54 also carries the second leg, `GenStepDef` filtering — which has **no
+`ApplyExclusions` (settings) escape hatch**, but *is* covered by `ApplyOverrides` and so by a
+`TechLevelConfigDef`, and which **T-54 records as recoverable**: unlike the faction roster it
+is re-evaluated per map rather than baked into the world, so the fix works on an existing
+save once the cause is found. Only the faction leg is permanent.
 
 **This is T-07 firing on the campaign's opening move, and #70's wide pass missed it.** The
 resolution read World Tech Level's **transpiler** on `FactionGenerator.InitializeFactions`,
@@ -332,13 +544,22 @@ the operative filter is `Patch_Page_CreateWorldParams.ApplyChanges`, not the pos
 `ApplyChanges` [V]. The postfix is what bites `ConfigurableFactions`' other callers. Both honour
 the exemption.
 
-**A second, worse instance of the same mechanism, with no escape hatch.**
+**A second instance of the same mechanism — louder in consequence, but recoverable.**
 `Patch_MapGenerator.GenerateContentsIntoMap_Prefix` filters `GenStepDef` through the *same*
 `MinRequiredTechLevel` array and **rewrites the ref parameter** [V]. Any Archinity map genstep
-resolving above the world level silently never runs, with no log line — and unlike `FactionDef`,
-`GenStepDef` gets **no `ApplyExclusions` pass**, so the `TechLevelConfigDef` override is the only
-lever. Every `Filter_*` patch in that assembly fails the same way, silently; the faction one is
-merely the one we tripped over.
+resolving above the world level silently never runs, with no log line. Two qualifications
+that ORBIT previously stated too harshly, both from **T-54**:
+
+- **It is gated, like every `Filter_*` patch in that assembly, on a mod setting** — this one
+  on `WorldTechLevel.Settings.Filter_GenSteps`, through the `[PatchGroup("Filters")]` /
+  `[HarmonyPrepare]` pair [V]. That makes it a **T-18** surface as well: two clients with
+  different settings generate different maps.
+- **It is not terminal.** `GenStepDef` gets no `ApplyExclusions` pass, so the settings
+  exclusion list cannot reach it and a `TechLevelConfigDef` override is the only lever — but
+  `ApplyOverrides` *does* cover `GenStepDef`, and the filter is re-evaluated **per map**
+  rather than baked into the world. A stronghold that generated as a void is repaired by
+  shipping the override; only maps already generated keep what they were generated with.
+  **The faction leg is the permanent one; this one is a bug you can fix after the fact.**
 
 **[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) needs a checklist line that
 does not exist yet:** *is World Tech Level active at world creation, at what level, and does a
@@ -391,6 +612,35 @@ Note what the early reveal produces: unowned quest sites on the layer, not stati
 becomes *selectable* early; it does not become *populated* early. That is a weaker failure
 than the roster one, and it is loud rather than silent.
 
+### A stronghold that generates as a void, or as a structure in vacuum
+
+Three silent failures, all on the map-generation half.
+
+1. **T-54's second leg deletes our gensteps.** `WorldTechLevel`'s
+   `Patch_MapGenerator.GenerateContentsIntoMap_Prefix` filters `GenStepDef` through the
+   `MinRequiredTechLevel` array and rewrites the ref parameter, and unlike `FactionDef`,
+   `GenStepDef` gets **no `ApplyExclusions` pass** [V]. An Archinity orbital `GenStepDef`
+   resolving above the world tech level therefore **never runs, with no log line**, and the
+   player enters a bare `GenStep_Space` void — 200×200 of impassable, vacuum-exposing
+   nothing. `TechLevelConfigDef` is the only lever; the patch is gated on
+   `WorldTechLevel.Settings.Filter_GenSteps`, so it is a **T-18** surface too. **Unlike the
+   roster failure this one is recoverable** — the filter runs per map, not at worldgen, so
+   shipping the override repairs every stronghold not yet generated (**T-54**). Every
+   `GenStepDef` in the cost table must appear in the same file as the faction exemption, and
+   the [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) line covering it still
+   does not exist.
+2. **A missing `<temperature>` generates the interior at −75 °C.** `SpawnTemp` is
+   `temperature ?? -75f` [V]. Nothing warns.
+3. **A KCSG layout placed on an orbit map produces a structure that can never
+   pressurise.** This is the failure the route above exists to avoid, and it is worth
+   keeping written down because the cause is not the one it looks like: a `.` in a
+   `KCSG.StructureLayoutDef` `terrainGrid` means *leave the terrain alone*, so those cells
+   stay `TerrainDefOf.Space`, which sets `exposesToVacuum` — and one such cell inside a
+   sealed, roofed room pins `Room.Vacuum` to 1 permanently and neuters the life-support
+   unit [V]. Walls and roofs do not help. `KCSG.GenStep_CustomStructureGen` has **no
+   default-terrain or terrain-fill field of any kind** [V], so there is no XML escape
+   inside KCSG.
+
 ### The campaign softlock this spec exists to prevent
 
 A roster mistake in orbit. An orbital faction omitted at world creation cannot be added
@@ -431,11 +681,18 @@ the def's and Ignorance Is Bliss's job, not this spec's.
 **Verified available mechanism. Not yet selected, not yet built.**
 
 Evidence class **READ**, against decompiled RimWorld 1.6.4871, `Multiplayer.dll`,
-`RimPacts.dll` and `WorldTechLevel.dll`, plus a two-root corpus sweep of all 155 mods.
+`RimPacts.dll`, `WorldTechLevel.dll` and `KCSG.dll`, Odyssey's shipped defs, plus two-root
+corpus sweeps of all 155 mods.
 Re-verified adversarially on 2026-09-12; every load-bearing engine claim below reproduced,
 and five claims were corrected in place (the WTL postfix, the `CreateFactionAndAddToManager`
 overload, the `Find.WorldGrid.Orbit` condition, the `State` leg's owner, and two STUB-grade
 numbers reported as [V]).
+
+A second adversarial pass the same day corrected the map half: the `roofs:` argument is dead
+code and roofing comes from `LayoutRoomDef.roofDef` (which demotes the fog claim to a RUN
+item), `Settlement.MapGeneratorDef` has three branches rather than two, the WTL `GenStepDef`
+leg is settings-gated and recoverable rather than terminal, the BTG counts were 17/3 and are
+19/2, and the § 6 cost arithmetic read ~80–95 for 76–96.
 
 - **Verified:** T-07 applies per layer and therefore to orbit; `Faction.hidden` is a
   scribed instance override; hidden factions get neither the freebie nor a lottery slot;
@@ -444,14 +701,31 @@ numbers reported as [V]).
   is scribed (**T-45**); `CreateFactionAndAddToManager` is a real runtime route, with a
   shipped precedent **only for the surface-layer overload**; MP syncs `PlanetLayer` and
   patches `FactionManager.Add`; World Tech Level's `ConfigurableFactions` postfix reaches
-  worldgen.
+  worldgen; `GenStep_OrbitalPlatform` builds a floored, heated, pressurised,
+  life-supported interior from an XML-only `StructureLayoutDef`, **roofed per room from
+  `LayoutRoomDef.roofDef` rather than from the dead `roofs:` argument**, and its whole
+  pipeline is
+  `Verse.Rand`; `Room.ExposedToSpace` and `VacuumUtility.IsRoomAirtight` are different
+  rules with different callers; `Breached` is a shipped per-layout `RoomPartDef`; three
+  corpus mods already use Odyssey's layout system, one of them for custom-faction orbital
+  settlements.
 - **Proposed [I]:** that these compose into the reveal described above. Nothing is built.
 - **Open, and owned elsewhere:** the machine-readable political outcome that fires the reveal
   ([#100](https://github.com/cjd721/Rimworld-Archinity/issues/100), with the beat at
   [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46)); which orbital powers exist and
   how many settlements each gets
   ([#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)); when `OrbitalTech` becomes
-  reachable ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)).
+  reachable ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)); **which room
+  kinds a Glitterite stronghold must present**, which `docs/requirements/GLITTERTECH.md`
+  states only in prose and no ticket currently owns
+  ([#46](https://github.com/cjd721/Rimworld-Archinity/issues/46),
+  [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)).
+
+The map-generation half is established on
+[#66](https://github.com/cjd721/Rimworld-Archinity/issues/66), which **corrected the framing
+that ticket was written around**: the choice is not *"author `terrainGrid`, or write a
+flooring `GenStep`"* but *"do not put KCSG on the orbit layer"*. `GenStep_OrbitalPlatform`
+is a **verified available mechanism**, not yet selected and not yet built.
 
 **T-07's provenance is stale.** It is marked against 1.6.4566 while every read here is
 1.6.4871, and its body still calls `CreateFactionAndAddToManager` "a repair, not a plan".
@@ -474,8 +748,34 @@ before world creation — see *Verification*.
 | `WorldObject.SetFaction` | bare field write, `Settlement` does not override [V] | notifies nothing; not MP-synced |
 | `FactionGenerator.CreateFactionAndAddToManager(FactionDef)` | full runtime faction creation; the overload RimPacts actually ships [V] | hardcodes `Find.WorldGrid.Surface` — no use to orbit |
 | `FactionGenerator.CreateFactionAndAddToManager(layer, def)` | full runtime faction creation on a named layer [V] | `Rand`-heavy; places a freebie settlement the caller must destroy; **zero shipped precedent in the corpus** [V] |
+| `GenStep_OrbitalPlatform` | floor, procedural rooms, roofs (per room, from `LayoutRoomDef.roofDef`), 20 °C, life support, docks, cannons, exterior prefabs, debris — every field XML [V] | `temperature` defaults to −75 °C; needs a `StructureLayoutDef`; its `roofs:` argument is dead code, so an unroofed `roomDefs` entry silently fails to pressurise [V] |
+| `StructureLayoutDef` + `LayoutRoomDef` | a *generator*, not a floor plan — size, rotation, room set, corridor shape and dock arrangement all re-roll per map [V] | vanilla rooms are Ancient-flavoured; bespoke rooms are content |
+| `RoomPartDef Breached` / `Gore` | per-room, weighted hull breach and gore, applied through `LayoutDef.parts` [V] | refuses the `importantRoomDef` and wall-protected rooms [V] |
+| `Building_LifeSupportUnit` | pumps a sealed room to zero vacuum and 20 °C, and **generates** 3200 W [V] | no-ops on any room that is `ExposedToSpace` [V] |
+| `AncientFortifiedWall` / `OrbitalAncientFortifiedWall` | `isAirtight` on the def, so **T-47** does not bite the generated hull [V] | `neverBuildable`, `deconstructible: false` — the player cannot extend or repair with it [V] |
+| `AncientBlastDoor` | `Building_HackableDoor` exterior door, shipped on the orbital base layout [V] | the design lever is `ensureOneDoorUnlocked`; the mechanism is [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58)'s |
+
+**The corpus precedent.** A two-root sweep of all 155 mods found **three** mods using
+Odyssey's layout system: **Better Traders Guild** (`shunter.bettertradersguild`) ships
+`BTG_SettlementPlatform`, `BTG_SmugglersDenPlatform` and `BTG_OrbitalCargoVault` — custom
+`StructureLayoutDef`s, **19** custom `LayoutRoomDef`s, three `MapGeneratorDef`s and three
+platform `GenStepDef`s, **two** of which use the bare vanilla `GenStep_OrbitalPlatform` as
+their `genStep Class` (the cargo-vault one declares a class of its own) [V];
+**Vanilla Gravship Expanded – Chapter 1** and **Worksites Expanded** ship layout content
+too [V]. BTG is the worked example for route A, including the one thing we avoid: it needs
+a Harmony patch on `MapParent.MapGeneratorDef` because it cannot choose the settlement's
+`WorldObjectDef`, and `RevealOrbit` can.
 
 **What does not exist.**
+
+- **No terrain fill in KCSG.** `KCSG.GenStep_CustomStructureGen`'s fields are `fullClear`,
+  `clearFogInRect`, `preventBridgeable`, `spawnInRandomFreeLocation`, `structureLayoutDefs`,
+  `settlementLayoutDefs`, `tiledStructures`, `symbolResolvers`, `scatterThings`,
+  `filthTypes`, `scatterChance`, `scaleWithQuest` — and nothing that sets a default terrain
+  [V]. The two fixes [#66](https://github.com/cjd721/Rimworld-Archinity/issues/66) was framed
+  around — author `terrainGrid` on every layout, or write a flooring `GenStep` — both buy a
+  floor and neither buys roofing, temperature, life support, docking or fogging. **Replacing
+  the generator is cheaper than repairing its input.**
 
 - **No `WorldObject` hide.** Checked `WorldObject`, `WorldObjectDef` and `Settlement`; the
   only visibility concept is `VisibleInBackground`, a render flag for space layers [V].
@@ -600,6 +900,33 @@ sweep having run, not of its completeness.
    the Factions tab and its settlement inspect string shows a goodwill number.
 4. **Two clients agree.** Run the reveal under Multiplayer and confirm identical settlement
    tiles and names — the two `Rand` calls are the whole determinism surface.
+5. **The second RUN item — generate one stronghold and walk it.** Everything in § *The
+   build → 6* is read end to end; what a run confirms is composition, which no grep proves.
+   In one generated map:
+   - **Interior pressure.** Stand a colonist in a generated room and read the vacuum
+     overlay: expect **0**, not 1, and no `VacuumExposure` accruing. Catches a `roomDefs`
+     entry with `noRoof`, or a `LayoutRoomDef` whose `floorTypes` leaves `Space` showing.
+   - **Interior temperature is 20 °C**, not −75 °C. This is the one that fails silently if
+     `<temperature>` is omitted from the `GenStepDef`.
+   - **Whether the interior is fogged on arrival**, with the exterior deck unfogged. **This
+     is the check, not a settled claim — read it as unproven [I].** The reading half is
+     solid: `GenStep_FogSpace` flood-unfogs from the four map corners through a validator
+     that rejects any cell with an edifice **or a roof** [V], so a roofed hull stops the
+     fill. What is *not* solid is the premise — an earlier draft rested it on
+     `LayoutWorker.Spawn(…, roofs: true, …)`, which is dead code (see § *The build → 6*);
+     roofing actually arrives per room from `LayoutRoomDef.roofDef`, so the fog outcome is
+     only as good as the room defs in the layout. A layout carrying an unroofed room will
+     leak the fill into the interior, silently. *(The recon's separate claim that `FogSpace`
+     "reveals essentially everything" is true of an all-vacuum map with no roofs — the
+     failure case — and not of a correctly roofed platform.)*
+   - **With World Tech Level active at a Neolithic world level**, confirm the map is a
+     platform and not a void. If it is a void, the `TechLevelConfigDef` exemption is
+     missing (**T-54**). There is no log line either way; the map is the readout.
+
+   **Multiplayer needs no separate run for the map half.** Determinism rests on vanilla's
+   per-genstep `Rand` seeding, which this route inherits with no `System.Random` anywhere
+   on it. If a two-client check is run anyway, compare the room graph — room count,
+   corridor shape, dock arrangement — because those are the only `Rand` consumers.
 
 ## Outstanding decisions
 
@@ -614,3 +941,8 @@ sweep having run, not of its completeness.
 | Whether the surviving institution also swaps `Faction.def` | If yes, pay #8's leak list | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | Orbit `subdivisions` — 6, or back to 5 | ~27 frozen orbital settlements versus ~9 | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) |
 | Hiding `TradersGuild` versus zeroing its worldgen count | Whether orbital trade ships have a faction behind them pre-reveal | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14), [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
+| **How many stronghold *flavours* the campaign distinguishes** | ~40–60 lines of XML each; the mechanism does not wait on the number, and each flavour re-rolls per encounter | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
+| **Which room kinds a Glitterite stronghold must present** — the exemplar vault, the archive, the command core | The bespoke `LayoutRoomDef`s cannot be authored without it. `docs/requirements/GLITTERTECH.md` states the contents in prose and **never as a map requirement**; no ticket owns that gap today | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) — **gap** |
+| Whether the outer blast doors must be hacked to enter, per flavour | `ensureOneDoorUnlocked` on the layout def; free either way | [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) |
+| Breach chance per flavour, and whether any stronghold is deliberately derelict | One weight in `LayoutDef.parts`; costs nothing | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
+| Whether Glittertech Expansion's art is reused inside our `LayoutRoomDef`s | Content reuse without KCSG — GTE `ThingDef`s referenced from vanilla room defs. Its surface quests are unaffected either way | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
