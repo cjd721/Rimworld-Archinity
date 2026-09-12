@@ -220,4 +220,78 @@ on a miss. Never `?.SetValue`.
 `USH_HE.CompHackableExtensions.ResetHackProgress` from `HackingExpansion.dll`
 (`3573344880/1.6/Assemblies/`); `HarmonyLib.AccessTools.Field`. 1.6.4871.*
 
+### T-79 — The disabled-work-type cache has exactly one invalidation call
+
+`Pawn.Notify_DisabledWorkTypesChanged()` is the only call that invalidates a pawn's
+disabled-work-type state: it nulls `cachedDisabledWorkTypes` and `cachedDisabledWorkTypesPermanent`,
+clears `cachedReasonsForDisabledWorkTypes`, and calls `workSettings?.Notify_DisabledWorkTypesChanged()`
+and `skills?.Notify_SkillDisablesChanged()`. Any mechanism that changes whether a
+work type is disabled — research-granted capability, a hediff, a policy — must call it on every
+affected pawn. Omit it and the change takes effect on the next save/load and **not before**: no
+error, no warning, no log line. (`GetDisabledWorkTypes` does drop both caches whenever
+`Scribe.mode != Inactive`, which is why a reload "fixes" it and why the bug is so easy to miss.)
+VFE Tribals calls it from a `ResearchManager.FinishProject` postfix over
+`PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive`, guarded on the project actually
+granting a work type or tag.
+
+**Designators need no equivalent**, because the correct pattern disables the gizmo in place rather
+than touching `DesignationCategoryDef.resolvedDesignators`, which is built once at
+`ResolveReferences` under `LongEventHandler.ExecuteWhenFinished` and is not runtime-rebuildable.
+
+Filed here rather than with the pawn content: this is a def-driven capability grant failing through
+an unflushed engine cache, the same family as **T-40** and **T-69**.
+
+*[#72](https://github.com/cjd721/Rimworld-Archinity/issues/72), `docs/specs/RESEARCH.md` §
+*Granted capability — the build* § 4. `Verse.Pawn.Notify_DisabledWorkTypesChanged` /
+`.GetDisabledWorkTypes`, `Verse.DesignationCategoryDef.ResolveReferences`;
+`VFETribals.dll` (`3079786283/1.6/Assemblies/`). 1.6.4871.*
+
+### T-83 — `GoodwillSituationDef.baseMaxGoodwill` is declared and read nowhere
+
+`RimWorld.GoodwillSituationDef` declares `public int baseMaxGoodwill`. The identifier appears
+**exactly once in the entire assembly — at its own declaration.** Nothing reads it: not
+`GoodwillSituationWorker.GetMaxGoodwill`, whose vanilla subclasses each return their own hardcoded
+constant (`_PermanentEnemy` → −100, `_AttackingSettlement` → −80), and not
+`GoodwillSituationManager.Recalculate`, which calls the worker.
+
+**The failure:** an authored `GoodwillSituationDef` setting `baseMaxGoodwill` in XML gets no cap, no
+config error and no log line. The def loads, the field is populated, and the value is inert. The
+adjacent field `naturalGoodwillOffset` *is* read — by `GoodwillSituationWorker_SameIdeo` and
+`_MemeCompatibility` — which is what makes the dead one plausible.
+
+**The fix:** a `GoodwillSituationDef` that must cap goodwill needs a `workerClass` overriding
+`GetMaxGoodwill` and returning the number itself. Treat `baseMaxGoodwill` as documentation.
+
+*[#93](https://github.com/cjd721/Rimworld-Archinity/issues/93), `docs/specs/POLITICS.md` §
+*Standing as a content gate*. `RimWorld.GoodwillSituationDef`,
+`RimWorld.GoodwillSituationWorker.GetMaxGoodwill`, `RimWorld.GoodwillSituationManager.Recalculate`.
+1.6.4871.*
+
+### T-84 — `PreceptComp_GoodwillSituation` is inert in 1.6
+
+`RimWorld.PreceptComp_GoodwillSituation` exists, loads, and does nothing. Its only consumer appends
+to `Ideo.cachedPossibleGoodwillSituations`, and across the whole assembly that list is only
+`Clear`ed, `Contains`-tested and `Add`ed to — **never read to produce a goodwill effect.** No
+shipped vanilla XML uses the comp, in any DLC.
+
+**The failure:** attaching it to a `PreceptDef` to make an ideology move faction goodwill produces
+no effect, no error and no log line. It looks like the sanctioned XML route to ideology-driven
+goodwill precisely because the type name says so.
+
+**The fix:** ideology-driven goodwill goes through a `GoodwillSituationDef` with a `workerClass`
+(the shape `GoodwillSituationWorker_SameIdeo` and `_MemeCompatibility` use), not through this comp.
+⚠ And note the visibility rule that comes with it: `FactionUIUtility.GetNaturalGoodwillExplanation`
+lists only situations whose `naturalGoodwillOffset != 0` and `GetOngoingEvents` only those whose
+`maxGoodwill < 100`, so such a worker is visible to the player **exactly when, and only when, it
+moves goodwill**.
+
+Not a trap, and recorded here so it is not filed as one: `GoodwillSituationDef.workerClass` defaults
+to the **abstract** `GoodwillSituationWorker`, so an omitted `workerClass` throws in
+`Activator.CreateInstance`. That is loud.
+
+*[#93](https://github.com/cjd721/Rimworld-Archinity/issues/93), `docs/specs/POLITICS.md` §
+*Standing as a content gate*. `RimWorld.PreceptComp_GoodwillSituation`,
+`RimWorld.Ideo.cachedPossibleGoodwillSituations`,
+`RimWorld.FactionUIUtility.GetNaturalGoodwillExplanation` / `.GetOngoingEvents`. 1.6.4871.*
+
 ---

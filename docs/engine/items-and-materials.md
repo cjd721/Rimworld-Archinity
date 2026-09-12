@@ -129,3 +129,37 @@ consults `ModsConfig.AnomalyActive`. `VanillaBooksExpanded.Newspaper : Book` is 
 - `Book.PostPostMake` and `Book.PostQualitySet` both call `GenerateBook()`, which
   **overwrites** title and description from the grammar packs. An authored string
   assigned to an instance is replaced unless `GenerateBook` itself is overridden.
+
+## Utility items are ordinary apparel, and the utility "slot" is one layer
+
+`Verse.ApparelLayerDef.IsUtilityLayer` is literally `this == ApparelLayerDefOf.Belt` **[V]** —
+one def, hardcoded. Most `ApparelUtility` defs sit on `Belt`/`Waist`, but not all:
+`VPE_Psyring` is `OnSkin`/`MiddleFingers`, `IC_MK3_Tacticloak` is `Shell` **[V]**. **No utility
+item in the corpus uses a mod-defined `ApparelLayerDef`** — only Vanilla Expanded Framework
+(`VFEC_OuterShell`) and Medieval Overhaul define layers at all, and none of their uses carries
+`ApparelUtility` **[V]**.
+
+An `ApparelPolicy` is a bare `ThingFilter` with no layer awareness **[V]**, and
+`JobGiver_OptimizeApparel.TryGiveJob` has no layer test **[V]**, so **a policy reaches belt-layer
+items and pawns will fetch and wear them** — a plain tool belt scores ~1.0 against a 0.05
+threshold. Vanilla's Worker, Soldier and Spacefarer starting outfits bulk-allow the whole
+`ApparelUtility` category **[V]**.
+
+**`ApparelUtility.CanWearTogether` is the constraint that bites**: two defs sharing a layer with
+interfering body-part groups are mutually exclusive, silently. Every `Belt`/`Waist` item excludes
+every other one **[V]**.
+
+Gates that stop an equip despite the policy allowing it **[V]**: `-1000f` for a shield belt with a
+projectile weapon, for `ignoredByNonViolent` on a non-violent pawn, and for a conflicting item that
+is force-worn or locked; `-10f` for `!PawnCanWear`, `blocksVision`, `slaveApparel`, and
+`mechanitorApparel` on a non-mechanitor. Non-score gates include `IsInAnyStorage()` — **an item on
+open ground is never fetched** — plus forbidden, burning, gender, `developmentalStageFilter`,
+biocoding and `HasPartsToWear`. The scan runs per pawn on a `Rand.Range(6000, 9000)`-tick interval.
+
+**`ApparelPolicy` has no `Def` backing** — it is `RimWorld.ApparelPolicy : RimWorld.Policy`, an
+`IExposable` held in `OutfitDatabase` and scribed into the save; the `Policy` family in 1.6 is
+`ApparelPolicy`, `DrugPolicy`, `FoodPolicy`, `ReadingPolicy`, and **there is no weapon policy**
+**[V]**. `DrugPolicyDef : Def` is the asymmetry: vanilla already ships "author presets as XML defs,
+instantiate at game start" for drugs, and apparel is the family missing its Def half.
+
+Established by [#28](https://github.com/cjd721/Rimworld-Archinity/issues/28). 1.6.4871 rev590.

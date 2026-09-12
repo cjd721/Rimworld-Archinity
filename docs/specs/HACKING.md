@@ -15,9 +15,10 @@ classes of target, and the hacking-specific readout.
 
 **Adjacent systems take over at four boundaries.**
 
-- **Trace** — [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) owns the
-  number, its bands, its decay and how a hack moves it. This document owns only the
-  *emission*; § *The intrusion report* is the contract between them.
+- **Trace** — [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) /
+  [`TRACE.md`](TRACE.md) owns the number, its bands, its decay and how a hack moves it.
+  This document owns only the *emission*; § *The intrusion report* is the contract
+  between them, and it has now been consumed rather than merely offered.
 - **The Analysis research gate** — [`RESEARCH.md`](RESEARCH.md), from
   [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) (closed; the mechanism is
   settled, the pricing is not). Artifact → research unlock is entirely that mechanism; this
@@ -262,6 +263,7 @@ must be read later or not at all.
 | Which hackset guards this target, active or dormant, which outcomes an ICE breaker disabled | `USH_HE.CompDataSourceProtected.CompInspectStringExtra` **[V]** — nothing to build |
 | Full outcome probability table on the info card | `HacksetDef.SpecialDisplayStats` + `GetOutcomesDescription` **[V]** — nothing to build |
 | Why this target refuses to be hacked | `AcceptanceReport.Reason`, three surfaces **[V]** — free, and it carries our research gate |
+| **What this intrusion will cost in Trace, before it starts** | the same `CanHackNow` postfix plus `CompHackable`'s inspect string — **~10 lines**, counted in [`TRACE.md`](TRACE.md) § D3, not below |
 | Remote reach, and whether a relay is live | the `USH_RemoteHackingDistance` stat row plus our `StatPart` explanations — free |
 | **Intrusion history** — the last N reports: target, depth, detected | **ours**, `ITab_Cyberpod_Intrusions` on `Building_Cyberpod`, ~60 lines |
 
@@ -341,6 +343,23 @@ display, its pursuit rules, and the function from `(depth, defence, detected, su
 to a Trace increment. **I emit every intrusion including `Local` ones, flagged** — so #56
 decides to ignore them, rather than me deciding they never happened. The same event feeds
 the intrusion history readout, which is mine, so the `Local` ones must exist.
+
+> **#56 has answered, and the answer confirms this contract rather than amending it.**
+> [`TRACE.md`](TRACE.md) § *What changes it* subscribes `WorldComponent_Trace` to
+> `IntrusionCompleted` and looks the increment up in `TraceDef.intrusionRows` by `depth`,
+> scaled by a curve on `defence`. **The `Local` row is authored `onSuccess: 0,
+> onDetected: 0`** — so `GLITTERTECH.md`'s *"a basic isolated door need not matter"* is an
+> authored number rather than a special case in either document, and neither spec
+> hardcodes which depths count. `detected` is consumed as it stands; nothing new rolls it.
+
+**6. One thing #56 asks back, and it is ten lines.**
+[`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) requires the player
+to *"see the risk before committing to an intrusion"*. The
+`CompHackable.CanHackNow(Pawn)` postfix in § *Gating target classes by research* is
+already the seam vanilla renders in three places **[V]**, and `CompHackable`'s inspect
+string is already in this document's display table. **The target's authored
+`IntrusionDepth` and its Trace cost are appended there** — on a patch this cost table
+already carries. [`TRACE.md`](TRACE.md) § D3 counts the ten lines, not this document.
 
 ---
 
@@ -649,7 +668,7 @@ this design depends on it, but a hackable Anomaly def would not have been seen.
 | Does Ushanka's Hacking Expansion ship? | if not, ~1,500 lines of new C# and the requirement is re-scoped | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
 | The `HackTargetClass` catalogue and its research map — which classes exist, in what order | authoring; the mechanism does not depend on the answer | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) authoring, against a requirements line that does not yet exist |
 | `defence` values for the Ultra bands, `minDefense` thresholds, ExecData learning costs | balance | map [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) *Not yet specified* |
-| The function from `IntrusionReport` to a Trace increment, and whether `Local` contributes at all | none here — I emit everything and flag it | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) |
+| ~~The function from `IntrusionReport` to a Trace increment, and whether `Local` contributes at all~~ | **Answered.** `TraceDef.intrusionRows`, keyed on `depth`, scaled by a curve on `defence`; `Local` is authored zero. The contract above is unchanged — this document still emits everything and flags it. | **Closed** by [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md) |
 | **Whether Ultra hacking research costs Intel on top of its exemplar.** The `requiredAnalyzed` gate is XML and free *under the unpriced default*; [`RESEARCH.md`](RESEARCH.md) and [`CURRENCIES.md`](CURRENCIES.md) both hold the question **open** and both record that a priced answer costs **two Harmony postfixes** — `CompAnalyzable.OnAnalyzed` and `CompInteractable.CanInteract`. Hacking is the side that makes it non-trivial: `GLITTERTECH.md` asks for artifacts *"combined with sufficient Intel/research"*, which reads as a price | the cost row's "zero C#" is conditional, not settled. **This document does not resolve it** | Open requirements parameter owned by [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md), tracked as the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2). [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) is closed and settled only the mechanism |
 | **How far `docs/requirements/CHARTING.md` carries the protocol artifact.** It **does** name *"unique protocols"* among the deterministic core rewards of a Charting beat — an earlier draft of this spec said it did not, and that was wrong. What it does not carry is hacking, intrusion, or an away-site hack as a beat activity; `GLITTERTECH.md` supplies those with *"Campaign-critical Charting sites can contain unique protocol artifacts that must be brought home"* | the artifact itself has a requirements home; the relay and the away-site intrusion still do not | **no open ticket owns this**; the gap is stated here rather than handed anywhere. Raised on [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) |
 | Whether the intrusion readout stays an `ITab` or folds into a campaign pressure surface | display only; the letter fallback costs nothing | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) |

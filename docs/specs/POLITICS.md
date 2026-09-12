@@ -3,15 +3,19 @@
 ## Purpose and scope
 
 How the political consequences in [`docs/requirements/POLITICS.md`](../requirements/POLITICS.md)
-will be built. This document owns two capabilities, kept in separate parts below:
+will be built. This document owns three capabilities, kept in separate parts below:
 
 - **The political ripple** — propagating a single player act along a faction's alliances and
   rivalries, and the faction-relation graph it reads. Everything up to *Outstanding decisions*.
 - **[The faction demand](#the-faction-demand)** — the ask, the deadline, the consequence, and
-  moving a second faction on resolution. The final part of this document.
+  moving a second faction on resolution.
+- **[Standing as a content gate](#standing-as-a-content-gate)** — refusing an action until the
+  player's standing on some axis reaches a threshold, and showing the threshold before it is
+  reached. The final part of this document.
 
 It does not own Reverence, which is a second per-faction axis and belongs to
-[`RELIGION.md`](RELIGION.md).
+[`RELIGION.md`](RELIGION.md) — but the **gate** that reads Reverence is here, not there, and
+`RELIGION.md` links to it rather than restating it.
 
 ## The build
 
@@ -316,8 +320,9 @@ document does not build.
 It does not own the
 **ally-aid battle at a tile** ([#92](https://github.com/cjd721/Rimworld-Archinity/issues/92)),
 which is a demand wearing this shell plus a world object and an in-absentia resolution. It does
-not own **standing as a gate** ([#93](https://github.com/cjd721/Rimworld-Archinity/issues/93)),
-though `QuestPart_RequirementsToAccept` is the surface such a gate would use.
+not own **standing as a gate**, which is [the final part of this document](#standing-as-a-content-gate)
+— and that part confirms the guess made here: `QuestPart_RequirementsToAccept` is the surface,
+and the skill-threshold ask in §3 below is the same build with a different predicate.
 
 ### The build
 
@@ -417,7 +422,7 @@ requirement is trying to cap.
 | **Silver** | Free. The deliberately boring control case. |
 | **Delivery to a named tile** | Free. `Script_TradeRequest.xml`, 100% XML [V]. |
 | **A loaned colonist for a duration** | Ships. `QuestNode_LendColonistsToFaction` is XML-reachable [V]. Two constraints: it reads the pawns out of a `Thing` with a `CompTransporter`, and `Complete()` returns them by shuttle only for `Faction.OfEmpire`, otherwise by drop pod [V]. The mechanism is sound; the fiction is wrong for a neolithic asker. |
-| **A pawn skill threshold** | New. No `QuestPart_RequirementsToAcceptSkill` exists [V]. ~35 lines copying `QuestPart_RequirementsToAcceptColonistWithTitle` exactly: `CanAccept()` sweeps `PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_Colonists`, `CanPawnAccept(p)` tests the skill, `RequiresAccepter => true` makes the accepter pawn the specialist [V on the donor, I on the composition]. Display is free — `MainTabWindow_Quests.DoAcceptanceRequirementInfo` draws the red box and disables Accept [V]. |
+| **A pawn skill threshold** | New. No `QuestPart_RequirementsToAcceptSkill` exists [V]. ~35 lines copying `QuestPart_RequirementsToAcceptColonistWithTitle` exactly: `CanAccept()` sweeps `PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_Colonists`, `CanPawnAccept(p)` tests the skill, `RequiresAccepter => true` makes the accepter pawn the specialist [V on the donor, I on the composition]. Display is free — `MainTabWindow_Quests.DoAcceptanceRequirementInfo` draws the red box, and `QuestUtility.CanAcceptQuest` refuses the accept [V]. **The button is greyed, not disabled** — `DoAcceptButton` sets `GUI.color = Color.grey` plus a warning tooltip while `Widgets.ButtonText` still fires; the refusal is one layer down in `AcceptQuestByInterface`, which emits `"MessageCannotAcceptQuest"` [V]. See [*Standing as a content gate*](#standing-as-a-content-gate) §2. |
 | **An embargo on trading with a third faction** | New. Nothing hears trading; `Faction.Notify_PlayerTraded(float, Pawn)` is the sole convergence point and raises no signal [V]. One ~6-line Harmony postfix broadcasting a global signal, plus a listener part — see *The `Quest.` prefix*, below. |
 
 #### 4. The refusal raid — what fires it, not how big it is
@@ -722,3 +727,622 @@ reason; satisfying one rival demand visibly removes the other before the player 
    demand from the other [V], which the current phrasing does not reach.
 4. **Which demands exist, and what each asks for.** The real cost of this capability, and design
    work over the campaign's hand-authored factions.
+
+---
+
+## Standing as a content gate
+
+Refusing an action until the player's standing with a faction reaches a threshold —
+*"you may not accept this until you are at +50 with the Reach"* — and, per
+[`requirements/POLITICS.md`](../requirements/POLITICS.md) § *Player information and agency*,
+**showing the threshold before it is reached: a locked row with its number, not an absent one.**
+
+This part owns the **gate mechanism** for every standing axis the campaign has — Goodwill here,
+Reverence and Exaltation in [`RELIGION.md`](RELIGION.md), Influence, Intel and Trace in
+[`CURRENCIES.md`](CURRENCIES.md). Those documents own their numbers; **the thing that refuses an
+action on a number, and draws the refusal, is one mechanism and it is specified here once.**
+`RELIGION.md` § *The build — religious institutions inside foreign factions* is the first
+consumer and links back rather than restating.
+
+It does not own **what is behind any particular gate** — which quest, which diplomatic action,
+which threshold. Those are authoring, and the thresholds themselves are balance.
+
+### The build
+
+**Vanilla ships the enforcement seam, the display and a worked numeric-goodwill gate. What it
+does not ship is a gate on a *number* at quest-accept time, or any XML reach to either.** The
+build is one axis resolver plus two thin adapters, and it adds **no Harmony patch** beyond the
+one [`RELIGION.md`](RELIGION.md) already costs for the comms console.
+
+#### 0. Two premises in the ticket, re-verified — one holds, one does not
+
+**Holds [V]:** there is no XML `QuestNode` wrapper for
+`RimWorld.QuestPart_RequirementsToAcceptFactionRelation`. Vanilla ships **twelve**
+`QuestPart_RequirementsToAccept` subclasses and exactly **four** `QuestNode_` wrappers —
+`Bedroom`, `ColonistWithTitle`, `PlanetLayer`, `Research`. The faction-relation part can only be
+added from C#.
+
+**Does not hold, and it is the load-bearing half [V]:** the gate that exists **cannot express
+the ticket's own question.** `QuestPart_RequirementsToAcceptFactionRelation.CanAccept()` tests
+
+```
+Faction.OfPlayer.RelationKindWith(otherFaction) == relationKind
+```
+
+— an equality against a **three-valued enum** (`Ally` / `Neutral` / `Hostile`), plus an
+`acceptIfDefeated` escape. There is no threshold in it. Its `ReasonText` is one of three fixed
+keys (`QuestAlliedTo` / `QuestNeutralTo` / `QuestHostileTo`) and **carries no number**, so even
+its display half cannot show a carrot. *"+50 with the Reach"* is not expressible on this part and
+never was.
+
+⚠ **And the enum it tests is not a function of the number, which makes the substitution people
+reach for wrong.** `Faction.RelationKindWith` reads the latched `FactionRelation.kind`, and
+`CheckKindThresholds` flips to `Hostile` at ≤ −75, to `Ally` at ≥ 75, and back to `Neutral` only
+on crossing **0** [V]. A faction sitting at +74 is `Ally` if it came down from 80 and `Neutral` if
+it came up from 10. **"Ally" is not "goodwill ≥ 75"**, so authoring a standing gate as a relation
+gate produces a threshold the player cannot reason about — and this is the hysteresis the ripple
+part above already flags from the other side.
+
+Its three call sites are all Archonexus victory nodes, all passing `acceptIfDefeated: true`, and
+its sole constructor helper `QuestGen_Requirements.RequirementsToAcceptFactionRelation` is the only
+member of that static class [V]. It is endgame plumbing, not a general mechanism.
+
+**And *"relations barely gate anything in vanilla"* is wrong about the surface that matters
+most.** `RimWorld.FactionDialogMaker.RequestAICoreQuest` does exactly what the ticket asks for,
+today, in shipped code [V]:
+
+```
+if (faction.PlayerGoodwill < 40) { diaOption.Disable("NeedGoodwill".Translate(40.ToString("F0"))); }
+```
+
+`NeedGoodwill` is a shipped translation key — *"need {0} goodwill"* —
+in `Core/Languages/English/Keyed/Dialog_Trees.xml` [V]. Three further options —
+`RequestTraderOption`, `RequestOrbitalTraderOption`, `RequestMilitaryAidOption` — gate on
+`Disable("MustBeAlly")`, carry a `Disable("WaitTime")` cooldown keyed on the scribed
+`Faction.lastTraderRequestTick` / `lastMilitaryAidRequestTick`, and **all three spend goodwill**,
+with the price rendered into the option label from
+`-Faction.OfPlayer.CalculateAdjustedGoodwillChange(faction, -30)` [V]. So vanilla already ships
+*a numeric standing threshold, shown before it is reached, on an action that costs standing to
+take* — which is the whole of this capability and, separately, the whole of #73's price.
+
+The correct conclusion is narrower and more useful than the ticket's: **the gate is not missing,
+the *generality* is.** Every instance above is hand-compiled against `PlayerGoodwill`.
+
+#### 1. The axis resolver — `StandingAxisDef`, one `switch`, ~25 lines
+
+One `Def` type naming an axis, and one static resolver:
+
+```
+float Archinity.Altar.Standing.Of(Faction f, StandingAxisDef axis)
+```
+
+| Axis | Source | Evidence |
+|---|---|---|
+| Goodwill | `Faction.PlayerGoodwill => GoodwillWith(OfPlayer)` | [V] |
+| Reverence | the per-faction record on `WorldComponent_Reverence` ([`RELIGION.md`](RELIGION.md) § *The build — Reverence* §1) | [V] on the component shape, [I] on the composition |
+| Exaltation | `Pawn_RoyaltyTracker.GetFavor(faction)` ([`RELIGION.md`](RELIGION.md) § *The build — Exaltation*) | [V] |
+| Influence / Intel / Trace | [`CURRENCIES.md`](CURRENCIES.md) | not read here |
+
+The Def carries the axis's **label and its formatting**, so one gate produces *"need 50 goodwill
+with the Reach"* and another *"need 40 Reverence with the Reach"* from the same code path.
+**This is the only piece that is genuinely new**, and it is a `switch`.
+
+`StandingGate` is the XML-loadable value both adapters take: an axis, a faction (a
+`SlateRef<Faction>` on the quest side, a live `Faction` on the dialogue side), and a `float min`.
+
+#### 2. Quest accept — `QuestPart_RequirementsToAcceptStanding` + its `QuestNode`
+
+**The part. ~25 lines, and the donor is not the relation gate — it is the *wealth* gate.**
+`RimWorld.QuestPart_RequirementsToAcceptPlayerWealth` is already the numeric-threshold shape [V]:
+one `float requiredPlayerWealth`, a `CanAccept()` comparing it against a live number, an
+`AcceptanceReport` carrying the threshold in its message, and a two-line `ExposeData`. Copy it,
+replacing `WealthUtility.PlayerWealth` with `Standing.Of(faction, axis)` and adding a
+`Scribe_References.Look` for the faction.
+
+`QuestPart_RequirementsToAccept` is a 12-line abstract base — `CanAccept()`, `CanPawnAccept(Pawn)`,
+`ShowInRequirementBox`, `Culprits` [V].
+
+**The XML wrapper is ~20 lines, not a rabbit hole**, and this answers the ticket's first question
+directly. `RimWorld.QuestGen.QuestNode_RequirementsToAcceptResearch` is the whole pattern [V]: a
+`SlateRef<T>`, a `RunInt()` that does `QuestGen.quest.AddPart(new …{…})`, and a `TestRunInt(Slate)`
+returning `false` when the requirement is already impossible so the quest is not offered at all.
+Ours takes the three `StandingGate` fields and does the same. *(Copy the shape, not the spelling:
+its XML field is `<reserach>`, misspelt identically in the C# field and in the two shipped Odyssey
+quest defs that use it [V].)*
+
+> **Give `TestRunInt` the deliberate answer, not the obvious one.** Returning `false` when standing
+> is below the threshold means the quest is never *offered* — which deletes the carrot this
+> capability exists to show. Return `true` unconditionally and let `CanAccept()` refuse, so the
+> offer arrives visibly locked. Vanilla's research node returns `false` because a research-gated
+> quest has no carrot value; a standing-gated one is the opposite case. `TestRunInt` is inert on
+> VEF's chain-grant path in any case — **T-71**.
+
+**Enforcement and display are both free, and both are vanilla's** [V]:
+
+- `RimWorld.QuestUtility.CanAcceptQuest(Quest)` walks every `QuestPart_RequirementsToAccept` on the
+  quest and returns the **first failing `AcceptanceReport`**. It is the single enforcement point;
+  nothing else is consulted.
+- `MainTabWindow_Quests.DoAcceptanceRequirementInfo` runs **only while
+  `!selected.EverAccepted && !selected.Historical`** — precisely while the offer is pending —
+  collects the unmet reasons through `ListUnmetAcceptRequirements()`, and draws them in a coloured
+  info box under `"QuestAcceptanceRequirementsDescription"`, highlighting culprits. **Whatever
+  string our `AcceptanceReport` returns is the locked row's threshold text**, for free, before the
+  player accepts. That is `requirements/POLITICS.md`'s carrot clause satisfied by vanilla's own UI
+  at zero cost.
+
+⚠ **One precision, and *The faction demand* §3 above has been corrected to match.** That section
+used to say the requirement box *"disables Accept"*. It does not literally:
+`MainTabWindow_Quests.DoAcceptButton` sets `GUI.color = Color.grey` and attaches the reason as a
+warning tooltip, but `Widgets.ButtonText` still fires. The **refusal** is in
+`AcceptQuestByInterface`, which re-runs `QuestUtility.CanAcceptQuest` and emits
+`"MessageCannotAcceptQuest"` [V]. The gate is enforced; the button is greyed rather than dead.
+Nothing in either design depends on the difference, but a Harmony patch aimed at the wrong one
+produces a visually correct, functionally open gate.
+
+⚠ **`ShowInRequirementBox` is the anti-pattern to avoid, and vanilla ships one instance of it.**
+`QuestUtility.CanAcceptQuest` consults **every** `QuestPart_RequirementsToAccept` regardless of the
+flag, while `ListUnmetAcceptRequirements` skips the ones that set it false — so a part can enforce
+while rendering nothing. `QuestPart_RequirementsToAcceptPlanetLayer` is the only vanilla override
+and it is deliberate [V]. A standing gate that copies it is invisible and silent, which is exactly
+the failure the legibility requirement is written against. Leave it at its default.
+
+#### 3. The diplomatic action — a gated `DiaOption`, ~15 lines
+
+For anything reached from the comms console — establishing an institution, calling a revolt,
+asking for a specialist — the gate is `DiaOption.Disable(reason)`, which is **vanilla's own idiom,
+on this exact surface, for this exact purpose** (§0). One helper called from the
+`FactionDialogMaker.FactionDialogFor` postfix that [`RELIGION.md`](RELIGION.md) §
+*The build — Reverence* D2 already costs:
+
+```
+opt.Disable(axis.needKey.Translate(min, Standing.Of(f, axis), f.Name));
+```
+
+**How it actually renders, because it is not a tooltip** [V]. `DiaOption.OptOnGUI` sets the label
+colour to `DisabledOptionColor` (mid-grey) and **concatenates the reason into the label in
+parentheses** — *"Establish a monastery with the Reach (cost: 40 goodwill) (need 60 Reverence)"* —
+then passes `active: false` to `Widgets.ButtonText`. There is no `TooltipHandler` and no hover
+behaviour: the whole gate is one grey, unclickable, fully legible line. That is exactly the
+requirement's *"a locked row with its threshold"*, and it is free.
+
+⚠ **`Disable` is last-writer-wins, and `FactionDialogMaker` has a near-blanket writer.**
+`Disable(reason)` is a two-line setter, and the local `AddAndDecorateOption` inside
+`FactionDialogFor` calls `opt.Disable("WorkTypeDisablesOption".Translate(…))` when the negotiator's
+Social work type is disabled — **overwriting any reason already set** — but only for options passed
+`needsSocial: true` [V]. `Disconnect`, the dev-mode debug options and `RequestRoyalHeirChangeOption`
+pass `false` and are never touched. **This makes the conclusion stronger, not weaker:** a postfix
+that *appends* its own options runs after that closure has finished with vanilla's, so our reasons
+always survive; only a postfix that *modifies* an existing `needsSocial` option must not assume its
+reason is the one that will show. `Disable(null)` greys with no text at all.
+
+**The disabled half carries no delegate and is therefore free of every Multiplayer constraint** —
+`disabled` and `disabledReason` scribe as plain values
+([`docs/engine/determinism.md`](../engine/determinism.md) § *MP serialises the comms-console
+dialogue*) [V]. The **enabled** action behind it is the constrained half, and that constraint is in
+*Persistence and multiplayer*, below.
+
+**The surrounding window already shows the axis the gate reads**, for Goodwill at least:
+`Dialog_Negotiation.DoWindowContents` prints `Faction.GetInfoText` — *"goodwill: +N"* — in the same
+window, and `Faction.CommFloatMenuOption` appends *"(Neutral, +12)"* to the console's float-menu row
+before the dialogue is even opened [V]. A Reverence gate has no such companion until
+[`RELIGION.md`](RELIGION.md)'s D1/D2 or [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)
+ships one, which is why the gate's reason string must name **both** the threshold and the current
+value rather than the threshold alone.
+
+#### 4. A third surface exists, and it is the ritual gizmo
+
+`RitualBehaviorDef.workerClass` → **`RitualBehaviorWorker.CanStartRitualNow(TargetInfo, Precept_Ritual, Pawn, Dictionary)` returns a `string`**, and `Command_Ritual.ValidateDisabledState` re-runs it
+**every GUI frame**, greying the gizmo and showing the returned text as its disabled reason [V].
+That is a per-frame, arbitrary-predicate, reason-carrying gate on a surface the player is already
+looking at — and it is a `workerClass`, so it takes any predicate including a standing threshold.
+Three companions round it out [V]:
+
+- `RitualObligationTargetFilter.CanUseTargetInternal` returns a `RitualTargetUseReport`, and
+  `ShouldShowGizmo` is true when `canUse` is false **but `failReason` is non-empty** — vanilla
+  deliberately keeps drawing the locked row.
+- `RitualObligationTargetFilter.ShouldGrayOut(Pawn, …, out TaggedString)` greys a portrait and
+  attaches a red tooltip.
+- `RitualOutcomeComp.GetQualityFactor` returns a `QualityFactor` whose `count` is literally
+  `have + " / " + need`, drawn by `Dialog_BeginLordJob.DrawQualityFactor` in green or red with a
+  tick or a cross. **It is the cleanest have/need widget vanilla ships**, and it is the one to copy
+  if a standing threshold ever needs a numeric readout of its own.
+
+⚠ **But `CanStartRitualNow` is not sufficient on its own.** `Precept_Ritual.GetRitualBeginWindow`
+calls it, fires a `RejectInput` message when the reason is non-empty — **and then returns the
+dialog anyway** [V]. The gate re-asserts silently inside `RitualBehaviorWorker.TryExecuteOn`. Belt
+and braces: also yield the reason from `RitualOutcomeComp.BlockingIssues`, which is what makes
+`Dialog_BeginLordJob.CanBegin` return false.
+
+This surface matters to [`RELIGION.md`](RELIGION.md) — Exaltation's title rite and the altar's
+rites are gated things — and is recorded here because the gate mechanism is this document's.
+
+#### 5. The surfaces that read nothing relation-shaped, and what to do instead
+
+A negative worth stating, because four of them look like they should work [V]:
+
+| Surface | Verdict |
+|---|---|
+| `ResearchProjectDef` | `CanStartNow` is exactly eight clauses — not finished, prerequisites, techprints, bench, mechanitor, analysed things, **not hidden**, inspection — and **not one reads faction standing**. `heldByFactionCategoryTags` is consumed only by `TechprintUtility.GetResearchProjectsNeedingTechprintsNow`, comparing against the immutable `FactionDef.categoryTag`; it decides which faction's traders **stock** a techprint. The one real coupling is indirect and binary: `IncidentWorker_NeutralGroup.FactionCanBeGroupSource` rejects a faction hostile to the player, so a faction's techprints stop arriving at goodwill ≤ −75 — **a cliff, invisible in the research tab.** |
+| `ThingDef` buildability | `Designator_Build.Visible` gates on god mode, `min/maxTechLevelToBuild` against the player `FactionDef`'s static tech level, research, monolith level, difficulty, `PlaceWorker`, building and discovery prerequisites, and grav-engine inspection. **No relation term**, and `Visible` **filters out** rather than disables — so unbuildable content is invisible *in vanilla*, and the Architect menu shows no carrot. ⚠ **That is a fact about `Visible`, not a structural limit** — see §5a below, which corrects an earlier claim here. |
+| Trader stock | `TraderKindDef` has no relation field, `StockGenerator.HandlesThingDef(ThingDef)` takes no faction and is structurally incapable of one, and all 15 subclasses are clean of `goodwill` / `RelationKind` / `HostileTo`. `Settlement_TraderTracker.TraderKind` is a deterministic hash of the settlement. Relation enters trade only as binary `HostileTo`. **But the template we want is here:** `Settlement.GetInspectString` prints `"RequiresTradePermission"` **with the required title named, beside the live relation kind and goodwill number** — vanilla's one pre-announced, pre-reached trade gate, and the shape a standing-gated stock tier should copy. |
+| `GoodwillSituationDef` | **Not a gate and not a display.** `FactionUIUtility.GetNaturalGoodwillExplanation` lists only situations whose `naturalGoodwillOffset != 0`, `GetOngoingEvents` only those whose `maxGoodwill < 100` [V, and independently re-confirmed here] — so a situation worker becomes visible **exactly when, and only when, it moves goodwill.** It is a coupling mechanism; whether we want that coupling is [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s. Five vanilla workers, all blanket flags: `AttackingSettlement`, `MemeCompatibility`, `NaturalEnemy`, `PermanentEnemy`, `SameIdeo`. |
+| `QuestNode_GetFaction` | Generation-time **selection**, not a gate: `storeAs`, `allowEnemy`/`allowNeutral`/`allowAlly`/`allowAskerFaction`/`allowPermanentEnemy`, `mustBePermanentEnemy`, `mustBeHostileToFactionOf`, `leaderMustBeSafe`, `exclude` and six more — **no goodwill range field**, and every relation flag is an exclusion. The player never sees a quest that was not generated, so it cannot show a carrot. |
+| `QuestNode_GetFieldValue` | The one generic reflection reader — `GetField(name, Instance\|Public\|NonPublic)` into the slate — and it **cannot reach goodwill**: `Faction.PlayerGoodwill` is a *property*, and the backing `List<FactionRelation> relations` is private and not a number. Combined with `QuestNode_Greater` / `_Less` / `_Equal` and their `OrFail` variants, this is the closest XML comes to a generic standing predicate, and it stops one step short. |
+
+**So the answer to *"gating surfaces other than quest accept"* is: three that carry a reason string
+today, and a fourth that could.** The pending quest offer, the comms-console dialogue and the
+ritual gizmo all refuse *with a reason* out of the box. The Architect menu can be made to (§5a) but
+vanilla never does. Research and trader stock cannot be reached at all without reimplementing their
+locked-reason lists.
+
+**So everything else the campaign wants gated should be *reached through* one of the three** — a
+quest that grants the thing, a dialogue option that does, or a rite that does — rather than gated
+at its own surface. Not because the other surfaces are incapable, but because those three cost
+nothing and the others cost a patch each.
+
+**A cross-checking scan, so the negative is not a sampling** [V]: all 231 non-root `QuestNode_*`
+types — 301 `QuestNode_*` types in total, 70 of them `QuestNode_Root_*` — were enumerated and
+searched for both `RequirementsToAcceptFactionRelation` and `PlayerGoodwill`. Zero hits for
+either. **No quest node anywhere in vanilla reads a goodwill number.**
+
+##### 5a. The Architect menu — an earlier claim here was wrong, and it foreclosed a real option
+
+⚠ **This section previously asserted, marked [V], that `Designator_Build` has "no `Disabled` /
+`disabledReason` member at all" and that the Architect menu "cannot show a carrot even in
+principle". Both are false, and the second is the damaging one.** The correction [V]:
+
+`Designator_Build : Designator_Place : Designator : Command : Gizmo`, and **`Verse.Gizmo` itself
+declares `protected bool disabled`, `public string disabledReason`, `public virtual bool Disabled`
+and `public void Disable(string reason = null)`.** `ArchitectCategoryTab.DesignationTabOnGUI`
+draws the palette through `GizmoGridDrawer.DrawGizmoGrid`, and `Command.GizmoOnGUI` renders a
+disabled gizmo greyed, appends
+`"DisabledCommand".Translate() + ": " + disabledReason` to its tooltip colourised
+`ColorLibrary.RedReadable`, and on click emits that same string as a `RejectInput` message.
+
+**So a Harmony gate on `Designator_Build` can produce exactly the locked-row-with-its-threshold the
+legibility requirement asks for.** The Architect menu is a fourth viable surface, not an impossible
+one.
+
+**The routing recommendation above is unchanged**, and now rests on the defensible reason rather
+than a false one: vanilla's own buildability gate is `Designator_Build.Visible`, which *filters*
+rather than disables, so nothing in vanilla ever greys a building with a reason — and
+`Designator_Build` reads no relation term, so the whole gate would be ours. Reaching a building
+through a quest or a dialogue option remains cheaper and needs no patch. But if a *building* is
+ever the thing that must visibly unlock at a standing threshold, **the surface exists and costs one
+`Disable` call inside a postfix**, and this document should not have said otherwise.
+
+#### Cost
+
+| Piece | Cost |
+|---|---|
+| `StandingAxisDef` — axis label, formatting, `needKey` | **XML** — one new Def type |
+| The axis resolver | **New C#**, ~25 lines |
+| `QuestPart_RequirementsToAcceptStanding` | **New C#**, ~25 lines, copying `QuestPart_RequirementsToAcceptPlayerWealth` |
+| `QuestNode_RequirementsToAcceptStanding` — **the missing XML wrapper** | **New C#**, ~20 lines, copying `QuestNode_RequirementsToAcceptResearch` |
+| Gate enforcement at accept | **Free** — `QuestUtility.CanAcceptQuest` |
+| The locked row with its threshold, on a pending offer | **Free** — `MainTabWindow_Quests.DoAcceptanceRequirementInfo` |
+| `DiaOption` gate helper | **New C#**, ~15 lines |
+| The `FactionDialogFor` postfix that hosts it | **Already costed** by [`RELIGION.md`](RELIGION.md) D2 — not double-counted here |
+| The ritual gate (§4) | **XML** — a `workerClass` on an existing `RitualBehaviorDef`; the worker is ~10 lines calling the same resolver, plus its `BlockingIssues` twin |
+| Multiplayer | **Free** — see below |
+| Thresholds | **Requirements / balance**, not here |
+
+**Aggregate: one new Def type, ~95 lines of C# in the existing `ArchinityAltar.dll`, and no new
+Harmony patch.** No new assembly. The mechanisms are [V]; **the claim that they compose into the
+behaviour the requirement describes is [I]**, as every proposed build is until something is built.
+
+**There is no second plausible build for the quest half** — `QuestUtility.CanAcceptQuest` consults
+`QuestPart_RequirementsToAccept` and nothing else, so any accept-time gate is a subclass of it or
+it does not exist. **There are two for the dialogue half**, separated in *Available mechanisms*: a
+`FactionDialogFor` postfix (selected), or a `RoyalTitlePermitDef` worker, which vanilla already
+uses to inject options into that same dialogue but whose gate is welded to holding a title in that
+faction.
+
+### Persistence and multiplayer (the gate)
+
+**Nothing new is persisted.** The quest part scribes inside its quest (`QuestPart.ExposeData`) and
+a save predating it simply has no such part. The dialogue gate stores nothing at all — it is a
+predicate evaluated at draw time. The axes themselves persist wherever their owning system keeps
+them.
+
+**The gate is read-only over world state, so it is deterministic by construction.** Goodwill,
+Reverence and favour are all world state both clients agree on, evaluated at the same moment on
+both. It consumes no `Rand`, reads no `ModSettings` (**T-18**) and holds no cache (**T-20**).
+
+**Quest acceptance is already synced.** `SyncMethod.Register(typeof(Quest), "Accept")` is bare [V]
+— either founder can accept any quest, and the gate is re-evaluated inside `AcceptQuestByInterface`
+on the accepting client before the command goes out.
+
+**A comms-console `DiaOption` click is already a synced command, and this is stronger than the
+"wrap every player write" rule assumed.** Two independent mechanisms in `Multiplayer.dll` [V]:
+
+- `Multiplayer.Client.NodeTreeDialogSync` is a **Harmony prefix on `DiaOption.Activate`**. It
+  suppresses the local activation and routes it through
+  `[SyncMethod] SyncDialogOptionByIndex(int position)` — which re-activates the option at that
+  index on every client — but **only when `Multiplayer.session != null`, `SyncUtil.isDialogNodeTreeOpen`
+  is set, and the option's own `dialog` is a `Dialog_NodeTree`** [V]. Outside those three
+  conditions the prefix clears the flag and lets the vanilla activation run locally, which is why a
+  `DiaOption` reached from anywhere other than an open node-tree dialog is **not** synced by this
+  path.
+- `Multiplayer.Client.PersistentDialog.Click(int ver, int opt)` is `[SyncMethod]` and runs
+  `Dialog.curNode.options[opt].Activate()` behind a `ver` guard that drops a click made against a
+  stale node.
+
+So **#73's institution-planting option, and every other gated diplomatic action, need no
+`[SyncMethod]` of ours.** [`RELIGION.md`](RELIGION.md) § *Persistence and multiplayer* §
+*Reverence* says these "are the ones that need synced commands"; the *rule* is right and this
+*instance* is already covered.
+
+⚠ **But the sync is positional, and that is a hazard nothing in the repo records.** Both mechanisms
+identify the clicked option by its **index in `curNode.options`** [V]. A postfix that appends
+options to the faction dialogue must therefore build **the same list, in the same order, on both
+clients** — otherwise index *n* activates one action on one machine and a different action on the
+other. A standing gate is safe: it reads world state, so both clients compute the same `disabled`
+flag and, critically, `Disable` **keeps the option in the list** rather than removing it.
+**Omitting an unavailable option instead of disabling it is what breaks this** — and it breaks
+silently, with no error on either client. Disable, never skip. *(Proposed trap; unnumbered, the
+orchestrator allocates.)*
+
+**The enabled action's host type is constrained, and the constraint is real.**
+`DelegateSerialization.CheckMethodAllowed` walks the delegate method's **outermost** declaring type
+and then its base chain, requiring a member of a fixed fifteen-type array — `Ability`,
+`AbilityComp`, `Command`, `ThingComp`, `Dialog_BeginRitual`, `LordToil`, `Precept`,
+`SocialCardUtility`, `Letter`, `FactionDialogMaker`, `GenGameEnd`, `IncidentWorker`, `QuestPart`,
+`ResearchManager`, `ShipUtility` — and throws `"Delegate deserialization: method not allowed"`
+otherwise [V]. `FactionDialogMaker` is on the list but is a static class and cannot be derived
+from, so **our option actions must be static methods declared on a type deriving from one of the
+derivable entries** — `QuestPart`, `Command`, `Letter` and `ThingComp` are the realistic hosts.
+Full mechanism: [`docs/engine/determinism.md`](../engine/determinism.md) § *MP serialises the
+comms-console dialogue*. **`Disable(reason)` is exempt** — it involves no delegate — so the *gate*
+is free and only the *action* pays.
+
+One shared player faction means one standing number per axis per faction, seen by both players and
+actionable by either (**T-21**). No per-player gate is possible, and none is wanted.
+
+### Failure and recovery (the gate)
+
+- **A gate whose axis resolver returns a default for an unknown axis fails open.** `Standing.Of`
+  must throw or log on an axis it does not handle; returning `0f` silently makes every gate on that
+  axis permanent and `float.MaxValue` silently opens every one. Neither says anything. Pick loud.
+- **A `StandingGate` whose faction resolves to null.** `QuestPart_RequirementsToAccept` subclasses
+  must override `Notify_FactionRemoved` — `QuestPart_RequirementsToAcceptFactionRelation` does,
+  nulling its `otherFaction` [V]. A gate on a null faction must refuse loudly, not accept silently;
+  vanilla's relation gate returns its reason text when `otherFaction == null`, which is the right
+  default.
+- **`ShowInRequirementBox: false` makes the gate invisible and still enforcing** — the exact
+  failure the legibility requirement exists to prevent (§2).
+- **A `TestRunInt` returning `false` on an unmet gate deletes the carrot** rather than locking it
+  (§2). The quest is never offered, the player never learns the threshold exists, and nothing is
+  logged.
+- **Omitting a gated dialogue option rather than disabling it desyncs the option index** under
+  Multiplayer, silently (*Persistence and multiplayer*).
+- **The threshold in the reason string and the threshold in the predicate are two separate
+  literals.** Nothing compares them; a gate that says "need 50" and tests 60 is a lie with no
+  error. Build the string from the same field the predicate reads — the `StandingGate` value —
+  which is the entire reason §1 puts the formatting on the axis Def rather than in call sites.
+- **A ritual gate written only in `CanStartRitualNow` does not block.** The begin-window path
+  messages and opens anyway; the reason must also appear in `RitualOutcomeComp.BlockingIssues`
+  (§4).
+- ⚠ **Two silent defects in `GoodwillSituationDef`, and one loud one, if that route is ever taken
+  for the coupling #97 owns** [V]. **Silent:** `baseMaxGoodwill` is **declared and read nowhere in
+  the assembly** — the identifier appears exactly once, at its own declaration — so setting it in
+  XML does nothing, with no error; and `PreceptComp_GoodwillSituation` is **inert in 1.6**, its
+  only reader appending to `Ideo.cachedPossibleGoodwillSituations`, a list that is only `Clear`ed,
+  `Contains`-tested and `Add`ed to and never read, with no vanilla XML using the comp. **Both are
+  proposed traps** (unnumbered; the orchestrator allocates). **Loud, and therefore an engine note
+  rather than a trap:** `workerClass` defaults to the **abstract** `GoodwillSituationWorker`, so an
+  omitted `workerClass` throws in `Activator.CreateInstance` rather than producing a config error.
+
+### Status (the gate)
+
+**Verified available mechanism. Not an implementation commitment.**
+
+Established by [Standing as a content gate](https://github.com/cjd721/Rimworld-Archinity/issues/93),
+evidence class **READ** — a fresh decompile of `Assembly-CSharp.dll` at the version
+`docs/data/MOD-SNAPSHOT.md` pins, plus `Multiplayer.dll`, `VFEEmpire.dll` and `VFED.dll` (the
+**1.6** files), `RimPacts.dll`, `FactionTerritories.dll`, shipped DLC XML and keyed language files,
+and a wide pass over both corpus roots in ASCII and in a hand-typed null-interleaved UTF-16LE form.
+
+Three findings reframe the capability:
+
+1. **The one gate the ticket names cannot express the question the ticket asks.** It is an enum
+   equality with no number and no threshold in its reason text (§0).
+2. **Vanilla already ships a numeric goodwill gate with its threshold rendered before it is
+   reached**, on the comms console, with a shipped translation key — and three more that spend
+   goodwill with the price in the label (§0). What is missing is generality, not the mechanism.
+3. **The whole accept-time gating surface is one abstract base with one virtual method**, and both
+   the enforcement and the locked-row display are free (§2). The XML wrapper the ticket worried
+   might be a rabbit hole is ~20 lines.
+4. **There are three free gating surfaces, not one.** Quest accept, the comms dialogue and the
+   ritual gizmo all refuse with a reason out of the box; research and trader stock read nothing
+   relation-shaped and have no reachable locked-reason seam (§4, §5). That, not the quest gate, is
+   what decides where campaign content has to be *reached from*. ⚠ An earlier draft made this
+   finding stronger than the evidence by claiming the Architect menu "cannot show a carrot even in
+   principle" — **false**, and corrected in §5a: `Designator_Build` inherits `Gizmo.Disable(string)`
+   and `Command.GizmoOnGUI` renders the reason. It is a fourth viable surface that costs a patch,
+   not an impossible one.
+
+**Verdict for the sourcing ledger ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)):**
+
+| Piece | Verdict |
+|---|---|
+| `QuestPart_RequirementsToAccept` + `QuestUtility.CanAcceptQuest` + the requirement box | **reuse as-is** — carrier is base RimWorld |
+| `DiaOption.Disable` + `FactionDialogMaker`'s own gate idiom | **reuse as-is** — base RimWorld |
+| RimPacts' `TreatyDef` / `TreatyWorker.CanSign` | **actively blocked** — the shape is right and the mod is not (below) |
+| Faction Territories' vassalage gate | **not the donor for the gate**; its *object* half is [`RELIGION.md`](RELIGION.md)'s candidate donor for #73 |
+| `RitualBehaviorWorker.CanStartRitualNow` as the rite-side gate | **reuse as-is** — base RimWorld, a `workerClass` |
+| The axis resolver and the three adapters | **author from nothing** — ~95 lines |
+
+### Available mechanisms (the gate)
+
+#### Vanilla — the enforcement seam, stated exactly
+
+Twelve `QuestPart_RequirementsToAccept` subclasses ship [V]: `Bedroom`, `ColonistWithTitle`,
+`FactionRelation`, `NoDanger`, `NoOngoingBestowingCeremony`, `PawnOnColonyMap`, `PlanetLayer`,
+`PlayerWealth`, `Research`, `ThingStudied`, `ThingStudied_ArchotechStructures`, `ThroneRoom`. Four
+have `QuestNode_` wrappers. **Two are numeric-threshold gates** — `PlayerWealth` and
+`ColonistWithTitle` — and `PlayerWealth` is the donor (§2).
+
+`QuestUtility.CanAcceptQuest` is the sole enforcement point and consults only this base class [V].
+`MainTabWindow_Quests.DoAcceptanceRequirementInfo` is the sole locked-row renderer, and it runs
+only on an unaccepted, non-historical quest [V].
+
+#### Vanilla — the dialogue gate, and the second route into it
+
+`FactionDialogMaker.FactionDialogFor` builds the comms node and gates four of its own options on
+standing (§0) [V]. **It also carries a def-driven injection point that is not a Harmony patch**:
+for each `RoyalTitle` the negotiator holds in that faction, it calls
+`permit.Worker.GetFactionCommDialogOptions(map, negotiator, faction)` on every
+`RoyalTitlePermitDef` on that title, and appends whatever comes back [V]. That is a shipped,
+`workerClass`-backed way to put an arbitrary gated option on the faction dialogue with no patch at
+all — and **no vanilla `RoyalTitlePermitWorker` overrides it; the base returns `null`.** It is a
+pure, unused mod seam.
+
+**It is not selected, for two reasons.** Its gate is *"the negotiator holds a title in this
+faction"*, which is the wrong predicate for a Reverence or Goodwill threshold and ties every gated
+action to the Exaltation ladder; and `RoyalTitlePermitWorker` is **not** on Multiplayer's
+fifteen-type delegate whitelist [V], so an option built there carries an action MP will refuse.
+Recorded because it looks like the free answer and is the shape a *title*-gated action would
+legitimately use — which is [`RELIGION.md`](RELIGION.md)'s Exaltation business, not this one.
+
+**Permit *acquisition* is not a seam either.** `RoyalTitlePermitDef.AvailableForPawn` — has-permit,
+prerequisite, permit points, `currentTitle.seniority >= minTitle.seniority` — is **non-virtual**,
+and `PermitsCardUtility` calls it on the static type [V]. Gating permit acquisition on anything of
+ours needs Harmony, not a `workerClass`.
+
+#### Vanilla — where a threshold is already drawn before it is reached
+
+Six surfaces, and the two worth copying are not the obvious ones [V]:
+
+| Surface | Method | Shows a number? |
+|---|---|---|
+| Research tab, per node | `MainTabWindow_Research.DrawBottomRow` → `GetTechprintsInfoCached`, `applied + " / " + total`, red until met, with icon | ✅ **the best numeric template** |
+| Ritual dialog | `RitualOutcomeComp.GetQualityFactor` → `have + " / " + need`, drawn by `Dialog_BeginLordJob.DrawQualityFactor` green/red with tick or cross | ✅ **the cleanest have/need widget** |
+| Comms console | `DiaOption.OptOnGUI`, via `FactionDialogMaker.RequestAICoreQuest` | ✅ the only goodwill number |
+| Permits tab | `PermitsCardUtility.DoLeftRect` → one line per requirement, `.Colorize(met ? Color.white : ColorLibrary.RedReadable)` | ✅ favour and title |
+| Quests tab | `MainTabWindow_Quests.DoAcceptanceRequirementInfo` | prose — the wealth variant prints money |
+| Factions tab | `FactionUIUtility.DrawFactionRow`, whose tooltip states the literal −75 / +75 thresholds | ✅ but purely **retrospective** — never "at N you unlock X" |
+| Architect menu | — | ❌ **no surface at all** |
+
+Two gaps in vanilla's own work, both worth not reproducing:
+
+- **`permitPointCost` gates `AvailableForPawn` and is never printed** [V]. An unaffordable permit
+  simply loses its Accept button, with no line saying how many points it wants. Half a gate.
+- **`MainTabWindow_Research.DrawStartButton` composes its locked reasons from a hardcoded
+  if-chain**, and `Log.ErrorOnce`s if a project is locked with no reason in that list [V]. A
+  Harmony-added research gate must add to the chain or it produces a silent lock plus a log error —
+  which is another reason §5 routes research gating through a quest instead.
+
+#### Prior art — the right shape in the wrong mod
+
+**RimPacts' `TreatyDef` is the only def-level standing gate in the entire 155-mod corpus** [V].
+`RimPacts.TreatyDef : Def` carries `minTrust`, `minGoodwill`, `silverCost`, `durationDays`,
+`breakTrustPenalty`, `breakGoodwillPenalty`, `TreatyDef requiresTreaty` and `empireAllowed`; the
+enforcement is `RimPacts.TreatyWorker.CanSign(...)`, which returns an **`AcceptanceReport`** —
+vanilla's own type — carrying `Rpt_CantSign_Goodwill` with the threshold substituted in, after
+softening it by 10 when leader favour is ≥ 60. Its shipped ladder is a genuine standing ladder:
+NonAggression −20 / trust 20 / 300 silver → Passage 0/15 → Trade +10/30 → Defense +40/50
+(requiring NonAggression) → Alliance +75/60.
+
+**That is this capability, built, by someone else — and the mod stays rejected.** The grounds are
+the ripple part's, unchanged: 623 types, a 57-field settings surface gating `Rand` inside a ticking
+component (**T-18** at maximum scale), and a second competing authority over the same faction
+relations. The value here is the **convergence**: an independent implementation of the same
+requirement reached for the same `AcceptanceReport` seam and the same
+`Def` + `Worker.CanSign` + threshold-in-the-reason-string shape this build proposes. A design
+nobody has tried is a risk; a design shipped independently in the corpus is not.
+
+**Faction Territories' vassalage gate is the second instance** [V]:
+`VassaliseUtility.GetSettlementVassaliseGoodwillCost()` clamps a configured cost to 10–100, then
+`if (faction.PlayerGoodwill < cost)` produces a *"Requires N goodwill with …"* fail reason, guards
+on `Faction.CanChangeGoodwillFor`, and on execution **spends** the standing through
+`TryAffectGoodwillWith(Faction.OfPlayer, -cost, …)` with a `+cost` rollback on failure.
+⚠ The cost comes from **`ModSettings`** — **T-18** — which is the piece not to copy.
+
+#### Prior art — the display half in the mods, best and worst
+
+Three shipped idioms for *"locked, and here is why"*, of markedly different quality [V]:
+
+- **Best ladder:** VFE Deserters' `DeserterTabWorker_Plots.DoLeftPart` draws **every** future plot,
+  wired top to bottom, swapping `RoyalTitleDefExtension.Icon` for its paired `GreyIcon` when
+  unreached; the row is inert but fully legible, with its name and target visible. That is
+  `requirements/POLITICS.md`'s *"a locked row with its threshold, not an absent one"* in shipped
+  form.
+- **Best threshold text:** VFE Empire's `RoyaltyTabWorker_Permits.DoLeftRect` colourises each
+  requirement line white or `ColorLibrary.RedReadable` by whether it is met, and **omits the action
+  button entirely** rather than disabling it.
+- **The anti-pattern:** VFE Deserters' `DesertersUIUtility.DoPurchaseButton` greys the button
+  **cosmetically** — it still fires, and the refusal arrives afterwards as a red toast — and
+  `DeserterTabWorker_Services.DrawService` gives an unaffordable service no visual gate at all. Do
+  not copy either.
+
+**Nothing in either mod carries a generic gate primitive.** VFE Empire's closest thing,
+`RoyalTitleDefExtension`, is a `DefModExtension` holding three *lists of requirement objects* each
+read by a separate hand-compiled worker, and none of them is a threshold on a number. Its three
+`QuestPart_RequirementsToAccept` subclasses gate on **rooms and shuttle landing zones**, never on
+honour or title level [V]. VFE Deserters' `VisibilityLevelDef` bands **scale prices and flip
+incidents and carry no min-band field anywhere** — "locked until band N" is not a shipped pattern
+there [V].
+
+#### The wide pass
+
+Both corpus roots plus vanilla and the DLC, `.cs`, `.xml` and every `.dll` with `-a` and
+`-g '!**/obj/**'`, each vocabulary swept twice — ASCII, then a **hand-typed null-interleaved
+literal** for the `#US` heap (**never** `--encoding utf-16le`,
+[#103](https://github.com/cjd721/Rimworld-Archinity/issues/103)). Validated against
+`GoodwillSituationWorker` (11 files) and `TryAffectGoodwillWith` before any negative was trusted.
+
+| Vocabulary | Result |
+|---|---|
+| `MinGoodwill` / `minGoodwill` / `GoodwillThreshold` | RimPacts, Rim War only |
+| `RequiredGoodwill`, `goodwillRequired`, `FactionRequirement`, `RelationRequirement`, `requiredRelation`, `minRelation`, `StandingRequirement`, `QuestNode_Requirement` | **zero, in both heaps** |
+| XML def fields `minFactionRelation`, `requiredGoodwill`, `factionRelation` | **zero**. `requiresFaction` (56 hits) is vanilla `SitePartDef`'s *does this site need a faction* flag; every `goodwill*` XML field in the corpus is an **effect**, not a gate |
+| `RequirementsToAccept` | VEF, VFE Empire, Multiplayer |
+| All 113 distinct `QuestNode_*` names in the corpus | none faction-standing-shaped |
+
+**Residual gap, stated:** a mod could express a standing gate as a comparison inside a generically
+named worker with no distinctive identifier, and no vocabulary sweep would find it. Bounded by the
+two def-level hits above, both of which *do* name their fields; unlikely to hide a better donor
+than RimPacts, which is already rejected on other grounds.
+
+### Verification (the gate)
+
+READ-class throughout. Every mechanism claim above was read from a decompiled 1.6 assembly and is
+cited by `Type.Method`; the translation keys were read from
+`Core/Languages/English/Keyed/Dialog_Trees.xml`.
+
+**What still needs the game: nothing to settle the mechanism.** Two cheap confirmations are owed
+before the build is relied on, and neither is a RUN:
+
+- A **STUB**-class check that a `QuestScriptDef` carrying the new node offers the quest with the
+  requirement box populated and the Accept button greyed — observable in one single-player session,
+  and it also proves the `TestRunInt` choice in §2 is the one that shipped.
+- The positional-`DiaOption` hazard belongs to the two-client regime on
+  [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16) as one observation: **with a gated
+  option present and disabled on both clients, clicking the option below it activates the same
+  action on both.** That is the check that would catch an option list built differently per client,
+  and it is the only multiplayer claim here that reading cannot close.
+
+Observable checks that the requirement is satisfied: an offered quest the player cannot yet accept
+states its threshold and the player's current value, in the requirement box, before accepting; a
+comms-console action below its threshold is present, greyed, and names the number it wants.
+
+### Outstanding decisions (the gate)
+
+1. **Every threshold is a balance number and none has an owner.** What "+50 with the Reach"
+   actually is, per gate and per era, is `docs/requirements/POLITICS.md`'s and
+   `docs/requirements/RELIGION.md`'s. The build does not wait on them — they are Def fields by
+   construction — but **the same gap [`RELIGION.md`](RELIGION.md) § *Outstanding decisions* §
+   *Reverence* item 4 records applies here**, and it is still a gap rather than a hand-off:
+   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s scope is the coupling, not the
+   values.
+2. **Whether standing gates are ever *spent* rather than merely read.** Vanilla's own precedent is
+   both at once — `RequestTraderOption` gates on ally status **and** charges 15 goodwill [V] — and
+   `requirements/RELIGION.md` asks for exactly that split for institutions: *"Reverence unlocks the
+   diplomatic option; normal Goodwill remains the spend lever."* The mechanism supports either;
+   **which axis is checked and which is charged is authoring, per action.**
+   [`RELIGION.md`](RELIGION.md) § *The build — religious institutions* makes the first such call.
+3. **Whether a gate should ever hide rather than lock.** The requirement says show the carrot, and
+   this build always shows it. A campaign beat that must stay secret until it is reachable needs
+   the opposite behaviour, its mechanism is different — `TestRunInt` returning `false`, §2 — and it
+   is deliberately not the default. No ticket owns the question of which beats, if any, want it.

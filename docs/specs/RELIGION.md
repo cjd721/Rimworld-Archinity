@@ -3,7 +3,7 @@
 ## Purpose and scope
 
 How the religious systems in [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md)
-will be built. This document owns two behaviours end to end:
+will be built. This document owns four behaviours end to end:
 
 - **Reverence** — the number, the events that move it, the decay that pulls it back, the bands,
   and the surfaces the player reads it on.
@@ -14,10 +14,19 @@ will be built. This document owns two behaviours end to end:
   Church's ideology mid-run, what seats them in that ideology's defining roles, and what the
   campaign stores so the act can be told apart from an accident
   ([#75](https://github.com/cjd721/Rimworld-Archinity/issues/75)).
+- **Religious institutions inside foreign factions** — the church or monastery the player plants
+  inside another faction, its Reverence gate, its Goodwill price, the decay it offsets and its
+  suppression by a hostile government
+  ([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73)).
 
-It does not own **religious institutions inside foreign factions**
-([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73)); the interface those need is
-named in *The build* and nothing more. It does not own **Reverence as a storyteller attention
+**Two boundaries inside this document matter more than the rest, because both were drawn to stop
+one number acquiring two owners.** The institution build **writes** `sustain` on the per-faction
+record *The build — Reverence* §1 defines and **adds no store of its own**; and the mechanism that
+refuses the founding action until Reverence is high enough, and draws the threshold before it is
+reached, is [`POLITICS.md`](POLITICS.md) § *Standing as a content gate* — **this document consumes
+that gate and does not restate it**, for every Reverence- and Exaltation-gated action alike.
+
+It does not own **Reverence as a storyteller attention
 weight** ([#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)), **vassalage and
 revolt** ([#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)), or the **shape of
 the political surface** ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)) —
@@ -67,7 +76,7 @@ ever had a non-zero value:
 |---|---|
 | `Faction faction` | the key, scribed `Scribe_References.Look` — `Faction` is `ILoadReferenceable` [V] |
 | `float value` | the number the requirement calls "57 out of 100" |
-| `float sustain` | institutional resistance to decay — **written by [#73](https://github.com/cjd721/Rimworld-Archinity/issues/73), read here** |
+| `float sustain` | institutional resistance to decay — **written by *[The build — religious institutions inside foreign factions](#the-build--religious-institutions-inside-foreign-factions)* below, read here**. That section also nests a `List<Institution>` beside it and recomputes this field from it; nothing else about this record or the decay changes |
 | `int decayTimer` | the neglect counter, on `Faction.naturalGoodwillTimer`'s pattern [V] |
 | `ReverenceBandDef lastBand` | the band as of the last crossing, so a change can be announced once |
 
@@ -197,11 +206,14 @@ requirement states, and C adds a hook that fires on every history event in the g
 
 In `WorldComponentTick`, on a modulus, copying `Faction.CheckReachNaturalGoodwill`'s shape [V]:
 a deadband, a `decayTimer` that resets whenever the value moves, a threshold, and a step capped
-at a small constant. The step is reduced by the record's `sustain`, which is
-[#73](https://github.com/cjd721/Rimworld-Archinity/issues/73)'s only required interface: **it
-writes `sustain`, this reads it.** A faction whose institutions fully offset decay holds its
-value; the requirement's *"institutions deliberately counteract natural Reverence decay and can
-eventually make the faith self-sustaining"* is that subtraction and nothing more.
+at a small constant. The step is reduced by the record's `sustain`, which is the institution
+build's only required interface: **it writes `sustain`, this reads it.** A faction whose
+institutions fully offset decay holds its value; the requirement's *"institutions deliberately
+counteract natural Reverence decay and can eventually make the faith self-sustaining"* is that
+subtraction and nothing more. **Self-sustaining is an inequality, not a state** — see
+*[The build — religious institutions inside foreign factions](#the-build--religious-institutions-inside-foreign-factions)* §3,
+which also flags the one open question this subtraction raises: whether it is clamped at the step
+or may go negative and turn decay into growth.
 
 `WorldComponentTick` is reached from `TickManager.DoSingleTick` → `World.WorldTick` →
 `WorldComponentUtility.WorldComponentTick` [V] — inside the synced tick. `WorldComponentUpdate`
@@ -914,6 +926,277 @@ ritual def trio. No new saved collection, no new Def type, no Harmony patch.** T
 cheaper than Exaltation, and for the same reason: we are not building a system, we are
 invoking one the DLC already ships.
 
+## The build — religious institutions inside foreign factions
+
+`docs/requirements/RELIGION.md`: *"With sufficient Reverence, the player can spend Goodwill to
+establish churches, monasteries or equivalent religious institutions inside friendly factions.
+These institutions deliberately counteract natural Reverence decay and can eventually make the
+faith self-sustaining. Hostile governments can suppress institutions, persecute apostles and keep
+Reverence falling unless the player changes the political situation."*
+
+**This section owns the institution. It does not own the store and it does not own the gate.**
+The per-faction Reverence ledger is *The build — Reverence* §1 above
+([#98](https://github.com/cjd721/Rimworld-Archinity/issues/98)); §3 below states the interface this
+capability needs from it and adds nothing else. The mechanism that refuses the founding action
+until Reverence is high enough, and draws the threshold before it is reached, is
+[`POLITICS.md`](POLITICS.md) § *Standing as a content gate*; §2 below consumes it rather than
+restating it.
+
+**Nothing in the corpus carries this.** A wide pass over both roots returned **zero in both
+assembly metadata heaps** for `Embassy`, `Monastery`, `ChapterHouse`, `Diocese`, `Congregation`,
+`Chapel` and `Persecut` — and zero corpus-wide for four of the seven; the other three appear only
+in backstory, meme and quest **XML** with no institution behind any of them [V]. *Available
+mechanisms* § *Institutions* carries the exact scoping. What does exist is two near misses and one
+genuine structural donor. So this is new code — but it is **~125–130 lines and no new saved
+collection**, because the store, the gate, the decay subtraction, the world hook and the letter
+shape are all already there.
+
+### 1. What it is, structurally — a record on the ledger, not a world object
+
+**An institution is a nested record on the per-faction Reverence entry that
+`WorldComponent_Reverence` already holds.** No new component, no new world object, no map.
+
+The ticket's own guess was *"probably not a `WorldObject` — closed
+[#10](https://github.com/cjd721/Rimworld-Archinity/issues/10) established that a bare `MapParent`
+shrine carries real costs and cannot own a quest clock under Async Time"*, and that is **confirmed
+and it is the right conclusion for a stronger reason than the one given.** #10's finding is about
+`MapParent` specifically — a full simulated map, a tick cost, an authoring requirement that its
+`WorldObjectDef` declare no `incidentTargetTags` or it becomes the sole incident target whenever it
+ticks, and a quest clock that `MultiplayerAsyncQuest.TryGetQuestMap` binds to the wrong speed. A
+plain `WorldObject` avoids all of that. **The reason not to use one is different: it would be a
+second store for a number #98 already owns**, and two stores for one number is the specific failure
+this capability was re-scoped to prevent.
+
+So: `FactionReverence` gains one field.
+
+| Field | Purpose |
+|---|---|
+| `List<Institution> institutions` | one record per institution planted in that faction |
+
+and `Institution : IExposable` is four values:
+
+| Field | Purpose |
+|---|---|
+| `ReligiousInstitutionDef def` | the tier — shrine, church, monastery — carrying its Reverence gate, its Goodwill price and its sustain contribution |
+| `int foundedTick` | when, for the letter, the inspect string and any maturation ramp |
+| `int suppressedTick` | `-1` when operating; the tick suppression began otherwise (§4) |
+| `PlanetTile tile` | optional, and only for display — which of that faction's settlements it sits beside |
+
+**`ReligiousInstitutionDef : Def` is the whole tunable surface**, and it is XML: a label, a
+description, the Reverence threshold to found one, the Goodwill price, the sustain it contributes,
+the maximum number of that tier per faction, a `float suppressedSustainFactor` (§4), and a
+work/time cost if one is wanted. One further field is global rather than per-tier and belongs on
+the same settings-style Def instance the decay rate already lives on: `bool allowNegativeDecay`
+(§3). **Not `ModSettings` — T-18.**
+
+### 2. The gate and the price — consumed, not rebuilt
+
+The founding action is a `DiaOption` on the faction's comms dialogue, appended by the
+`FactionDialogMaker.FactionDialogFor` postfix *The build — Reverence* D2 already costs. Its gate is
+[`POLITICS.md`](POLITICS.md) § *Standing as a content gate* §3, on the Reverence axis:
+
+```
+Found a monastery among the Reach (cost: 40 goodwill)  (need 60 Reverence — currently 41)
+```
+
+**This is the split the requirement asks for, exactly**: *"Reverence unlocks the diplomatic option;
+normal Goodwill remains the spend lever."* One axis is **checked**, a different axis is **charged**,
+and vanilla already does both at once on this same surface — `RequestTraderOption` gates on ally
+status and charges 15 goodwill, with the price in the label and the gate in the disabled reason
+[V]. The label's *"(cost: N goodwill)"* half is vanilla's own formatting, built from
+`-Faction.OfPlayer.CalculateAdjustedGoodwillChange(faction, -N)` [V].
+
+**The charge itself, and the two ways it lies if written naively** [V, both from
+[`POLITICS.md`](POLITICS.md) § *Available mechanisms*]:
+
+- `Faction.OfPlayer.TryAffectGoodwillWith(faction, -cost, …)` returns a `bool`, and gates C and E
+  make it return `false` silently. **Check it before creating the record and before sending the
+  letter** — an institution founded for free because the charge no-opped is worse than one that
+  could not be founded.
+- `CalculateAdjustedGoodwillChange` amplifies any change moving *toward* natural goodwill by 25% of
+  the remaining gap, so a −40 price can land as more than −40. The label prints the adjusted figure
+  because it calls the same method; the record must store the price actually paid if a refund is
+  ever wanted.
+
+**A second, deliberate gate:** `ReligiousInstitutionDef.maxPerFaction`, and a relation-kind floor.
+The requirement says *"inside **friendly** factions"*, so the option is disabled — never omitted,
+see *Persistence and multiplayer* — with `"MustBeAlly"`-shaped reasoning when the faction is
+hostile. Vanilla's own key is reusable verbatim.
+
+### 3. The interface to the Reverence ledger — exactly three things, and two already exist
+
+This is the whole of what #73 asks of #98:
+
+1. **`float sustain` on `FactionReverence`.** Already specified by
+   [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) — *The build — Reverence* §1 lists
+   it as *"institutional resistance to decay — written by #73, read here"*, and §4 already
+   subtracts it from the decay step. **Nothing about #98's decay code changes.**
+2. **The nested `institutions` list (§1)**, which is one extra
+   `Scribe_Collections.Look(ref institutions, "institutions", LookMode.Deep)` inside
+   `FactionReverence.ExposeData`. The record is already scribed `LookMode.Deep` from the
+   component's single collection, so this nests for free and a save predating it loads the field as
+   null → empty.
+3. **`sustain` is recomputed from the list whenever the list changes**, and never independently
+   accumulated. Founding recomputes it; suppression recomputes it; a faction losing its last
+   institution recomputes it to zero. This is the one design rule that keeps the two numbers from
+   drifting apart across a months-long save, and it costs a three-line method.
+
+**The requirement's *"can eventually make the faith self-sustaining"* is the case where the
+recomputed `sustain` meets or exceeds the decay step** — #98's §4 subtraction, unchanged, with no
+special-casing. Self-sustaining is not a state, it is an inequality.
+
+⚠ **`sustain` needs a ceiling, and the build sets one rather than handing the question back.**
+Nothing in #98's decay step stops `sustain` exceeding the step and turning decay into *growth*,
+which the requirement does not ask for and which would make institutions a second acquisition loop
+rather than a preservation one. **The mechanism is one clamp and a `bool allowNegativeDecay`
+defaulting to `false`** — the step becomes `Max(0, step − sustain)` unless the flag says otherwise.
+Whether the flag is ever flipped is then an ordinary balance call on an XML field, and the *"can
+eventually make the faith self-sustaining"* clause is satisfied at the default. Stating the default
+is the point: *institutions preserve, they do not evangelise*, unless someone deliberately says
+otherwise.
+
+### 4. Suppression — one Harmony postfix, on a method vanilla already uses for exactly this
+
+**`RimWorld.Faction.Notify_RelationKindChanged(Faction other, FactionRelationKind previousKind, bool canSendLetter, string reason, GlobalTargetInfo lookTarget, out bool sentLetter)`
+is the hook, and it is `public`** [V]. It is vanilla's single convergence point for *"the political
+situation with this faction just changed"*, and **it already contains two suppression routines of
+exactly the shape this capability needs** [V]:
+
+- **The suppression branch.** When `other == OfPlayer && this.HostileTo(OfPlayer)`, it walks
+  `Find.WorldObjects.AllWorldObjects`, finds every object whose `Faction` is the newly hostile
+  faction, fetches its `TradeRequestComp`, and calls `component.Disable()` on any active request —
+  then, per map, `map.passingShipManager.RemoveAllShipsOfFaction(this)`. **A player-facing
+  arrangement with that faction is disabled, not destroyed, the moment the faction turns hostile;
+  a transient one is removed outright.** That is suppression, shipped, and the split between the
+  two halves is the model for ours.
+- **The restoration branch, and its letter.** When `other == OfPlayer && !this.HostileTo(OfPlayer)`,
+  it collects every site of that faction where
+  `factionMustRemainHostile && sites[i].Faction == this && !sites[i].HasMap` — **the `!HasMap` term
+  matters: a site the player is currently standing on is left alone** — and if any remain sends
+  `LetterLabelSiteNoLongerHostile` / `…Multi`, the multi form building a bulleted
+  `"  - " + LabelCap` list with a parenthesised pawn name per entry, and a `LookTargets` over the
+  affected tiles, before destroying them.
+
+**So the postfix is small and its letter is a transcription.** On the hostile edge: mark every
+institution in that faction `suppressedTick = TicksGame`, recompute `sustain`, and send a
+`ChoiceLetter` built on the `…Multi` shape naming each institution and the faction. On the friendly
+edge: clear `suppressedTick`, recompute, and send the mirror letter.
+
+**Suppressed, not destroyed — and the requirement decides that, not the design.**
+*"keep Reverence falling **unless the player changes the political situation**"* says the state is
+reversible by changing the situation, which is precisely the friendly edge of this same hook. The
+vanilla routine it is modelled on destroys its sites; ours must not, and the difference is
+deliberate and worth stating because the donor code is right there doing the other thing.
+
+**What suppression costs the player, mechanically — and the build settles the branch rather than
+handing it back.** A suppressed institution contributes
+`def.sustain * def.suppressedSustainFactor` to the recomputation instead of `def.sustain`, with
+**`suppressedSustainFactor` defaulting to `0f`**. At the default, suppression simply removes the
+help and #98's decay step resumes at full rate. The requirement's *"persecute apostles"* clause —
+a hostile government making things actively worse than neglect — is then **a negative value in that
+same field**, needing no second mechanism and no `if`. Whether it is ever set negative is an
+ordinary balance call; the branch exists either way.
+
+⚠ **The postfix must read the right operand.** `Notify_RelationKindChanged` is an instance method on
+the faction whose relation changed, and `other` is the counterparty. **The two branches quoted
+above** are each guarded on `other == OfPlayer` [V] — though the method as a whole is not: its
+prisoner-status sweep and its attack-target-cache block run for any pair. Read `__instance` for the
+faction whose institutions move. This is the same discipline the apostle hook needs (*The build —
+Reverence* §3A) and for the same reason.
+
+⚠ **Guard on `Current.ProgramState == ProgramState.Playing`** — but not for the reason an earlier
+draft of this section gave. **It does *not* fire during world generation**, and saying so sent an
+implementer hunting a bug that cannot happen [V]:
+
+- `FactionGenerator.NewGeneratedFactionWithRelations` reaches `Faction.SetRelation(FactionRelation)`,
+  which mutates `relations` directly.
+- `Faction.TryMakeInitialRelationsWith` hand-constructs **both** `FactionRelation` objects and
+  appends them to the two `relations` lists itself.
+
+Neither calls `Notify_RelationKindChanged` at all. The only route that could fire early —
+`GoodwillSituationManager.CheckHostilityChanged` → `Notify_GoodwillSituationsChanged` →
+`CheckKindThresholds` — is itself guarded on `Current.ProgramState != ProgramState.Playing`, and
+worldgen runs at `ProgramState.Entry`.
+
+**The guard is still required**, because the hook *does* reach us at
+`ProgramState.MapInitializing` — during map generation and during load — through
+`SettlementUtility.AffectRelationsOnAttacked` and `GoodwillSituationManager.RecalculateAll`. That
+is the window in which the component may not yet hold its records.
+
+⚠ **And the vanilla body consults `ProgramState` three times, not once.** The first occurrence
+suppresses letters; a second brackets the prisoner-status sweep; a third `return`s before the
+attack-target-cache and lord block [V]. An earlier draft said the method used it *"only to suppress
+letters"*, which is true of the first line and false of the method.
+
+### 5. Where the player sees it
+
+Four surfaces, three of them free:
+
+- **The gate, before it is reachable** — the disabled `DiaOption` with its threshold and the
+  player's current Reverence, §2. This is the *"see the carrot"* clause of
+  [`requirements/RELIGION.md`](../requirements/RELIGION.md) § *Reverence — Religious Penetration,
+  Not Goodwill++*, satisfied on vanilla's own surface.
+- **The founding and the suppression** — `ChoiceLetter`s, on the shapes above and on *The build —
+  Reverence* §5's band-change letter (VFED's `Letter_VisibilityChange` is the shipped precedent
+  [V]).
+- **The standing state** — the faction row tooltip that *The build — Reverence* D1 already builds.
+  Institutions belong in the tooltip rather than in the row: *"3 institutions, 2 suppressed;
+  sustain 0.4/day"* is a line of tooltip text and needs none of D1's contested layout arithmetic.
+  **This is the piece that makes `sustain` legible**, and without it the number the whole capability
+  exists to move is invisible.
+- **On the world map, optionally** — `Settlement.GetInspectString` is the template and it is
+  vanilla's: it already prints `"RequiresTradePermission"` with the required title **beside the
+  live relation kind and goodwill number** [V], which is precisely the register an institution line
+  belongs in. Reaching it is the alternative build, §6.
+
+### 6. The alternative build — a `WorldObjectComp` on `Settlement`, and what separates them
+
+**It is cheaper than it looks, and it is still not selected.** `WorldObjectDef Settlement` already
+declares a `<comps>` list with five entries, so a `PatchOperationAdd` puts a comp of ours on every
+settlement in the game [V]. And the backfill is free: `WorldObject.ExposeData` calls
+`InitializeComps()` on `LoadingVars` **from `def.comps`**, then `comps[i].PostExposeData()` — comps
+are *rebuilt from the def at load*, never scribed as a collection, so adding one mid-campaign
+initialises it on every existing settlement rather than erroring [V]. `WorldObjectComp` gives
+`CompInspectStringExtra`, `GetDescriptionPart`, `GetFloatMenuOptions(Caravan)`, `GetGizmos`,
+`GetCaravanGizmos` and `PostDrawExtraSelectionOverlays` [V] — the institution would be visible,
+selectable and caravan-reachable on the world map with no new world object and no map.
+
+**What separates the two builds is not cost, it is ownership.** A comp holding institution state is
+a second store for a number #98 owns, keyed by `Settlement` rather than by `Faction`, and
+settlements are destroyed, abandoned and re-founded over a campaign while the faction persists.
+The requirement is per faction — *"institutions inside friendly factions"*, *"counteract natural
+Reverence decay"* — and the decay it counteracts is per faction.
+
+**So the recommendation is the ledger, with the comp available as a pure display adapter**: if the
+map presence is wanted, add the comp holding *nothing but a lookup* — read the ledger for
+`comp.parent.Faction`, print a line — and the ledger stays the single authority. That is the
+version to build if [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) or playtest says
+the institution needs to be somewhere the player can point at.
+
+### Cost
+
+| Piece | Cost |
+|---|---|
+| `ReligiousInstitutionDef` — tiers, thresholds, prices, sustain, caps | **XML** — one new Def type |
+| `Institution` record + the nested list on `FactionReverence` | **New C#**, ~20 lines, inside #98's component. **No new saved collection** |
+| `sustain` recomputation | **New C#**, ~5 lines |
+| The decay subtraction that consumes it | **Free** — [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) already built it |
+| The Reverence gate and the Goodwill price, shown before reached | **Free** — [`POLITICS.md`](POLITICS.md) § *Standing as a content gate* §3, on the postfix D2 already costs |
+| The founding action | **New C#**, ~35 lines, hosted on an MP-whitelisted type |
+| Suppression and restoration | **Patch** — 1 Harmony postfix on `Faction.Notify_RelationKindChanged`, **~55–60 lines** including both letters. The `…Multi` letter builder this transcribes is ~25 lines on its own and there are two edges; an earlier estimate of ~40 did not account for that |
+| Institutions in the faction tooltip | **New C#**, ~10 lines, inside D1's existing tooltip |
+| World-map presence (§6) | **XML** — one `PatchOperationAdd` — plus ~25 lines, **only if taken** |
+| Multiplayer | **Free** — the comms click is already a synced command |
+| Every number | **Requirements / balance** — see *Outstanding decisions* |
+
+**Aggregate: one new Def type, one Harmony postfix, ~125–130 lines of C# in the existing
+`ArchinityAltar.dll`, and no new component, no new world object and no new saved collection.** No
+new assembly. The optional world-map adapter adds ~25.
+
+The mechanisms are [V]; **the claim that they compose into the behaviour the requirement describes
+is [I]**, as every proposed build is until something is built.
+
+
 ## Persistence and multiplayer
 
 ### Exaltation
@@ -975,7 +1258,11 @@ invoking one the DLC already ships.
   list and messages: [`docs/engine/determinism.md`](../engine/determinism.md).
 - **The player-initiated writes are the ones that need synced commands** — establishing an
   institution, calling a revolt. A UI click is not a simulated event, and that is the case the
-  "wrap every write" rule is actually about.
+  "wrap every write" rule is actually about. ⚠ **The rule stands; both named instances turn out to
+  be covered already.** A `DiaOption` click on the comms console is synced by Multiplayer itself
+  [V] — see *Institutions*, below, and
+  [`POLITICS.md`](POLITICS.md) § *Persistence and multiplayer (the gate)*. The *unsynced* case is a
+  gizmo or a window of our own, which nothing in this document builds.
 - **One shared player faction means one Reverence number per NPC faction.** Letters are shared;
   any per-player filtering is draw-time only (**T-21**).
 - If Reverence ever hooks faction-ideo recalculation, Multiplayer already brackets
@@ -1029,6 +1316,43 @@ invoking one the DLC already ships.
   `RoleSingle` seat is one seat for two colonies, so the preacher rung would be permanently
   held by one founder and permanently empty for the other, while one leader is the correct
   answer because there is one `Faction.OfPlayer.leader` to set.
+### Institutions
+
+- **Nothing new is persisted.** The institution list nests inside the `FactionReverence` record
+  Reverence already scribes `LookMode.Deep` (*The build — religious institutions* §3), so there is
+  no second collection, no second component and no migration. A save predating the feature loads
+  the field null and the recomputation yields `sustain = 0`, which is the correct starting state.
+- **The founding click is already a synced command, and this corrects the assumption above.** The
+  *Reverence* subsection says *"the player-initiated writes are the ones that need synced commands
+  — establishing an institution, calling a revolt."* The rule is right; **this instance is already
+  covered.** `Multiplayer.Client.NodeTreeDialogSync` is a Harmony prefix on `DiaOption.Activate`
+  that, while a `Dialog_NodeTree` is open in a multiplayer session, suppresses the local activation
+  and routes it through `[SyncMethod] SyncDialogOptionByIndex(int position)`; and
+  `Multiplayer.Client.PersistentDialog.Click(int ver, int opt)` is itself `[SyncMethod]` behind a
+  version guard that drops a click made against a stale node [V]. **No `[SyncMethod]` of ours and
+  no `Multiplayer.API` reference is needed to found an institution.** Full mechanism and its
+  hazard: [`POLITICS.md`](POLITICS.md) § *Persistence and multiplayer (the gate)*.
+- ⚠ **Disable the option, never omit it.** Both sync mechanisms identify the clicked option by its
+  **index in `curNode.options`** [V], so an option list that differs between clients makes index
+  *n* mean two different actions. Every gate in §2 — the Reverence threshold, the per-faction cap,
+  the friendly-faction floor — must produce a `Disable(reason)`, not a skipped `Add`. It fails
+  silently on both clients and it is the single easiest mistake to make here.
+- **The enabled action's host type is constrained.** `DelegateSerialization.CheckMethodAllowed`
+  requires the delegate's outermost declaring type to derive from one of fifteen whitelisted types
+  [V]; `QuestPart`, `Command`, `Letter` and `ThingComp` are the realistic hosts. This is the same
+  constraint D2 carries and the founding action inherits it.
+- **The suppression postfix is inside simulation.** `Faction.Notify_RelationKindChanged` is reached
+  from `TryAffectGoodwillWith` → `CheckKindThresholds`, which both clients execute on the same tick
+  in the same order [V on the mechanism, I that this hook qualifies] — the same reasoning
+  [`POLITICS.md`](POLITICS.md) sets out for the ripple. It consumes no `Rand`.
+- **Every tunable is a `ReligiousInstitutionDef` field** — **T-18**. Faction Territories is the
+  live worked example of getting this wrong for exactly this capability: its vassalage goodwill
+  cost comes from a `ModSettings` slider [V].
+- **One shared player faction means one set of institutions per faction** (**T-21**). Either
+  founder can found one, both see the letters, and any per-player filtering is draw-time only.
+- **Iterate the institution list, never a dictionary**, for the same determinism reason the record
+  list is a list.
+
 
 ## Failure and recovery
 
@@ -1151,6 +1475,51 @@ invoking one the DLC already ships.
   role precepts vanilla's `IdeoRole_Moralist` or `IdeoRole_Leader` `defName`s, and never patch
   vanilla's.** Both are conferred on *every* ideology in the game, NPC factions included, and a
   `PatchOperation` on them changes the moral guide for the whole planet with no error (§4A).
+### Institutions
+
+- ⚠ **A `sustain` that is stored rather than recomputed drifts, and nothing detects it.** Two
+  numbers describing one fact — the institution list and the decay offset — diverge the first time
+  a code path changes one without the other, and the symptom is a decay rate that is quietly wrong
+  for the rest of the campaign. *The build* §3 makes `sustain` a recomputation for this reason and
+  no other.
+- ⚠ **A goodwill charge that silently no-ops founds a free institution.** `TryAffectGoodwillWith`
+  returns `false` under gates C and E and clamps at `GetMaxGoodwill` [V,
+  [`POLITICS.md`](POLITICS.md)]. **Check the `bool` before creating the record**, not after —
+  otherwise the requirement's *"spend Goodwill"* clause is unenforced against exactly the factions
+  whose relations are locked.
+- ⚠ **Omitting a gated founding option instead of disabling it desyncs the comms option index**,
+  silently, on both clients (*Persistence and multiplayer*).
+- **Suppression fails open.** If the `Notify_RelationKindChanged` postfix is ever missed — a mod
+  short-circuiting the method, a relation changed through `SetRelationDirect` — institutions keep
+  sustaining a faction that is now shooting at the colony, and nothing is logged. Any acceptance
+  check has to observe `sustain`, not the absence of an error. This is the same failure shape the
+  apostle hook has (*Failure and recovery* § *Reverence*) and it is inherent to a Harmony
+  observation of a vanilla event.
+- **The postfix can fire before the component holds records — at `MapInitializing`, not at
+  worldgen.** Both worldgen relation-seeding paths bypass the hook entirely
+  (`FactionGenerator.NewGeneratedFactionWithRelations` → `Faction.SetRelation`, and
+  `TryMakeInitialRelationsWith`, which appends both `FactionRelation` objects itself) [V]. The real
+  early window is map generation and load, through `SettlementUtility.AffectRelationsOnAttacked`
+  and `GoodwillSituationManager.RecalculateAll`. Guard on
+  `Current.ProgramState == ProgramState.Playing` (*The build* §4) — an earlier draft gave the right
+  guard with the wrong justification, which would send an implementer hunting a worldgen bug that
+  cannot happen.
+- **Institutions are keyed by `Faction`, so they inherit T-07** — the faction roster must be final
+  before world creation. A faction added later can never host one.
+- **A faction removed mid-campaign takes its institutions with it.** They nest inside the
+  `FactionReverence` record, which *The build — Reverence* §2 prunes on a null `Faction` reference.
+  Whether pruning is right is [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s
+  question for Reverence, and the institutions inherit whatever it decides — they do not need a
+  second ruling.
+- **A `sustain` exceeding the decay step would turn decay into growth**, and nothing in #98's step
+  prevents it on its own. The build clamps at `Max(0, step − sustain)` behind
+  `allowNegativeDecay: false` (*The build* §3); **shipping without the clamp is the silent failure**
+  — institutions quietly become a second acquisition loop the requirement never asked for, and the
+  symptom is a Reverence number that rises while nobody is doing anything.
+- **Suppression that destroys rather than disables has no route back**, and the requirement
+  explicitly wants one (*The build* §4). The donor routine in the same vanilla method destroys its
+  sites, so the wrong behaviour is the one that is easiest to copy.
+
 
 ## Status
 
@@ -1254,6 +1623,61 @@ regardless (§4).
 
 **And one framing premise was wrong:** the ticket's *"Assume host-only"* for
 `Page_ChooseIdeoPreset`. See *Persistence and multiplayer* § *The commitment*.
+### Institutions
+
+**Verified available mechanism. Not an implementation commitment.**
+
+Established by
+[Religious institutions inside foreign factions](https://github.com/cjd721/Rimworld-Archinity/issues/73),
+evidence class **READ** — a fresh decompile of `Assembly-CSharp.dll` at the version
+`docs/data/MOD-SNAPSHOT.md` pins, plus `Multiplayer.dll`, `VFEEmpire.dll` and `VFED.dll` (the
+**1.6** files, never their 1.4 `Source/` trees), `FactionTerritories.dll`, `RimPacts.dll`,
+`Outposts.dll`/`VOE.dll`, shipped Core XML, and a wide pass over both corpus roots in ASCII and in
+a hand-typed null-interleaved UTF-16LE form, validated against known hits before any negative was
+trusted.
+
+Three findings shape the build:
+
+1. **The corpus negative is clean and the near misses are instructive.** Nothing anywhere spells a
+   church, monastery, embassy, mission house, chapter house or diocese. The two things that come
+   closest — Vanilla Outposts Expanded and VFE Empire's vassals — each miss on a different axis,
+   and Faction Territories carries the whole shape but converts a settlement rather than planting
+   beside one.
+2. **Suppression is not new code, it is a transcription.** `Faction.Notify_RelationKindChanged`
+   already contains a disable-on-hostile routine and a restore-with-bulleted-letter routine, both
+   over faction-owned world objects, both public and both read end to end [V].
+3. **The institution needs one field from #98's store and changes none of its code.** `sustain` was
+   already specified as *"written by #73, read here"*; this resolution takes that at its word and
+   adds exactly one nested list beside it.
+
+**One premise in the ticket's own body is wrong, and it is recorded rather than inherited.** #73
+cites *"VFE Empire's Great Hierarchy (`WorldComponent_Hierarchy`, 147 lines)"* as the nearest
+shipped analogue. **That figure is a count of the 1.4 `Source/` file — which is exactly 147 lines —
+and not of the 1.6 assembly the game loads**, which is the failure
+`docs/agents/capability-research.md` § *Stale source* names #73 for by name. No replacement number
+is given here on purpose: a line count against a decompiler's output is an artifact of the
+invocation, not a fact about the type, and two `ilspycmd` runs disagreed by twenty lines. The
+load-bearing point needs no number. And having read it: **it is
+not the analogue.** Its state is `List<Pawn> TitleHolders` plus a `bool`, scribed
+`LookMode.Reference` — a roster of generated nobles, not a per-faction record of anything the
+player placed; its `WorldComponentTick` calls `Rand.Chance` and `Rand.RangeSeeded` and generates
+world pawns whose *count* comes from a `ModSettings` slider, which is the T-18 defect this document
+already records under *Persistence and multiplayer* § *Exaltation*; and neither it nor anything
+else in VFE Empire or VFE Deserters has any Multiplayer sync surface at all [V]. It was read
+because the ticket asked for it. It is a counter-example, not a donor.
+
+**Verdict for the sourcing ledger ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)):**
+
+| Piece | Verdict |
+|---|---|
+| `Faction.Notify_RelationKindChanged` as the suppression hook, and its two routines as the pattern | **reuse as-is** — carrier is base RimWorld |
+| The comms `DiaOption` + `Disable` gate, and MP's sync of the click | **reuse as-is** — base RimWorld and `Multiplayer.dll` |
+| `WorldObjectDef Settlement`'s `<comps>` list, if §6 is taken | **reuse as-is** — base RimWorld |
+| VFE Empire `WorldComponent_Hierarchy` / `WorldComponent_Vassals` | **not the donor** — read at the ticket's request and rejected on state shape, T-18 and the absent suppression path |
+| Vanilla Outposts Expanded / VEF `Outposts.dll` | **not the donor** — player tiles, no host faction, no gate, no price, no suppression |
+| Faction Territories' vassal outpost | **not the donor, but the closest structural precedent** — read and reported below |
+| The institution record, its Def, the founding action and the postfix | **author from nothing** — ~125–130 lines |
+
 
 ## Available mechanisms
 
@@ -1528,6 +1952,107 @@ objects with no running total and no decay, and Deserters Visibility being a sin
   `Multiplayer.dll` in UTF-16, the correct signature for a name existing only as a
   `SyncMethod.Register` string literal. **The `--encoding utf-16le` form
   ([#103](https://github.com/cjd721/Rimworld-Archinity/issues/103)) was not used.**
+### Institutions — nothing carries it, and the near misses each miss differently
+
+**The corpus negative, stated with its construction.** Both roots plus vanilla and the DLC, `.cs`,
+`.xml` and every `.dll` with `-a` and `-g '!**/obj/**'` (the five vendored publicised
+`Assembly-CSharp.dll` copies under `Source/obj/**` were excluded from every pass and **no `obj/`
+path appears in any result set** — verified, not assumed). Each vocabulary swept twice: ASCII, then
+a **hand-typed null-interleaved literal** for the `#US` heap — never `--encoding utf-16le`
+([#103](https://github.com/cjd721/Rimworld-Archinity/issues/103)), and never through `$(…)` or a
+generated pattern file, which strips the NULs and degrades the sweep to ASCII in silence. Validated
+against `GoodwillSituationWorker` and `TryAffectGoodwillWith` before any negative was trusted.
+
+| Vocabulary | Result |
+|---|---|
+| `Embassy`, `ChapterHouse`, `Diocese`, `Chapel` | **zero** — corpus-wide, across `.cs`, `.xml` and both assembly heaps |
+| `Monaster`, `Congregation`, `Persecut` | **zero in the assembly heaps**, which is the claim that matters. ⚠ **Not zero corpus-wide** — an earlier draft said "both heaps" under a heading claiming a `.cs`/`.xml`/`.dll` pass, which overstated its own evidence. They hit vanilla backstory and meme **XML**, Sepulchral Reliquary, VFED's `PlotMission.xml` and a cultists mod. **None is an institution**, so the negative survives; the sentence did not |
+| `Missionar` | RimPacts only, in both heaps |
+| `Church`, `Shrine`, `Institution`, `Suppression` | vanilla Ideology's `Need_Suppression`, `VPE_Shrineshield_*`, `NatureShrine_*` — decoration and abilities, no institution |
+| `Temple`, `Estate`, `Holding`, `Gated` | `AncientTemple` genstep, Anomaly's `Building_HoldingPlatform`, Rim War's transient `AttemptDiplomatMission`, vanilla's `Mission_BanditCamp` quest |
+| `Outpost` | VEF `Outposts.dll`, VOE, VFE Classical, Mining Outpost, Faction Territories |
+
+#### Vanilla Outposts Expanded — the framework is real and it is on the wrong tiles
+
+The state machinery is **not** in VOE: it is `Outposts.Outpost : MapParent, IRenameable` in VEF's
+`Outposts.dll`, holding `List<Pawn> occupants`, `List<Thing> containedItems`,
+`ticksTillProduction`, `ticksTillPacked`, `costPaid`, `raidFaction`, `raidPoints`, `deliveryMap`
+and a name, all scribed, with behaviour driven by an `OutpostExtension` on the `WorldObjectDef`
+[V]. VOE ships only the subclasses and defs.
+
+**It cannot be planted inside an NPC faction, by construction.**
+`Outposts.Utils.CanSpawnOnWithExt` rejects the placement outright when
+`Find.WorldObjects.AnySettlementBaseAtOrAdjacent(tile)`, and `Dialog_CreateCamp` calls
+`outpost.SetFaction(creator.Faction)` — the creating caravan's, i.e. the player's [V]. No goodwill
+cost, no standing gate, no host faction, no suppression path. It is a player colony annex on an
+empty tile, and it is also a `MapParent`, which [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10)
+already priced. **Not a donor.**
+
+#### VFE Empire's vassal — the right *decoration* pattern, no adversary
+
+`VFEEmpire.TitheInfo : IExposable` carries `TitheTypeDef Type`, `Pawn Lord`,
+`Settlement Settlement`, a setting, a speed and `DaysSinceDelivery`; `WorldComponent_Vassals`
+holds `Dictionary<Settlement, TitheInfo>` scribed Reference→Deep, and
+`AllPossibleVassals` lazily mints a record per existing Empire settlement [V]. **The object is an
+existing NPC settlement, decorated — never a new world object the player builds**, which is a
+genuinely useful precedent for §6's comp-as-adapter.
+
+Three reasons it is not the donor [V]: the currency is a derived vassalage-point budget summed
+over the pawn's title chain, not a spend; **nothing can suppress, raid, contest or reduce a
+vassal** — the only removal paths are the lord losing standing and a debug action, so the
+requirement's entire third clause has no precedent here; and `WorldComponent_Vassals.DoDay()`
+writes directly from a tick and a UI callback with no Multiplayer sync anywhere in the assembly.
+
+#### Faction Territories — the closest structural precedent in the corpus
+
+`jaeger972.factionterritories`, `Assemblies/FactionTerritories.dll`, no source, decompiled [V]. It
+is the only thing in 155 mods with the whole shape, and it is worth reading before building:
+
+- **Gate and price on one axis.** `VassaliseUtility.GetSettlementVassaliseGoodwillCost()` clamps a
+  configured cost to 10–100; the check is `if (faction.PlayerGoodwill < cost)` producing a
+  *"Requires N goodwill with …"* reason, guarded by `Faction.CanChangeGoodwillFor`; execution then
+  spends it through `TryAffectGoodwillWith(Faction.OfPlayer, -cost, …)` **with a `+cost` rollback
+  on failure**. The rollback is the detail worth copying.
+- **The planted object.** `FactionTerritories_VassalOutpost : WorldObject` — a plain `WorldObject`,
+  not a `MapParent` — placed by `VassaliseUtility.ExecuteVassalisationAtTile` **at the NPC
+  settlement's own tile** and given `SetFaction(Faction.OfPlayer)`, retaining `originalFactionId`,
+  `originalFactionLoadID`, `originalSettlementName` and `originalWorldObjectDefName` so the host
+  identity survives on the object.
+- **The ongoing effect.** `VassalagePointsComponent : GameComponent` accrues per-faction points on
+  `GameComponentTick` and spends them on silver tribute, purchased pawns and trade sellables.
+- **A real suppression loop.** `FactionTerritories.Invasions.Component` scans `GetAllOutposts()`,
+  calls `Utility.FindEligibleAttackers(outpost)` and `TryCreateForVassalOutpost(...)` to spawn an
+  `Invasion` against it, and the outpost can be destroyed.
+
+**Two reasons it is a precedent and not a donor.** It **converts** an existing NPC settlement, or a
+destroyed one, rather than planting an institution beside a living base — so the placement half
+would have to be built anyway; and ⚠ its cost is a `ModSettings` slider, **T-18**, which is the one
+thing not to copy. It is also already recorded as a `DrawFactionRow` patcher claiming the row's
+right-edge 80px (*The build — Reverence* D1), so it is a known collision surface either way.
+
+#### RimPacts' missionary — the pricing half without the persistence half
+
+`RimPacts.RptTuning` carries `MissionaryCost`, `MissionaryCooldownDays`, `MissionaryBaseChance`,
+`MissionarySuccessGoodwill`, `MissionaryFailGoodwill`, `MissionaryFavorBonus` and
+`MissionaryTechPenalty` [V on the symbols, [I] on the numbers, which come from the mod's own docs].
+Mechanically it sends the moral guide away for seven days at a silver cost for a roll to convert
+the faction's ideoligion, moving goodwill either way. **It is a timed operation with a price and an
+outcome — there is no persistent object and no decay offset**, so it is the *transaction* half of
+this capability and none of the *institution* half. The mod itself is already rejected on
+[`POLITICS.md`](POLITICS.md)'s grounds.
+
+#### What vanilla ships that this build stands on
+
+| Mechanism | What it gives institutions | Evidence |
+|---|---|---|
+| `Faction.Notify_RelationKindChanged` | the suppression trigger, **plus two shipped routines of exactly the right shape** — `TradeRequestComp.Disable()` on the hostile edge, and the `LetterLabelSiteNoLongerHostile{,Multi}` bulleted letter with `LookTargets` on the friendly edge | [V] |
+| `FactionDialogMaker` | the founding surface, its gate idiom and its *"(cost: N goodwill)"* label formatting | [V] |
+| `Multiplayer.Client.NodeTreeDialogSync` / `PersistentDialog.Click` | the founding click as a synced command, free | [V] |
+| `Faction.TryAffectGoodwillWith` | the price, with a `bool` that must be checked | [V] |
+| `WorldObjectDef Settlement`'s `<comps>` + `WorldObject.ExposeData` → `InitializeComps()` | the optional world-map presence, **with mid-save backfill for free** | [V] |
+| `Settlement.GetInspectString`'s `RequiresTradePermission` line | the register a world-map institution line belongs in | [V] |
+| `WorldComponent_Reverence`'s per-faction record | the store, already built | [V], [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) |
+
 
 ## Verification
 
@@ -1671,6 +2196,46 @@ inferring it from the role appearing.
 `QuestScriptDef` chain reaching `SetIdeo` through a generically named quest part — would be
 invisible to a name sweep. Bounded but not excluded; it would not be a better donor than
 `Pawn_IdeoTracker.SetIdeo` itself.
+### Institutions
+
+READ-class throughout, from decompiled 1.6 assemblies at the pinned versions. Every mechanism claim
+is cited by `Type.Method`. The ticket's named donor was read from the **1.6** `VFEEmpire.dll` and
+not from its 1.4 `Source/` tree, which is where the ticket's own line count came from (*Status*).
+
+**Two things that would raise confidence, and neither is a RUN:**
+
+- A **STUB**-class check that a `PatchOperationAdd` onto `WorldObjectDef Settlement`'s `<comps>`
+  reaches every settlement — `python tools/xpath.py '/Defs/WorldObjectDef[defName="Settlement"]/comps'`
+  gives the red-green number before the patch is written (`CODING_STANDARDS.md` § *The red–green
+  loop for def work*). Only needed if §6 is taken. Both tools merge the **active** set, so the
+  verdict is "matches in one configuration."
+- A logging postfix on `Faction.Notify_RelationKindChanged`, one faction driven across the −75
+  threshold, confirming the hostile edge fires once with `__instance` as the faction whose relation
+  changed and `other == Faction.OfPlayer`. Single-client, one session.
+
+**What still needs the game: nothing to settle the mechanism.** One observation belongs to the
+two-client regime on [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16), and it is the
+one multiplayer claim here that reading cannot close: **with the founding option present on both
+clients, one founder clicking it produces the same institution, the same goodwill charge and the
+same letter on both, on the same tick** — and, separately, that with the option *disabled* on both,
+clicking the option below it activates the same action on both (the positional-index hazard,
+[`POLITICS.md`](POLITICS.md) § *Persistence and multiplayer (the gate)*).
+
+Observable checks that the requirement is satisfied: a faction below the Reverence threshold shows
+the founding option greyed, naming the threshold and the current value; founding one deducts the
+stated goodwill and the faction's Reverence stops sliding; that faction turning hostile produces a
+letter naming the institutions and the slide resumes; the relation returning to neutral produces
+the mirror letter and the slide stops again.
+
+**Residual gap, stated:** a mod could express an institution as a `WorldObjectComp` or a `GameComponent`
+field with an entirely generic name and a `Dictionary<Faction, …>` type signature, which lives in
+the `#Blob` heap and is invisible to text search — the same bounded gap
+[#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) records for the Reverence store, and
+closable by the same Mono.Cecil `tools/` mode it proposes. Given that the vocabulary sweep returned
+a clean zero across seven institution words in both **assembly** heaps — and corpus-wide for four
+of them, with the other three surviving only as unrelated XML prose — a hidden better donor is
+unlikely.
+
 
 ## Outstanding decisions
 
@@ -1795,3 +2360,45 @@ ticket is named as *context*, never as the owner.
     `docs/requirements/RELIGION.md` nor [`ENDING.md`](../plot/ENDING.md) says. **Gap, no owner.**
     This is the same unowned-numbers gap as decisions 4 and 8 and probably belongs in the same
     ticket.
+
+### Institutions
+
+**Every open item here is a number, and that is deliberate.** Two entries in an earlier draft were
+*mechanisms* wearing a number's clothes — whether the decay subtraction is clamped, and whether
+suppression can reverse rather than merely remove sustain. Handing those back was wrong under
+`docs/agents/capability-research.md` § *Requirements stay where they live*: **a missing mechanism
+is the build's**. Both are now branches the build ships, with their defaults stated, and only their
+values are open. Items 4 and 6 remain open questions rather than parameters, but each is priced
+against a named donor, so neither blocks.
+
+The build does not wait on any of these — all are Def fields by construction — but naming them is
+the point.
+
+1. **The prices and the thresholds.** What Reverence a tier requires, what Goodwill it costs, how
+   many of each tier a faction may host. Same owner problem as *Reverence* item 4 above: no open
+   ticket holds Reverence's values, and none holds these either.
+   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s scope is the coupling.
+   **Gap, no owner**, recorded rather than handed to a ticket that disclaims it.
+2. **What `sustain` is worth per tier.** Purely a number. **The clamp question that used to sit
+   here is no longer open**: the build sets `Max(0, step − sustain)` behind a global
+   `bool allowNegativeDecay` defaulting to `false` (*The build* §3), so *"institutions preserve,
+   they do not evangelise"* is the shipped default and flipping it is an ordinary XML call. Whether
+   a branch exists at all was a mechanism and belonged in the build, not in this list.
+3. **What `suppressedSustainFactor` should be, per tier.** Also purely a number. **The
+   remove-versus-reverse question that used to sit here is no longer open either**: a suppressed
+   institution contributes `sustain * suppressedSustainFactor`, defaulting to `0f` (*The build*
+   §4), so the requirement's *"persecute apostles"* clause is **a negative value in that field**
+   rather than a second mechanism. Setting it is balance.
+4. **Whether an institution can be destroyed at all, and by what.** This build makes suppression
+   reversible because the requirement's *"unless the player changes the political situation"*
+   demands a route back (*The build* §4). Faction Territories' invasion loop shows the destructive
+   alternative exists and is affordable. Nothing in `docs/requirements/RELIGION.md` says whether a
+   long-hostile faction should eventually raze what the player built there.
+5. **Whether the institution has a world-map presence.** §6 prices it at one XML patch and ~25
+   lines and recommends the ledger-only form until something asks for it. The natural asker is
+   [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61), which owns the shape of the
+   political surface and is open.
+6. **Whether founding is instant or takes time.** Every shipped analogue in the corpus is instant —
+   a click, a charge, an object. The requirement is silent and the fiction may want a delay; VEF's
+   `WorldComponent_FactionGoodwillImpactManager` is the shape if one is wanted (*The build —
+   Reverence*, *Mod donors*), and it costs nothing extra because it already ships.

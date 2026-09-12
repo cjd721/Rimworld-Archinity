@@ -29,6 +29,9 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | **T-50** | **A budget computed from un-patched def values is wrong once mods merge — the compat patch one mod ships *for another* is the copy that wins** |
 | **T-55** | **`GenTypes` resolves short names last-writer-wins; a mod type in no namespace replaces the vanilla one for every `Class=` lookup** |
 | T-69 | `AccessTools.Field(...)?.SetValue(...)` is a silent no-op after a rename — `ResetHackProgress` does it ten times |
+| T-79 | Granting a work type from research and not calling `Pawn.Notify_DisabledWorkTypesChanged()` leaves every colonist unable to do the work until the next load, with no message |
+| T-83 | `GoodwillSituationDef.baseMaxGoodwill` is declared and read nowhere — setting it in XML does nothing |
+| T-84 | `PreceptComp_GoodwillSituation` is inert in 1.6 — the list its only reader writes to is never read |
 
 ## World creation and factions — [`docs/traps/world-creation.md`](traps/world-creation.md)
 
@@ -55,6 +58,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-71 | A chain-granted quest skips `TestRun`, so `CanRun`, `QuestNode_QuestUnique` and `minRefireDays` are inert |
 | T-72 | VEF's `conditionFailQuests` never matches an expired offer — `outcome` is written only on completion |
 | T-73 | VEF's `grantAgainOnExpiry` passes a tick count into an `mtbDays` parameter and never fires |
+| T-76 | A VEF `QuestGiverDef` with `onlyOneReward: false` has a permanently empty catalogue |
+| T-77 | `QuestWorker.GenerateQuests` swallows every generation exception, so a broken quest script silently never appears |
+| T-85 | World Tech Level's planet-tab button writes the scribed `GameComponent_TechLevel` from `FillTab` — a client-local write to synchronised state, off a draw path |
+| T-86 | WTL's `Window_AddFactions` registers factions at runtime and spawns settlements on a `Rand` bound re-drawn inside the loop condition, from `DoWindowContents` — armed whenever `Filter_Factions` is on |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -75,6 +82,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | **T-67** | **Hacking Expansion's settings rewrite `ThingDef.comps` at `RebindAllDefOfs`, and a third injection is ungated entirely** |
 | **T-74** | **Vehicle Framework pathfinds on the .NET thread pool, and neither its own switch nor MP Compat reaches it** |
 | T-75 | `Vehicles.SectionDebug.debugUseMultithreading` cannot be set — there is no flag to turn that threading off |
+| T-78 | Multiplayer wraps the gravship *landing* for determinism and does not wrap the *takeoff*; code hung on `TakeoffEnded` or `TravelTo` runs unfrozen and unseeded |
+| T-80 | A caravan gizmo or dialog is outside Multiplayer's float-menu SyncAction — the net covers `WorldObject.GetFloatMenuOptions`, and nothing else on a caravan |
+| T-81 | Overriding `WorldObject.UpdateRateTicks` escapes MP's VTR prefix, and the world-object tick phase silently goes back to depending on which player has the world map open |
+| T-82 | Multiplayer syncs a `DiaOption` click by its **index** in `curNode.options` — an option list built differently per client activates a different action on each |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -135,12 +146,12 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole. **Four of the five are over that line: `world-creation.md` (21),
-`content-and-buildings.md` (20), `multiplayer.md` (15) and `defs-and-patching.md` (11).**
+read whole. **Four of the five are over that line: `world-creation.md` (25),
+`content-and-buildings.md` (20), `multiplayer.md` (19) and `defs-and-patching.md` (14).**
 
 **The split the shape now asks for is an incidents-and-quests group.** None of the five
-names it, so T-65 and T-70 through T-73 sit in `world-creation.md` on the strength of
-factions and goodwill alone — filed under an *Incidents, quests and goodwill* heading
-inside it — and T-39 and T-48 are the same subject filed under determinism and worldgen
-respectively. Adding a group changes this index's shape and is the orchestrator's call,
-not an entry author's.
+names it, so T-65, T-70 through T-73 and T-76/T-77 sit in `world-creation.md` on the
+strength of factions and goodwill alone — filed under an *Incidents, quests and goodwill*
+heading inside it — and T-39 and T-48 are the same subject filed under determinism and
+worldgen respectively. Adding a group changes this index's shape and is the orchestrator's
+call, not an entry author's.

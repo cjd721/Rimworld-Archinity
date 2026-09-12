@@ -152,3 +152,50 @@ idea — a player-initiated way to turn *"I am blocked"* into an action
   facilities, exposing an open `MedievalOverhaul.QuestInformation` extension that any
   `QuestScriptDef` can join.
 - **VFE Deserters ships a second**: an intel-priced rolling queue on a comms tab.
+
+## The accept-time gate is one abstract base, and only three things touch it
+
+Verified against RimWorld 1.6.
+
+`RimWorld.QuestPart_RequirementsToAccept` is a twelve-line abstract base — `CanAccept()` returning
+an `AcceptanceReport`, `CanPawnAccept(Pawn)`, `ShowInRequirementBox`, `Culprits`. **Twelve vanilla
+subclasses**: `Bedroom`, `ColonistWithTitle`, `FactionRelation`, `NoDanger`,
+`NoOngoingBestowingCeremony`, `PawnOnColonyMap`, `PlanetLayer`, `PlayerWealth`, `Research`,
+`ThingStudied`, `ThingStudied_ArchotechStructures`, `ThroneRoom`. **Four have XML `QuestNode`
+wrappers** — `Bedroom`, `ColonistWithTitle`, `PlanetLayer`, `Research`; the last spells its field
+`<reserach>`, misspelt identically in the C# and in the two shipped Odyssey defs that use it. [V]
+
+- **`QuestUtility.CanAcceptQuest(Quest)` is the sole enforcement point**, and consults only this
+  base class — ignoring `ShowInRequirementBox`.
+- **`MainTabWindow_Quests.DoAcceptanceRequirementInfo` is the sole renderer**, and runs only while
+  `!EverAccepted && !Historical` — exactly while the offer is pending. Whatever the
+  `AcceptanceReport` says is the locked row's text, free.
+- ⚠ **`ShowInRequirementBox: false` enforces while rendering nothing.**
+  `QuestPart_RequirementsToAcceptPlanetLayer` is vanilla's one deliberate use.
+- ⚠ **The Accept button is greyed, not disabled.** `DoAcceptButton` sets `GUI.color = Color.grey`
+  plus a warning tooltip; `Widgets.ButtonText` still fires. The refusal is one layer down in
+  `AcceptQuestByInterface`. A Harmony patch aimed at the wrong one gives a visually correct,
+  functionally open gate.
+
+**Two numeric-threshold subclasses ship**, and they are the donors for any new one:
+`QuestPart_RequirementsToAcceptPlayerWealth` (one `float`, a live comparison, the threshold in the
+message, a two-line `ExposeData`) and `QuestPart_RequirementsToAcceptColonistWithTitle` (ordinal, on
+title seniority).
+
+**XML cannot reach a goodwill number.** `QuestNode_GetFieldValue` is the only generic reflection
+reader and takes **fields** (`GetField(name, Instance|Public|NonPublic)`); `Faction.PlayerGoodwill`
+is a *property* over a private `List<FactionRelation>`. All 301 `QuestNode_*` types — 70 of them
+`QuestNode_Root_*`, 231 non-root — were enumerated: **none reads `PlayerGoodwill`.** The generic
+comparison nodes (`QuestNode_Greater` / `_Less` / `_Equal` and their `OrFail` variants) therefore
+stop one step short of a standing predicate. [V]
+
+⚠ **`QuestPart_RequirementsToAcceptFactionRelation` cannot express a threshold.** Its `CanAccept` is
+`Faction.OfPlayer.RelationKindWith(otherFaction) == relationKind` — an equality against a
+three-valued enum, plus an `acceptIfDefeated` escape — and its `ReasonText` is one of three fixed
+keys carrying no number. The enum is not a function of the goodwill value either:
+`RelationKindWith` reads the latched `FactionRelation.kind`, and `CheckKindThresholds` flips Hostile
+at ≤ −75, Ally at ≥ +75 and back to Neutral only on crossing **0**, so a faction at +74 is `Ally`
+coming down from 80 and `Neutral` coming up from 10. [V]
+
+Established on [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93); the system built on it
+is `docs/specs/POLITICS.md` § *Standing as a content gate*.

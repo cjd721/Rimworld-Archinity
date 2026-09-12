@@ -475,6 +475,19 @@ GameComponent; the ritual-outcome workers are ~40 lines each. Rebuilding it in
 behind an altar interaction the project already owns and can sync correctly, and lets
 the cornerstones carry the Waystone's narrative.
 
+**A third defect, and it is a second reason a rebuild targets a different method [V].**
+VFE Tribals' work-type patch targets `Pawn.GetDisabledWorkTypes`'s compiler-generated local
+`FillList` — reached by scanning `AccessTools.GetDeclaredMethods(typeof(Pawn))` for a name
+containing both `GetDisabledWorkTypes` and `FillList` — and a `FillList` postfix receives only
+the `List<WorkTypeDef>`, so it **cannot tell which of the two caches it is filling** and adds
+research gates to `cachedDisabledWorkTypesPermanent` as well as the ordinary cache. A work type
+you have not researched yet is not a permanent incapability. Postfix the public
+`GetDisabledWorkTypes(bool permanentOnly)` instead, which receives the flag as a parameter and is
+a citeable, refactor-stable anchor. The whole granted-capability surface is twelve rows of XML
+across seven projects, all authored at `techLevel Animal`; the mechanism, the invalidation rule
+(**T-79**) and the rebuild are in `docs/specs/RESEARCH.md` § *Granted capability — the build*.
+See [#72](https://github.com/cjd721/Rimworld-Archinity/issues/72).
+
 ### 5.4 More Realistic Research `3771646847` — the pacing idea
 
 Not a cost multiplier — a gate. It requires **physical study of materials** before a
@@ -1326,9 +1339,37 @@ and its 1.6 `loadFolders.xml` drops Fishing and comments out Factory. **BLOCK fo
 co-op:** a `Window` calling `WorldObjectMaker.MakeWorldObject` + `Find.WorldObjects.Add`
 unsynced; production timers and yields multiplied by client-local settings; and
 reflection writing settings values **directly onto live `Outpost` instances at load**.
-**[V]** Removing it deletes the outposts *and the colonists inside them*. (It *is*
-covered by the compat layer, which patches the dialogs and gizmos — verify rather than
-assume.)
+**[V]** Removing it deletes the outposts *and the colonists inside them*.
+
+**Multiplayer Compatibility does not cover it. [V]** The whole of
+`Multiplayer.Compat.VanillaOutpostsExpanded` is
+`MP.RegisterSyncMethod(AccessTools.TypeByName("VOE.Outpost_Artillery"), "Fire", null)` and
+`MpCompat.RegisterLambdaDelegate("VOE.Outpost_Defensive", "GetGizmos", 3)`; a whole-assembly
+byte scan of `1.6/Assemblies/Multiplayer_Compat.dll` finds **zero** `Outposts.` references.
+Founding, occupants, production, delivery, packing and every dialog are uncovered. This
+supersedes the parenthetical that used to close this row.
+See [#81](https://github.com/cjd721/Rimworld-Archinity/issues/81).
+
+**Counts, corrected [V]:** **10** `Outpost_*` subclasses (not 13) — `Artillery`, `Defensive`,
+`Drilling`, `Encampment`, `Farming`, `Hunting`, `Mining`, `Scavenging`, `Science`, `Town` — plus
+`OutpostExtension_Mining : OutpostExtension_Choose`, `Resource`, `TexDefensive` and
+`TravellingArtilleryStrike : WorldObject` — a world object of its own, so "no engine" should read
+"no *outpost* engine". **14** `WorldObjectDef`s, of which 13 are outposts; **three outpost defs
+have no VOE class**: `Outpost_Logging` and `Outpost_Trading` run base `Outposts.Outpost`,
+`Outpost_Production` runs `Outposts.Outpost_ChooseResult`.
+
+**The reflection is `Outposts.OutpostsMod.Setup(Outpost)` [V]**, reached from
+`OutpostsMod.Notify_Spawned` ← `Outpost.SpawnSetup` — every world load, not a
+`StaticConstructorOnStartup` — and again from `OutpostsMod.WriteSettings()` over every live
+outpost when the settings window closes. Its **second loop writes onto `outpost.Ext`, the
+`DefModExtension` instance shared by every outpost of that def**, so a per-outpost setting mutates
+global def state. Several VOE subclasses also carry their own `[PostToSetings]` float multipliers.
+
+**Yields are only partly data [V].** `ResultOption.Amount` is XML-driven, but `Outpost_Scavenging`
+overrides `ProducedThings()` to use `Reward_ItemsStandard` and `Outpost_Town` overrides `Produce()`
+to yield pawns — neither reads `ResultOptions` at all — while `Outpost_Hunting`, `Outpost_Farming`,
+`Outpost_Mining` and `Outpost_Drilling` generate or gate options in code. 7 of 13 defs are
+restattable by xpath alone.
 
 ### 7.7 What still is not XML
 
@@ -2625,3 +2666,36 @@ The precedent is the point: a **third-party faction** getting a real orbital set
 out of `GenStep_OrbitalPlatform` + `StructureLayoutDef` + `LayoutRoomDef` with **no new
 generator class**, shipped and in production. Copy the pattern, not the rooms — which
 also leaves §6.2's design objection intact, since nothing here requires taking the mod. ([#66](https://github.com/cjd721/Rimworld-Archinity/issues/66))
+
+---
+
+## 18. Carriers the 2026-09-12 capability batch surfaced
+
+Same rule as §17: on disk already, never covered here. Mechanisms live in `docs/specs/`,
+silent failures in `docs/TRAPS.md`, verdicts and collisions in `docs/data/MOD-VERDICTS.md`.
+
+- **A purchasable quest catalogue with a pluggable currency** — `VEF.Storyteller`
+  (`…/294100/2023507013/1.6/Assemblies/VEF.dll`). `QuestGiverDef` (currency, worker,
+  window, pool size, reset cadence, `onlySpecifiedQuests`) + `QuestCurrency.Allows` +
+  `QuestCurrencyInfo.Buy`/`GetCurrencyInfo` + `QuestInfo` (`saveQuestDeeply`, so an
+  unbought offer never enters `QuestManager`) + `QuestGiverManager.ActivateQuest`
+  (add → accept → charge → remove) + `Window_Contracts` (challenge-rating pips, price
+  row, `Choose` before accept). `GoodwillCurrency` is the worked subclass. **Extending it
+  to a new currency is one `QuestCurrency` and one `QuestCurrencyInfo`.** [V]
+  Carries **T-76** and **T-77**.
+  ([#106](https://github.com/cjd721/Rimworld-Archinity/issues/106))
+- **Shelving a generated quest without a manager** — vanilla `Quest.hidden` +
+  `hiddenInUI` + `acceptanceExpireTick = -1`, parked in `Find.QuestManager`; the third
+  makes `TicksUntilExpiry` return `-1` so `QuestTick`'s cleanup branch never fires. [V]
+  VFE Deserters' route. Strictly worse than `Scribe_Deep` on an offer object, which never
+  enters `QuestManager` at all — recorded because it is the only route available without
+  VEF.
+  ([#106](https://github.com/cjd721/Rimworld-Archinity/issues/106))
+- **Disable-on-hostile / restore-on-friendly for anything the player holds *with* a
+  faction** — vanilla `RimWorld.Faction.Notify_RelationKindChanged`, which already walks
+  `Find.WorldObjects.AllWorldObjects` disabling `TradeRequestComp` requests on the hostile
+  edge and sends the `LetterLabelSiteNoLongerHostile…` letters on the friendly one. [V]
+  The convergence point, and the letter is a transcription — see
+  `docs/engine/factions-and-worldgen.md` § *What `Notify_RelationKindChanged` already does
+  to faction-owned things*.
+  ([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73))

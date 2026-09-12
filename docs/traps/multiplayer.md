@@ -554,4 +554,198 @@ switchable from outside our own assembly.
 `Vehicles.DebugProperties.Debug`, `Vehicles.VehiclePathingSystem.InitThread`. Corrects the
 Vehicle Framework row in `docs/data/MOD-VERDICTS.md` § *Real*. `ilspycmd` 8.2.0, 2026-09-12.*
 
+### T-78 — The gravship takeoff and landing are not equally protected
+
+`Verse.WorldComponent_GravshipController.WorldComponentUpdate` advances the cutscene on
+`Time.deltaTime`, gated on `Prefs.GravshipCutscenes`, and calls **both** `TakeoffEnded()`
+and `LandingEnded()` from there. Multiplayer patches both — differently:
+
+| | `TakeoffEnded` | `LandingEnded` |
+|---|---|---|
+| patch | `Multiplayer.Client.Patches.PatchGravshipTakeoffEnded`, prefix | `…PatchGravshipLandingEnded`, prefix |
+| body | `GravshipTravelUtils.StopFreeze();`<br>`CloseSessionAt(__instance.takeoffTile);` | `Rand.PushState();`<br>`Rand.StateCompressed = __instance.map.AsyncTime().randState;`<br>plus a `Finalizer` calling `Rand.PopState()` |
+| `Rand` wrapper | **none** | yes |
+| client freeze | **lifted here, before the body runs** | held until here |
+
+`Multiplayer.Client.Patches.PatchGravshipCutsceneToFreeze` postfixes `InitiateTakeoff`
+and `InitiateLanding` with `GravshipTravelUtils.StartFreeze()`, which sends a
+`ClientFreezePacket` to every client. It **opens** the window that the takeoff prefix
+closes — it does not protect the takeoff body.
+
+**Consequence.** `GravshipUtility.TravelTo` is called from inside `TakeoffEnded`'s body,
+so a Harmony patch on either one runs with the simulation unfrozen, with no `Rand`
+state pushed, on a path whose timing depends on a per-client `Prefs` value. Two clients
+reach it at different ticks. A game-state write there desyncs, and **nothing reports it**
+— the symptom is a divergence some time after a gravship launch.
+
+Reading only `PatchGravshipLandingEnded` invites the opposite conclusion, because that
+one is fully protected. **Check the takeoff half separately.**
+
+**Fix:** do not hang game-state writes on `TakeoffEnded` or `TravelTo`. Detect a
+relocation on a synced tick by comparing the settled tile against a scribed previous
+value — see `docs/specs/TRACE.md` § *The escape rule*.
+
+**Related, and not a multiplayer issue but adjacent:** `GravshipUtility.TravelTo`
+reassigns its own `oldTile` parameter — `if (oldTile.Layer != newTile.Layer) oldTile =
+newTile.Layer.GetClosestTile_NewTemp(oldTile);`. A **postfix** reads the mutated
+value, so a cross-layer move measures from a projected tile rather than the origin. Use a
+prefix or `__state` if you must patch it.
+
+*[#56](https://github.com/cjd721/Rimworld-Archinity/issues/56), `docs/specs/TRACE.md`.
+`RimWorldWin64_Data/Managed/Assembly-CSharp.dll`
+(`WorldComponent_GravshipController.WorldComponentUpdate` / `.TakeoffEnded` /
+`.LandingEnded` / `.ResetCutscene`, `GravshipUtility.TravelTo`) and `Multiplayer.dll`
+(`2606448745/1.6/AssembliesCustom/`). 1.6.4871.*
+
+### T-80 — Multiplayer's caravan sync net covers float-menu options and nothing else
+
+**What the net covers.** `Multiplayer.Client.SyncActions.Init` registers one `SyncAction` over
+`WorldObject.GetFloatMenuOptions(Caravan)` and calls `PatchAll("GetFloatMenuOptions")`. In
+`SyncAction.DoSync`, every yielded option gets
+`actionGetter(current) = actionWrapper(...) ?? delegate { ActualSync(...); }`, and the default
+wrapper is `(…) => (Action)null`, so a `null` wrapper falls through to the sync path. **Every
+`FloatMenuOption` the method yields is synced, hand-rolled or not.**
+`WorldObjectCaravanMenuWrapper`'s non-null branch is not the sync case — it defers the command
+behind `CaravanArrivalActionUtility`'s confirmation dialog.
+
+**What the net does not cover, which is the trap.** `SyncAction`'s registration only ever sees
+`FloatMenuOption`s returned from `WorldObject.GetFloatMenuOptions(Caravan)`. Two things on a caravan
+are not that, and are therefore **never synced, with no error and no log line**:
+
+- a `Command_Action` (or any `Gizmo`) yielded from `Caravan.GetGizmos`, including one added by a
+  postfix;
+- any button inside a `Window` / `Dialog_*`, however it was opened.
+
+Either one can mutate world state on one client only. VEF's
+`Outposts.Dialog_CreateCamp.DoOutpostDisplay` founds an outpost exactly this way —
+`WorldObjectMaker.MakeWorldObject` + `NameGenerator.GenerateName` + `Find.WorldObjects.Add` +
+`AddPawn`, inline in a `Widgets.ButtonText` branch, reached from a `Caravan.GetGizmos` postfix.
+
+**The tell, when a world object is involved:** `WorldObjectMaker.MakeWorldObject` calls
+`Find.UniqueIDsManager.GetNextWorldObjectID()`, and MP's `UniqueIdsPatch` hands out **negative,
+decreasing, client-local IDs** while `Multiplayer.InInterface` is true — so the object exists with a
+negative ID on the clicking client and not at all on the other.
+
+**Fix:** commit through an explicit `[SyncMethod]`, or move the commit into a `FloatMenuOption` on
+the world object. Do not assume a gizmo or a dialog inherits the caravan net.
+
+*[#81](https://github.com/cjd721/Rimworld-Archinity/issues/81) and
+[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), `docs/specs/TERRITORY.md`.
+`Multiplayer.Client.SyncActions.Init` / `SyncAction.DoSync` /
+`SyncActions.WorldObjectCaravanMenuWrapper` / `Multiplayer.Client.UniqueIdsPatch` from
+`Multiplayer.dll` (`2606448745/1.6/AssembliesCustom/`);
+`Outposts.Dialog_CreateCamp.DoOutpostDisplay` from `Outposts.dll`
+(`2023507013/1.6/Assemblies/`). 1.6.4871.*
+
+### T-81 — Overriding `WorldObject.UpdateRateTicks` escapes Multiplayer's VTR sync
+
+`WorldObject.DoTick` accumulates `tickDelta` and calls `TickInterval(tickDelta)` when
+`tickDelta > UpdateRateTicks` or on a hash-offset interval, where
+`UpdateRateTicks => !WorldRendererUtility.WorldSelected ? 15 : 1` — client-local viewport state.
+Multiplayer repairs it: `Multiplayer.Client.Patches.VtrSyncWorldObjectPatch` prefixes
+`WorldObject.UpdateRateTicks` to return `Multiplayer.AsyncWorldTime.VTR`, whose `CurrentPlayerCount`
+is mutated only from the synced `CommandType.PlayerCount` world command.
+
+Harmony patches the declaration it is pointed at. MP patches `RimWorld.Planet.WorldObject` and
+`Verse.Projectile` **separately** — and elsewhere in the same assembly `SyncAction.PatchAll`
+enumerates `AllSubtypesAndSelf()` rather than trusting a base-declaration patch. A `WorldObject`
+subclass of ours that overrides the property is covered by neither.
+
+**The symptom is not drift.** `DoTick` passes the accumulated `tickDelta` and consumers decrement by
+`delta`, so elapsed ticks are conserved. What diverges is the **phase and granularity** at which a
+timer crosses zero: the same production or expiry fires on a different tick on each client, taking
+any `Rand` inside it to a different stream position. Silent until the trace names something else.
+
+**Fix:** do not override it. Put new clocks on `Tick()` / `CompTick()`, which run unconditionally
+every tick, and stagger with `Gen.IsHashIntervalTick(WorldObject, int)`. Note that VEF's
+`Outposts.Outpost` puts production on the gated `TickInterval(delta)` and is safe **only** because it
+does not override the property.
+
+*[#81](https://github.com/cjd721/Rimworld-Archinity/issues/81) and
+[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), `docs/specs/TERRITORY.md`.
+`RimWorld.Planet.WorldObject.DoTick` / `.UpdateRateTicks`;
+`Multiplayer.Client.Patches.VtrSyncWorldObjectPatch` and `Multiplayer.Client.SyncAction.PatchAll`
+from `Multiplayer.dll` (`2606448745/1.6/AssembliesCustom/`); `Outposts.Outpost` from
+`Outposts.dll` (`2023507013/1.6/Assemblies/`). 1.6.4871.*
+
+### T-82 — Multiplayer syncs a `DiaOption` by its index in the option list
+
+**Two Harmony prefixes sit on `DiaOption.Activate`, and both identify the option by its position
+in `curNode.options`.** Which one carries a given click depends on how the dialog was opened.
+
+- `Multiplayer.Client.NodeTreeDialogSync.Prefix` fires only when `Multiplayer.session != null`
+  **and** `SyncUtil.isDialogNodeTreeOpen` **and** `__instance.dialog is Dialog_NodeTree`. It
+  routes the click through `[SyncMethod] internal static void SyncDialogOptionByIndex(int position)`
+  — declared **on `NodeTreeDialogSync` itself**, not on `SyncMethods` — which re-activates
+  `curNode.options[position]` on every client.
+- `Multiplayer.Client.DiaOptionActivate.Prefix` fires when `Multiplayer.InInterface` **and**
+  `PersistentDialog.FindDialog(__instance.dialog) != null`, and calls
+  `persistentDialog.Click(persistentDialog.ver, persistentDialog.Dialog.curNode.options.IndexOf(__instance))`.
+  `Multiplayer.Client.PersistentDialog.Click(int ver, int opt)` is itself `[SyncMethod]`, running
+  `Dialog.curNode.options[opt].Activate()` behind a `ver` guard that drops a click made against a
+  stale node.
+
+**For the faction comms console it is the second one.** `SyncUtil.isDialogNodeTreeOpen` is armed
+only by `SyncUtil.DialogNodeTreePostfix`, applied only by `SyncUtil.PatchMethodForDialogNodeTreeSync`
+← `Sync.RegisterSyncDialogNodeTree`, whose in-assembly call sites are the `[SyncDialogNodeTree]`
+attribute scan in `Sync.RegisterAllAttributes` plus **exactly two explicit registrations** in
+`SyncMethods` — `IncidentWorker_CaravanMeeting.TryExecuteWorker` and
+`IncidentWorker_CaravanDemand.TryExecuteWorker`. Neither is the comms console, so on that surface
+`NodeTreeDialogSync.Prefix` falls straight through: it sets `isDialogNodeTreeOpen = false` and
+returns `true`. The comms dialog reaches `DiaOptionActivate` instead because
+`Multiplayer.Client.CancelDialogNodeTree` prefixes `WindowStack.Add` and, when
+`Multiplayer.MapContext != null` and the window has a registered binding, builds a
+`PersistentDialog` and adds it to `mapContext.MpComp().mapDialogs` — and
+`PersistentDialog_NodeTreeWithFactionInfo : PersistentDialog<Dialog_NodeTreeWithFactionInfo>` is
+exactly that binding. All [V].
+
+**The failure.** A postfix that *appends* options to the faction dialogue must build the same
+list, in the same order, on both clients. If a gate omits an option on one client and not the
+other, index *n* activates one action on one machine and a different action on the other —
+**silently, with no error on either.** A world-state gate (goodwill, standing, a per-faction cap)
+is exactly the kind that can differ between two clients mid-evaluation.
+
+**Three ways a bad index goes wrong, and only one of them is loud [V]:**
+
+- `DiaOptionActivate` applies **no `>= 0` check** to `IndexOf`. An option missing from the
+  *receiving* dialog's list sends `opt = -1`, and `Click` indexes `options[-1]` — that one throws,
+  on the receiving side, far from the click.
+- `NodeTreeDialogSync` does check, but its `return false` sits **outside** the `if (num >= 0)`
+  guard. A `FindIndex` miss therefore swallows the click entirely: nothing is synced, nothing is
+  activated locally, and `isDialogNodeTreeOpen` is left set. The player clicks and nothing happens.
+- Two lists that merely *differ in order* produce no error at all on either side — the wrong
+  action simply runs on one client.
+
+**Fix: disable an unavailable option; never omit it.** `DiaOption.Disable(string newDisabledReason)`
+keeps the option in the list and greys it with the reason concatenated into the label, which is what
+makes a gate on world state safe here.
+
+⚠ **And do not reach for `AddAndDecorateOption` to do it.** Vanilla's helper is **not** a method on
+`FactionDialogMaker` — it is a **local function inside `FactionDialogFor(Pawn, Faction)`**, IL name
+`<FactionDialogFor>g__AddAndDecorateOption|0_0`, so
+`AccessTools.Method(typeof(FactionDialogMaker), "AddAndDecorateOption")` returns **null** — the same
+silent-null-target class as `Pawn.GetDisabledWorkTypes`'s `FillList` local (**T-79**,
+`docs/data/PARTS-BIN.md` § 5.3), and the `|0_0` ordinal can shift on any vanilla rebuild. It is also
+**not a blanket disable**: the body is
+`if (needsSocial && negotiator.skills.GetSkill(SkillDefOf.Social).TotallyDisabled) opt.Disable(…)`,
+so with a socially-capable negotiator those options are added untouched [V]. Both facts point the
+same way — **an option appended by a postfix carries its own `Disable` reason and nothing vanilla
+overwrites it.**
+
+The mechanisms are [V]; the divergence consequence is [I] until two clients are run — it is one of
+the observations [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16) owns.
+
+*[#93](https://github.com/cjd721/Rimworld-Archinity/issues/93), `docs/specs/POLITICS.md` §
+*Standing as a content gate*; consumed by
+[#73](https://github.com/cjd721/Rimworld-Archinity/issues/73).
+`Multiplayer.Client.NodeTreeDialogSync.Prefix` / `.SyncDialogOptionByIndex`,
+`Multiplayer.Client.DiaOptionActivate.Prefix`, `Multiplayer.Client.PersistentDialog.Click` /
+`.FindDialog`, `Multiplayer.Client.CancelDialogNodeTree.Prefix`,
+`Multiplayer.Client.PersistentDialog_NodeTreeWithFactionInfo`,
+`Multiplayer.Client.SyncUtil.DialogNodeTreePostfix` / `.PatchMethodForDialogNodeTreeSync`,
+`Multiplayer.Client.Sync.RegisterSyncDialogNodeTree` — all from `Multiplayer.dll`
+(`2606448745/1.6/AssembliesCustom/`), decompiled 2026-09-12 with `ilspycmd` 8.2.0;
+`RimWorld.FactionDialogMaker.FactionDialogFor`'s local `AddAndDecorateOption`,
+`Verse.DiaOption.Disable` / `.OptOnGUI`. 1.6.4871.*
+
 ---

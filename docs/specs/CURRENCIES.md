@@ -12,7 +12,10 @@ Implements the two **spendable operational currencies** the campaign requires:
   advanced research and hacking.
 
 Established on [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), which
-absorbed [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55)'s currency half.
+absorbed [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55)'s currency half,
+and extended by [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) with the
+**purchasable quest catalogue** — the *Purchase* arrival channel of
+[`docs/requirements/QUESTS.md`](../requirements/QUESTS.md).
 
 **This document owns** the mechanism that holds a spendable balance, moves it, persists
 it, shows it, and spends it against a catalogue. It owns that mechanism for *any* number
@@ -24,8 +27,8 @@ of currencies, because nothing in it names either fiction.
 |---|---|
 | The **exemplar gate** — a research project requiring a physically-analysed item | [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67). The interface between the two is stated below, and what it does *not* commit either side to is the load-bearing part. |
 | **Exaltation** and **Reverence** | [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) / [`RELIGION.md`](RELIGION.md). Threshold ladders, not spends. |
-| **Trace** | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56). A band ladder, not a balance. #56 also rules on whether sharing one store with Intel couples it to Church standing — see *What is shared*. |
-| The **purchasable quest catalogue** — which quests are for sale, at what price, out of what pool | [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). It **consumes** the catalogue machinery below rather than duplicating it; see *The purchasable-quest seam*. |
+| **Trace** | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md). A band ladder, not a balance. #56 has now **ruled** on whether sharing one store with Intel couples it to Church standing — see *What is shared*. |
+| **Which quests are for sale, and what they contain** | Authoring. The **machinery** that offers and sells a quest is [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s and is **in this document**, at *The purchasable quest catalogue* — because it is a purchase, and purchases live here. |
 | The **ordered campaign chain** that Schism operations advance | **No owning ticket yet.** Its separation from spending is this document's business; its carrier is not, and nothing currently owns it — see *Outstanding decisions*. |
 | Cross-cutting political-UI layout | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61). The readout for these two numbers is here. |
 
@@ -72,9 +75,20 @@ CurrencyPurchaseDef : Def
     CurrencyCategoryDef category
 
 CurrencyPurchaseWorker (abstract)
+    CurrencyPurchaseDef def
+    virtual int      Cost => def.cost         // overridable — see The purchasable quest catalogue
     AcceptanceReport CanPurchase()
     void             Purchase()
 ```
+
+> **`Cost` is `virtual` rather than a bare read of `def.cost`, and that is
+> [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s one amendment to
+> this design.** A purchasable quest's price is *derived from the quest that was
+> generated*, not authored — the donor computes it from the offered rewards' market
+> value **[V]**. A fixed `int` cannot express that. Making the worker the authority on
+> its own price costs five lines here and removes the only reason #106 would have
+> needed a catalogue mechanism of its own. Every other entry ignores the override and
+> reads `def.cost`.
 
 `CurrencyPurchaseDef` is modelled on vanilla **`RimWorld.RoyalTitlePermitDef`**, which is
 the same idea — a Def-driven catalogue of favors with a worker per entry — and already
@@ -215,6 +229,333 @@ overwritten **[V]**. A pure number cannot live there.
 > granted by inspecting site lore, and a saved *"Intel balance"* distinct from stockpile
 > contents. See *Available mechanisms*.
 
+### The purchasable quest catalogue
+
+[#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). **VEF already ships a
+Def-driven, XML-authorable, save-backed purchasable quest catalogue with a *pluggable
+currency*. We write the currency and nothing else** — a `QuestCurrency` /
+`QuestCurrencyInfo` pair that reads `WorldComponent_Currencies`, about 40–60 lines.
+
+> **An earlier draft of this section, and #106's first resolution comment, opened with
+> *"nothing in the corpus or in vanilla sells a quest except VFE Deserters."* That is
+> false and is retracted.** It was reached from a sweep-and-type-list pass over
+> `VEF.Storyteller` that was reported as **[I]** and then leaned on as a negative. **An
+> [I] marker licenses "inferred from a name"; it does not license a positive claim about
+> what shipped code does.** See *Available mechanisms* § *The purchasable-quest seam* for
+> what VEF actually carries, read out of the assembly.
+
+#### The build — one piece replaced
+
+`VEF.Storyteller` (`…/294100/2023507013/1.6/Assemblies/VEF.dll`), all **[V]**:
+
+```
+QuestGiverDef : Def
+    QuestCurrency        currency            // polymorphic, Class= in XML
+    FactionDef           fixedQuestGiverFaction
+    List<QuestScriptDef> onlySpecifiedQuests
+    int                  maximumAvailableQuestCount = -1
+    int                  resetEveryTick      = -1
+    bool                 generateOnce, onlyOneReward, hideGeneratedQuestsInVanilla
+    Type                 workerClass         -> QuestWorker
+    Type                 windowClass         = typeof(Window_Contracts)
+    string               windowTitleKey
+
+QuestCurrency                                 // the eligibility + pricing half
+    float costToAcceptQuest
+    virtual bool Allows(QuestGiverManager, Quest, Slate, out QuestInfo)
+
+QuestCurrencyInfo : IExposable                // the debit + display half
+    float  amount                             // scribed
+    virtual void   Buy(QuestInfo)
+    virtual string GetCurrencyInfo()
+```
+
+**`QuestCurrency.Allows` is handed the freshly generated `Quest` and returns the
+`QuestInfo` it wants to offer** — so it decides eligibility, computes the price, and
+attaches the `QuestCurrencyInfo` that will later be debited. `GoodwillCurrency` /
+`GoodwillCurrencyInfo` are the shipped subclass: `Allows` reads the `asker` off the slate,
+checks `GoodwillWith(Faction.OfPlayer) >= minimunGoodwillRequirement`, and `Buy` debits
+through `TryAffectGoodwillWith` **[V]**. That is the entire extension surface.
+
+**Ours:**
+
+```csharp
+class CurrencyQuestCurrency : QuestCurrency {          // ~30 lines
+    CurrencyDef currency;
+    float       costPerMarketValue;
+    public override bool Allows(QuestGiverManager m, Quest q, Slate s, out QuestInfo info) {
+        var ci = new CurrencyQuestCurrencyInfo { currency = currency,
+                     amount = PriceFor(q) };           // snapshot, see below
+        info = new QuestInfo(q, m.FixedQuestGiverFaction, ci,
+                             onlyOneChoice: true, saveQuestDeeply: true);
+        return true;
+    }
+}
+class CurrencyQuestCurrencyInfo : QuestCurrencyInfo {  // ~20 lines
+    CurrencyDef currency;                              // scribed alongside amount
+    public override void   Buy(QuestInfo qi) => Currencies.TrySpend(currency, (int)amount, "quest");
+    public override string GetCurrencyInfo() => $"{amount} {currency.label}";
+}
+```
+
+**What that inherits, at zero cost** — every one **[V]**:
+
+| Need | Provided by |
+|---|---|
+| the pool | `QuestGiverManager.availableQuests`, `List<QuestInfo>` |
+| persistence | `QuestInfo : IExposable` with `Scribe_Deep.Look<Quest>(ref questDeep, "questDeep")` |
+| refill cadence | `QuestGiverManager.Tick()` → `Reset()` when `TicksAbs > lastResetTick + def.resetEveryTick` |
+| pool membership | `QuestGiverDef.onlySpecifiedQuests`, or all `!isRootSpecial && IsRootAny` scripts |
+| pool size | `maximumAvailableQuestCount` |
+| price display | `Window_Contracts` draws `questInfo.currencyInfo.GetCurrencyInfo()` |
+| challenge rating before commitment | `Window_Contracts` draws one pip per `Quest.challengeRating` |
+| choice resolution | `Window_Contracts` calls `selected.quest_Part_choice.Choose(selected.choice)` **before** accepting |
+| add → accept → charge → remove | `QuestGiverManager.ActivateQuest(Pawn, QuestInfo)` |
+
+**`ActivateQuest` is, line for line, the `Purchase()` an earlier draft proposed writing:**
+
+```csharp
+Find.QuestManager.Add(questInfo.Quest);
+questInfo.Quest.Accept(accepter);
+QuestUtility.SendLetterQuestAvailable(questInfo.Quest, null);
+questInfo.currencyInfo?.Buy(questInfo);
+availableQuests.Remove(questInfo);
+```
+
+**And VEF does not need the donor's shelving idiom at all.** `QuestInfo` is constructed
+with `saveQuestDeeply: true`, so an unbought offer is held by `Scribe_Deep` on the
+manager's own list and **never enters `Find.QuestManager` until purchase** **[V]**. A
+quest that is not in `QuestManager` is never ticked, so there is nothing to hide from and
+nothing to stop expiring. That is strictly cleaner than
+`hidden` + `hiddenInUI` + `acceptanceExpireTick = -1`, which is reaper-*evasion* rather
+than reaper-*avoidance*.
+
+**Two `QuestGiverDef`s ship**, one per currency — `QuestGiverDef.currency` is a single
+object, so Influence and Intel are two givers rather than two columns of one. That is the
+better shape anyway: two networks, two fictions, two windows' worth of framing.
+
+**The readout stays in one place, which is the group's shared decision.**
+`QuestGiverDef.windowClass` is a `Type` field defaulting to `Window_Contracts`, and
+`QuestGiverManager.CallWindow()` does `Activator.CreateInstance(def.windowClass, this)`
+**[V]**. We ship `Window_ArchinityNetwork : Window_Contracts`, inheriting every row VEF
+draws and adding the balance header and [`TRACE.md`](TRACE.md)'s band row. ~40 lines, and
+#56's D1 and #106's catalogue remain one surface rather than two.
+
+#### The three defects we must fix on the way in
+
+**1. The price must be snapshotted, not recomputed.** `QuestCurrencyInfo.amount` is a
+scribed `float` set once in `Allows`, and `PriceFor(q)` therefore runs **at generation,
+against the unresolved quest**. This matters more than it looks: `QuestPart_Choice.Choose`
+**destroys the non-chosen choices** — it calls `Cleanup()` and `quest.RemovePart` on their
+parts and does `choices.RemoveAt(num)` **[V]** — so a price averaged over *N* choices
+before `Choose` and over *1* after it are different numbers. Storing `amount` makes
+displayed price and charged price the same number by construction. A design that
+recomputed from a draw method would show one price and charge another.
+
+**2. `Buy` runs *after* `Accept`, and that is the ordering this document warns about.**
+`ActivateQuest`'s fourth statement is the debit; the quest is already added and accepted
+**[V]**. This document's *Failure and recovery* names that failure — *"a worker that
+grants its goods and then throws hands them out free"*. We cannot reorder VEF's method, so
+the discipline moves into ours: **`CurrencyQuestCurrencyInfo.Buy` must not be able to
+throw** — `TrySpend` returns a bool and logs, and the affordability check happens in the
+window before the button is live.
+
+**3. `ActivateQuest` is reached from `OnGUI` and needs one sync wrapper.**
+`Window_Contracts.AcceptQuestByInterface` calls it from the draw path **[V]**. That is one
+`RegisterSyncMethod` on `QuestGiverManager.ActivateQuest` against `Multiplayer.API` — **not
+a reason to rebuild the catalogue**. See *Persistence and multiplayer*.
+
+#### The alternative, and what separates them
+
+**Build B — write it ourselves**, as this document proposed before VEF was read properly:
+`WorldComponent_QuestCatalogue` holding `List<QuestOffer>`, an
+`Arch_PurchasableQuestExtension` for membership, `EnsureFilled` modelled on
+`VFED.WorldComponent_Deserters.EnsureQuestListFilled`, the donor's shelving idiom, and
+quest rows in `MainTabWindow_Network`. **~260 lines of new C#.**
+
+**What separates them is a dependency, not a capability.** Build B re-derives the pool,
+the persistence, the refill cadence, the price display, the challenge-rating row, the
+choice resolution and the accept sequence that VEF already ships. It costs roughly five
+times the code and carries two defects VEF does not (the shelving idiom instead of
+deep-save, and the `Choose` hazard below).
+
+**Recommend Build A.** VEF is already a dependency —
+[`PRESSURE.md`](PRESSURE.md) § 4 takes `IncidentWorker_RaidEnemySpecial` and
+`StorytellerDefExtension` from it, and [`HACKING.md`](HACKING.md)'s carrier depends on it —
+so this adds no new mod to the ledger. **Build B is the fallback if
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) declines VEF**, and it is
+kept below for that reason.
+
+> **Build B carries a defect worth naming, because it was in this document's own first
+> draft.** Its `EnsureFilled` pseudocode dropped the donor's
+> `questPartChoice.Choose(choices.RandomElement())` call as "an unsynced `Rand` draw from
+> `OnGUI`", and treated the difference as location only. It is not.
+> `QuestPart_Choice.PreQuestAccept()` — invoked by `Quest.Accept` — does
+> `if (choices.Count >= 2) { Log.Error("Tried to accept a quest but … still has a choice
+> unresolved. Auto-choosing the first option."); Choose(choices[0]); }` **[V]**. Dropping
+> the call means **every purchase of a multi-choice quest throws a red error and silently
+> hands the player option zero.** The fix is not to restore `RandomElement` — it is to let
+> the *player* pick in the window and pass the index through the synced method, and to
+> guard `.OfType<QuestPart_Choice>().First()`, which throws outright on a quest with no
+> choice part and which the donor evaluates from a draw method every frame **[V]**.
+
+#### Build B, retained as the fallback
+
+**The pool.** `Archinity.Core.WorldComponent_QuestCatalogue`, a new `WorldComponent`
+holding one flat list:
+
+```csharp
+private List<QuestOffer> offers;          // Scribe_Collections.Look(..., LookMode.Deep)
+
+class QuestOffer : IExposable {
+    public CurrencyDef currency;          // Scribe_Defs
+    public Quest       quest;             // Scribe_References
+}
+```
+
+A flat deep-scribed list rather than a `Dictionary<CurrencyDef, List<Quest>>`, because
+a dictionary whose *values* are collections has no clean `Scribe_Collections` form.
+`VFED.WorldComponent_Deserters.PlotMissionInfo` is the shipped precedent for a
+deep-scribed `IExposable` row holding a `Scribe_References` quest **[V]**.
+
+It does **not** live on `WorldComponent_Currencies`, which states *"Nothing else lives
+here, and that is the design. No campaign index, no chapter, no quest reference."*
+
+**Pool membership is XML.** `Arch_PurchasableQuestExtension : DefModExtension
+{ CurrencyDef currency; }` on a `QuestScriptDef`. The eligible set is built once in a
+static constructor by walking `DefDatabase<QuestScriptDef>.AllDefs` and keeping those
+carrying the extension — the donor's `VFED.Utilities.DeserterQuests` shape, which uses
+`QuestExtension_Deserter` the same way **[V]**, generalised by putting the currency on
+the extension. **One extension type, one currency field, never two extensions** —
+`Def.GetModExtension` returns the first match and a second is inert (**T-06**).
+
+**Refill.** `EnsureFilled(CurrencyDef)` reproduces
+`VFED.WorldComponent_Deserters.EnsureQuestListFilled` **[V]**, which is worth copying
+almost line for line because every line is vanilla API:
+
+```csharp
+float points = StorytellerUtility.DefaultThreatPointsNow(Find.World);
+StoryState storyState = Find.World.StoryState;
+while (CountFor(currency) < TargetCount(currency)
+       && PoolFor(currency).Where(root => root.CanRun(points, Find.World))
+            .TryRandomElementByWeight(
+                root => NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight(
+                            root, points, storyState),
+                out QuestScriptDef root))
+{
+    Slate slate = new Slate();
+    slate.Set("points", points);
+    slate.Set("purchasable", true);
+    Quest q = QuestGen.Generate(root, slate);
+    q.hidden = true; q.hiddenInUI = true; q.acceptanceExpireTick = -1;
+    Find.QuestManager.Add(q);
+    offers.Add(new QuestOffer { currency = currency, quest = q });
+}
+```
+
+**Those three flags are the whole trick and each is load-bearing [V]:**
+`hidden` and `hiddenInUI` keep a shelved offer out of the quests tab and out of the
+"new quest" letter; `acceptanceExpireTick = -1` makes `Quest.TicksUntilExpiry` return
+`-1`, so `Quest.State` never becomes `EndedOfferExpired` and `Quest.QuestTick`'s
+`TicksUntilExpiry == 0 && State == NotYetAccepted` cleanup branch never fires. A
+shelved offer therefore lives until it is bought or the pool is trimmed.
+
+> **"Lives until bought" is only true for scripts we author.** A quest script may carry a
+> `QuestPart_QuestEnd` whose `SignalListenMode` is `NotYetAcceptedOnly` or
+> `OngoingOrNotYetAccepted`, which ends a quest *before* acceptance. The default is
+> `OngoingOnly`, so the behaviour is controllable — but a third-party script pulled into
+> the pool can end itself on the shelf, and Build B must handle a dead offer. Build A does
+> not have the problem: its offers are not in `QuestManager` and receive no signals.
+
+**`$purchasable` is consumed in XML, by a vanilla node, at zero C# cost.** The donor's
+`Defs/QuestScriptDefs/Base.xml` reads it with `QuestNode_IsTrue` and branches the
+challenge-rating subscript **[V]**. So the flag does not mean "buyable" to the engine —
+it is simply a slate bool our own quest scripts may branch on, and branching the
+difficulty roll is exactly what we want it for, since a bought mission should be worth
+buying.
+
+**Price.** `CurrencyPurchaseWorker_Quest.Cost` overrides the `virtual` above:
+
+```
+Cost = ceil( averageRewardMarketValue(quest) / def.costPerMarketValue
+             * BandModifierFor(def.currency) )
+```
+
+`averageRewardMarketValue` walks the quest's single `QuestPart_Choice` and averages
+`Reward.TotalMarketValue` over its choices — the donor's `VFED.Utilities.GetIntelCost`
+**[V]**. **The price therefore falls out of the reward the generator actually rolled**,
+so nothing has to be re-authored when a reward table changes.
+
+> **`BandModifierFor` is currency-scoped, and this is not a detail.** The donor applies
+> `VisibilityLevelDef.intelCostModifier` to **everything in its shop** **[V]**. Ported
+> naively into a window that also sells Schism operations, Glitterite pursuit would
+> silently set the price of Church politics.
+> [`TRACE.md`](TRACE.md) § *Decoupling from Church politics* rules that
+> `TraceBandDef.intelCostModifier` applies **only** where
+> `CurrencyPurchaseDef.currency == Archinity_Intel`; `BandModifierFor` returns `1f` for
+> every other currency. Checkable by grep: no code path may read a band def without a
+> `CurrencyDef` in scope.
+
+**Purchase.** `CurrencyPurchaseWorker_Quest.Purchase()`:
+
+```csharp
+int cost = offer.price;             // snapshotted at generation, never recomputed here
+quest.hidden = false;
+quest.hiddenInUI = false;
+choicePart?.Choose(choicePart.choices[choiceIndex]);   // player's pick, passed through the sync
+offers.Remove(offer);
+EnsureFilled(def.currency);
+quest.Accept(null);                 // LAST statement — see Failure and recovery
+```
+
+`Quest.Accept(Pawn by)` is `public`, accepts a null accepter, and no-ops unless
+`State == NotYetAccepted` **[V]**. The whole of it runs inside a single
+`[SyncMethod] TryPurchase(CurrencyPurchaseDef purchase, int choiceIndex)`.
+
+**Three things in those seven lines are corrections to this document's first draft**, and
+each one is load-bearing:
+
+- **`choiceIndex` travels through the synced method.** The donor resolves the choice with
+  `RandomElement` from `OnGUI`; omitting the call entirely — which the first draft did —
+  makes `QuestPart_Choice.PreQuestAccept` log a red error and auto-choose option zero
+  **[V]**. Letting the player pick is both deterministic and better than either.
+- **`cost` is read before any mutation.** `Choose` destroys the non-chosen choices
+  **[V]**, so a price derived from the reward set is a different number before and after
+  it. Snapshot at generation; store it on the offer.
+- **`choicePart` is null-guarded.** `.OfType<QuestPart_Choice>().First()` throws on a
+  quest with no choice part, and the donor evaluates it from a draw method every frame
+  **[V]**.
+
+**The synced boundary is the difference from the donor**, whose identical lines run from
+`DeserterTabWorker_Services.DoMainPart` — a draw method **[V]** — and which MP Compat has
+to reach with two transpilers and four synthetic sync methods.
+
+**Refill must never run from a draw method either.** The donor calls
+`EnsureQuestListFilled` from `Notify_Open` *and* from the purchase path, both inside
+`OnGUI` **[V]**, and MP Compat has to sync `EnsureQuestListFilled` explicitly. Ours
+runs from `TryPurchase` (already synced) and from `WorldComponentTick` on a slow
+cadence, and from nowhere else. Opening the window must not generate a quest.
+
+**Display.** The `MainTabWindow_Network` this document already builds, with one
+`CurrencyCategoryDef` per currency. Each offer row draws the quest's
+`challengeRating` — which is how
+[`docs/requirements/QUESTS.md`](../requirements/QUESTS.md)'s *"Every quest declares a
+challenge rating the player sees before committing to it"* is satisfied, using
+vanilla's own `QuestChallengeRatingTip` string; the donor does exactly this and even
+splits its two columns on `challengeRating <= 3` **[V]**. Reward rows come free from
+`Reward.StackElements`, which the donor draws with `GenUI.DrawElementStack` **[V]**.
+
+`QUESTS.md` also names **Purchase** as one of its seven arrival channels; this is that
+channel's mechanism.
+
+**The cost of a shelved pool, stated rather than glossed.** `QuestGen.Generate` runs
+the whole generator up front — pawns are generated, sites are generated. They do not
+appear in the world: `QuestNode_SpawnWorldObjects` emits a
+`QuestPart_SpawnWorldObject` that fires on the quest's `inSignal`, i.e. on accept
+**[V]**. But the objects exist in the save, and ten shelved offers per currency is
+twenty generated quests. `TargetCount` is a `CurrencyDef` field for that reason, and
+the donor's hardcoded `10` is not copied.
+
 ### Cost
 
 | Piece | Kind | Lines | Lands in |
@@ -229,8 +570,23 @@ overwritten **[V]**. A pure number cannot live there.
 | `MainButtonWorker` subclass (D4, optional) | new C# | ~20 | same |
 | `GlobalControlsUtility.DoDate` postfix (D3) | patch | ~25 | `Archinity.Altar/Source/Patches.cs` |
 | MP registration behind an `MP.enabled` guard | new C# | ~15 | `Archinity.Altar/Source/Patches.cs` |
-| **Total new C#** | | **~430–520** | one assembly |
-| Two `CurrencyDef`s, one `MainButtonDef`, every catalogue entry, every price, every reward amount, every artifact's comp | **XML** | — | `Archinity.Altar/Defs/`, `Archinity.Glitterites/Defs/` |
+| **— the purchasable quest catalogue, [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106), Build A (recommended) —** | | | |
+| `CurrencyQuestCurrency : VEF.Storyteller.QuestCurrency` | new C# | ~30 | `Archinity.Altar/Source/QuestCatalogue.cs` |
+| `CurrencyQuestCurrencyInfo : VEF.Storyteller.QuestCurrencyInfo` | new C# | ~20 | same |
+| `Window_ArchinityNetwork : VEF.Storyteller.Window_Contracts` (balance header + Trace band row) | new C# | ~40 | `Archinity.Altar/Source/CurrencyUI.cs` |
+| One `RegisterSyncMethod` on `QuestGiverManager.ActivateQuest` | new C# | ~5 | `Archinity.Altar/Source/Patches.cs` |
+| Two `QuestGiverDef`s (one per currency) with `onlySpecifiedQuests`, `maximumAvailableQuestCount`, `resetEveryTick`, `onlyOneReward: true`, `windowClass` | **XML** | ~40 | `Archinity.Altar/Defs/QuestGivers.xml` |
+| **Build A total new C#** | | **~95** | one assembly |
+| **— Build B, the fallback if [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) declines VEF —** | | | |
+| `WorldComponent_QuestCatalogue` + `QuestOffer` (pool, `EnsureFilled`, scribe) | new C# | ~110 | `Archinity.Altar/Source/QuestCatalogue.cs` |
+| `Arch_PurchasableQuestExtension` + the static eligible-set build | new C# | ~25 | same |
+| `CurrencyPurchaseWorker_Quest` (`Cost` override + `Purchase` + choice handling) | new C# | ~70 | same |
+| Quest rows in `MainTabWindow_Network` (challenge rating, reward stack, choice picker) | new C# | ~85 | `Archinity.Altar/Source/CurrencyUI.cs` |
+| `$purchasable` branch in each authored `QuestScriptDef` — vanilla `QuestNode_IsTrue` | **XML** | ~8 per script | `Archinity.*/Defs/QuestScriptDefs/` |
+| `Arch_PurchasableQuestExtension` on each eligible `QuestScriptDef` | **XML** | ~4 per script | same |
+| **Build B total new C#** | | **~290** | one assembly |
+| **Total new C# — currencies plus Build A** | | **~525–615** | one assembly |
+| Two `CurrencyDef`s, one `MainButtonDef`, every catalogue entry, every price, every reward amount, every artifact's comp, every purchasable quest script | **XML** | — | `Archinity.Altar/Defs/`, `Archinity.Glitterites/Defs/` |
 
 Marked **[I]**: the mechanisms composed above are each **[V]**, but the claim that they
 compose into the required behaviour is inferred until something compiles, and the line
@@ -292,8 +648,23 @@ Register with one `MP.RegisterAll(assembly)` behind an `MP.enabled` guard. The a
 type is `SyncMethodAttribute` — there is no `Multiplayer.API.SyncMethod` **[V]**; the
 similarly-named `ISyncMethod` is a registration handle.
 
+**Build A adds exactly one more.** `VEF.Storyteller.Window_Contracts.AcceptQuestByInterface`
+calls `QuestGiverManager.ActivateQuest(Pawn, QuestInfo)` from the draw path **[V]**, so that
+method needs a `RegisterSyncMethod` against `Multiplayer.API`. **One registration** — it is
+a public instance method on a scribed `IExposable` whose arguments Multiplayer can address,
+which is the whole reason the catalogue is worth adopting rather than rebuilding. VEF's
+*generation* path is not a sync surface: `QuestGiverManager.Tick()` and `Init()` run off the
+game tick **[V]**.
+
+> **One residual, stated rather than assumed.** `QuestInfo` is not an
+> `ILoadReferenceable`, so whether Multiplayer can serialise it as a sync argument
+> unaided — or whether the registration must take `(QuestGiverDef, int index)` instead —
+> **is not settled by reading** and is listed under *Verification*. The index form works
+> regardless and is the fallback.
+
 **Defs, not settings** (**T-18**). Every price, amount, cooldown and catalogue entry is a
-`CurrencyPurchaseDef` field. No `ModSettings` is read anywhere in this mechanism.
+`CurrencyPurchaseDef` or `QuestGiverDef` field. No `ModSettings` is read anywhere in this
+mechanism.
 
 **Presentational state stays out of the tick path** (**T-21**). Scroll position, open
 categories and the pending selection are instance fields on the window — never static,
@@ -395,10 +766,13 @@ public and is the single funnel **[V]** — but it **recurses into unfinished pr
 prefix because by postfix time `progress[proj]` is written and the unlock signal has fired.
 That negative stands whichever way that is settled; it only becomes *relevant* if Analysis is priced.
 
-### What is shared, for [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) to rule on
+### What is shared — [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) has ruled
 
-#56 is the single decision point for whether shared machinery couples Intel to Church
-standing. Reported, not ruled on:
+**Ruling: the shared dictionary stays. The escape hatch is not taken.**
+[`TRACE.md`](TRACE.md) § *Decoupling from Church politics* carries it in full, with the
+one place the coupling is real — the band's price modifier, which is currency-scoped
+and must stay that way. The report below stands as written and the ruling is appended
+to it.
 
 - **Shared:** `WorldComponent_Currencies` stores Influence and Intel as **two rows in one
   dictionary under one `Scribe` key, in one component**. This is the coupling; the headline
@@ -412,7 +786,13 @@ standing. Reported, not ruled on:
   and Church standing is not an input to any code path.
 - **The escape hatch, which exists on purpose.** If #56 judges even a shared save key too
   close, the same class instantiated as two `WorldComponent`s costs about 15 lines and no
-  design change **[I]**.
+  design change **[I]**. **Not taken** — see the ruling above.
+- **What #56 added to this list, which was not on it.** The *shop window* is shared too,
+  and the donor scales **every price in its shop** by its heat meter's band
+  (`VisibilityLevelDef.intelCostModifier` reaches `DeserterServiceDef.intelCost`,
+  `ContrabandExtension` and the derived quest price alike **[V]**). That is a live
+  coupling this document did not report, and it is the one #56 actually had to rule on.
+  Resolved by scoping the modifier to `CurrencyPurchaseDef.currency == Archinity_Intel`.
 
 ---
 
@@ -426,6 +806,13 @@ standing. Reported, not ruled on:
 | Two clients disagree on a balance | MP desync | `TryPurchase` is the only mutation reachable from UI and carries `[SyncMethod]`. Every other mutation is inside a Job or a quest part. |
 | The catalogue is empty or every entry unaffordable | Visible in D1 | Not a failure. The window states the balance and the shortfall, as `TrySpendIntel`'s `"VFED.NotEnough"` message does **[V]**. |
 | The D3 postfix breaks on a game update | **Visible** — the row vanishes or misdraws | Layout arithmetic only; the balance and every spend path are unaffected. This is the piece most exposed to a RimWorld update, and it fails loudly rather than silently. |
+| A shelved quest offer's `QuestScriptDef` leaves the load order | Loud — `Quest.root` is null and `QuestManager` prunes it on load (`allQuests.RemoveAll(q => q.root == null)`) **[V]** | `EnsureFilled` tops the pool back up. The offer row is dropped with it. |
+| The eligible quest pool is empty, or every candidate fails `CanRun` | Visible in D1 — the currency's category is empty | Not a failure. `EnsureFilled`'s `while` terminates on the first failed draw rather than spinning, because `TryRandomElementByWeight` returns false. |
+| A shelved offer is bought and its `Accept` throws | The debit never happens — see the worker-discipline row above | `Accept` is the **last** statement of `Purchase()` precisely so the failure mode is "no quest, no charge" rather than "charged, no quest". |
+| **A `QuestGiverDef` is authored `onlyOneReward: false` and its catalogue is permanently empty** | **Silent — nothing logs and the window simply shows no rows.** `QuestGiverManager.AvailableQuests` prunes every entry whose `quest_Part_choice` or `choice` is null, and `QuestInfo`'s constructor populates those two fields **only** when `onlyOneChoice` is true **[V]** | Prevented, not recovered: a startup validator asserting `onlyOneReward: true` on every `QuestGiverDef` we ship, ~10 lines. The same prune also fires on a null `askerFaction`, which happens when `fixedQuestGiverFaction` is unset and the player has no allies — so **set `fixedQuestGiverFaction`**. |
+| **A quest script throws during generation and silently never appears in the catalogue** | **Silent** — `QuestWorker.GenerateQuests` wraps the body in `catch (Exception) { }` **[V]** | Not repairable from outside; use `onlySpecifiedQuests` so the pool is a list we authored and can test, rather than every `IsRootAny` script in the load order. |
+| **`QuestCurrencyInfo.Buy` throws** | The quest is already added and accepted — `ActivateQuest` debits fourth **[V]** | `Buy` must not be able to throw: `TrySpend` returns a bool and logs, and affordability is checked before the button is live. The ordering is VEF's and we cannot reorder it. |
+| Shelved offers bloat the save | **Silent** — the save grows and nobody looks | `QuestGen.Generate` runs pawn and site generation up front **[V]**. `TargetCount` is a `CurrencyDef` field, not the donor's hardcoded 10, so the pool size is a tuning decision rather than an accident. Worth measuring once with a real save. **[I]** |
 
 **No campaign softlock is reachable from this document.** Spending cannot move campaign
 state — see *Structural separation* — so no sequence of purchases can strand the player.
@@ -438,7 +825,8 @@ state — see *Structural separation* — so no sequence of purchases can strand
 
 | | |
 |---|---|
-| **Verified available mechanisms** | `WorldComponent` + `Scribe_Collections.Look(…, LookMode.Def, LookMode.Value)`; `World.FillComponents` backfill; `RimWorld.Reward` + `QuestPartUtility.GetStandardRewardStackElement`; `CompUsable` → `JobDriver_UseItem` → `CompUseEffect.DoEffect`; `MainButtonDef` as pure XML; `GlobalControlsUtility.DoDate`'s `ref float curBaseY`; `Multiplayer.API.SyncMethodAttribute` with soft-dependency fallback. All **[V]**. |
+| **Verified available mechanisms** | `WorldComponent` + `Scribe_Collections.Look(…, LookMode.Def, LookMode.Value)`; `World.FillComponents` backfill; `RimWorld.Reward` + `QuestPartUtility.GetStandardRewardStackElement`; `CompUsable` → `JobDriver_UseItem` → `CompUseEffect.DoEffect`; `MainButtonDef` as pure XML; `GlobalControlsUtility.DoDate`'s `ref float curBaseY`; `Multiplayer.API.SyncMethodAttribute` with soft-dependency fallback. **Added by [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106):** **`VEF.Storyteller`'s whole quest-giver stack** — `QuestGiverDef`, `QuestCurrency.Allows`, `QuestCurrencyInfo.Buy` / `GetCurrencyInfo`, `QuestInfo` with `saveQuestDeeply`, `QuestGiverManager.ActivateQuest` / `Tick` / `Reset` / `CallWindow`, `QuestWorker.GenerateQuests`, `Window_Contracts`, and `GoodwillCurrency` as the worked subclass. Plus, for Build B only: `QuestGen.Generate` into a `Slate`; the `hidden` / `hiddenInUI` / `acceptanceExpireTick = -1` shelving idiom with `TicksUntilExpiry` returning `-1`; `QuestManager.Add` / `Remove`; `Quest.Accept(null)`; `QuestScriptDef.CanRun` + `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`; `QuestNode_IsTrue`; `QuestNode_SpawnWorldObjects`; and `QuestPart_Choice.Choose` / `PreQuestAccept`. All **[V]**. |
+| **Retracted** | *"Nothing in the corpus or in vanilla sells a quest except VFE Deserters."* **False** — VEF does, with a pluggable currency. The claim rested on a tier-3 sweep reported as [I] and then used as a negative. Corrected above and on [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). |
 | **Confirmed negative** | Nothing in vanilla, the DLC or the corpus holds a **Def-keyed, world-level, spendable balance**. The named donor holds no balance at all. Independently re-verified by the close-out audit, which re-ran the highest-signal sweep family and found the negative holds **harder** than either #54 comment claimed. **The sweep form used to reach it was itself defective** — see *Verification* and [#103](https://github.com/cjd721/Rimworld-Archinity/issues/103). |
 | **Proposed, not selected** | The whole build above. It is **[I]** as a composition, and the line estimates with it. |
 | **Open parameters** | Every number, plus whether Analysis is priced at all (the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)). See *Outstanding decisions*. |
@@ -524,25 +912,116 @@ exactly the `$purchasable` node the map named, and the corpus does carry it. **T
 was in hand when #54 was resolved and was not reported there**; it is recorded here.
 
 The map made a purchasable quest catalogue conditional on #54 and #55 settling their
-currencies. **Both are settled**, so the question has graduated out of *Not yet specified* and
-is open as [#106 — The purchasable quest catalogue](https://github.com/cjd721/Rimworld-Archinity/issues/106).
+currencies. Both are settled;
+[#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) resolved it, and **the
+build is above rather than here** — a purchase belongs in the purchases document. This
+section is the survey behind it.
 
-**#106 consumes this document's design; it must not duplicate it.** One behavior, one owner:
+**#106 consumed this document's design and added one line to it.** One behavior, one
+owner — the split as it actually landed:
 
-- **Here:** the balance (`WorldComponent_Currencies`), the catalogue Def
-  (`CurrencyPurchaseDef`), the entry base class (`CurrencyPurchaseWorker`), the shop window
-  (`MainTabWindow_Network`) and the single synced debit (`TryPurchase`). None of these names
-  a quest, a fiction or a price — a quest purchase is simply a `CurrencyPurchaseWorker`
-  subclass whose `Purchase()` generates or accepts a quest, plus XML rows.
-- **#106's:** the quest **pool** and its refill policy, which quests are in it, their prices,
-  and how `slate` carries `purchasable` into whatever `QuestScriptDef`s we author. That is the
-  one piece it owes that is not currency machinery. VFED's `ServiceQuests` +
-  `EnsureQuestListFilled` is the shape to copy, and MP Compat's need to sync both
-  `EnsureQuestListFilled` and `InitializePlots` **[V]** is the standing warning: a refill that
-  runs from a draw method is a desync.
+- **Already here:** the balance, `CurrencyPurchaseDef`, `CurrencyPurchaseWorker`,
+  `MainTabWindow_Network` and the single synced debit `TryPurchase`. None of them names a
+  quest, a fiction or a price.
+- **#106's addition:** `virtual int CurrencyPurchaseWorker.Cost`, because a quest's price
+  is derived from the reward the generator rolled rather than authored. Five lines. **It
+  is needed only by Build B** — Build A prices through `QuestCurrency.Allows` instead — but
+  it is kept, because it costs nothing and the fallback needs it.
+- **#106's own, Build A:** a `QuestCurrency` / `QuestCurrencyInfo` pair and a
+  `Window_Contracts` subclass.
+- **#106's own, Build B:** the pool, its refill policy, `Arch_PurchasableQuestExtension`,
+  and how `slate` carries `purchasable` into an authored `QuestScriptDef`.
 
-A second balance, a second store or a second shop window opened by #106 would be a
-duplication, and this paragraph exists to make that visible before it is proposed.
+**No second balance, no second store, no second shop window was opened.**
+
+#### VEF carries it, and an earlier draft of this section said it did not
+
+**`VEF.Storyteller` ships a complete purchasable quest catalogue with a pluggable
+currency** — `QuestGiverDef`, `QuestCurrency`, `QuestCurrencyInfo`, `QuestInfo`,
+`QuestGiverManager`, `QuestWorker`, `Window_Contracts`, held by
+`GameComponent_QuestChains`, with `GoodwillCurrency` / `GoodwillCurrencyInfo` as a shipped
+working subclass **[V]**. *The build* above is written against it.
+
+**What this document previously said, and why it was wrong.** The first draft wrote:
+*"VEF ships the shop window without the shop… the accept button is a bare
+`Widgets.ButtonText` guarded only by `QuestUtility.CanAcceptQuest`."* Both halves are
+false. `Window_Contracts` draws `questInfo.currencyInfo.GetCurrencyInfo()` as the price and
+routes accept through `AcceptQuestByInterface` → `QuestGiverManager.ActivateQuest`, whose
+fourth statement is `questInfo.currencyInfo?.Buy(questInfo)` **[V]**. `CanAcceptQuest` is
+one guard among several, not the whole gate.
+
+**The methodological point, recorded because it is the reusable half.** That claim was
+marked **[I]** and the marker was treated as covering it. It does not.
+[`docs/agents/capability-research.md`](../agents/capability-research.md) defines **[I]** as
+*"inferred from a name, a blurb or a folder structure"* — a licence to say *"this might
+carry it"*, never a licence to say *"this does not carry it"* or *"this is what its code
+does."* **A negative asserted from a tier-3 sweep is not [I]; it is unverified, and it
+must either be read at tier 4 or stated as an unclosed gap.** The same error produced the
+Rim War readout claim recorded in `docs/data/MOD-VERDICTS.md`.
+
+**What VEF does *not* carry, stated precisely so the remaining build is honest:**
+
+- **No currency but goodwill.** `QuestCurrency` is abstract-in-practice with one shipped
+  subclass **[V]**. A pooled spendable balance is still ours — which is what the rest of
+  this document is.
+- **A flat price per giver, not per quest.** `QuestCurrency.costToAcceptQuest` is one
+  `float` on the Def **[V]**. Deriving a price from the generated quest is possible only
+  because `Allows` is handed the `Quest` — our subclass does the arithmetic itself.
+- **Unweighted offer selection.** `QuestWorker.GenerateQuests` draws with plain
+  `RandomElement` over `!isRootSpecial && IsRootAny` scripts **[V]**, where VFED uses
+  `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`. If the offer mix matters,
+  that is a `workerClass` override — `QuestGiverDef.workerClass` exists for it.
+- **Two silent failure modes we must author around**, both **[V]**, both proposed for the
+  register on [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106):
+  `QuestGiverManager.AvailableQuests` does
+  `RemoveAll(x => x == null || x.askerFaction == null || x.quest_Part_choice == null || x.choice == null)`,
+  and `QuestInfo`'s constructor populates `quest_Part_choice` and `choice` **only when
+  `onlyOneChoice` is true** — so a `QuestGiverDef` with `onlyOneReward: false` has a
+  catalogue that is **silently, permanently empty**; and `QuestWorker.GenerateQuests`
+  wraps generation in `catch (Exception) { }`, so a quest script that throws simply never
+  appears.
+
+#### The rest of the corpus, and vanilla
+
+**Beyond VEF and VFED, nothing sells a quest** **[V]**. Run over
+both roots plus vanilla and the DLC, `-a -g '*.dll' -g '!**/obj/**'`, with the `#US`-heap
+half as a hand-typed null-interleaved literal
+(`p\x00u\x00r\x00c\x00h\x00a\x00s\x00a\x00b\x00l\x00e\x00`) after validating that the
+ASCII form returns **zero** hits on VFED.dll and the interleaved form returns one:
+
+- `purchasable` appears in **three VFED assemblies and three VFED XML files and nowhere
+  else** in 228 mods, and not at all in `Assembly-CSharp.dll` **[V]**.
+- Thirteen 1.6 assemblies carry both `QuestGen` and `QuestScriptDef`; **`TradeUtility.LaunchThingsOfType`
+  appears in exactly one of them, VFED** **[V]**. None of the other twelve removes a
+  currency anywhere near a quest-generation site.
+- **Vanilla cannot sell a quest.** `RoyalTitlePermitWorker_CallShuttle` spends
+  `royalAid.favorCost` through `Pawn_RoyaltyTracker.TryRemoveFavor`, and
+  `PermitsCardUtility` prices permits in `permitPointCost` and honor — none of it touches
+  `QuestUtility` or `QuestGen` **[V]**. The nearest vanilla thing to a bought quest is an
+  aid effect that fires immediately.
+
+> **The `purchasable` sweep's negative is sound and its *scope* was overread.** It proves
+> nobody else uses VFED's slate key. It does not prove nobody else sells a quest, because
+> VEF's catalogue uses no such key — it never puts an unbought quest in `QuestManager` at
+> all. A symbol sweep bounds the *symbol*, never the *behaviour*, and the behaviour was
+> the ticket.
+
+**What the donor gets wrong, recorded because it is the specification for not repeating
+it** — all **[V]**:
+
+- `EnsureQuestListFilled` is called from `Notify_Open` and from `DoMainPart`, both inside
+  `OnGUI`. So is the accept. MP Compat's `VanillaFactionsDeserters` entry needs a prefix
+  replacing `DesertersUIUtility.DoPurchaseButton` wholesale, two transpilers, five
+  `RegisterSyncMethod` calls, seven lambda registrations and four synthetic sync methods
+  to paper over it.
+- `EnsureQuestListFilled` also calls
+  `questPartChoice.Choose(questPartChoice.choices.RandomElement())` — an unsynced `Rand`
+  draw from a draw method, which is the canonical Divergence-gate failure.
+- The pool target is a hardcoded `10`, the price divisors are hardcoded `500` and `2000`,
+  and the column split is a hardcoded `challengeRating <= 3`.
+- Payment is `TradeUtility.LaunchThingsOfType(VFED_Intel, n, Map, null)` — the items
+  physically launch off the map. It is a trade, not a debit, and it is why the donor's
+  Intel must sit on a powered orbital trade beacon to exist at all.
 
 ### The ordered-operation surface, and why it is not this document's
 
@@ -698,6 +1177,11 @@ this document.
    with Faction Customizer's `GlobalControlsOnGUIPrefix` when both are active.
 3. That `MP.RegisterAll` behind an `MP.enabled` guard leaves single-player untouched when
    `0MultiplayerAPI.dll` is present but Multiplayer is not.
+4. **Whether `QuestInfo` can cross the wire as a sync argument.** It is `IExposable` but
+   not `ILoadReferenceable` **[V]**, and Multiplayer's argument serialisation for such a
+   type was not read. If it cannot, register
+   `ActivateQuest(QuestGiverDef giver, int offerIndex)` on a wrapper of ours instead — the
+   index form needs no serialiser and is the fallback either way. **[I]**
 
 ### Observable checks that demonstrate the requirements
 
@@ -710,6 +1194,20 @@ this document.
   ordered chain does not move** — checkable by grep as well as by play, per *Structural
   separation*.
 - The number survives a save/reload, and survives the colony moving map.
+- **A shelved quest offer does not appear in the quests tab, does not send a letter, and
+  does not expire** across several in-game seasons; buying it makes it appear and accept in
+  the same frame, and the pool refills to its target count.
+- **A multi-choice purchasable quest charges the price it displayed**, and accepting it
+  produces **no** `"still has a choice unresolved"` error in the log. Both halves matter:
+  the error is the `Choose`-omission defect and the price is the `Choose`-destroys-choices
+  defect, and they have the same root.
+- **A `QuestGiverDef` authored `onlyOneReward: false` shows an empty catalogue** — confirm
+  the startup validator catches it rather than the player discovering it.
+- **Raising Trace raises the price of an Intel offer and leaves every Influence offer's
+  price unchanged** — the decoupling ruling, visible in one window.
+- **Opening the network window generates no quest**, on either client. This is the donor's
+  defect and it is the one worth checking deliberately: watch the save's quest count across
+  ten window opens.
 
 ---
 
@@ -720,7 +1218,10 @@ this document.
 | **Every number** — earn rates, prices, starting balances, caps | Balance. `RELIGION.md` says *"exact catalogs are implementation work"*; `GLITTERTECH.md` says *"project costs… remain implementation/authoring work"*. | Whoever authors the catalogues. |
 | **Does either currency decay or expire?** Neither requirements file says. The donor's Intel rots **[V]**; Reverence decays by requirement. | A balance that never decays is a different economy from one that does, and it changes whether hoarding is a strategy. | **Requirements gap, no ticket** → [`RELIGION.md`](../requirements/RELIGION.md) for Influence, [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) for Intel. |
 | **Does any Analysis project cost Intel on top of its exemplar?** | Decides whether [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) calls anything in this document at all. Two specs presumed opposite answers; **neither had the authority**, and both have withdrawn. | **Open requirements parameter**, owned by [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md), tracked as the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2). |
-| **Does sharing one dictionary between Influence and Intel couple Intel to Church standing?** | If yes, split into two `WorldComponent`s (~15 lines, no design change). | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56), item 4. |
+| ~~**Does sharing one dictionary between Influence and Intel couple Intel to Church standing?**~~ | **Answered: no. The dictionary stays shared; the escape hatch is not taken.** The real coupling was elsewhere — a band price modifier that reaches the whole shop — and it is scoped to `Archinity_Intel`. | **Closed** by [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md) § *Decoupling from Church politics*. |
+| **How many offers sit in each currency's pool, and what each is worth** | Pool size is save weight; `costPerMarketValue` is the exchange rate between a mission's payout and its price. | Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2). |
+| **Whether a shelved offer should ever rotate out** | VFE Deserters never rotates, so its shop goes stale. **Build A already has the lever** — `QuestGiverDef.resetEveryTick`, which clears and regenerates the pool **[V]** — so this is a number, not a mechanism. What it is *set to* is still unanswered. | **Requirements gap, no ticket** → [`docs/requirements/QUESTS.md`](../requirements/QUESTS.md), whose *Purchase* channel does not say whether offers are standing or perishable. |
+| **Does VEF ship?** | Build A is ~95 lines of new C#; Build B is ~290 and re-derives the pool, persistence, refill, price display, challenge-rating row, choice resolution and accept sequence. | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14). **VEF is already required** by [`PRESSURE.md`](PRESSURE.md) § 4 and by [`HACKING.md`](HACKING.md)'s carrier, so this adds no new mod — but the ledger owns the decision, not this document. |
 | **Is the always-visible readout (D3) the right surface, or does the campaign UI absorb it?** | D3's layout arithmetic is the maintenance cost; a tab of our own removes it. | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) rules on the shape; D1 and D2 ship regardless. |
-| **Which quests are purchasable, out of what pool, at what price?** | Decides what the catalogue actually contains. The machinery is built here; the contents are not. | [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) — **consuming** `CurrencyPurchaseDef` / `CurrencyPurchaseWorker` / `MainTabWindow_Network`, not duplicating them. |
+| **Which quests are purchasable, and what each contains** | Decides what the catalogue actually holds. The machinery is built here and the membership test is one `DefModExtension`; the contents are not this document's. | Authoring, alongside the era content. [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) settled the mechanism. |
 | **Which carrier holds the ordered Schism chain?** | This document requires only that it is *not* `WorldComponent_Currencies`. | **No owner.** [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40) is the Chronicle's implementation surface and *"nothing else"* **[V]** — a different chain, `hitl` + `wayfinder:grilling`, deliberately last in its own chain. Widening it is Conrad's call, not this document's. |

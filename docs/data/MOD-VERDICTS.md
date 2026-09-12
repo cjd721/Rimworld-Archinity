@@ -289,7 +289,7 @@ file; never re-click it. This is a rule to follow, not a defect to fix.
 | **RimPacts – Diplomacy Overhaul** | `wowgag.RimPacts` |
 | **Slave Rebellions Improved (Continued)** | `Mlie.SlaveRebellionsImproved` — no threads, no `WorldComponent` **[V]**, but both settings floats are read *inside* rebellion logic, so mismatched files produce different rebel rosters from the same tick. Transpiles `SlaveRebellionUtility.IsRebelling`. |
 | **Auto-Cast Specialist Commands** | `Linnun.AutoCastSpecialistCommands` — no threads, no `WorldComponent` **[V]**. **The heaviest settings dependency in the bin, by kind rather than by size:** six bools that decide whether a *toil is inserted into a vanilla `JobDriver`*. See Named prices. |
-| **Better Workbench Management** | `falconne.BWM` — no threads **[V]**; two `WorldComponent`s (`ExtendedBillDataStorage`, `WorktableRestrictionDataStorage`) that only persist bill metadata. Three of its seven settings are read inside a `RecipeWorkerCounter.CountProducts` detour. See Named prices. |
+| **Better Workbench Management** | `falconne.BWM` — no threads **[V]**; two `WorldComponent`s (`ExtendedBillDataStorage`, `WorktableRestrictionDataStorage`) that only persist bill metadata. Three of its seven settings are read inside a `RecipeWorkerCounter.CountProducts` detour. See Named prices. **A second settings defect, on a different method from the count-setting one:** `ImprovedWorkbenches.Detours.BillUtility_MakeNewBill_Detour.Postfix` calls `Main.Instance.ShouldDropOnFloorByDefault()` → `ModSettings_ImprovedWorkbenches._dropOnFloorByDefault` **[V]**, and the add-bill delegate is replayed on every client, so two players with different settings write different `storeMode` onto the same scribed bill — **T-18**, live. MP transmits the map selection as command context for that delegate, which rescues the postfix's other divergent read (`Find.Selector.SingleSelectedThing`); nothing restores a mod setting. The assembly declares no `[HarmonyPriority]`/`HarmonyBefore`/`HarmonyAfter` anywhere **[V]**. See [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95). |
 | **QualityBuilder Unofficial 1.6** | `hatti.qualitybuilder` — no threads, no `WorldComponent` **[V]**. **The only mod in this batch the compat layer covers**, and it covers the commands, not the defaults path. See Named prices. |
 | **Defensive Positions – Forked** | `GonDragon.DefensivePositions` — no threads **[V]**: every `Thread` hit in the assembly is the compiler-generated `<>l__initialThreadId` of an iterator, and the one `Task` hit is `MessageTypeDefOf.TaskCompletion`. Its four settings are hotkey and camera behaviour only. **Its orders are MP-safe with no patch of any kind** — see the dedicated section below, which corrects an earlier claim in this file. |
 | **Range Finder** | `brrainz.rangefinder` — settings are display-only (modifier keys, colours, max draw range) and steer nothing synced **[V]**. Tiered here for the rule, not for a hazard. Its assembly question is separate and is recorded below. |
@@ -475,7 +475,7 @@ each is a specific thing to do when the mod ships.
 | `syrchalis.processor.framework` | `initialProcessState` in `CompProcessor.Initialize()` ⇒ every processor spawns with a different enabled set. |
 | `adaptive.storage.framework` | The **only natively MP-aware mod** in the bin. Nothing to do. |
 | `rwmt.MultiplayerCompatibility` | **Not hygiene — it is the carrier for a live silent desync fix.** Its `VanillaExpandedFramework.PatchKCSG` transpiles the unseeded `System.Random` in `KCSG.SettlementGenUtils.Sampling.Sample` into a `Verse.Rand` redirector: **`docs/TRAPS.md` T-33**, the hazard on every `SettlementLayoutDef` path. Beyond that one patch it carries 33 `PatchSystemRand` sites, 41 `PatchPushPopRand` sites and 224 `[MpCompatFor]` package ids, **21 of which are mods on disk**. It is the single highest-leverage entry in the shipping set for multiplayer, and it costs nothing to author. **Its protection is a hardcoded per-mod allowlist, not a general mechanism** — anything else in the set, and anything we write, gets no coverage. **[V]** ([#88](https://github.com/cjd721/Rimworld-Archinity/issues/88)) |
-| `andromeda.nicebilltab` | **New candidate, absent from every earlier survey — silence, not rejection.** It carries the *finding* half of the bill-menu problem (search box, sigil category filters, collapsible `ThingCategoryDef` tree) by replacing `ITab_Bills` wholesale: its `FillTab` prefix returns `false` and the vanilla add-bill `FloatMenu` ceases to exist. **Two prices.** (1) **MP-hostile as it stands** — zero `Multiplayer`/`SyncMethod` references in 8,949 decompiled lines, and its reorder/insert paths write `billStack.Bills.Insert/Remove` **directly**, bypassing the `BillStackAddPatch`/`DeletePatch` that MP core syncs **[V]**; the desync consequence is **[I]**, unverified against two clients. (2) `Settings.EnableAutoNaming` is read inside `TryAddBillToQueue` and writes `Bill_Production.RenamableLabel`, which is **scribed game state** — settings must match. Zero tech-level awareness. **[V]** ([#87](https://github.com/cjd721/Rimworld-Archinity/issues/87)) |
+| `Andromeda.NiceBillTab` | **New candidate, absent from every earlier survey — silence, not rejection.** It carries the *finding* half of the bill-menu problem (search box, sigil category filters, collapsible `ThingCategoryDef` tree) by replacing `ITab_Bills` wholesale: its `FillTab` prefix returns `false` while `Settings.EnabledMod` and the vanilla add-bill `FloatMenu` ceases to exist. **Two prices.** (1) **MP-hostile as it stands** — zero `Multiplayer`/`SyncMethod` references in 8,949 decompiled lines, and its reorder/insert paths write `billStack.Bills.Insert/Remove` **directly**, bypassing the `BillStackAddPatch`/`DeletePatch` that MP core syncs **[V]**; the desync consequence is **[I]**, unverified against two clients. (2) `Settings.EnableAutoNaming` is read inside `TryAddBillToQueue` and writes `Bill_Production.RenamableLabel`, which is **scribed game state** — settings must match. Zero tech-level awareness. **[V]** ([#87](https://github.com/cjd721/Rimworld-Archinity/issues/87)) **Amended by [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95), and it does not soften the verdict above:** on the *creation* path specifically, `NiceBillTab.TabBillsDrawer.TryAddBillToQueue` calls `BillUtility.MakeNewBill(recipe, selection.style)` itself and adds the result, so with the tab loaded MP's `SyncDelegate.Lambda(typeof(ITab_Bills), "FillTab", 2)` never fires and bill *creation* rests entirely on the `BillStack.AddBill` SyncMethod **[V]**. That one path is covered; the reorder/insert paths in (1) are a different seam and remain uncovered. It also mutates the bill **after** `billStack.AddBill` — `SetMaterialToBill` rewrites `ingredientFilter`, `AutoRenameBill` under its own setting — **a seam no Harmony priority on `MakeNewBill` reaches** **[V]**. Workshop `3520130671`, `1.6/Assemblies/NiceBillTab.dll`. |
 | `ferny.betterarchitect` | **PULL with a caveat, and its era resolver is worth harvesting regardless.** `MysteryUnlockTracker : GameComponent` scribes `baMysteryUnlocks` and is mutated from two asymmetric sources — a synced game event (`ResearchManager.FinishProject`) **and a purely local UI click** (`ClearPendingFor`, when a player reveals a wrapped gizmo). RimWorld instantiates every `GameComponent`, so this is live whether or not the feature is on; mitigation is `mysteryUnlocks = false`. **[V]** on the mechanism, **[I]** on save divergence. Separately it **conflicts silently with Architect Menu Optimizer** (`MRK.architectmenuoptimizer`): BAM's `DesignationTabOnGUI` prefix returns `false` unconditionally, so AMO's transpiler never runs and its pagination is a no-op — and AMO's BAM-compat shim never installs, because it looks up a property `Settings` where BAM exposes a static field `settings`. Cargo, not a verdict. **T-22 is live for both.** **[V]** ([#87](https://github.com/cjd721/Rimworld-Archinity/issues/87)) |
 | `Linnun.AutoCastSpecialistCommands` | **The worst settings dependency in the bin, and it is not close.** Five postfixes on `MakeNewToils` — `JobDriver_Mine`, `JobDriver_DoBill`, `JobDriver_PlantWork`, `JobDriver_Research`, `JobDriver_StudyInteract` — each call `AutoCastToilInjector.Inject(…, settings.enableAutoCastX)`, which returns immediately if the bool is false and otherwise **inserts a toil into the job's toil list** that calls `ability.verb.TryStartCastOn`. Every other settings hazard in this file changes a *value*; this one changes the *length and indexing of a pawn's toil list*. **The mechanism, stated precisely** (confirmed while verdicting Defensive Positions): Multiplayer syncs the `Job` — `TryTakeOrderedJob` is a registered SyncMethod with the job exposed — but each client then reconstructs the **toil list locally** by calling `MakeNewToils`. So a settings-gated toil injection makes two clients execute *different toils from the same synced job*, and the sync layer has no way to notice: it delivered the job correctly. Not covered by the compat layer. Settings must match, and this is the mod to check first if a desync appears. **[V]** |
 | `falconne.BWM` | `_countOutsideStockpiles`, `_countInventory` and `_countCarriedByNonHumans` are read inside a detour on `RecipeWorkerCounter.CountProducts` (plus a `GetCarriedCount` transpiler). That count is what decides whether a "do until X" bill is satisfied — so mismatched settings mean one client's bill completes and the other's keeps issuing jobs. Not covered by the compat layer. Settings must match. **[V]** |
@@ -582,6 +582,211 @@ it, so a re-derivation is only as good as the bytes that reached ripgrep — whi
 `docs/agents/capability-research.md` now requires a sweep's *construction* to be reported
 with its result. [#103](https://github.com/cjd721/Rimworld-Archinity/issues/103),
 [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83).
+
+## What the 2026-09-12 capability batch found
+
+Ten capability tickets resolved in parallel, each re-verified against the 1.6 assemblies by an
+independent adversarial pass. Same rule as the batch above: recorded here only where a finding
+bears on a **verdict** or on a mod's price. Nothing below changes a bar or a decline, and
+**conflicts are cargo, not verdicts**.
+
+**Every mod this batch touched already has an entry.** Nice Bill Tab's findings are folded into
+its existing row in § *Named prices already known*, which #87 filed as **MP-hostile** — this batch
+covers a different seam and does not soften that.
+
+**Rows amended, by mod.**
+
+**Compositable Loadouts** — `Wiri.compositableloadouts` (`2679126859`,
+`1.6/Assemblies/Inventory.dll`) — the only loadout mod in the corpus. Its `Loadout`/`Tag` are
+`IExposable` on a `GameComponent`, **not Defs**, so it ships no authorable preset content **[V]**.
+It is the only thing in the corpus that reaches weapons from a preset
+(`Inventory.ThinkNode_LoadoutRealisation` issues `JobDefOf.Equip`) **[V]**.
+**Live T-18 on the simulation path.** `Inventory.OptimizeApparel_ApparelScoreGain_Patch` postfixes
+`JobGiver_OptimizeApparel.ApparelScoreRaw` and returns `-1000f` when
+`ModBase.settings.onlyItemsFromLoadout` is set and the pawn's `LoadoutComponent` does not desire the
+item; `Inventory.OptimizeApparel_TryGiveJob_Patch` transpiles `TryGiveJob` to drop apparel outside
+the loadout on the same setting **[V]**. Both read mod settings inside AI that ticks on every client
+— unlike Better Workbench Management's, there is no synced-command context to rescue it. **With that
+setting on, any apparel-policy-driven equipment scheme stops working**, Archinity's presets
+included. Also transpiles `BillRepeatModeUtility.MakeConfigFloatMenu` to inject a mod-defined
+`BillRepeatModeDef` **[V]** (adds an option; does not remove vanilla's `CanCountProducts` gate).
+([#28](https://github.com/cjd721/Rimworld-Archinity/issues/28),
+[#95](https://github.com/cjd721/Rimworld-Archinity/issues/95))
+
+**Vanilla Expanded Framework** — `OskarPotocki.VanillaFactionsExpanded.Core` (`2023507013`).
+**Ships a purchasable quest catalogue with a pluggable currency**, not merely a board: `QuestGiverDef` / `QuestCurrency` / `QuestCurrencyInfo` /
+`QuestInfo` / `QuestGiverManager` / `QuestWorker` / `Window_Contracts`, held by
+`GameComponent_QuestChains`, with `GoodwillCurrency` as a shipped subclass debiting through
+`TryAffectGoodwillWith` **[V]**. Extending it to a new currency is two small subclasses.
+`QuestGiverManager.ActivateQuest` is reached from `OnGUI` and needs one sync registration **[V]**.
+Carries **T-76** and **T-77**. **The outpost engine is also VEF's**, not Vanilla Outposts
+Expanded's: `Outposts.dll` ships inside VEF and carries `Outposts.Outpost : MapParent`, the
+`OutpostExtension`, production, delivery and packing, plus the abstract `WorldObjectDef`
+`OutpostBase`; `VEF.dll` itself contains **zero** `Outpost` types, so a sweep of `VEF.dll` for
+outposts returns a false negative **[V]**.
+([#106](https://github.com/cjd721/Rimworld-Archinity/issues/106),
+[#81](https://github.com/cjd721/Rimworld-Archinity/issues/81))
+
+**Vanilla Outposts Expanded** — `vanillaexpanded.outposts` (`2688941031`,
+`1.6/Assemblies/VOE.dll`) — **not a donor for a player-planted institution inside an NPC faction**,
+and it contains no *outpost* engine of its own (see VEF above). Placement is structurally barred
+from NPC territory: `Outposts.Utils.CanSpawnOnWithExt` rejects the tile when
+`Find.WorldObjects.AnySettlementBaseAtOrAdjacent(tile)`, and `Dialog_CreateCamp` calls
+`outpost.SetFaction(creator.Faction)` — the player's. No goodwill cost, no standing gate, no host
+faction, no suppression. And it is a `MapParent`, which
+[#10](https://github.com/cjd721/Rimworld-Archinity/issues/10) already priced. **Multiplayer
+Compatibility does not cover it** — the whole of `Multiplayer.Compat.VanillaOutpostsExpanded` is two
+lines, and a whole-assembly byte scan of `1.6/Assemblies/Multiplayer_Compat.dll` finds **zero**
+`Outposts.` references **[V]**; counts and the full correction are in `docs/data/PARTS-BIN.md`
+§ 7.6. **[V]**
+([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73),
+[#81](https://github.com/cjd721/Rimworld-Archinity/issues/81))
+
+**Lemmy Progression** — `LemmyMods.LemProgression` (`3548896697`,
+`1.6/Assemblies/LemProgress.dll`). **BLOCK, on three independent defects [V]:**
+
+① **It writes the volatile mirror and never the scribed field.**
+`LemProgress.Systems.WorldEraManager.SetWorldTechLevel` calls `InitializeWorldTechLevelAccess()` —
+which is where the reflection lives, a four-tier fallback starting at `AccessTools.TypeByName` —
+and then does one `cachedCurrentField.SetValue(null, level)` inside a try/catch. That is the
+assembly's **only** `FieldInfo.SetValue` call site, and the string `GameComponent_TechLevel` does
+not appear anywhere in the assembly in **either** metadata heap. So WTL's scribed state is never
+touched and the raise is discarded on the next load — see
+`docs/engine/research-and-tech-tiers.md` § *The scribed field and the volatile mirror are two
+different things*.
+
+② **`System.Random` in the faction-upgrade half — two instances, one of them live.** Both
+`LemProgress.Systems.FactionUpgradeManager` and `LemProgress.Systems.FactionUpgrader` declare a
+`private static readonly System.Random random`. **`FactionUpgrader.random` is dead** — it is read
+nowhere in the assembly, and `FactionUpgrader` draws through `GenCollection.RandomElement` instead.
+The live site is `FactionUpgradeManager`'s: `random.NextDouble() < settings.factionUpgradeChance`.
+One unseeded stream off the shared `Rand` stream is enough; the count is two, the defect is one.
+
+③ **A settings-window write to saved state.** `LemProgress.Settings.LemProgressMod.DrawAdvancedSettings(Rect)`
+draws *"Force Tech Level Advance"* through `Listing_Standard.ButtonText`, reached from
+`DoSettingsWindowContents` only via `case SettingsTab.Advanced:` and only when `Current.Game != null`;
+the handler is `ForceAdvanceTechLevel()`, which opens the `FloatMenu` whose options call
+`WorldEraManager.AdvanceToTechLevel(level)` — **T-18**'s shape on top of ①.
+
+Also prefixes VFE Tribals' `AdvanceToEra` and returns **`true`**, observing that mod's polling era
+detector and pushing WTL's level alongside it — *amplifying* the detector rather than suppressing
+it. Worth copying, though: `InitializeWorldTechLevelAccess` handles the auto-property correctly in
+four steps (`AccessTools.Field` → `AccessTools.Property` → `<Current>k__BackingField` → a
+static-field scan).
+([#109](https://github.com/cjd721/Rimworld-Archinity/issues/109))
+
+**Faction Territories and Vassalage** — `jaeger972.factionterritories` (`3626725895`,
+`Assemblies/FactionTerritories.dll`, no source) — **the closest structural precedent in the corpus
+for a player-planted object inside an NPC faction**, and not the donor. `VassaliseUtility` gates on
+`faction.PlayerGoodwill < GetSettlementVassaliseGoodwillCost()` (clamped 10–100) with a
+*"Requires N goodwill with …"* reason guarded by `Faction.CanChangeGoodwillFor`, then **spends** the
+standing via `TryAffectGoodwillWith(Faction.OfPlayer, -cost, …)` **with a `+cost` rollback on
+failure** — the rollback is the detail to copy. `FactionTerritories_VassalOutpost : WorldObject` — a
+plain `WorldObject`, not a `MapParent` — is placed by `ExecuteVassalisationAtTile` **at the NPC
+settlement's own tile** with `SetFaction(Faction.OfPlayer)`, retaining `originalFactionId`,
+`originalFactionLoadID`, `originalSettlementName` and `originalWorldObjectDefName`.
+`VassalagePointsComponent : GameComponent` accrues the yield; `Invasions.Component` scans
+`GetAllOutposts()` and spawns an `Invasion` against them — a real suppression loop. **Rejected as
+donor on two grounds:** it *converts* an existing (or destroyed) settlement rather than planting
+beside a living one, so the placement half is new work regardless; and ⚠ its cost comes from a
+`ModSettings` slider — **T-18**. Already recorded as a `DrawFactionRow` patcher claiming the row's
+right-edge 80px. **[V]** ⚠ Its invasion half carries a second T-18:
+`Invasions.Component.GameComponentTick` reads `FactionTerritoriesSettings.enableInvasions` — a
+**public field**, so it cannot be Harmony-prefixed — and `RollNextInvasionTick` draws
+`Rand.Range(...)` off the **shared stream** with both bounds derived from per-client settings, so a
+client with the setting false never takes the draw at all **[V]**. Its `Utility.RollWinner` is by
+contrast better than merely safe: the winner is a pure function of tile, both faction load IDs and
+the tick, under `Rand.PushState(seed)` with a `finally { Rand.PopState(); }` **[V]**. MP Compat
+covers the packageId **nowhere** — a validated sweep across all 18 `Multiplayer_Compat*.dll` builds
+returns zero **[V]**.
+([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73),
+[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92),
+[#93](https://github.com/cjd721/Rimworld-Archinity/issues/93))
+
+**VFE Empire** — `OskarPotocki.VanillaFactionsExpanded.Empire`. `WorldComponent_Hierarchy`, named on
+[#73](https://github.com/cjd721/Rimworld-Archinity/issues/73) as the nearest analogue for a
+per-faction ledger, **is not one**. Its state is `List<Pawn> TitleHolders` plus a `bool initialized`,
+scribed `LookMode.Reference` — a roster of generated nobles, not a per-faction record of anything
+the player placed. Its `WorldComponentTick` (daily, at `TicksGame % 60000 == 2500`) calls
+`Rand.Chance` and `Rand.RangeSeeded` and generates world pawns whose *count* comes from
+`VFEEmpireMod.Settings.noblesPerTitle`, a client-local slider — **T-18**, and
+`Multiplayer.Compat.VanillaFactionsEmpire` patches neither `WorldComponentTick` nor `RefreshPawns`
+nor `MakePawnFor`. ⚠ **The ticket's "147 lines" is the 1.4 `Source/` file, not the 1.6 assembly**
+— the exact failure `docs/agents/capability-research.md` § *Stale source* names.
+`WorldComponent_Vassals` + `TitheInfo` (a `Dictionary<Settlement, TitheInfo>` scribed
+Reference→Deep, lazily decorating an existing Empire settlement) is the nearer analogue and has
+**no suppression path at all** — nothing can raid, contest or reduce a vassal; the only removals are
+`ReleaseAllVassalsOf(Pawn)` and a debug action. **Neither VFE Empire nor VFE Deserters references
+`Multiplayer`, `SyncMethod` or `SyncWorker` anywhere**: both assemblies reference only mscorlib,
+Assembly-CSharp, UnityEngine and 0Harmony (plus KCSG for VFED). **[V]**
+([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73))
+
+**Rim War** — `2222935097`, `v1.6/Assemblies/RimWar.dll`. Player heat is stored **per settlement**:
+`RimWar.Planet.RimWarSettlementComp.playerHeat`, a private `int` scribed `"playerHeat"`, clamped
+0–10000 in its setter [V]. `RimWarData.PlayerHeat` is a derived aggregation over those comps, not
+the store. **It does have a readout** — `RW_AggressionPoints` and `RW_AggressionDefense` (with a
+`vassalHeat` variant) are appended to a settlement's inspect string; both literals live in the `#US`
+heap only, so an ASCII-only sweep misses them [V]. No band ladder and no world-scoped meter. Its one
+reusable idea is pacing: on firing an action, `PlayerHeat = 0; minimumHeatForPlayerAction +=
+GetHeatForAction(...)` — spend heat and raise the bar, so the next strike costs more. Verdict
+unchanged: **barred and declined**.
+([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56))
+
+**Ushanka's Glittertech Expansion** — `3522676478`. `_instability` is on
+**`USH_GE.Hediff_CryogenicNexus : Hediff_AddedPart`** — a pawn hediff — as a private `float` scribed
+`"_instability"`, clamped 0–1, with `ResetInstability()` and `LabelInBrackets` showing
+`CurStage.label` and `(1 - Instability) × 100%` [V]. `USH_GE.CompOverclock` does not carry it.
+Banded by hediff stage, not by a Def threshold; **not** a world meter. Ruled out for
+[#56](https://github.com/cjd721/Rimworld-Archinity/issues/56). Separately, it **prefixes
+`RimWorld.BillUtility.MakeNewBill`** and returns `false` for its own recipes, substituting
+`USH_GE.Bill_ModifyCell : Bill_Production`, `Bill_Glittertech : Bill_Autonomous` and
+`Bill_Overclock : Bill_Glittertech` [V] — so any bill-defaults postfix must allowlist types rather
+than test `is Bill_Production`. Cite the **1.6** assembly specifically,
+`3522676478/1.6/Assemblies/GlittertechExpansion.dll`; the 1.5 build is a differently named
+`GlitterworldUprising.dll` carrying one of the three branches [I].
+([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56),
+[#95](https://github.com/cjd721/Rimworld-Archinity/issues/95))
+
+**RimPacts – Diplomacy Overhaul** — `wowgag.RimPacts` (`3762723122`, `Assemblies/RimPacts.dll`, no
+version folder; About declares 1.6 only). **Verdict unchanged: not barred; Cheap + settings; the
+whole/fork/ours question is [#13](https://github.com/cjd721/Rimworld-Archinity/issues/13)'s.** Three
+findings against the dedicated section above, all **[V]**:
+
+- **The corpus's only other world-scoped player heat meter.**
+  `WorldComponent_RimPacts.playerNotoriety`, an `int` scribed `"playerNotoriety"`, 0–100. Decay is
+  `((PlayerIdeoLeader() != null) ? -3 : -2) × DoctrineNotorietyDecayMult` per day in
+  `ProcessNotorietyDaily`, **not a flat rate**. `AddPlayerNotoriety(int, string)` is the main but
+  **not the only** write site — at least three places clamp `playerNotoriety` directly, including an
+  inline settlement-raze path. The band threshold is read through `DoctrineHegemonThreshold`,
+  doctrine-dependent and able to return 90, not a bare constant; `RptTuning` holds the defaults
+  (`NotorietyMax 100`, `NotorietyHegemonThreshold 80`, `NotorietyHegemonEndBelow 60`, with
+  hysteresis). Displayed as one colour-flipping label row in `MainTabWindow_RimPacts`; escalates
+  through `EnterPlayerHegemon` → `FormAntiPlayerCoalition` → `DeclareCoalitionWar`. Gated on
+  `RimPactsMod.Settings.enableNotoriety` — **T-18**. **Design reference, not code reference**, and it
+  confirms that VFED's Def-driven bands are the better shape.
+  ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56))
+- **The corpus's only def-level standing gate.** `RimPacts.TreatyDef : Def` with `minTrust`,
+  `minGoodwill`, `silverCost`, `durationDays`, `breakTrustPenalty`, `breakGoodwillPenalty`,
+  `TreatyDef requiresTreaty`, `empireAllowed`, enforced by `RimPacts.TreatyWorker.CanSign(...)`
+  returning a vanilla `AcceptanceReport` with the threshold substituted into its reason string,
+  softened by 10 at leader favour ≥ 60. Shipped ladder: NonAggression −20 / trust 20 / 300 silver →
+  Passage 0/15 → Trade +10/30 → Defense +40/50 (requires NonAggression) → Alliance +75/60. Recorded
+  because the *shape* is the one `docs/specs/POLITICS.md` § *Standing as a content gate* proposes,
+  independently arrived at. ([#93](https://github.com/cjd721/Rimworld-Archinity/issues/93))
+- **A `Missionary` operation**: send the moral guide away for seven days at a silver cost for a roll
+  to convert the faction's ideoligion, moving goodwill either way; tunables `MissionaryCost`,
+  `MissionaryCooldownDays`, `MissionaryBaseChance`, `MissionarySuccessGoodwill`,
+  `MissionaryFailGoodwill`, `MissionaryFavorBonus`, `MissionaryTechPenalty` in `RimPacts.RptTuning`.
+  **It is the transaction half of a mission with none of the institution half** — no persistent
+  object, no decay offset. **[V]** on the symbols, **[I]** on the numbers.
+  ([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73))
+
+**A sweep hazard that touches every negative in this file, added to the method doc.** Ripgrep is
+case-sensitive and C# identifiers are not written the way you type them: `notoriety` returns
+**zero** over both roots while `Notoriety` returns RimPacts. It splits **both** metadata heaps
+identically, because the cause is the pattern rather than the encoding. See
+`docs/agents/capability-research.md` § *Searching what the mods actually ship*.
+([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56))
 
 ## Open
 

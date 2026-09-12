@@ -334,6 +334,91 @@ scribed as plain values with no delegate involved — which makes the disabled-w
 the cheap way to show a gate before it opens, and the only half of a gated option that carries
 no delegate risk at all.
 
+**The live-click path is separate from the scribing above, and it makes a comms-console option a
+synced command for free.** There are **two** Harmony prefixes on `DiaOption.Activate`, and which
+one carries a click depends on how the dialog was opened. All [V]:
+
+- `Multiplayer.Client.NodeTreeDialogSync.Prefix` — gated on `Multiplayer.session != null`,
+  `SyncUtil.isDialogNodeTreeOpen`, and the option's own `dialog` being a `Dialog_NodeTree`. It
+  routes through `[SyncMethod] internal static void SyncDialogOptionByIndex(int position)`,
+  declared **on `NodeTreeDialogSync` itself**.
+- `Multiplayer.Client.DiaOptionActivate.Prefix` — gated on `Multiplayer.InInterface` and
+  `PersistentDialog.FindDialog(__instance.dialog) != null`, calling
+  `PersistentDialog.Click(int ver, int opt)`, itself `[SyncMethod]`, which runs
+  `Dialog.curNode.options[opt].Activate()` behind a `ver` guard that drops a click made against a
+  stale node.
+
+**For the faction comms console the second is the live one, and the first falls through.**
+`isDialogNodeTreeOpen` is armed only by `SyncUtil.DialogNodeTreePostfix`, applied only via
+`Sync.RegisterSyncDialogNodeTree` — whose in-assembly call sites are the `[SyncDialogNodeTree]`
+attribute scan plus **two explicit registrations**, `IncidentWorker_CaravanMeeting.TryExecuteWorker`
+and `IncidentWorker_CaravanDemand.TryExecuteWorker`. Neither is the comms console, so
+`NodeTreeDialogSync.Prefix` sets the flag false and returns `true`. The comms dialog is instead a
+registered `PersistentDialog`: `CancelDialogNodeTree` prefixes `WindowStack.Add` and, when
+`Multiplayer.MapContext != null` and the window has a binding, builds one and adds it to
+`mapContext.MpComp().mapDialogs` — and `PersistentDialog_NodeTreeWithFactionInfo` is that binding.
+So "a `DiaOption` is synced for free" is true of a dialog opened inside a synced command with map
+context, and **not** of a `DiaOption` reached any other way. [V]
+
+**Consequence: an option appended to the faction dialogue needs no `[SyncMethod]` of ours.** The
+delegate whitelist above still governs whether its action survives *reconstruction*; this governs
+whether the *click* reaches both clients, and they are different gates.
+
+⚠ **Both mechanisms identify the option by its index in `curNode.options`.** A postfix appending
+options must therefore build the same list, in the same order, on both clients — otherwise index
+*n* activates one action on one machine and a different action on the other, silently, with no
+error on either. **Disable an unavailable option; never omit it.** `Disable(string newDisabledReason)`
+keeps it in the list, which is what makes a gate on world state safe here. Note that vanilla's
+`AddAndDecorateOption` is a **local function inside `FactionDialogFor`** — unreachable by
+`AccessTools.Method` — and disables only `needsSocial` options whose negotiator has Social
+`TotallyDisabled`, so it never touches an appended option's own reason. See `docs/TRAPS.md`
+**T-82** for the index-mismatch outcomes, including the one that swallows the click in silence.
+
+Established on [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93) and consumed by
+[#73](https://github.com/cjd721/Rimworld-Archinity/issues/73); the Multiplayer members were
+re-derived from `2606448745/1.6/AssembliesCustom/Multiplayer.dll` on 2026-09-12.
+
+---
+
+## Multiplayer does not intercept sync methods inside a long event
+
+`Multiplayer.Client.Multiplayer.ShouldSync` is `InInterface && !dontSync`, and `InInterface` is
+`Client != null && !Ticking && !ExecutingCmds && !reloading && Current.ProgramState == Playing &&
+LongEventHandler.currentEvent == null` **[V]** (`2606448745/1.6/AssembliesCustom/Multiplayer.dll`,
+`Multiplayer.Client.Multiplayer.InInterface`). Note `SyncField.DoSync` bypasses `ShouldSync` when
+`inGameLoop` **[V]**.
+
+Game load, worldgen and map generation all run inside a long event, so code on those paths —
+`GameComponent.FinalizeInit`, `StartedNewGame`, `LoadedGame`, GenSteps — **never generates a
+command**, even when it calls a registered `SyncMethod`. Our own seeding code may therefore call
+e.g. `OutfitDatabase.MakeNewOutfit` there without dispatching a command. Prefer not to rely on it:
+the predicate lives in someone else's assembly, and constructing the object directly is usually two
+lines. Established by [#28](https://github.com/cjd721/Rimworld-Archinity/issues/28).
+
+---
+
+## Adding a bill is synced two different ways, and a mod can remove one of them
+
+`SyncDelegate.Lambda(typeof(ITab_Bills), "FillTab", 2).SetContext(SyncContext.MapSelected).CancelIfNoSelectedMapObjects()`
+makes the add-bill float-menu delegate a synced *delegate* — its body, including
+`BillUtility.MakeNewBill`, is **replayed on every client** **[V]**. Every other caller — clipboard
+paste, mod bill tabs — goes through
+`SyncMethod.Register(typeof(BillStack), "AddBill").ExposeParameter(0)` **[V]**, which serialises
+the finished `Bill` instead.
+
+**A postfix on `MakeNewBill` must therefore be deterministic.** `SyncContext.MapSelected` restores
+the initiator's selection on the replaying client, so `Find.Selector` reads correctly there;
+**nothing restores a mod setting.**
+
+`Multiplayer.Client.SyncMethods.AddBill_Prefix` assigns `bill.loadID` from the shared
+`UniqueIDsManager` when `ExecutingCmds && bill.loadID < 0`, but it is a **backstop** — the `Bill`
+constructor already assigns the id from the same manager **[V]**.
+
+Nice Bill Tab (`Andromeda.NiceBillTab`) prefixes `ITab_Bills.FillTab` and returns `false` while its
+own `Settings.EnabledMod` is true **[V]**, so with it loaded vanilla `FillTab` never runs, the
+registered lambda never fires, and creation rests entirely on the `AddBill` SyncMethod. Established
+by [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95).
+
 ---
 
 ## Presentational separation between the two players

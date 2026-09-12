@@ -39,3 +39,12 @@ generates.
 Each domain defines its own checks — meaningful intermediate choices, staggered upgrades,
 manageable unlock groups, deliberate ceilings. A flat row is not automatically a defect.
 Research transitions are derived **after** the desired states, not before.
+
+**When an era began — and when each prior era began — is
+[`docs/specs/ERA.md`](../specs/ERA.md)'s `GameComponent_Era`.** A grid cell that wants
+*"N days after the Medieval gate"* reads `StartTickOf(TechLevel.Medieval)`; the boundary log is
+retained after the colony leaves that era, so a cell may key off a boundary the campaign has
+already passed. Established by
+[#109](https://github.com/cjd721/Rimworld-Archinity/issues/109), which found that nothing owned
+the clock and that `AdvanceEra()` — assumed shipped by
+[#7](https://github.com/cjd721/Rimworld-Archinity/issues/7) — had never been built.

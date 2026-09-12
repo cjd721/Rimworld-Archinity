@@ -22,6 +22,14 @@ each ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83)). That half 
 rather than read the Analysis gate first. The two halves meet in one place: a bypass that
 ignores `CanStartNow` also ignores `requiredAnalyzed`, and one such route ships in **Core**.
 
+And it owns **granted capability** — what lets a research project unlock a *verb* rather than a
+recipe: a work type, a work tag, a designator
+([#72](https://github.com/cjd721/Rimworld-Archinity/issues/72)). That third half starts at
+[*Granted capability — the build*](#granted-capability--the-build). It is the shape of the
+Neolithic on-ramp, and it meets the other two halves at the same seam they do: every one of
+them is keyed on `ResearchProjectDef.IsFinished`, so a bypass that finishes a project also
+hands over the verbs it grants.
+
 It does **not** own the Intel balance
 ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)) — the interface between the two
 is stated in *The build* § **The seam with Intel** and nothing more. It does not own whether
@@ -32,8 +40,11 @@ exemplar **catalogue** — which artifact gates which branch is authoring work a
 **pacing**, tier totals or the era ladder
 ([`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md); **#5 and #7
 are closed and pacing has no owning ticket today**), the research **menu surface**
-([#96](https://github.com/cjd721/Rimworld-Archinity/issues/96)), or research that unlocks work
-types ([#72](https://github.com/cjd721/Rimworld-Archinity/issues/72)).
+([#96](https://github.com/cjd721/Rimworld-Archinity/issues/96)), or **the era clock** that the
+capstones move ([`ERA.md`](ERA.md)). It does not own **which** verbs the Neolithic gates —
+that is the grid's ([#41](https://github.com/cjd721/Rimworld-Archinity/issues/41),
+[#37](https://github.com/cjd721/Rimworld-Archinity/issues/37)) — only what makes gating one
+possible at all.
 
 ---
 
@@ -413,6 +424,301 @@ every xpath matches.
 
 ---
 
+## Granted capability — the build
+
+**Keep the mechanism, drop the mod: one `DefModExtension`, six Harmony patches and one cache
+invalidation, all reading vanilla's already-scribed `ResearchProjectDef.IsFinished`. We own no
+new saved state.** Roughly **250–300 lines** of C# in the assembly we already ship, plus XML per
+gated verb — see *Cost*, which shows the donor's measured line counts and why an earlier
+estimate of ~155 was too low. And **before any of that — where a whole architect category can be
+gated, vanilla already does it in pure XML** (§ 1), which is free and should be preferred
+wherever it fits.
+
+The named carrier, **VFE Tribals**, does carry it. `VFETribals.TribalResearchProjectDef :
+ResearchProjectDef` declares exactly the three fields the ticket names —
+`public List<WorkTypeDef> unlocksWorkTypes`, `public WorkTags unlocksWorkTags`,
+`public List<Type> unlocksDesignators` [V,
+`…/294100/3079786283/1.6/Assemblies/VFETribals.dll`]. **The ticket's premise is confirmed**, which
+is worth saying out loud because premises in this repo have not always survived
+([`docs/agents/capability-research.md`](../agents/capability-research.md) § *Inherited claims*).
+
+But [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) ruled the mod out on **T-15**
+(`VFET_OpportunitySite_WildMen` registers a faction at runtime against the frozen roster), and
+`docs/data/PARTS-BIN.md` § 5.3 independently files it **RESTAT leaning REBUILD** on a hard
+co-op desync and a twelve-building retier collision. **So we take the shape and write the code.**
+The whole of it fits in this document because — read end to end — the mod's mechanism turns out
+to be **stateless**: it holds nothing, scribes nothing and asks nothing of the save.
+
+### 0. The shape, read out of the donor
+
+Seven of VFE Tribals' pre-Neolithic projects carry a grant, and this is the entire authored
+surface [V, `…/1.6/Defs/ResearchProjectDefs/ResearchProjects.xml`]:
+
+| Project | `techLevel` | work types | work tags | designators |
+|---|---|---|---|---|
+| `VFET_Fire` | Animal | `Firefighter` | `Firefighting` | — |
+| `VFET_Agriculture` | Animal | `Growing` | — | `Designator_ZoneAdd_Growing` |
+| `VFET_AnimalHandling` | Animal | `Handling` | — | `Designator_Tame`, `Designator_Slaughter` |
+| `VFET_Mining` | Animal | `Mining` | — | `Designator_Mine`, `Designator_SmoothSurface` |
+| `VFET_Hunting` | Animal | `Hunting` | — | `Designator_Hunt` |
+| `VFET_Construction` | Animal | — | — | `Designator_AreaBuildRoof`, `Designator_RemoveFloor`, `Designator_RemoveFoundation` |
+| `VFET_Culture` | Animal | — | `Intellectual` | — |
+
+Five grants of work types, two of work tags, five of designators — **twelve rows of XML** is
+what "the entire Neolithic on-ramp" amounts to as data. Note the tier: all seven are
+`techLevel Animal`, which falls **below** TechBlock's injected era ladder — `GetBlock` indexes at
+`techLevel - 2`, so `Undefined` and `Animal` receive no injected prerequisite [V, *Bypasses —
+the build* § 0]. An on-ramp authored at `Animal` is outside the era arc by construction, which is
+why VFE Tribals' own Animal-tier catch-up is not a breach and why ours would not be either.
+
+### 1. Take the free half first — `DesignationCategoryDef.researchPrerequisites`
+
+**Vanilla already gates an entire architect category on research, in pure XML, and nobody in the
+repo has written it down.** `Verse.DesignationCategoryDef` ships
+`public List<ResearchProjectDef> researchPrerequisites`, and its `Visible` property returns false
+while any of them is unfinished [V]. `MainTabWindow_Architect` passes `panel.Visible` to
+`DoCategoryButton` as the button's `enabled` flag and refuses `ClickedCategory` outright when it
+is false [V].
+
+Two properties make it better than anything we would write:
+
+- **It is evaluated live, every frame.** `CacheDesPanels` caches the *tab objects*, not their
+  visibility [V]. So a category becomes reachable the instant the project finishes, with **no
+  invalidation of any kind** — which answers the ticket's "does a mid-game designator appearing
+  need a UI invalidation" with *not for this route*.
+- **`DebugSettings.godMode` short-circuits it to true** [V], so dev mode is not locked out of
+  its own content.
+
+**Know what the player actually sees, because it is not a hidden tab.** `DoWindowContents`
+iterates **every** `desPanelsCached` entry unconditionally and `DoCategoryRow` passes
+`panel.Visible` to `DoCategoryButton` as its `enabled` flag [V]. When that flag is false,
+`DoCategoryButton` sets `labelColor` and `GUI.color` to `InactiveColor` and **still calls
+`Widgets.ButtonTextSubtle`** — so the button is drawn, greyed, and remains clickable; clicking
+routes to `ClickedCategory`, whose first statement is
+`if (!Pan.Visible) { Messages.Message("NothingAvailableInCategory".Translate() + ": " +
+Pan.def.LabelCap, MessageTypeDefOf.RejectInput, historical: false); return; }` [V]. **The
+observable is greyed, clickable, and refused with a message — not absent.** That is arguably
+better for an on-ramp (the player can see what is coming), but it is a different thing from
+hiding, and a check written against "the tab is absent" will fail.
+
+Use it wherever the unit being gated is a whole category. It does not reach an individual
+designator inside a category, and it does not touch work types — which is what § 2 is for.
+
+### 2. Mechanism — `ResearchGrantExtension`, and six patches
+
+**A `DefModExtension` on the vanilla `ResearchProjectDef`, not a subclass.** VFE Tribals
+subclasses, which forces every gated project to be authored as `<VFETribals.TribalResearchProjectDef>`
+and makes it impossible to gate a def somebody else already shipped. A `DefModExtension` is
+`PatchOperationAdd`-able onto **any** existing project [V, the mechanism `docs/engine/` already
+relies on throughout], which is what a campaign patching vanilla and mod research needs.
+
+```
+public class ResearchGrantExtension : DefModExtension
+{
+    public List<WorkTypeDef> unlocksWorkTypes;
+    public WorkTags          unlocksWorkTags;
+    public List<Type>        unlocksDesignators;
+}
+```
+
+with three lookup indexes — `WorkTypeDef → projects`, `WorkTags → projects`, `Type → project` —
+because the enforcement patches run per pawn and per gizmo draw and cannot afford a `DefDatabase`
+scan. **`VFETribals.Utils` builds its three in two different ways, which is worth copying
+deliberately rather than by halves** [V]: `researchProjectsWithDesignators` is a static field
+initialiser on a `[StaticConstructorOnStartup]` class, so it is built **eagerly at startup**,
+while `cachedResearchProjectsForWorkTypes` and `cachedResearchProjectsForWorkTags` are
+`Dictionary` caches filled **lazily on first use** inside `GetCachedResearchProjectsFor`. Eager
+is right for the designator index (it is iterated by every gizmo draw); lazy is right for the two
+keyed dictionaries (they are sparse). Build ours the same way, and note that a lazy index must be
+cleared if defs are ever reloaded mid-session.
+
+**The six patches, each read off the donor and each verified against the vanilla member it
+targets:**
+
+| # | Target | Kind | What it does |
+|---|---|---|---|
+| 1 | `Pawn.GetDisabledWorkTypes`'s local `FillList` | postfix | appends every locked `WorkTypeDef` for player-faction pawns |
+| 2 | `Pawn.CombinedDisabledWorkTags` | postfix | ORs in every locked `WorkTags` flag for player-faction pawns |
+| 3 | `Pawn.GetReasonsForDisabledWorkType` | postfix | the *"requires research: X"* line on the work tab |
+| 4 | `CharacterCardUtility.GetWorkTypeDisabledCausedBy` | postfix | the same line on the character card |
+| 5 | `Designator.GizmoOnGUI` | postfix | `Gizmo.Disable(reason)` on a locked designator — **and re-enables it when the reason matches ours, so we never strand a gizmo another mod disabled** |
+| 6 | `DesignationManager.AddDesignation` | prefix | hard refusal plus a `Messages.Message`, so no other route can place the designation |
+
+Patch 1 is the one with a wrinkle. `Pawn.GetDisabledWorkTypes(bool permanentOnly = false)` fills
+`cachedDisabledWorkTypes` **or** `cachedDisabledWorkTypesPermanent` through a **C# local
+function** `FillList`, not a named method [V, `Verse.Pawn.GetDisabledWorkTypes`]. VFE Tribals
+reaches it by scanning `AccessTools.GetDeclaredMethods(typeof(Pawn))` for a name containing both
+`GetDisabledWorkTypes` and `FillList` [V]. **Target `GetDisabledWorkTypes` itself instead**,
+postfixed on `__result`. Two reasons, and neither is the one an earlier draft gave:
+
+1. **A public method is a stable anchor; a compiler-generated name is not.** The donor's search
+   survives a recompile of the same source but not a refactor, and it is unciteable — there is no
+   `Type.Method` to write down.
+2. **Only the public postfix can read `permanentOnly`, and that is a correctness bug in the
+   donor, not a preference.** `GetDisabledWorkTypes(true)` fills the *permanent* cache — the one
+   that answers "is this pawn incapable of X for good", read by backstory and trait UI. A
+   `FillList` postfix receives only the `List<WorkTypeDef>` and **cannot tell which cache it is
+   filling**, so VFE Tribals adds research-gated work types to `cachedDisabledWorkTypesPermanent`
+   as well [V — `DisableWorkTypes` takes only `(Pawn, List<WorkTypeDef>)` and adds
+   unconditionally]. A work type you have not researched yet is not a *permanent* incapability.
+   The public postfix gets `permanentOnly` as a parameter and can skip the permanent call.
+
+The one thing to get right is that the returned list **is the cache**, so a postfix must add to
+it idempotently (`Contains` first) or it grows on every non-cached rebuild.
+
+> **The Loudness argument an earlier draft made for this choice was wrong and is withdrawn.** It
+> claimed a missing local function gives Harmony a silent null target while a missing public
+> method throws. **Both are loud.** `PatchClassProcessor.GetBulkMethods()` invokes
+> `[HarmonyTargetMethod]` through `RunMethod` with a `failOnResult` delegate
+> `method => method != null ? null : "null"`; a non-null result throws
+> `"Method … returned an unexpected result: null"`, which `ReportException` rethrows as
+> `HarmonyException` [V, `0Harmony.dll` **2.4.1.0**, `…/294100/2009463077/Current/Assemblies/`].
+> The recommendation is unchanged; the two reasons above are what actually support it.
+
+Patches 5 and 6 are why **no designator cache has to be rebuilt**. VFE Tribals never removes a
+designator from its category; it lets the category resolve normally and **disables the gizmo in
+place**, every frame [V]. `DesignationCategoryDef.resolvedDesignators` is built once at
+`ResolveReferences` under `LongEventHandler.ExecuteWhenFinished` [V] and is not rebuildable at
+runtime without re-resolving the def — so *not touching it* is the design, not an omission. The
+donor also patches `Designator.CreateReverseDesignationGizmo`, `Designator.DesignateThing` (over
+a computed set of subclasses) and `PawnColumnWorker_Designator.SetValue` [V]; patch 6 covers all
+three routes at the one chokepoint they share, `DesignationManager.AddDesignation`, and the
+extra three are belt-and-braces that can be added if a hole shows up in play.
+
+### 3. State — **none of ours**, and that is the load-bearing part
+
+**The capability is derived, not stored.** "Is this verb unlocked" is
+`extension.project.IsFinished`, and that is `ResearchManager.progress`, which vanilla already
+scribes, already synchronises, and already migrates. This document adds **zero** saved fields,
+**zero** `Scribe` calls and **zero** migration.
+
+This is deliberately the opposite answer to [`ERA.md`](ERA.md) § 1, and the two come from one
+rule: **scribe only what nothing else scribes; derive everything else.** The era clock owes a
+store because nothing in the game records when an era began. Granted capability owes none,
+because `ResearchManager` already holds the only fact it needs. Building a `GameComponent` here
+would be a second store for a number vanilla keeps, and it would drift the first time anything
+finished a project by a route we did not write — which, per *Bypasses — the build*, is seventeen
+routes.
+
+**VFE Tribals does store something, and it is worth saying why we do not copy it.**
+`GameComponent_Tribals` scribes `HashSet<ResearchProjectDef> finishedResearchProjects`, kept in
+step by a `ResearchManager.FinishProject` postfix and self-pruned on every read
+(`finishedResearchProjects.RemoveWhere(x => !x.IsFinished)`) [V]. It exists to make
+*"was this newly finished"* answerable inside that postfix, for the mod's ideology letter and
+its storyteller's back-to-back-research raid — not for the unlock check, which reads `IsFinished`
+directly [V, `VFETribals.Utils.IsUnlocked`]. We need neither consumer, so we need neither field.
+
+### 4. Persistence, change, and what a legacy save sees
+
+- **Persistence: nothing to persist.** Adding this to an existing save changes what the work tab
+  and the architect menu report on the next frame and writes nothing. There is no migration and
+  no version gate.
+- **Change: one postfix on `ResearchManager.FinishProject`**, and it exists for exactly one
+  reason — **`Pawn` caches its disabled work types and nothing else will invalidate that cache
+  when a project finishes.** `Pawn.Notify_DisabledWorkTypesChanged()` is **the only invalidation
+  call**: it nulls `cachedDisabledWorkTypes` and `cachedDisabledWorkTypesPermanent`, clears
+  `cachedReasonsForDisabledWorkTypes`, and calls `workSettings?.Notify_DisabledWorkTypesChanged()`
+  and `skills?.Notify_SkillDisablesChanged()` [V, `Verse.Pawn`]. (The caches are *also* dropped
+  inside `GetDisabledWorkTypes` itself whenever `Scribe.mode != Inactive` [V] — that is a
+  save/load guard, not an invalidation anything can trigger, which is exactly why the symptom
+  below disappears after a reload and never before one.) Without the call, **a research
+  project finishes and no colonist can do the new work until something else happens to
+  invalidate the cache** — no error, no message. VFE Tribals makes exactly this call, over
+  `PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive`, and only when the finished
+  project actually grants a work type or tag [V]. Copy it verbatim, including the guard.
+  > **This is a silent failure.** The full proposed `docs/TRAPS.md` entry is written out verbatim
+  > in the resolution on [#72](https://github.com/cjd721/Rimworld-Archinity/issues/72); the
+  > orchestrator applies it, since this session may not edit the register.
+- **Designators need no invalidation** (§ 2), and work *tags* need none beyond the same call,
+  because `Pawn.CombinedDisabledWorkTags` is computed fresh on every read [V].
+
+### 5. Where the player sees it
+
+| Surface | What it shows | Cost |
+|---|---|---|
+| research tab, project detail | the granted verb listed among *Unlocks*, with its icon | one transpiler or postfix on `ResearchProjectDef.UnlockedDefs`, ~35 lines |
+| work tab cell | greyed, with *"requires research: fire"* on hover | patch 3, free once written |
+| character card | the same reason under the disabled work tag | patch 4 |
+| the designator | drawn, greyed, with the reason in its tooltip | patch 5 |
+| an attempt anyway | a `Messages.Message` naming the project | patch 6 |
+| a gated architect category | the category button **greyed and still clickable**; clicking it produces *"nothing available in category: X"* as a `RejectInput` message | vanilla, free (§ 1) |
+
+The research-tab half needs the same trick the donor uses, and it is worth knowing before
+someone tries something cleverer. `ResearchProjectDef.UnlockedDefs` builds
+`cachedUnlockedDefs` from six `DefDatabase` queries over recipes, things, plants, terrain,
+surgeries and psychic rituals [V] — it is a list of `Def`, and a `WorkTypeDef` is a `Def` but a
+`Designator` is a `Type`. VFE Tribals therefore synthesises a `FakeDef` carrying the designator's
+`LabelCap`, `Desc` and icon, appends it, and patches `Widgets.DefIcon` to render it [V]. That is
+three small classes, and it is the only way to get a designator into a list typed as `Def`.
+Work types need no fake — append the `WorkTypeDef` itself.
+
+### 6. Multiplayer
+
+**Nothing here is a sync surface of ours, and the one hook rides a path Multiplayer already
+covers.**
+
+- `ResearchManager.FinishProject` is reached from `JobDriver_Research`'s toil on the synced tick,
+  and Multiplayer registers `MainTabWindow_Research.DoBeginResearch` and
+  `ResearchManager.StopProject` as sync methods [V, *Persistence and multiplayer* below]. Both
+  clients run the postfix on the same tick with the same result.
+- The enforcement patches are **pure reads** — `IsFinished` against a static index — inside UI
+  draw and cache-fill paths. They write no simulation state and draw no random number.
+- `Notify_DisabledWorkTypesChanged()` mutates only client-local caches; running it on both
+  clients from the same synced tick is the deterministic case, and running it on one would
+  desync nothing because the caches are derived.
+- **The donor's own defect is not inherited.** PARTS-BIN § 5.3 records that
+  `GameComponent_Tribals.AddCornerstone` mutates saved state from `DoWindowContents` with no
+  `[SyncMethod]` [V]. That is the cornerstone system, not the unlock system, and § 3 does not
+  copy it — but it is the reason a *restat* of VFE Tribals would have to be audited window by
+  window while a rebuild does not.
+
+### 7. The cornerstone system — drop it
+
+The ticket asks. **Recommend dropping it**, and the recommendation is narrow: the mechanism is a
+stat-offset shop (`CornerstoneDef` → `StatWorker_GetValueUnfinalized` / `GetExplanationUnfinalized`
+postfixes, spent from `availableCornerstonePoints`, 88 authored defs) [V], it is the one piece of
+the mod carrying the unsynced-write defect, and the campaign already owns a register for
+permanent colony-wide boons — **the altar** ([`ALTAR.md`](ALTAR.md)), which #7 § 7 makes the
+home of era advancement anyway. Two registers doing one job is the thing `CODING_STANDARDS.md` §
+*The bar for a change* rejects.
+
+**The missing Archotech `EraAdvancementDef` entry does not matter**, and for a sharper reason
+than "Archotech is never researched": `EraAdvancementDef` is looked up by
+`FirstOrDefault(x => x.newTechLevel == newTechLevel)` and a null result is simply skipped [V,
+`GameComponent_Tribals.AdvanceTechLevel`] — the absence is inert, not a hole. It is moot for us
+regardless, since `AdvanceEra()` ([`ERA.md`](ERA.md) § 3) does not read `EraAdvancementDef` at
+all. The verdict on the mod remains
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s; this document recommends
+**REBUILD**, agreeing with PARTS-BIN § 5.3.
+
+### Cost
+
+| Piece | Kind | Donor, measured | Ours | Lands in |
+|---|---|---|---|---|
+| `ResearchGrantExtension` + the three indexes (§ 2) | C# | ~45 | **~45** | the assembly we already ship |
+| Patches 1–4 — work types, work tags, both reason strings | C# | **119** | **~70** | same |
+| Patches 5–6 — designator gizmo disable and the `AddDesignation` refusal | C# | **69** | **~55** | same |
+| `FinishProject` postfix — the `Notify_DisabledWorkTypesChanged` sweep | C# | ~12 | **~12** | same |
+| `UnlockedDefs` display + `FakeDef` + `Widgets.DefIcon` postfix | C# | **240** | **~70** | same |
+| Per gated project: the extension block | XML `PatchOperationAdd` | — | ~6 lines each | `Archinity.Pacing/Patches/` |
+| Per gated architect category: `researchPrerequisites` | XML `PatchOperationAdd`, **no code** | — | ~5 lines each | same |
+
+**~250–300 lines of C# in the assembly we already ship, and ~6 lines of XML per verb. No new
+assembly, no new saved state, no recompiled third-party DLL.**
+
+**An earlier draft of this section said ~155, and the correction is worth keeping visible.** The
+*Donor, measured* column is VFE Tribals' decompiled line count for the equivalent piece. Our
+column discounts decompiler verbosity (`//IL_` comments, explicit interface casts) and takes a
+postfix where the donor uses a transpiler — but four of the five rows still land above the first
+estimate, and the display stack lands far above it. **The same sentence this document applies to
+the ticket's ~30-line guess — low by roughly 5× — applies to ~155 at roughly 1.7×.** Estimating
+a rebuild without counting the thing being rebuilt is how both numbers went wrong.
+
+**[I] on the composition.** Every mechanism above was read [V]; the claim that they compose into
+a working on-ramp is inferred until it is built and a colonist is watched failing to mine.
+
+---
+
 ## Persistence and multiplayer
 
 **Persistence.** `Game.ExposeData` does `Scribe_Deep.Look(ref analysisManager, "analysisManager")`
@@ -595,6 +901,37 @@ claims on the ticket that the assemblies contradict*, and two of this document's
   off.
 - [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) — the freeze the lockout must
   precede.
+
+### Granted capability ([#72](https://github.com/cjd721/Rimworld-Archinity/issues/72))
+
+**Evidence class: READ.** Settled against the 1.6 `Assembly-CSharp.dll` (`Verse.Pawn`,
+`Verse.WorkTypeDef`, `Verse.DesignationCategoryDef`, `RimWorld.GameRules`,
+`RimWorld.ResearchManager`, `Verse.ResearchProjectDef`, `RimWorld.MainTabWindow_Architect`),
+`VFETribals.dll` 1.6 read end to end, `VEF.dll` 1.6, and both corpus roots for the wide pass. No
+stub and no launch.
+
+**Verified available mechanism; the carrier is ours to write.** The ticket's premise is
+confirmed — `TribalResearchProjectDef.unlocksWorkTypes` / `unlocksWorkTags` /
+`unlocksDesignators` exist and work [V] — and the mod stays ruled out on **T-15**
+([#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)). Recommendation to
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14): **REBUILD**, agreeing with
+`docs/data/PARTS-BIN.md` § 5.3, and **drop the cornerstone system** rather than restat it.
+
+**Newly found and free:** `DesignationCategoryDef.researchPrerequisites` gates a whole architect
+category on research in pure vanilla XML, evaluated live with no cache to rebuild [V]. It
+appears in no repo document today.
+
+**Selected: nothing.** The composition is **[I]** until it is built.
+
+- [#72](https://github.com/cjd721/Rimworld-Archinity/issues/72) — this build and its survey.
+- [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) — the T-15 ruling that puts VFE
+  Tribals out, re-checked and upheld.
+- [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41),
+  [#37](https://github.com/cjd721/Rimworld-Archinity/issues/37) — which verbs the Neolithic
+  gates, and in what order. **Not settled here**, deliberately.
+- [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) — the per-mod verdict.
+- [`ERA.md`](ERA.md) — the clock these capstones move, and the opposite answer to the same
+  state-ownership question.
 
 ---
 
@@ -964,6 +1301,126 @@ same pattern on the same roots returned zero in the mods reported clean.
 
 ---
 
+## Granted capability — available mechanisms
+
+### Vanilla carries one third of it, in XML, and nothing of the other two
+
+**The positive.** `Verse.DesignationCategoryDef.researchPrerequisites` + its `Visible` property
+[V], read by `MainTabWindow_Architect.DoCategoryButton` and `ClickedCategory` [V]. Whole
+architect categories are research-gated in vanilla XML, live, with `DebugSettings.godMode` as an
+escape hatch. *Granted capability — the build* § 1.
+
+**The second vanilla mechanism, which is scribed and which is not what it looks like.**
+`RimWorld.GameRules` holds `HashSet<Type> disallowedDesignatorTypes` and
+`HashSet<ThingDef> disallowedBuildings`, scribes both through `Game.ExposeData`'s
+`Scribe_Deep.Look(ref rules, "rules")`, and is consulted **live** by
+`DesignationCategoryDef.ResolvedAllowedDesignators` via `GameRules.DesignatorAllowed(d)` [V].
+`SetAllowDesignator(Type, bool)` even calls `Find.ReverseDesignatorDatabase.Reinit()` for you
+[V] — the one place vanilla does the invalidation the ticket asks about.
+
+It was surveyed carefully and **not taken**, for three reasons, all [V]:
+
+1. **It is a deny-list with no default.** Research-gating with it means disallowing every gated
+   designator at game start and removing entries as projects finish — an *applied* model, which
+   needs an apply-once hook and breaks on a save where the project finished before our mod
+   existed. The derived model in § 2 has no such state.
+2. **`DesignatorAllowed` short-circuits for `Designator_Place`**: if the designator is a
+   `Designator_Place`, it returns `!disallowedBuildings.Contains(PlacingDef)` and **never
+   consults `disallowedDesignatorTypes` at all** [V]. Build designators cannot be blocked by
+   type through this path.
+3. **It does not touch work types.** Half the ticket is untouched either way.
+
+**The negative, and it is complete.** Vanilla `ResearchProjectDef` has no field that grants a
+work type, a work tag, or an individual designator. There is no `WorkTypeDef` gate other than
+the def-level `visible` flag and `visibleOnlyWithChildrenInColony` [V] — `visible` is a **def**
+field, so writing it at runtime is a def mutation, per-install rather than per-save, and the
+same class of defect as **T-11**. `WorkTypeDef.VisibleCurrently` also caches its answer for **30
+frames** [V], which would make any such write visibly laggy. Not a route.
+
+**`Verse.ResearchMod` is vanilla's unused extension point, and it is worth knowing about even
+though it is not taken.** `ResearchProjectDef.researchMods` is a `private List<ResearchMod>`
+(private is not a bar — `DirectXmlToObject` sets it), and `ResearchManager.FinishProject` calls
+`ReapplyAllMods()` → `ResearchProjectDef.ReapplyAllMods()` → `researchMods[i].Apply()` inside a
+try/catch [V]. **Vanilla ships the abstract class and zero subclasses** [V]. It is the
+XML-authored "do this when the project finishes" hook, and it is the natural carrier for an
+*applied* design — which is precisely why the *derived* design in § 2 does not need it.
+
+> **Correction to an earlier draft, which had this exactly backwards.** That draft said
+> `ReapplyAllMods` has *"no load path"* and concluded that *"a `ResearchMod` that mutates state
+> is not re-applied on load"*, and marked it [V]. **It is re-applied on load.** There are
+> **three** callers, not two: `ResearchManager.FinishProject`,
+> `ResearchManager.DebugSetAllProjectsFinished`, and **`Verse.Game.FinalizeInit()`**, which calls
+> `researchManager.ReapplyAllMods()` two lines above `GameComponentUtility.FinalizeInit()` [V,
+> `Verse.Game.FinalizeInit`]. So a `ResearchMod` is idempotently re-run for **every finished
+> project on every load**, which makes it *more* attractive as an applied carrier, not less —
+> and note it is the same hook [`ERA.md`](ERA.md) § 4 builds its post-load repairs on, firing
+> immediately before them. The reason § 2 does not take it is unchanged and was never this: a
+> derived design needs no apply step at all.
+
+### VFE Tribals, read end to end
+
+The mechanism is fifteen types and no saved state. Beyond the fields and the seven authored
+projects already tabulated in *Granted capability — the build* § 0:
+
+| Piece | Anchor | Note |
+|---|---|---|
+| the unlock test | `VFETribals.Utils.IsUnlocked(WorkTypeDef, out …)` / `(WorkTags, out …)` | reads `IsFinished` directly; two `Dictionary` indexes built lazily [V] |
+| work types | `Pawn_GetDisabledWorkTypes_FillList_Patch` | targets the **compiler-generated local function** by name scan over `AccessTools.GetDeclaredMethods(typeof(Pawn))` [V] |
+| work tags | `Pawn_CombinedDisabledWorkTags_Patch` | ORs locked flags for `Faction.OfPlayerSilentFail` pawns [V] |
+| reasons | `Pawn_GetReasonsForDisabledWorkType_Patch`, `CharacterCardUtility_GetWorkTypeDisabledCausedBy_Patch` | two surfaces, same string [V] |
+| designators | `Designator_GizmoOnGUI_Patch`, `Designator_CreateReverseDesignationGizmo_Patch`, `Designator_DesignateThing_Patch`, `PawnColumnWorker_Designator_SetValue_Patch`, `DesignationManager_AddDesignation_Patch` | **disable in place; never remove from the category** [V] |
+| display | `ResearchProjectDef_UnlockedDefs_Patch` (transpiler + `AddUnlockedDefs`), `VFETribals.FakeDef`, `Widgets_DefIcon_Patch` | synthesises a `Def` for a `Type` [V] |
+| invalidation | `ResearchManager_FinishProject_Patch` | `Notify_DisabledWorkTypesChanged()` over all live pawns, guarded on the project actually granting something [V] |
+
+Two details that a summary would lose and that the build depends on:
+
+- **`Designator_GizmoOnGUI_Patch` re-enables as well as disables.** If the gizmo's
+  `disabledReason` equals *our* reason and the project is now finished, it clears `disabled` and
+  `disabledReason` [V]. Without that, a gizmo disabled once stays disabled, because
+  `Gizmo.Disable` is sticky across frames for a cached command.
+- **`DesignationManager_AddDesignation_Patch` guards against off-thread access**: it skips when
+  `Find.ReverseDesignatorDatabase.desList == null && !UnityData.IsInMainThread` [V]. The
+  designator lookup touches a lazily-built UI database; a patch on this method that ignores the
+  thread can deadlock or throw during map generation.
+
+### Wide pass
+
+Both corpus roots plus `common/RimWorld/Data`, `-g '*.dll' -g '!**/obj/**'`, ASCII
+(`#Strings`-heap identifiers), attributed with `python tools/corpus.py --which -`:
+
+| Symbol | Mods | Read |
+|---|---|---|
+| `unlocksWorkTypes` | **1** — VFE Tribals (its 1.4 / 1.5 / 1.6 copies) | yes |
+| `SetAllowDesignator` | **0 mods**; vanilla `Assembly-CSharp.dll` only | sweep validated against that known hit |
+| `GetReasonsForDisabledWorkType` | **1** — VFE Tribals | yes |
+| `Notify_DisabledWorkTypesChanged` | 7 — VFE Deserters, VFE Tribals, VPE Puppeteer, VRE Android, MedPod, VEF, EdB Prepare Carefully | VFE Tribals and VEF read; the rest are hediff-, xenotype- and apparel-driven work disabling, **not research-driven** [I] |
+| `CombinedDisabledWorkTags` | 4 — VFE Empire, VFE Tribals, VEF, EdB Prepare Carefully | same |
+
+**How the sweeps were built, because a null-interleaved negative is only worth the bytes that
+reached ripgrep.** The ASCII passes are `rg -a -l "<symbol>" <workshop> <common/Mods>
+<common/RimWorld/Data> -g '*.dll' -g '!**/obj/**'`. A `#US`-heap pass was run once for
+confirmation with the escapes **typed literally** into the pattern
+(`rg -a -l "u\x00n\x00l\x00o\x00c\x00k\x00s\x00W\x00o\x00r\x00k\x00"`, never through `$(…)`,
+never `--encoding utf-16le` — **#103**) and returned nothing, which is the correct result: a
+field or type *name* lives in `#Strings` as ASCII, not in `#US`. `corpus.py --which` attributed
+five `EdBPrepareCarefully.dll` / `VFECore.dll` paths under `common/RimWorld/Mods` to no mod —
+**T-22** second copies whose `About.xml` the tool does not index, not a broken sweep.
+
+**Nothing else in the corpus grants a capability from research.** The nearest thing is **VEF**,
+and it is not one: `VEF.Buildings.HiddenDesignatorsDef` carries a flat `List<BuildableDef>`
+consumed by `VanillaExpandedFramework_DesignationCategoryDef_ResolvedAllowedDesignators_Patch`,
+which filters out `Designator_Build` entries whose `PlacingDef` is on a **static** hidden list
+[V] — permanent, build-designators-only, and unconditioned by research.
+`VEF.Apparels.VanillaExpandedFramework_Pawn_GetDisabledWorkTypes_Patch` disables work types from
+**worn apparel** [V]. Both are the right seams, neither is keyed on a project.
+
+So the verdict is the ticket's own guess, confirmed by reading rather than by absence: **VFE
+Tribals is the only donor, and we reimplement it.** The ticket's ~30-line estimate is low by
+roughly a factor of five once display and invalidation are included; the build's table says
+where the rest goes.
+
+---
+
 ## Verification
 
 **Settled by reading** [V]: the gate chain (`CanStartNow` → `AnalyzedThingsRequirementsMet` →
@@ -1022,6 +1479,45 @@ Neolithic lock unpaid, no route in the load order completes or fills a Medieval 
 schematic advances one, no reward pool offers a `TechprofSubpersonaCore`, and no psycast, perk,
 wave, ritual or proximity trigger finishes one.
 
+### Granted capability
+
+**Settled by reading** [V]: `Pawn`'s two disabled-work-type caches and the single method that
+nulls them; `Pawn.CombinedDisabledWorkTags` as an uncached computation;
+`DesignationCategoryDef.researchPrerequisites` → `Visible` → `MainTabWindow_Architect`;
+`resolvedDesignators` built once under `LongEventHandler` and never rebuilt;
+`GameRules`'s scribe path, its live read and its `Designator_Place` short-circuit;
+`ResearchProjectDef.researchMods` → `ReapplyAllMods` and its **three** callers, including
+`Verse.Game.FinalizeInit`; `MainTabWindow_Architect.DoCategoryButton` / `ClickedCategory` and
+what a gated category actually looks like; `0Harmony` 2.4.1's `GetBulkMethods` `failOnResult`
+throw; `Game.FillComponents`; and every VFE Tribals anchor tabulated above.
+
+**Needs a prototype or an in-game check** [I]:
+
+1. **The invalidation, deliberately broken first.** Finish a granting project with the
+   `FinishProject` postfix commented out and confirm the work type stays disabled on every
+   colonist until a save/load. That is the silent failure the postfix exists for, and seeing it
+   once is the only way anyone will remember it is there.
+2. **The idempotence of patch 1.** `GetDisabledWorkTypes` returns the cache itself; confirm over
+   a few hundred ticks that the returned list does not accumulate duplicate entries.
+3. **A designator mid-game.** Finish `Mining`'s analogue and confirm `Designator_Mine` goes from
+   greyed-with-reason to live **without a save/load and without reopening the architect menu** —
+   the claim that no cache needs rebuilding.
+4. **A gated architect category.** Author `researchPrerequisites` on one `DesignationCategoryDef`
+   and confirm the category button is **drawn, greyed, and clickable** before the project
+   finishes, that clicking it produces the *"nothing available in category"* `RejectInput`
+   message, and that both revert after — with no code at all. **An earlier draft of this check
+   read "confirm the whole tab is absent before and present after" and would have failed**:
+   `DoWindowContents` iterates every cached panel unconditionally and `DoCategoryButton` only
+   greys it.
+5. **One two-client pass.** Finish a granting project on one client; both work tabs must change
+   on the same tick and no desync.
+
+**Observable check that demonstrates the requirement.** From `docs/plot/NEOLITHIC.md` —
+*"establish the first verbs of civilization"*: on a fresh colony with the on-ramp authored, a
+colonist cannot be assigned to Mining, the Mine designator is greyed and names the project, and
+the research tab's entry for that project lists **Mining** and **Mine** under *Unlocks*. After
+the project finishes, all three change, in that order, without a reload.
+
 ---
 
 ## Outstanding decisions
@@ -1041,3 +1537,7 @@ wave, ritual or proximity trigger finishes one.
 | **Per-mod disposition for the seventeen mod carriers** | *restat*, *art only*, *block* — each row of the census implies one and this document makes none of them. Two recommendations only: keep and restat `USH_ResearchProbe`; take the vanilla `Schematic` one-liner | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
 | **Whether the Class C rate producers are a pacing problem** | `MAG_AutoResearcher` at 5,000–15,000 points a cycle and the VQE-Ancients gene at **500/day** both outrun the 213/day single-researcher baseline in [`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md) § *Research rate, reconstructed*. They cannot skip an era; they can collapse one | **no owner** — #5 and #7 are closed; the gap is stated and awaits routing |
 | **Whether `ScenPart_StartingResearch` is in scope** | Our own scenario grants starting research through the same vanilla `FinishProject` path, with its recursive prerequisite completion. Harmless if the grant is Neolithic; an era breach if anything above it is ever listed | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) |
+| **Which verbs the Neolithic actually gates, and in what order** | The ticket asks and this document deliberately does not answer. The mechanism supports any `WorkTypeDef`, any `WorkTags` flag and any `Designator` subclass; which of them start locked is a progression decision with a real cost — a colony that cannot haul or cook on day one is a different game from one that cannot mine. VFE Tribals' seven-project shape is tabulated in *Granted capability — the build* § 0 as a worked reference, not as a recommendation | [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41), [#37](https://github.com/cjd721/Rimworld-Archinity/issues/37), grid at [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30) |
+| **What tier the on-ramp projects are authored at** | `Animal` puts them outside TechBlock's injected era ladder entirely (`GetBlock` indexes at `techLevel - 2`), which is what VFE Tribals does and is almost certainly right — an on-ramp that is itself era-locked is circular. Recorded because it is a one-word XML decision with a silent consequence | [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41) |
+| **Patch 1's target — public `GetDisabledWorkTypes` or the local `FillList`** | Recommended: **the public method**, on two grounds — a public member is a citeable, refactor-stable anchor, and **only it can read `permanentOnly`**, so only it can avoid writing research gates into `cachedDisabledWorkTypesPermanent` the way the donor does. The cost is having to add idempotently to a list that *is* the cache. (The Loudness argument an earlier draft gave is withdrawn: both targets throw — `0Harmony` 2.4.1 `GetBulkMethods` fails on a null `[HarmonyTargetMethod]`) | this document |
+| **Whether the cornerstone system is rebuilt anywhere** | Recommended **dropped**: the altar is already the campaign's register for permanent colony-wide boons and #7 § 7 puts era advancement there. If a "what this era made us" mechanic is wanted, it belongs in [`ALTAR.md`](ALTAR.md), not here | design call → [`ALTAR.md`](ALTAR.md) / [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |

@@ -141,10 +141,19 @@ the right feel is [I] until played.
 | Term | Reads | Bound | Evidence |
 |---|---|---|---|
 | Wealth, colonists, mechs, animals | `vanillaResult` unchanged | vanilla's own curves saturate (`PointsPerWealthCurve` flat 0 below 14,000, 4,200 at 1M) | [V] |
-| Era time | ticks since the era-start stamp, through a curve that **reaches a ceiling** | ceiling is the curve's last point | [V] the stamp is `AdvanceEra()`'s, per #7; see *Outstanding decisions* |
+| Era time | `Σ` over every boundary `e` in `GameComponent_Era.Boundaries` of `cappedCurve(ticks spent in e)` | each era's contribution is capped by the curve's last point; the sum is monotonic and never resets | [V] the boundary log is [`ERA.md`](ERA.md) § *The build* § 2 |
 | Military capability | summed `CostApparent` of finished `ResearchProjectDef`s; free-colonist count; `map.wealthWatcher.WealthItems` | curve per indicator | [V] all three are public and already computed |
 | Reverence | global Reverence derived from `WorldComponent_Reverence` | band curve | [V] [`RELIGION.md`](RELIGION.md) § *The build — Reverence* |
 | Diplomacy | count of `Faction`s with `PlayerRelationKind == Hostile`, excluding `Hidden` and `temporary` — the mirror of `StorytellerUtility.AllyIncidentFraction` | curve, capped | [V] |
+
+**The sum, not the current stamp, is what satisfies this document's own Verification check 2.**
+A single `EraStartTick` resets at every boundary; `cappedCurve` over the retained log climbs
+within an era, flattens at that era's ceiling, and **adds** at the seam — which is also #7 § 6's
+*"no reset and no spike at a boundary."* [`ERA.md`](ERA.md) exists so this term has a
+read-only source: `CurrentEra`, `CurrentEraStartTick`, `TicksInCurrentEra`,
+`StartTickOf(TechLevel)` and `Boundaries`. **Note the unit change:** the term's ceiling is now
+six era-caps rather than one, so each era's cap must be authored at roughly a sixth of what the
+single-stamp reading implied. That factor is Balance's.
 
 **Trace is deliberately absent from this list.** See §4; it never touches the global scalar, which
 is the structural reason Reverence and Trace cannot silently multiply.
@@ -563,14 +572,11 @@ for two demigod founders is not a reading question.
 
 ## Outstanding decisions
 
-- **The era clock has no spec owner.** [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7)
-  resolved that `AdvanceEra()` writes WTL's scribed `GameComponent_TechLevel` and stamps an
-  era-start tick, but no document in `docs/specs/` owns that state and `docs/progression/` holds
-  only a README. This build needs a read-only `int EraStartTick` and the current `TechLevel`. Until
-  something owns it, the era term reads WTL's `WorldTechLevel.Current` for the era and derives
-  era time from a stamp this spec does not define. **Raised on
-  [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60); the map
-  ([#2](https://github.com/cjd721/Rimworld-Archinity/issues/2)) decides whether it earns a ticket.**
+- **The era clock is owned.** [`ERA.md`](ERA.md)
+  ([#109](https://github.com/cjd721/Rimworld-Archinity/issues/109)) holds `GameComponent_Era` and
+  the boundary log, and states the read contract this document's era term uses. Note the
+  correction it carries: **`AdvanceEra()` did not exist** when this document was written — #7
+  designed it and nothing built it.
 - **What "military capability" measures.** The requirement says *"practical broad indicators,
   potentially including research and wealth"* and *"research must establish useful measurements"*.
   Three are available and cheap (§2); which of them, and in what proportion, is Balance's.

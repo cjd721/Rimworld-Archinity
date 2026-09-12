@@ -184,11 +184,20 @@ be is a requirement and is open** — see *Outstanding decisions*.
 `HitPoints`, `MaxHitPoints` or `CompQuality` [V]. **Yield cannot depend on the item's
 condition in XML at any price.**
 
-What *is* available today: `Bill.hpRange` and `Bill.qualityRange` filter which items are
-picked as ingredients, so *"recycle only tattered gear"* and *"recycle only awful-quality
-gear"* are already expressible on the bill. Whether those sliders default usefully — and
-they render only after the repeat mode is switched to `TargetCount` — is
-[#95](https://github.com/cjd721/Rimworld-Archinity/issues/95)'s.
+What *is* available today: `bill.ingredientFilter.AllowedHitPointsPercents` and
+`.AllowedQualityLevels`, so *"recycle only tattered gear"* and *"recycle only awful-quality
+gear"* are already expressible on the bill **[V]**. These are `ThingFilter` fields, not
+`Bill_Production.hpRange`/`.qualityRange` — that pair filters which existing products count
+toward a target, not which items are consumed. They are drawn by
+`Dialog_BillConfig.DoIngredientConfigPane`, a separate method with **no repeat-mode gate**
+(`forceHideHitPointsConfig: false, forceHideQualityConfig: false`) **[V]**, subject to two
+conditions: the pane draws only when the recipe has at least one **non-fixed** ingredient
+**[V]**, and inside `ThingFilterUI.DoThingFilterConfigWindow` the two sliders are additionally
+gated on `ThingFilter.allowedHitPointsConfigurable` / `allowedQualitiesConfigurable` — both
+default `true` and recomputed from the allowed defs at `ResolveReferences` **[V]**. So a reclaim
+bill can express both with no repeat-mode click and does not wait on
+[#95](https://github.com/cjd721/Rimworld-Archinity/issues/95). What a new bill *defaults* to is
+#95's.
 
 ### Where the player sees it
 

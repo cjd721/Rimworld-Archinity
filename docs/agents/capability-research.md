@@ -236,6 +236,28 @@ tickets in a row independently rediscovered this; it is written down now.
   `Source/obj/Debug/…`, `Source/obj/Release/…` *and* `Source/RimFantasy/obj/Debug/…`, and 18
   mods ship some `.dll` under an `obj/` directory. Exclude `obj/` from every sweep — nothing
   the game loads lives there.
+- **Ripgrep is case-sensitive and C# identifiers are not written the way you type them —
+  this splits BOTH heaps, not just `#US`.** Sweeping `notoriety` over both roots returns
+  **zero**; `Notoriety` returns RimPacts, whose field is `playerNotoriety`. The
+  null-interleaved pass splits exactly the same way, because the cause is the pattern, not
+  the encoding. **Pass `-i`** — it works on an interleaved pattern too
+  (`rg -a -i "n\x00o\x00t\x00o\x00r\x00i\x00e\x00t\x00y\x00"`) — or sweep a case-neutral
+  substring from the middle of the word. A negative from a single-casing sweep is not a
+  negative.
+- **Multiplayer Compatibility ships a reference stub that forges ASCII hits for every mod
+  it patches.** `Multiplayer_Compat_Referenced.dll` sits under `1629973374/<version>/Referenced/`
+  for **1.3 through 1.6 — eight files across both corpus roots, four distinct binaries
+  mirrored** — and carries other mods' metadata so the compat project can compile against
+  them. **It is never loaded.** A `.dll` wide pass therefore reports MP Compat as carrying any
+  type or member name belonging to a mod it patches, while the `.dll` the game *actually* loads
+  (`1.6/Assemblies/Multiplayer_Compat.dll`) returns zero for the same symbols — a sweep for
+  `PurchaseQuest` returns the six stubs that carry it and nothing else, a 100% false-positive
+  result. This is the same class of artifact as the four vendored `Assembly-CSharp.dll` copies
+  above, with two things that make it worse: **`-g '!**/obj/**'` does not exclude it** — the
+  path segment is `Referenced/` — and the binary carries **no `ReferenceAssemblyAttribute`**, so
+  nothing inside it marks it as a stub. Only the path does. **Pass
+  `-g '!**/Referenced/**'`** alongside the `obj/` exclusion, or confirm every MP Compat hit
+  against the loaded assembly before attributing it.
 - **Generic instantiations are invisible to text search.** A
   `Dictionary<Faction, float>` field lives in the `#Blob` heap as a type signature,
   not as a readable string. No grep will find it. Bound this class of question by

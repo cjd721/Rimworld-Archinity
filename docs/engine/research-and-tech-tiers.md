@@ -250,6 +250,27 @@ where an excluded faction returns `Archotech`. The sibling
 are re-initialised only when the def *count* changes
 (`TechLevelDatabase.cs:109-116`).
 
+### The scribed field and the volatile mirror are two different things
+
+`WorldTechLevel.GameComponent_TechLevel` holds one field, scribed as
+`Scribe_Values.Look<TechLevel>(ref _worldTechLevel, "WorldTechLevel", TechLevel.Archotech)` [V] —
+the whole of WTL's saved state. The ~60 filter sites do **not** read it; they read the static
+auto-property `WorldTechLevel.WorldTechLevel.Current`, which has no persistence of its own and is
+restored from the component by `Patch_WorldGenerator.GenerateFromScribe_Prefix` and
+`GenerateWithoutWorldData_Prefix` on every load [V]. **Anything raising the world tech level must
+write both.** WTL's own planet-tab button does [V]; Lemmy Progression's
+`LemProgress.Systems.WorldEraManager.SetWorldTechLevel` writes only the static and therefore
+reverts on the next load [V]. `Current` is an auto-property, so `AccessTools.Field(type, "Current")`
+returns null — reach it via `AccessTools.Property` or `<Current>k__BackingField`.
+
+The assembly the game loads is `1.6/Lunar/Components/WorldTechLevel.dll`, **not**
+`1.6/Assemblies/`, which holds only `LunarLoader.dll`.
+
+That planet-tab button is not dev-gated and is a route around any era clock — `docs/TRAPS.md`
+**T-85**; the window it opens registers factions at runtime — **T-86**. Established on
+[#109](https://github.com/cjd721/Rimworld-Archinity/issues/109); the clock built on it is
+`docs/specs/ERA.md`.
+
 ---
 
 ## Ignorance Is Bliss
@@ -275,3 +296,70 @@ when the quest appears.** Both needed; neither replaces the other.
 
 `useActualTechLevel: true` is correct for us — its own tooltip says it is only
 appropriate with a mod that drives colony tech level, which TechBlock does.
+
+## Research can grant capability, and vanilla carries one third of it
+
+- **`DesignationCategoryDef.researchPrerequisites`** is a vanilla `List<ResearchProjectDef>`; the
+  def's `Visible` property returns false while any is unfinished [V]. `MainTabWindow_Architect`
+  passes it to `DoCategoryButton` as the button's `enabled` flag and `ClickedCategory` refuses
+  when it is false. **The category is not hidden**: `DoWindowContents` iterates every cached panel
+  unconditionally and `DoCategoryButton` only greys it, so the observable is a greyed, still
+  clickable button that answers a click with
+  `Messages.Message("NothingAvailableInCategory".Translate() + ": " + …, RejectInput)` [V].
+  `CacheDesPanels` caches the *tab objects*, not their visibility, so the gate is evaluated live
+  every frame with no invalidation. `DebugSettings.godMode` short-circuits it true.
+- **There is no vanilla field that grants a work type, a work tag, or an individual designator.**
+  `WorkTypeDef.visible` is a def field (per-install, not per-save — the **T-11** class) and
+  `VisibleCurrently` caches for 30 frames [V].
+- **`Verse.ResearchMod` is vanilla's unused extension point.** `ResearchProjectDef.researchMods` is
+  a `private List<ResearchMod>` (private is no bar to `DirectXmlToObject`), applied by
+  `ResearchProjectDef.ReapplyAllMods()` → `Apply()` inside a try/catch. Vanilla ships the abstract
+  class and **zero** subclasses [V]. **Three callers:** `ResearchManager.FinishProject`,
+  `ResearchManager.DebugSetAllProjectsFinished`, and **`Verse.Game.FinalizeInit()`**, which calls
+  `researchManager.ReapplyAllMods()` two lines above `GameComponentUtility.FinalizeInit()` [V] — so
+  a `ResearchMod` is re-applied for every finished project on every load, and must be idempotent.
+- **`RimWorld.GameRules`** holds `HashSet<Type> disallowedDesignatorTypes` and
+  `HashSet<ThingDef> disallowedBuildings`, is scribed through `Game.ExposeData`'s
+  `Scribe_Deep.Look(ref rules, "rules")`, is read live by
+  `DesignationCategoryDef.ResolvedAllowedDesignators` via `DesignatorAllowed(d)`, and
+  `SetAllowDesignator(Type, bool)` calls `Find.ReverseDesignatorDatabase.Reinit()` [V].
+  **Quirk:** `DesignatorAllowed` short-circuits for `Designator_Place`, returning
+  `!disallowedBuildings.Contains(PlacingDef)` and never consulting `disallowedDesignatorTypes` —
+  build designators cannot be blocked by type. No mod in either corpus root calls
+  `SetAllowDesignator`.
+- **`Pawn.GetDisabledWorkTypes(bool permanentOnly)`** fills one of two caches through a C# local
+  function. A postfix on the local function cannot read `permanentOnly` and therefore cannot avoid
+  polluting `cachedDisabledWorkTypesPermanent`; postfix the public method instead [V]. Changing
+  whether a work type is disabled without calling `Pawn.Notify_DisabledWorkTypesChanged()` is
+  **T-79**.
+- **`Game.FillComponents()`** instantiates every non-abstract `GameComponent` subclass absent from
+  a loading save via `Activator.CreateInstance(type, this)` [V] — free, silent migration for a
+  component added to an existing save, provided it declares a `(Game game)` constructor. It is
+  called from `Game.ExposeSmallComponents()` on `LoadingVars`, which `ExposeData` calls [V].
+
+Established on [#72](https://github.com/cjd721/Rimworld-Archinity/issues/72); the system built on it
+is `docs/specs/RESEARCH.md` § *Granted capability — the build*. 1.6.4871.
+
+## A `Designator_Build` can be disabled with a reason; vanilla just never does
+
+The other half of the architect-menu story above: the *category* gate is
+`DesignationCategoryDef.researchPrerequisites`, and this is the *individual designator*.
+
+`Designator_Build : Designator_Place : Designator : Command : Gizmo`, and `Verse.Gizmo` declares
+`protected bool disabled`, `public string disabledReason`, `public virtual bool Disabled` and
+`public void Disable(string reason = null)`. `ArchitectCategoryTab.DesignationTabOnGUI` draws the
+palette through `GizmoGridDrawer.DrawGizmoGrid`, and `Command.GizmoOnGUI` greys a disabled gizmo,
+appends `"DisabledCommand".Translate() + ": " + disabledReason` to its tooltip colourised
+`ColorLibrary.RedReadable`, and emits the same string as a `RejectInput` message on click. [V]
+
+**Vanilla's own buildability gate is `Designator_Build.Visible`, which filters the designator out of
+the list rather than disabling it** — god mode, `min`/`maxTechLevelToBuild` against the player
+`FactionDef`'s static tech level, research, monolith level, difficulty, `PlaceWorker`, building and
+discovery prerequisites, grav-engine inspection. So unbuildable content is **invisible**, and the
+Architect menu never shows a threshold. [V]
+
+That is a property of `Visible`, not a limit of the surface: a Harmony gate that calls
+`Disable(reason)` instead of hiding produces a greyed entry with its requirement legible. Noted
+because the opposite was asserted on
+[#93](https://github.com/cjd721/Rimworld-Archinity/issues/93) and would have ruled the surface out
+entirely. Established on [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93). 1.6.4871.

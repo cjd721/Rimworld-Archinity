@@ -203,3 +203,33 @@ consequences are in that spec's *Living on the orbit layer*.
 See also `docs/engine/mods/medieval-overhaul.md` for the Medieval Overhaul
 buildings named above, and `docs/engine/world-time-and-layers.md` for the orbit
 layer's geometry.
+
+## Landing hooks, and which one can measure a move
+
+`WorldComponent_GravshipController.InitiateTakeoff(engine, targetTile)` → `TakeoffEnded()`
+→ `GravshipUtility.TravelTo(Gravship, PlanetTile oldTile, PlanetTile newTile)` → arrival →
+`LandingEnded()` → `Find.Scenario.PostGravshipLanded(map)`. All [V].
+
+**`PostGravshipLanded` takes only a `Map`.** There is no parameter and no state reachable
+from it that says where the ship came from, so no distance test can be written against it.
+Odyssey's own `ScenPart_PursuingMechanoids.PostGravshipLanded` reflects this — it resets
+its timers unconditionally, with no distance check anywhere. [V]
+
+**`takeoffTile` and `landingTile` survive.** Both are `private` on the controller but are
+`Scribe_Values`-persisted as `"takeoffTile"` and `"targetTile"`, and `ResetCutscene()` —
+`Find.ScreenshotModeHandler.Active = false; cutsceneInProgress = false; landingMap = null;`
+— touches neither. [V] They are reachable by `AccessTools.Field` after the landing and
+after a reload. `MapParent.Abandon(wasGravshipLaunch: true)` also leaves a `GravshipLaunch`
+world object at the old surface tile, carrying `creationGameTicks`. [V]
+
+**`TravelTo` mutates its own `oldTile` parameter** on a cross-layer move [V] — a postfix
+reads the projection, not the origin.
+
+**The whole path is frame-driven, and Multiplayer protects only half of it — T-78.**
+
+**Distance:** `Find.WorldGrid.TraversalDistanceBetween(PlanetTile, PlanetTile)` is
+layer-aware and is what `GravshipUtility.TryGetPathFuelCost` uses [V], so it is the number
+the player already sees when launching.
+
+Established on [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56); the system built on
+it is `docs/specs/TRACE.md` § *The escape rule*. 1.6.4871.

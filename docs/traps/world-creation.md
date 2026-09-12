@@ -354,6 +354,56 @@ the next seizure. Anything of ours that changes a `Thing`'s faction mid-map goes
 `USH_HE.CompTurretHackable.OnHacked` from `HackingExpansion.dll`
 (`3573344880/1.6/Assemblies/`). T-12 is the same shape one cache over. 1.6.4871.*
 
+### T-85 — World Tech Level writes scribed state from a draw method
+
+`WorldTechLevel.Patches.Patch_WITab_Planet.FillTab_Postfix` draws a `Widgets.ButtonText` on the
+planet inspect tab, and its float menu's `SetLevel` writes **both** the volatile
+`WorldTechLevel.Current` **and the scribed `GameComponent_TechLevel.WorldTechLevel`** — from
+`FillTab`, a draw method. That is a **client-local write to synchronised, saved state off the
+frame loop**: the clicking client's save now carries a world tech level the other client's does
+not, and nothing reports it. There is no synced command, no letter and no log line; the
+divergence surfaces later as mods filtering content differently on the two machines.
+
+Two things make it easy to reach by accident. The button is drawn whenever
+`Current.ProgramState == Playing` — **there is no `Prefs.DevMode` guard** — so it is live in an
+ordinary campaign, not a debug affordance. And because it skips an era in one click while writing
+nothing else, it is also a route around any era clock layered on top: a boundary log that records
+era-start ticks never sees the transition, and its history is silently wrong rather than absent.
+
+Shutoff and rationale: `docs/specs/ERA.md` § *The build* § 6a — a Harmony prefix returning false
+on that private static, named by string, ~6 lines, loud at startup if WTL renames it. Keep
+`GetDesc_Postfix`; the display half wants it.
+
+*[#109](https://github.com/cjd721/Rimworld-Archinity/issues/109), `docs/specs/ERA.md`.
+`WorldTechLevel.Patches.Patch_WITab_Planet.FillTab_Postfix` and
+`WorldTechLevel.GameComponent_TechLevel` from `WorldTechLevel.dll`
+(`3414187030/1.6/Lunar/Components/` — **not** `1.6/Assemblies/`, which holds only the Lunar
+loader). See `docs/engine/research-and-tech-tiers.md` § *The scribed field and the volatile
+mirror are two different things*. 1.6.4871.*
+
+### T-86 — WTL's add-factions window registers factions at runtime
+
+`Patch_WITab_Planet`'s `SetLevel` calls `WorldTechLevel.Window_AddFactions.OpenIfAnyAvailable(prev)`;
+the window's Confirm button calls `FactionGenerator.CreateFactionAndAddToManager(def)` per selected
+faction and then spawns settlements for each, **from `DoWindowContents`**. Runtime faction
+registration against a frozen roster (**T-07**, the **T-15** class) plus unsynced `Rand` off the
+frame loop, in one control.
+
+The `Rand` half is worse than a single draw: the loop is written
+`for (int k = 0; k < Rand.RangeInclusive(3, 7); k++)`, so **the bound is re-drawn on every
+iteration** and the number of values consumed from the shared stream is itself random. Two clients
+diverge in both world state and stream position, with nothing reported on either.
+
+Inert only while `Settings.Filter_Factions` is false, which is this campaign's settled
+configuration for an unrelated reason (#7 § 3) — `OpenIfAnyAvailable` returns immediately in that
+state. **Turning `Filter_Factions` back on re-arms it.**
+
+*[#109](https://github.com/cjd721/Rimworld-Archinity/issues/109), `docs/specs/ERA.md` § *The
+build* § 6b. `WorldTechLevel.Window_AddFactions.OpenIfAnyAvailable` / `.DoWindowContents` and
+`Patch_WITab_Planet`'s local `SetLevel`, from `WorldTechLevel.dll`
+(`3414187030/1.6/Lunar/Components/`); `RimWorld.FactionGenerator.CreateFactionAndAddToManager`.
+1.6.4871.*
+
 ---
 
 ## Incidents, quests and goodwill
@@ -466,5 +516,50 @@ expiry-path chain features are broken, in different ways, and both fail silently
 `VEF.GameComponent_QuestChains.TryGrantAgainOnExpiry` / `.TryGrantAgainOnFailure` /
 `.TryGrantAgainOnSuccess` / `.ScheduleQuestMTB` / `.ScheduleQuestInTicks` and
 `VEF.FutureQuestInfo.TryFire` from `VEF.dll`; `Verse.Rand.MTBEventOccurs`. 1.6.4871.*
+
+### T-76 — A VEF `QuestGiverDef` with `onlyOneReward: false` has a permanently empty catalogue
+
+`VEF.Storyteller.QuestGiverManager.AvailableQuests` prunes on every read:
+
+    availableQuests.RemoveAll(x => x == null || x.askerFaction == null
+                                || x.quest_Part_choice == null || x.choice == null);
+
+and `QuestInfo`'s constructor populates `quest_Part_choice` and `choice` **only inside
+`if (onlyOneChoice)`** — the flag fed by `QuestGiverDef.onlyOneReward`.
+
+So a giver authored `onlyOneReward: false` generates offers normally and then discards
+every one of them on the next read. The window draws no rows. **Nothing logs.**
+
+The same prune fires on a null `askerFaction`, which happens when
+`fixedQuestGiverFaction` is unset and `FixedQuestGiverFaction` falls through to
+`Find.FactionManager.RandomAlliedFaction(...)` with no allies.
+
+**Fix:** author `onlyOneReward: true` and set `fixedQuestGiverFaction` explicitly. A
+startup validator over `DefDatabase<QuestGiverDef>` asserting both is ~10 lines and turns
+a silent empty shop into a config error.
+
+*[#106](https://github.com/cjd721/Rimworld-Archinity/issues/106), `docs/specs/CURRENCIES.md` §
+*The purchasable quest catalogue*. `VEF.Storyteller.QuestGiverManager.AvailableQuests`,
+`VEF.Storyteller.QuestInfo..ctor`, `VEF.Storyteller.QuestGiverDef.onlyOneReward` from `VEF.dll`
+(`2023507013/1.6/Assemblies/`). 1.6.4871.*
+
+### T-77 — `QuestWorker.GenerateQuests` swallows every generation exception
+
+`VEF.Storyteller.QuestWorker.GenerateQuests` wraps the whole per-quest body — slate
+setup, `CanRun`, `QuestGen.Generate`, `QuestCurrency.Allows` — in `catch (Exception) { }`
+with an empty handler.
+
+A quest script that throws during generation therefore never appears in the catalogue and
+never reports why. Because the loop removes each candidate from its working list and
+continues, a systematically broken script family produces a quietly smaller shop rather
+than an error.
+
+**Fix:** prefer `QuestGiverDef.onlySpecifiedQuests` so the pool is a list we authored and
+can test, rather than every `!isRootSpecial && IsRootAny` script in the load order. If a
+shop is short, this trap is the first thing to check — the log will not mention it.
+
+*[#106](https://github.com/cjd721/Rimworld-Archinity/issues/106), `docs/specs/CURRENCIES.md` §
+*The purchasable quest catalogue*. `VEF.Storyteller.QuestWorker.GenerateQuests` from `VEF.dll`
+(`2023507013/1.6/Assemblies/`). 1.6.4871.*
 
 ---

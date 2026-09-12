@@ -367,5 +367,73 @@ scope in both; what is def-level is `FactionDef.SpecialDisplayStats`, which is h
   ships no non-player FactionDef; it patches Odyssey's `TradersGuild` (**two
   operations**, three `PatchOperation` elements counting one nested inside a
   conditional; none count-related) and Royalty's `Empire`.
-</content>
-</invoke>
+
+## What `Notify_RelationKindChanged` already does to faction-owned things
+
+Verified against RimWorld 1.6 (`Assembly-CSharp.dll`, the build `docs/data/MOD-SNAPSHOT.md` pins).
+
+`RimWorld.Faction.Notify_RelationKindChanged(Faction other, FactionRelationKind previousKind,
+bool canSendLetter, string reason, GlobalTargetInfo lookTarget, out bool sentLetter)` is `public`,
+and is vanilla's convergence point for *"the political situation with this faction changed"*. It is
+an instance method on the faction whose relation changed; `other` is the counterparty. **Read
+`__instance`, not `other`, for the faction the change is about.**
+
+Two of its routines are the shipped pattern for anything the player holds *with* a faction:
+
+- **Hostile edge** — `other == OfPlayer && this.HostileTo(OfPlayer)`: walks
+  `Find.WorldObjects.AllWorldObjects`, and for every object of that faction fetches
+  `TradeRequestComp` and calls `Disable()` on an active request; then, per map,
+  `map.passingShipManager.RemoveAllShipsOfFaction(this)`. **A standing arrangement is disabled, not
+  destroyed; a transient one is removed outright.**
+- **Friendly edge** — `other == OfPlayer && !this.HostileTo(OfPlayer)`: collects every site where
+  `factionMustRemainHostile && site.Faction == this && !site.HasMap` (a site the player is standing
+  on is left alone), and if any remain sends `LetterLabelSiteNoLongerHostile` / `…Multi` — the multi
+  form building a bulleted `"  - " + LabelCap` list with a parenthesised pawn name per entry, plus a
+  `LookTargets` over the tiles — before destroying them.
+
+**Two scoping facts that are easy to get backwards:**
+
+- **Those two branches** are each guarded on `other == OfPlayer`. **The method is not** — its
+  prisoner-status sweep (converting mutual guests to prisoners on a hostility flip) and its
+  attack-target-cache / lord block run for any pair.
+- The body consults `Current.ProgramState` **three times**: once to suppress letters, once bracketing
+  the prisoner sweep, and once as an early `return` before the map-cache block.
+
+**It does not fire during world generation**, and a patcher should not guard against that. Both
+worldgen relation-seeding paths bypass it: `Faction.TryMakeInitialRelationsWith` hand-constructs both
+`FactionRelation` objects and appends them to the two `relations` lists itself, and
+`FactionGenerator.NewGeneratedFactionWithRelations` reaches `Faction.SetRelation(FactionRelation)`,
+which mutates `relations` directly. The one route that could fire early —
+`GoodwillSituationManager.CheckHostilityChanged` → `Notify_GoodwillSituationsChanged` →
+`CheckKindThresholds` — is itself guarded on `Current.ProgramState != ProgramState.Playing`, and
+worldgen runs at `ProgramState.Entry`.
+
+**A postfix still needs a `ProgramState.Playing` guard**, because the hook does reach it at
+`ProgramState.MapInitializing` — during map generation and during load — through
+`SettlementUtility.AffectRelationsOnAttacked` and `GoodwillSituationManager.RecalculateAll`. That is
+the window in which a `WorldComponent` may not yet hold its records.
+
+Established on [#73](https://github.com/cjd721/Rimworld-Archinity/issues/73); the system built on it
+is `docs/specs/RELIGION.md` § *The build — religious institutions inside foreign factions*.
+
+## A `WorldObjectComp` added by XML patch backfills into an existing save
+
+Verified against RimWorld 1.6.
+
+`WorldObject.ExposeData` calls `InitializeComps()` on `LoadingVars` **from `def.comps`**, then
+`comps[i].PostExposeData()` for each. Comps are therefore **rebuilt from the def at load and never
+scribed as a collection**, so a `WorldObjectCompProperties` added to an existing `WorldObjectDef` by
+`PatchOperationAdd` appears on every existing instance in an existing save rather than erroring.
+
+`WorldObjectDef Settlement` already declares a `<comps>` list with five entries
+(`Abandon`, `TradeRequest`, `FormCaravan`, `TimedDetectionRaids`, `EnterCooldown`), so one patch
+reaches every settlement in the game. `WorldObjectComp` then offers `CompTick`, `CompTickInterval`,
+`GetGizmos`, `GetCaravanGizmos`, `GetFloatMenuOptions(Caravan)`, `IncidentTargetTags`,
+`PostDrawExtraSelectionOverlays`, `CompInspectStringExtra`, `GetDescriptionPart` and
+`PostExposeData`.
+
+**Not a trap:** `InitializeComps` wraps each instantiation in a try/catch and emits
+`Log.Error("Could not instantiate or initialize a WorldObjectComp: " + ex)`, so a bad comp class
+fails loudly.
+
+Established on [#73](https://github.com/cjd721/Rimworld-Archinity/issues/73).
