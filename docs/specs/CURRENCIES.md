@@ -366,12 +366,12 @@ gate and `TrySpend` from inside an already-synced work path". **That expectation
 withdrawn.** It presumes an answer to *does Analysis ever cost Intel*, which is a
 **requirements** question owned by
 [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) and now tracked as
-[#101](https://github.com/cjd721/Rimworld-Archinity/issues/101). `docs/specs/RESEARCH.md`
+the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2). `docs/specs/RESEARCH.md`
 reached the opposite presumption from the other side — it *ruled* "do not price analysis in
 Intel" — and has withdrawn that ruling. **Neither spec decides it.** #67 and #54 are both
 capability tickets; neither had the authority.
 
-Conditional on #101, and stated conditionally:
+Conditional on that question, and stated conditionally:
 
 - **If Analysis is priced in Intel**, the calling discipline is the one this document imposes
   on *every* caller and is not special to #67: `CanAfford` is pure and safe from a draw
@@ -389,7 +389,7 @@ must be written. `ResearchManager.FinishProject(ResearchProjectDef, bool, Pawn, 
 public and is the single funnel **[V]** — but it **recurses into unfinished prerequisites**
 **[V]**, so a naive postfix debits once per project in the chain, and a *gate* belongs in a
 prefix because by postfix time `progress[proj]` is written and the unlock signal has fired.
-That negative stands whichever way #101 rules; it only becomes *relevant* if #101 prices it.
+That negative stands whichever way that is settled; it only becomes *relevant* if Analysis is priced.
 
 ### What is shared, for [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) to rule on
 
@@ -437,7 +437,7 @@ state — see *Structural separation* — so no sequence of purchases can strand
 | **Verified available mechanisms** | `WorldComponent` + `Scribe_Collections.Look(…, LookMode.Def, LookMode.Value)`; `World.FillComponents` backfill; `RimWorld.Reward` + `QuestPartUtility.GetStandardRewardStackElement`; `CompUsable` → `JobDriver_UseItem` → `CompUseEffect.DoEffect`; `MainButtonDef` as pure XML; `GlobalControlsUtility.DoDate`'s `ref float curBaseY`; `Multiplayer.API.SyncMethodAttribute` with soft-dependency fallback. All **[V]**. |
 | **Confirmed negative** | Nothing in vanilla, the DLC or the corpus holds a **Def-keyed, world-level, spendable balance**. The named donor holds no balance at all. Independently re-verified by the close-out audit, which re-ran the highest-signal sweep family and found the negative holds **harder** than either #54 comment claimed. **The sweep form used to reach it was itself defective** — see *Verification* and [#103](https://github.com/cjd721/Rimworld-Archinity/issues/103). |
 | **Proposed, not selected** | The whole build above. It is **[I]** as a composition, and the line estimates with it. |
-| **Open parameters** | Every number, plus whether Analysis is priced at all ([#101](https://github.com/cjd721/Rimworld-Archinity/issues/101)). See *Outstanding decisions*. |
+| **Open parameters** | Every number, plus whether Analysis is priced at all (the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)). See *Outstanding decisions*. |
 
 Established on [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)
 (absorbing [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55)'s currency half).
@@ -715,7 +715,7 @@ this document.
 |---|---|---|
 | **Every number** — earn rates, prices, starting balances, caps | Balance. `RELIGION.md` says *"exact catalogs are implementation work"*; `GLITTERTECH.md` says *"project costs… remain implementation/authoring work"*. | Whoever authors the catalogues. |
 | **Does either currency decay or expire?** Neither requirements file says. The donor's Intel rots **[V]**; Reverence decays by requirement. | A balance that never decays is a different economy from one that does, and it changes whether hoarding is a strategy. | **Requirements gap, no ticket** → [`RELIGION.md`](../requirements/RELIGION.md) for Influence, [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) for Intel. |
-| **Does any Analysis project cost Intel on top of its exemplar?** | Decides whether [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) calls anything in this document at all. Two specs presumed opposite answers; **neither had the authority**, and both have withdrawn. | **Open requirements parameter**, owned by [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md), tracked as [#101](https://github.com/cjd721/Rimworld-Archinity/issues/101). |
+| **Does any Analysis project cost Intel on top of its exemplar?** | Decides whether [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) calls anything in this document at all. Two specs presumed opposite answers; **neither had the authority**, and both have withdrawn. | **Open requirements parameter**, owned by [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md), tracked as the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2). |
 | **Does sharing one dictionary between Influence and Intel couple Intel to Church standing?** | If yes, split into two `WorldComponent`s (~15 lines, no design change). | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56), item 4. |
 | **Is the always-visible readout (D3) the right surface, or does the campaign UI absorb it?** | D3's layout arithmetic is the maintenance cost; a tab of our own removes it. | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) rules on the shape; D1 and D2 ship regardless. |
 | **Which quests are purchasable, out of what pool, at what price?** | Decides what the catalogue actually contains. The machinery is built here; the contents are not. | [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) — **consuming** `CurrencyPurchaseDef` / `CurrencyPurchaseWorker` / `MainTabWindow_Network`, not duplicating them. |

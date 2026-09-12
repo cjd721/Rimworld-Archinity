@@ -721,9 +721,11 @@ It is a one-client check. The two-client Multiplayer test belongs to
 - **Which def carries a beat, and the parent quest's root node** —
   [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40).
 - **The reach-rung table's numbers** — which minTiles/maxTiles each rung reaches, and where
-  the rungs sit relative to travel time. Parameters, not mechanism, and they now have an
-  owner: [#105 — how long should travel take](https://github.com/cjd721/Rimworld-Archinity/issues/105),
-  shared with `docs/specs/WORLD-INFRASTRUCTURE.md` and with roads (#68).
+  the rungs sit relative to travel time. Parameters, not mechanism, and they sit in the
+  **balance deferral** on [map #2](https://github.com/cjd721/Rimworld-Archinity/issues/2)
+  — *"costs, durations, threat magnitudes and progression rates. Last, after the structure is
+  concrete."* Shared with `docs/specs/WORLD-INFRASTRUCTURE.md` and with roads (#68); the
+  mechanism does not wait on them.
 - **The apparatus ladder's numbers** — `scanFindMtbDays`, `scanFindGuaranteedDays` and
   `maxAcceptedBand` per tier. `docs/progression/` is where they belong and is currently empty
   — the same gap [#87](https://github.com/cjd721/Rimworld-Archinity/issues/87) found.

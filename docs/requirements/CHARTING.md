@@ -270,7 +270,7 @@ announcements and nobody is in a position to tell the colony about them.
   is a real signal — a road edge halves travel cost — but road *tier* currently changes
   nothing at all, so *"maintained roads"* must not be written as a ladder of road qualities
   until that is fixed. The distances themselves belong to
-  [how long should travel take](https://github.com/cjd721/Rimworld-Archinity/issues/105).
+  the balance deferral on [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2).
   Noted as a regression, not repaired here.
 - **Nothing in `docs/requirements/` states that map generation must be cross-client
   identical.** Named by

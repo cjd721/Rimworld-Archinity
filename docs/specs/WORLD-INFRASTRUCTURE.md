@@ -24,7 +24,7 @@ command rather than owning one.
 One thing the plot asks for is **not** answered here and is not deferred to a design that
 exists: *"finance, **protect**, capture and benefit from"* infrastructure. Finance, capture
 and benefit are below. **Protect is a gap** — see *Outstanding decisions*, handed to
-[#105](https://github.com/cjd721/Rimworld-Archinity/issues/105).
+the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2).
 
 ## The build
 
@@ -66,7 +66,7 @@ handed to [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69) by name*
 sets the vehicle ladder must set it against this table, not only against `RoadDef`.
 
 A ladder, as a `PatchOperationReplace` per def (values are a starting proposal, not a
-balance ruling — [#105](https://github.com/cjd721/Rimworld-Archinity/issues/105) owns the
+balance ruling — the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2) owns the
 numbers; see *Outstanding decisions*):
 
 | `RoadDef` | ships | proposed | reads as |
@@ -202,7 +202,7 @@ already there.
 > breadth-first walk of `WorldGrid` neighbours out to N, collecting `potentialRoads` on the
 > tiles reached). Plus, unconditionally, every route the ledger already attributes to that
 > faction. `N` is a tuning value and belongs to
-> [#105](https://github.com/cjd721/Rimworld-Archinity/issues/105) with the ladder numbers.
+> the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2) with the ladder numbers.
 >
 > **The rejected alternative, and why it is rejected.** Re-pathing between each pair of that
 > faction's settlements and upgrading the resulting corridor is the intuitive rule and is
@@ -533,7 +533,7 @@ now appears in §1.
 - **The ladder values are a requirement, not a mechanism, and they now have an owner.**
   §1's five numbers, the era→tier mapping and the era rite's proximity radius `N` are
   starting proposals. What travel time *should* feel like per era belongs to
-  **[#105 — How long should travel take](https://github.com/cjd721/Rimworld-Archinity/issues/105)**,
+  **the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)**,
   which owns world mobility and travel time generally. It pairs with
   [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69)'s vehicle ladder, because
   the two multiply — and because VF's `customRoadCosts` can override the road ladder
@@ -544,7 +544,7 @@ now appears in §1.
   a route's ends, via #8's rite) and benefit (the speed ladder). **Protect has no mechanism
   and no design here** — nothing in the corpus models a road as a thing that can be
   threatened, and `OverlayRoad` cannot express damage. Handed to
-  [#105](https://github.com/cjd721/Rimworld-Archinity/issues/105) as part of what world
+  the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2) as part of what world
   mobility must mean.
 - **Road debris on a roadless map is an open lever with no owner.** Suppressing
   `AncientRoads` leaves 1–2 ancient vehicle wrecks per map and spreads them map-wide (§2).
@@ -589,7 +589,7 @@ is XML.** CHARTING §4 already reads a `ResearchProjectDef` rung as satisfied wh
 (§3) — so the rung and the build gate are the same def and no `workerClass` is needed.
 
 Proposed rows — **the integers are [I] and belong to
-[#105](https://github.com/cjd721/Rimworld-Archinity/issues/105)**, not to this document; the
+the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)**, not to this document; the
 *shape* is the contract:
 
 | Tier the rung represents | Def carrying `<modExtensions>` | Satisfied when | `minTiles` | `maxTiles` |

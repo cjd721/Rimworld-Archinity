@@ -19,7 +19,7 @@ It does **not** own the Intel balance
 ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)) — the interface between the two
 is stated in *The build* § **The seam with Intel** and nothing more. It does not own whether
 Analysis is *priced* in Intel, which is a requirements question
-([#101](https://github.com/cjd721/Rimworld-Archinity/issues/101)). It does not own the
+(the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)). It does not own the
 exemplar **catalogue** — which artifact gates which branch is authoring work and belongs to
 [Act V](https://github.com/cjd721/Rimworld-Archinity/issues/47). It does not own research
 **pacing**, tier totals or the era ladder
@@ -162,14 +162,14 @@ against it:
    **the ruling is withdrawn.** #67 is a capability ticket and pricing is a gameplay rule — an
    open **requirements parameter** owned by
    [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) and tracked as
-   [**#101 — Does Analysis ever cost Intel**](https://github.com/cjd721/Rimworld-Archinity/issues/101).
+   **the Analysis-pricing question**, parked in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2).
    [`docs/specs/CURRENCIES.md`](CURRENCIES.md) has dropped the matching half of the interface —
    its expectation that this gate calls `CanAfford`/`TrySpend` — in the same pass. Everything
    below, and the cost table, assumes the **unpriced default**.
 3. **The clean split** — *under the unpriced default.* The exemplar answers *may this branch be
    researched at all* — binary, per branch, irreversible. Intel answers *how much of this branch
    can you afford now* — scalar, spent, replenished. One `requiredAnalyzed` entry at each branch
-   root; Intel priced across the projects beneath it. If #101 decides Analysis is priced, the
+   root; Intel priced across the projects beneath it. If Analysis is ever priced, the
    split moves and this spec grows a C# leg (see *Cost*).
 4. **What #54 may rely on.** `Find.AnalysisManager.TryGetAnalysisProgress(id, out details)` and
    `details.Satisfied` are public, scribed and multiplayer-safe, callable from any C# #54 writes.
@@ -186,7 +186,7 @@ against it:
 | Add `requiredAnalyzed` to each branch-root project | `PatchOperationAdd` | ~6 lines per project | `Archinity.Glitterites/Patches/Analysis_GlittertechGate.xml` |
 | Retire `Analysis_Glittertech.xml`, `Analysis_Unblock.xml`, `Fix_MoreRealisticResearch.xml` | deletion | −3 files, ~250 lines | `Archinity.Glitterites`, `Archinity.Pacing` |
 | Recommend dropping `sae.researchmod` | sourcing input | — | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) owns the verdict |
-| **New C#** | **none — conditional on Analysis staying unpriced ([#101](https://github.com/cjd721/Rimworld-Archinity/issues/101))** | **0 under the default.** If #101 prices Analysis, the completion path needs a `TrySpend` call and the gizmo needs a `CanAfford` disable reason — a Harmony postfix on `CompAnalyzable.OnAnalyzed` and one on `CompInteractable.CanInteract`, neither of which exists today | — |
+| **New C#** | **none — conditional on Analysis staying unpriced (the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2))** | **0 under the default.** If Analysis is ever priced, the completion path needs a `TrySpend` call and the gizmo needs a `CanAfford` disable reason — a Harmony postfix on `CompAnalyzable.OnAnalyzed` and one on `CompInteractable.CanInteract`, neither of which exists today | — |
 
 ---
 
@@ -330,7 +330,7 @@ the vanilla mechanism delivers the Glitterite loop is **[I]** until something is
 - [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) — owns the `sae.researchmod`
   verdict and the TechBlock question.
 - [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) — the Intel side of the seam.
-- [#101](https://github.com/cjd721/Rimworld-Archinity/issues/101) — whether Analysis is priced
+- the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2) — whether Analysis is priced
   in Intel at all. The cost line above is conditional on its default.
 
 **Open parameters, not mechanisms:** how many analyses per exemplar, the duration, which branch
@@ -624,7 +624,7 @@ one analysis it can; and the heart is still owned and still spendable on buildin
 |---|---|---|
 | **Which branch roots carry a gate, and which artifact gates each** | The whole shape of the Glitterite loop. The mechanism is settled; the catalogue is authoring. `GLITTERTECH.md` says only "every major Glittertech branch" and defers the catalogue itself | [Act V #47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | **Does analysis consume the exemplar** — as a stated rule, not an implementation default | Recommended here as **no**, on `GLITTERTECH.md`'s own "bring home armor" and on the double-charge argument. It is a gameplay rule and belongs in `docs/requirements/GLITTERTECH.md` as one line rather than living only in a spec | requirements gap, → [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
-| **Does Analysis cost Intel** | Not settled, and **not settleable here** — #67 is a capability ticket. The build, the seam in §6 and the "New C# = none" cost line all assume **unpriced**; a priced gate adds two Harmony postfixes and moves the split in §6.3 | [#101](https://github.com/cjd721/Rimworld-Archinity/issues/101), owned by `docs/requirements/GLITTERTECH.md` |
+| **Does Analysis cost Intel** | Not settled, and **not settleable here** — #67 is a capability ticket. The build, the seam in §6 and the "New C# = none" cost line all assume **unpriced**; a priced gate adds two Harmony postfixes and moves the split in §6.3 | the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2), owned by `docs/requirements/GLITTERTECH.md` |
 | **`analysisRequiredRange` per exemplar, and `analysisDurationHours`** | Pacing dials only. Default `1~1` and 0.5 h match Biotech. A campaign-central exemplar may want `2~2` — **if it does, the three `progressedLetter*` fields become mandatory** (see *Failure and recovery*), which is a real authoring cost, not a dial | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) / [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30) |
 | **Our reserved `analysisID` block** | Collision with a third-party mod is silent (**T-41**). Pick a block, record it here when the first exemplar is authored | this document |
 | **Whether `requiredResearchFacilities` also gates the Glittertech tree** | Ushanka already imposes `MultiAnalyzer` on all 18 and `USH_ResearchProbe` on 14. Composing a second facility gate on top is a pacing choice, not a capability question | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
