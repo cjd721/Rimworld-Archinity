@@ -32,6 +32,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-79 | Granting a work type from research and not calling `Pawn.Notify_DisabledWorkTypesChanged()` leaves every colonist unable to do the work until the next load, with no message |
 | T-83 | `GoodwillSituationDef.baseMaxGoodwill` is declared and read nowhere — setting it in XML does nothing |
 | T-84 | `PreceptComp_GoodwillSituation` is inert in 1.6 — the list its only reader writes to is never read |
+| T-92 | Declaring a modded research tab silently enrols a `requiredAnalyzed`-gated project into the vanilla `Schematic` book's grant pool, bypassing the gate |
 
 ## World creation and factions — [`docs/traps/world-creation.md`](traps/world-creation.md)
 
@@ -62,6 +63,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-77 | `QuestWorker.GenerateQuests` swallows every generation exception, so a broken quest script silently never appears |
 | T-85 | World Tech Level's planet-tab button writes the scribed `GameComponent_TechLevel` from `FillTab` — a client-local write to synchronised state, off a draw path |
 | T-86 | WTL's `Window_AddFactions` registers factions at runtime and spawns settlements on a `Rand` bound re-drawn inside the loop condition, from `DoWindowContents` — armed whenever `Filter_Factions` is on |
+| T-88 | A factionless or inert `attackTargets` focus issues no job at all — the objective no-ops and the group lingers until auto-flee |
+| T-89 | `Trigger_ThingsDamageTaken` cannot express a partial loss of pawns — "destroy a fraction" silently means "destroy all of them" |
+| T-90 | A `RaidStrategyDef` authored without `arriveModes` is silently unselectable forever, and a vanilla strategy is picked in its place |
+| T-91 | `VFEE_Deserters` silently stops raiding whenever no Empire-titled pawn is on the map |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -85,7 +90,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-78 | Multiplayer wraps the gravship *landing* for determinism and does not wrap the *takeoff*; code hung on `TakeoffEnded` or `TravelTo` runs unfrozen and unseeded |
 | T-80 | A caravan gizmo or dialog is outside Multiplayer's float-menu SyncAction — the net covers `WorldObject.GetFloatMenuOptions`, and nothing else on a caravan |
 | T-81 | Overriding `WorldObject.UpdateRateTicks` escapes MP's VTR prefix, and the world-object tick phase silently goes back to depending on which player has the world map open |
-| T-82 | Multiplayer syncs a `DiaOption` click by its **index** in `curNode.options` — an option list built differently per client activates a different action on each |
+| T-82 | Multiplayer syncs a `DiaOption` click by its **index**, through either of two contending prefixes — and one of them re-resolves the dialog client-locally, so identical option lists are necessary but not sufficient |
+| T-95 | Subclassing `Dialog_NodeTree` drops it out of Multiplayer's `PersistentDialog` bindings — options never sync, and the one log line names no type |
+| T-96 | A modded `ChoiceLetter`'s options are synced by neither mechanism — identical on both clients, acting on one |
+| T-97 | A `DiaOption` without `resolveTree = true` strands its `mapDialogs` entry, and `ForceShowDialogs` re-opens an already-answered dialog forever |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -111,6 +119,8 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-62 | A study designation on a null- or hostile-faction building is shown, scribed — and never worked |
 | T-63 | Overriding `Gene.Label` reaches the tooltip header only; the tile and info card are typed on the def |
 | T-64 | A `GeneVectorExtension` with `gene: null` spends the charge, grants nothing and reports success |
+| T-93 | `Window_AndroidCreation.OnGenesChanged()` reassigns `requiredItems` wholesale on every gene toggle, discarding any write that is not a postfix on it |
+| T-94 | `Bill_ProductionMech.CreateProducts` resolves the gestated pawnkind by reverse-lookup `.First()` — two `PawnKindDef`s sharing a race yield whichever `DefDatabase` ordering returns |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 
@@ -124,6 +134,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-43 | A downgrade through `WorldGrid.OverlayRoad` returns silently; only a null `RoadDef` logs |
 | T-44 | A road in an `allowRoads = false` biome is drawn but inert |
 | T-48 | On an orbit layer the pool collapses to 18 of 91 incidents and 18 of 139 quests, unannounced |
+| T-87 | A `RoadDef.movementCostMultiplier` patch is discarded for any caravan carrying a vehicle that declares `customRoadCosts` — the first declarer replaces the value in either direction |
 
 ---
 
@@ -146,12 +157,16 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole. **Four of the five are over that line: `world-creation.md` (25),
-`content-and-buildings.md` (20), `multiplayer.md` (19) and `defs-and-patching.md` (14).**
+read whole. **Four of the five are over that line: `world-creation.md` (29),
+`content-and-buildings.md` (22), `multiplayer.md` (22) and `defs-and-patching.md` (15).
+`worldgen-layouts.md` (9) is the only one still short of it.**
 
-**The split the shape now asks for is an incidents-and-quests group.** None of the five
-names it, so T-65, T-70 through T-73 and T-76/T-77 sit in `world-creation.md` on the
-strength of factions and goodwill alone — filed under an *Incidents, quests and goodwill*
-heading inside it — and T-39 and T-48 are the same subject filed under determinism and
-worldgen respectively. Adding a group changes this index's shape and is the orchestrator's
-call, not an entry author's.
+**The split the shape now asks for is an incidents-and-quests group, and this batch
+sharpened the case rather than changing it.** None of the five names the subject, so
+T-65, T-70 through T-73, T-76/T-77 and now **T-88 through T-91** sit in
+`world-creation.md` on the strength of factions and goodwill alone — filed under an
+*Incidents, quests and goodwill* heading inside it — and T-39 and T-48 are the same
+subject filed under determinism and worldgen respectively. **That is eleven entries
+inside `world-creation.md` and thirteen across the register**, against a host file
+whose remaining eighteen are genuinely about factions and worldgen. Adding a group
+changes this index's shape and is Conrad's call; it is recorded here rather than taken.

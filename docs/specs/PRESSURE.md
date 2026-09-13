@@ -15,13 +15,14 @@ This document owns:
 - the **composition** levers — points-band gating, faction selection, and the pawn-cost curve
   that turns points into quality instead of quantity;
 - the **positive half** — arrivals, aid and volunteers that scale with Reverence;
+- **raid objectives** — what an arriving group is *trying to do*, as distinct from how big it is
+  ([#77](https://github.com/cjd721/Rimworld-Archinity/issues/77), §8);
 - **protecting the ordered spine** from storyteller RNG;
 - the multiplayer constraints on all of the above.
 
 It does not own: **Trace and the Glitterite pursuit**
 ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)) — this document says how big a
-pursuit raid is and how it is authored, #56 says what starts one and when; **raid objectives as
-distinct from raid size** ([#77](https://github.com/cjd721/Rimworld-Archinity/issues/77)); **the
+pursuit raid is and how it is authored, #56 says what starts one and when; **the
 faction demand** ([#91](https://github.com/cjd721/Rimworld-Archinity/issues/91), whose spec is
 [`POLITICS.md`](POLITICS.md)) — #91 says what a refusal fires, this document says how big it is;
 **Reverence itself** ([`RELIGION.md`](RELIGION.md)); **the window the readout is drawn in**
@@ -357,6 +358,258 @@ own on the deserter faction, so a strategy we author is silently excluded), and 
 (`RaidStrategyDef` and `QuestScriptDef` have no `minTechLevel` — a tech gate written in XML never
 fires).
 
+### 8. Raid objectives — what the arriving group wants
+
+**Mechanism: one generic `RaidStrategyWorker` subclass driven by a `DefModExtension`, plus one
+`RaidStrategyDef` per objective in XML.** No new `LordJob`. The objective is expressed by which
+vanilla `LordJob` the worker builds and what it hands that job, and both of the jobs we need
+already ship.
+
+This is the answer to [#77](https://github.com/cjd721/Rimworld-Archinity/issues/77). It is scoped
+to **objective only** — magnitude and composition stay in
+[#9](https://github.com/cjd721/Rimworld-Archinity/issues/9) and §2/§4, incident selection stays in
+§3/§4.
+
+**Vanilla's whole objective vocabulary, read out of `Assembly-CSharp.dll`** [V]:
+
+| Job | Reached by | What it does |
+|---|---|---|
+| `LordJob_AssaultColony` | `RaidStrategyWorker_ImmediateAttack.MakeLordJob` and every sapper/breach sibling | assault the colony; **opportunistically** branch to kidnap or steal |
+| `LordJob_AssaultThings` | the same method, **when `parms.attackTargets` is non-empty** | assign `DutyDefOf.AssaultThing` at a randomly-chosen spawned target, re-picked every 300 ticks; leave when `Trigger_ThingsDamageTaken` fires — read its scoring carefully, below |
+
+`LordJob_AssaultColony`'s constructor is
+`(Faction, bool canKidnap = true, bool canTimeoutOrFlee = true, bool sappers = false, bool
+useAvoidGridSmart = false, bool canSteal = true, bool breachers = false, bool
+canPickUpOpportunisticWeapons = false)` [V]. Its `CreateGraph` attaches `LordJob_Kidnap` and
+`LordJob_Steal` as **subgraphs off the assault toil**, entered on `Trigger_KidnapVictimPresent`
+and `Trigger_HighValueThingsAround`, and only when `assaulterFaction.def.humanlikeFaction` [V].
+
+**That is the finding the ticket is actually about: vanilla has no kidnap raid.** It has an
+assault raid that kidnaps *if a colonist happens to go down*. Nine `RaidStrategyDef`s ship — three
+`ImmediateAttack` variants, `StageThenAttack`, `EmergeFromWater`, `Siege`, `ImmediateAttackSappers`
+and two breaching — and every one of them is "assault the colony", differing only in approach [V].
+None of the five DLC adds one [V].
+
+#### The three vehicles, and which objective goes on which
+
+**(a) `attackTargets` — the "point the raid at the base" lever, and it is already in the engine.**
+`IncidentParms.attackTargets` is a `List<Thing>`, `Scribe_Collections.Look(…, LookMode.Reference)`
+with a `PostLoadInit` null-prune [V]. `RaidStrategyWorker_ImmediateAttack.MakeLordJob` checks it
+*first*, before the hostility branch, and routes to `LordJob_AssaultThings` [V]. The duty it ends
+in, `AssaultThing`, is `JobGiver_AIFightEnemies` → **`JobGiver_AITrashDutyFocus`** →
+**`JobGiver_AISapper`** [V] — so the raiders fight what is in reach, wreck the focus, **and mine
+through walls to get to it.** The founders standing in the doorway are not on the path.
+
+> **Two silent no-ops sit on this path, and between them they kill the obvious build. This is the
+> section's load-bearing warning.**
+>
+> **A factionless target is never attacked.** `JobGiver_AITrashDutyFocus.TryGiveJob` returns null
+> unless `pawn.HostileTo(focus.Thing)`, and `GenHostility.HostileTo(Thing, Thing)` ends
+> `if (a.Faction == null || b.Faction == null) return false;` [V]. **A stockpiled item and a sown
+> crop have no `Faction`.**
+>
+> **An inert building is never attacked either.** `JobGiver_AITrashDutyFocus` calls
+> `TrashUtility.TrashJob(pawn, focus.Thing, allowPunchingInert: false, killIncappedTarget: true)`,
+> and `TrashJob` **returns null** for a `Building` whose `def.building.isInert` is true when
+> `allowPunchingInert` is false [V]. `Wall` sets `isInert: true`, and so do `DoorBase`, `Fence` and
+> `Column` (`Core/Defs/ThingDefs_Buildings/Buildings_Structure.xml`) [V]. `Shelf`, `ShelfSmall` and
+> `Cooler` declare no `isInert` and are therefore valid [V].
+>
+> In either case the objective **silently no-ops**: the raiders path to the focus and issue no
+> job, `Trigger_ThingsDamageTaken` never fires, and the group lingers. It is **not** a guaranteed
+> hang — `LordJob.AddFleeToil` is `virtual => true` and `LordJob_AssaultThings` does not override
+> it, so `Lord`'s graph builder attaches a `LordToil_PanicFlee` transition off **every** toil when
+> `faction.def.autoFlee && !faction.neverFlee && Map.CanEverExit`, fired by
+> `Trigger_FractionPawnsLost` [V]. So they leave once enough of them are downed. The group only
+> lingers indefinitely for a **never-flee or non-auto-flee faction, or against a player who does
+> not engage**. No error either way. That is **T-88**.
+
+So:
+
+- **Animal-killers** — `attackTargets` = colony animals. They are player-faction `Pawn`s, therefore
+  hostile, therefore valid [V]. **But `damageFraction` does nothing for pawn targets.**
+  `Trigger_ThingsDamageTaken.ActivateOn` counts only entries where `things[i].Spawned`; a dead
+  animal is despawned and so leaves the numerator *and* the denominator, while every surviving
+  spawned pawn scores `1f` [V]. The average is therefore always exactly `1`, and
+  `num < 1f - damageFraction` is never true — the transition fires **solely** through the
+  `num2 == 0` branch, i.e. the whole herd. The same bias applies to buildings: a destroyed shelf is
+  excluded too, so the fraction only ever moves on *partial* damage to survivors. **A livestock
+  objective on `LordJob_AssaultThings` terminates on total loss only.** A partial-herd objective —
+  "kill four and go" — needs a `Trigger` of our own that counts the original list rather than the
+  spawned one: about 25 lines, priced in the cost table.
+- **Stores raids** — target the **storage buildings**, never the food and never the walls. Shelves
+  and coolers are player-faction, non-inert `Building`s and yield a real `TrashJob` [V]; the
+  freezer's walls are inert and are a no-op focus. The food is then taken by the ordinary
+  `canSteal` branch or lost to deterioration. Free, given the right target set.
+- **Fields** — vanilla already does some of this, opportunistically, and it is weaker than a field
+  raid. `JobGiver_AITrashColonyClose` samples 35 random cells in a **5-cell** radius around the
+  pawn and will `Ignite` a plant passing `TrashUtility.ShouldTrashPlant` — sown, non-tree,
+  flammable, not raining, no static fire within two cells — but **only when
+  `pawn.natives.IgniteVerb` is non-null and usable**, which excludes mechanoids [V]. That is
+  passing damage to whatever a raider walks past, not an objective. A real field raid is **not**
+  duplicated by it; it is also not reachable through `attackTargets`, because crops are
+  factionless. If the campaign wants one, it is the custom-trigger build above with an `Ignite`
+  duty — out of scope here, and named so it is not assumed free.
+
+**(b) `canKidnap` / `canSteal` / `canTimeoutOrFlee` — and the negative that owes the code.**
+These are `IncidentParms` fields, all three scribed with vanilla defaults `true` [V]. **There is no
+XML path to `canKidnap` or `canSteal` anywhere in vanilla** [V]: `QuestNode_Raid` exposes
+`canTimeoutOrFlee`, `arrivalMode`, `raidPawnKind` and the custom letter, and nothing else [V]; the
+only vanilla XML occurrence of any of the three is `$canTimeoutOrFlee` in
+`Scripts_Utility_ThreatsCore.xml` [V]. Forcing a **declared** kidnap raid — arrive intending to
+take people, leave once they have — therefore needs a worker that hard-sets the flags. That is the
+code this section owes, and it is small.
+
+**(c) `RaidStrategyDef` — the era gate and the whole of Display.** Its full 1.6 field list is
+`workerClass`, `selectionWeightPerPointsCurve`, `minPawns`, `selectionWeightCurvesPerFaction`,
+`layerWhitelist`, `layerBlacklist`, `arrivalTextFriendly`, `arrivalTextEnemy`, `letterLabelEnemy`,
+`letterLabelFriendly`, `pointsFactorCurve`, `pawnsCanBringFood`, `arriveModes`,
+`raidLootValueFactor` [V] — **T-16 re-verified against the class, not inherited.**
+
+#### The build
+
+One `RaidStrategyWorker` subclass in `Archinity.Altar`, reading a `RaidObjectiveExtension :
+DefModExtension` off its own `def`. `MakeLordJob` is `RaidStrategyWorker_ImmediateAttack`'s, with
+two changes: the `attackTargets` list is **selected by us** from the extension's target class when
+`parms.attackTargets` is empty, and the `LordJob_AssaultColony` flags come from the extension
+rather than from `parms`. `CanUseWith` chains to `base` and adds the era gate.
+
+**Prior art for exactly this shape, both read** [V]: `VREArchon.RaidStrategyWorker_ArchonRaid`
+(`.../294100/3067715093/1.6/Assemblies/VREArchon.dll`) is `RaidStrategyWorker_ImmediateAttack`'s
+`MakeLordJob` copied verbatim with the hostile branch swapped and `canKidnap` hard-set — about
+fifteen lines. **Tribal Siege Raids** (`3697533935`, `TribalSiege_StrategyDef.xml`) is the XML
+half: a third-party `RaidStrategyDef` with its own `workerClass`, its own `letterLabelEnemy`, a
+points curve flat at zero below 2,000, and `arriveModes` cut to `EdgeWalkIn` alone.
+
+**Correcting the ticket's stated guess.** #77 proposes *"animal-, field- and stockpile-targeting
+variants likely need a custom `LordJob`, which is C#; the rest is `RaidStrategyDef` plus
+`PawnsArrivalModeDef` in XML."* **It is inverted at both ends.** Animal-targeting needs no custom
+`LordJob` — `LordJob_AssaultThings` is vanilla; field-targeting needs no raid machinery at all;
+stockpile-targeting is not a `LordJob` problem but a *target-selection* problem, and the naive
+target set fails silently as above. Meanwhile the half assumed to be free XML — kidnap and steal as
+**declared** objectives — is the half with no XML path in the engine. The code we owe is a target
+selector and a flag-setter, not a state graph.
+
+#### Era gating without `minTechLevel`
+
+**T-16 confirmed: `RaidStrategyDef` has no `minTechLevel`** [V]. Four substitutes, all verified,
+in the order they should be reached for:
+
+1. **`selectionWeightCurvesPerFaction`** — a `SimpleCurve` *per `FactionDef`*, consulted by
+   `RaidStrategyWorker.SelectionWeightForFaction` ahead of the global curve; a weight of `0` makes
+   `CanUseWith` return false [V]. Vanilla's `EmergeFromWater` is the idiom in pure form: base curve
+   flat `(0, 0)`, Mechanoid curve non-zero, so the strategy exists **only** for one faction [V].
+   Because the campaign's era progression is expressed as faction identity, this *is* the era gate.
+2. **`selectionWeightPerPointsCurve`** — the points band, which is how vanilla actually gates its
+   own escalation (§below). XML, free.
+3. **`PawnKindDef.canBeSapper` / `isGoodBreacher` plus the faction's `pawnGroupMakers`** —
+   `RaidStrategyWorker_WithRequiredPawnKinds.CanUseWith` refuses the strategy outright unless the
+   faction's group makers expose a matching kind [V]. A Neolithic faction with no sapper kind can
+   never draw a sapper raid at any points value. This is a **content** gate and the most robust of
+   the four.
+4. **`CanUseWith` in the worker we are writing anyway** — three lines reading the era clock
+   ([`ERA.md`](ERA.md)'s `GameComponent_Era.CurrentEra`). Free, because the worker exists for other
+   reasons.
+
+**`PawnsArrivalModeDef` *does* carry `minTechLevel`, and it is used** — `Industrial` on `EdgeDrop`,
+`EdgeDropGroups`, `CenterDrop`, `RandomDrop` and `SpecificDropDebug`, compared against
+`parms.faction.def.techLevel` in `PawnsArrivalModeWorker.CanUseWith` [V]. So the half of the pair
+the ticket pairs with `RaidStrategyDef` is already era-gated for free, and `FactionDef` adds
+`arrivalModeWhitelist` / `arrivalModeBlacklist` on top [V]. **The tech gate vanilla ships governs
+how a raid arrives, never what it wants.**
+
+#### The VFE Empire blacklist — which escape, and a second finding
+
+**T-14 re-verified against the assembly the game loads**,
+`.../294100/2938820380/1.6/Assemblies/VFEEmpire.dll`. `VFEEmpire.RaidStrategyWorker_Deserters` is
+`[StaticConstructorOnStartup]`; its static constructor null-initialises
+`VFEE_DefOf.VFEE_Deserters.disallowedRaidStrategies` and then
+`AddRange(DefDatabase<RaidStrategyDef>.AllDefs.Except(VFEE_DefOf.DesertersStrat))` [V]. The field is
+vanilla's own `FactionDef.disallowedRaidStrategies`, consumed on the first line of
+`RaidStrategyWorker.CanUseWith` [V]. Defs load before `[StaticConstructorOnStartup]`, so a strategy
+we author is in the list. T-14 is correct; its wording *"sets `disallowedRaidStrategies =`"* is
+`AddRange` onto a freshly-nulled list, which is the same outcome.
+
+**Take escape 2 — pre-set `parms.raidStrategy`.** `IncidentWorker_RaidEnemy.ResolveRaidStrategy`
+enters its selection block only `if (parms.raidStrategy == null)`, and the whole `CanUseStrategy`
+filter — `disallowedRaidStrategies` included — lives inside that block [V]. §4 already selects the
+carrier that does this in XML: VEF's `IncidentWorker_RaidEnemySpecial` reading
+`IncidentDefExtension.forcedStrategy`. **Escape 1 — a `workerClass` whose `CanUseWith` does not
+chain to `base` — is available and is not recommended**, because base `CanUseWith` is also where
+`layerBlacklist`, `layerWhitelist`, `MinimumPoints` and the tile-mutator blacklist are enforced
+[V]; dropping it to dodge one list silently drops the orbital-layer gate as well, straight into
+**T-48**.
+
+> **A second constraint on the Schism that T-14 does not record.**
+> `RaidStrategyWorker_Deserters.CanUseWith` returns false unless a pawn holding an Empire royal
+> title is spawned on the map [V]. `IncidentWorker_RaidEnemy.FactionCanBeGroupSource` rejects a
+> faction outright when no `RaidStrategyDef` passes `CanUseWith` [V]. Together: with every other
+> strategy blacklisted and `DesertersStrat` gated on a titled pawn, **the `VFEE_Deserters` faction
+> cannot produce a storyteller raid at all unless a titled pawn is present.** For the Schism,
+> authored raids are therefore not a compromise — they are the only route, which is a second and
+> independent reason to take escape 2. That is **T-91**, a companion to T-14 rather than a
+> replacement for it — T-14 stands as written.
+
+#### Display — and it is free
+
+The player must be able to read the objective off the arrival letter. Vanilla already carries it
+[V]:
+
+- `IncidentWorker_RaidEnemy.GetLetterLabel` returns `parms.raidStrategy.letterLabelEnemy + ": " +
+  parms.faction.Name`.
+- `GetLetterText` returns `parms.raidArrivalMode.textEnemy` formatted, then `\n\n`, then
+  `parms.raidStrategy.arrivalTextEnemy`, then the leader and age-restriction lines.
+
+Both fields are `[MustTranslate]` strings on `RaidStrategyDef` [V]. **A `RaidStrategyDef` we author
+gets its own letter title and its own body paragraph with zero code.** Every vanilla strategy spends
+`letterLabelEnemy` on the word `"Raid"` and differentiates only in the body — `Siege` is the one
+exception, and Tribal Siege Raids takes the same liberty [V]. We should use the title: *"Slave
+raid"*, *"Livestock raid"*, *"Stores raid"*. The arrival letter is `LetterDefOf.ThreatBig`, which
+pauses via `SignalForceNormalSpeedShort` [V] — the player reads it before the group closes.
+
+**The one thing Display does not cover, stated rather than hidden:** the *opportunistic* kidnap and
+steal branches announce themselves only when they trigger, through
+`TransitionAction_Message("MessageRaidersKidnapping" / "MessageRaidersStealing")` [V] — mid-raid,
+after a colonist is already down. That is late by construction and we are not fixing it; it is the
+reason the objectives above are declared up front on a strategy instead of left to vanilla's
+triggers.
+
+#### State, persistence and change
+
+**State: none of ours.** Every field the objective rides on is vanilla's and already scribed —
+`raidStrategy` and `raidArrivalMode` by `Scribe_Defs`, `canKidnap` / `canSteal` /
+`canTimeoutOrFlee` by `Scribe_Values` at their `true` defaults, `attackTargets` by
+`Scribe_Collections` with `LookMode.Reference` and a `PostLoadInit` prune of nulls [V].
+`LordJob_AssaultThings.ExposeData` scribes `assaulterFaction`, `things`, `damageFraction` and
+`useAvoidGridSmart` [V]. **Added to a save that predates it, this scribes nothing and migrates
+nothing**; a raid already in flight keeps the lord it was created with, and the next raid can draw
+the new strategies. The only new saved thing is the `DefModExtension`, which is def data, not save
+data.
+
+**Change:** `MakeLordJob`, called once per pawn group from `RaidStrategyWorker.MakeLords`, itself
+called from `IncidentWorker_Raid.TryGenerateRaidInfo` inside `IncidentWorker.TryExecute` [V]. That
+is the only write, it happens once, and there is no per-tick term.
+
+**Multiplayer.** Target selection draws from the shared `Rand` stream and must therefore stay on
+the synced path — it does. `Multiplayer.Client.AsyncTime.MapContextIncidentExecute` prefixes
+`IncidentWorker.TryExecute` and pushes the target map's async-time RNG context around the whole
+call [V, §*Persistence and multiplayer*], so `MakeLordJob` runs in the right context on both
+clients. Two constraints follow and they are hard: **the selector must not read
+`Find.CurrentMap`, selection, `Prefs` or any `ModSettings`** — it takes `parms.target` as the map
+and its parameters from the `DefModExtension` — and **it must not be reachable from a draw path**,
+which `MakeLordJob` is not. Vanilla's own `LordToil_AssaultThings.UpdateAllDuties` re-picks its
+focus with `TryRandomElement` every 300 ticks [V]; that is a lord-toil tick, already synced, and
+already shipped.
+
+#### Which objectives, and what is not ours
+
+The behaviours the playtest correction named — *"the stockpile, the animals, the fields and the
+colonists"* — are all expressible, and the survey above says at what price. **Which of them the
+campaign actually authors, at which era, and with what weights is not a capability answer.**
+`docs/requirements/PRESSURE.md` § *Difficulty contributors* requires only that *"enemy quality,
+equipment, composition and numbers produce an appropriate challenge"* and never names an
+objective; it lists #77 under *Open questions*. That is the gap, and it is handed back there.
+
 ### Cost
 
 | Piece | Kind | Estimate |
@@ -370,9 +623,14 @@ fires).
 | `maxPawnCostPerTotalPointsCurve` patches on band factions | XML patch, annotated | ~10 per faction |
 | Pressure readout supplied to [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s surface | C# | ~40 |
 | `layerWhitelist` patches for the orbital act (**T-48**) | XML patch, annotated | ~40 lines |
+| **§8** `RaidObjectiveExtension : DefModExtension` (target class, lord flags, era band) | C# Def class | ~35 |
+| **§8** `RaidStrategyWorker_Objective` — `MakeLordJob` + target selector + `CanUseWith` era gate | C# | ~110 |
+| **§8** one `RaidStrategyDef` per objective, with `letterLabelEnemy` and `arrivalTextEnemy` | XML | ~35 each |
+| **§8** startup validator: every `RaidStrategyDef` of ours has a non-empty `arriveModes`, and every `attackTargets` selector returns only **faction-owned, non-inert** Things | C# | ~30 |
+| **§8** `Trigger_ThingsLost` — our own trigger, scoring against the *original* list, for any partial-loss objective | C# | ~25 |
 
-**~345 lines of C# in the assembly we already ship, ~450 lines of XML, no new assembly, no
-recompiled third-party DLL.**
+**~545 lines of C# in the assembly we already ship, ~590 lines of XML, no new assembly, no
+recompiled third-party DLL.** §8 adds no new `LordJob` and no new saved state.
 
 ## Persistence and multiplayer
 
@@ -440,14 +698,46 @@ reach. Its async-time behaviour is unverified; treat the feature as off until so
   the count must be re-taken after every mod addition.
 - **A comp insertion re-rolls the schedule.** **T-66**, §1. If cadence changes for no reason anyone
   authored, check whether the comp list or the active mod set moved.
+- **An objective raid does nothing and lingers.** **T-88**, §8. `attackTargets` populated with a **factionless**
+  Thing (a stockpiled item, a crop) fails `JobGiver_AITrashDutyFocus`'s `pawn.HostileTo(focus.Thing)`
+  gate, and an **inert** `Building` (`Wall`, `Fence`, `Column`, any door) makes
+  `TrashUtility.TrashJob` return null because `JobGiver_AITrashDutyFocus` passes
+  `allowPunchingInert: false` [V]. Either way no job is issued,
+  `Trigger_ThingsDamageTaken` never fires, and the objective silently no-ops. `LordJob_AssaultThings`
+  has no timeout of its own, so the group then **lingers until auto-flee** — `LordJob.AddFleeToil`
+  defaults `true` and `Lord` attaches a `LordToil_PanicFlee` transition off every toil on
+  `Trigger_FractionPawnsLost` when `faction.def.autoFlee && !faction.neverFlee && Map.CanEverExit`
+  [V] — **and indefinitely if the faction never flees or the player does not engage.** The selector
+  must return faction-owned, non-inert Things; the startup validator in the cost table is what makes
+  this loud.
+- **A partial-loss objective never completes.** **T-89**, §8. `Trigger_ThingsDamageTaken` skips unspawned
+  entries, so a dead pawn leaves both sides of the average and the score is pinned at `1` [V]. Any
+  objective phrased as "destroy a fraction" resolves only at total loss unless it uses our own
+  trigger. Symptom: a livestock raid that will not leave until the last animal is dead.
+- **An authored `RaidStrategyDef` is never selected.** **T-90**, §8.
+  `IncidentWorker_RaidEnemy.ResolveRaidStrategy`'s
+  local `CanUseStrategy` returns **false** when `parms.raidArrivalMode` is null and the def's
+  `arriveModes` is null [V] — a strategy authored without `arriveModes` is silently unselectable by
+  the storyteller forever. The sibling path is loud rather than silent for the same omission:
+  `PawnsArrivalModeWorker.CanUseWith` dereferences `parms.raidStrategy.arriveModes` with no null
+  guard [V], so a *pre-set* strategy missing the list throws instead — which is the path an
+  authored raid takes. Both halves are
+  [`docs/engine/storyteller-and-incidents.md`](../engine/storyteller-and-incidents.md)
+  § *`arriveModes` is not optional, and the two paths fail differently*.
+- **The Schism cannot raid.** **T-91**, §8. With VFE Empire's blacklist (**T-14**) and
+  `RaidStrategyWorker_Deserters.CanUseWith`'s titled-pawn requirement both live, `VFEE_Deserters`
+  passes `FactionCanBeGroupSource` only while an Empire-titled pawn is on the map [V]. If the
+  Schism goes quiet, this is why, and it is **T-17**'s fail-open-and-fail-quiet shape again.
 
 ## Status
 
 **Evidence class: READ.** Settled against the 1.6 `Assembly-CSharp.dll`, `VEF.dll` 1.6,
-`Multiplayer.dll` 1.6 and `NCL_Storyteller.dll` 1.6. Corpus-wide hit counts are **[I]** — a sweep
-is a filename-and-string result, never a read. Established by
+`Multiplayer.dll` 1.6, `NCL_Storyteller.dll` 1.6 and — for §8 — `VFEEmpire.dll` 1.6 and
+`VREArchon.dll` 1.6. Corpus-wide hit counts are **[I]** — a sweep is a filename-and-string result,
+never a read. Established by
 [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60), against requirements settled on
-[#9](https://github.com/cjd721/Rimworld-Archinity/issues/9).
+[#9](https://github.com/cjd721/Rimworld-Archinity/issues/9); §8 by
+[#77](https://github.com/cjd721/Rimworld-Archinity/issues/77).
 
 **Verified available mechanisms** — every lever in *The build* is read out of a decompiled
 assembly or a shipped def and is marked [V] where it is claimed.
@@ -512,11 +802,72 @@ three fields named above are the ones actually read; the rest of the extension, 
 VEF's storyteller extension, and a field there could duplicate or fight a lever §2–§4 builds. It is
 a reading gap, not a negative: nothing below should be taken as "VEF offers nothing else".
 
+### Raid objectives — what vanilla already does, and what it does not
+
+**The archived claim is settled, and it is half true.** `docs/archive/HANDOFF.md` flags
+*"Raiders start bringing tools instead of torches"* as *"prose, not a mechanism — vanilla raid
+composition does not respond to your walls"*, and asks whether wealth- and time-scaled sappers and
+breachers already supply it.
+
+- **"Does not respond to your walls" — correct** [V]. Nothing in the raid pipeline reads wall
+  material, thickness or count. `RaidStrategyWorker.CanUseWith` and `SelectionWeightForFaction` see
+  points, faction, tile mutators and planet layer, and nothing else.
+- **"Wealth- and time-scaled sappers and breachers" — correct, and here are the numbers** [V].
+  `ImmediateAttackSappers.selectionWeightPerPointsCurve` is `(700, 0) → (1000, 0.4)`;
+  `BreachingBase`'s is `(700, 0) → (2000, 0.6)`, inherited by **both** breach strategies — vanilla's
+  own comment notes that doubles it. Below 700 points neither can be drawn. On top of that,
+  `RaidStrategyWorker_ImmediateAttackBreaching.MinRequiredPawnsForPoints` evaluates
+  `MinGoodBreachersFromPointCurve` `(0,1) → (200,1) → (1000,3) → (4000,4)`.
+- **But availability is a hard content gate, not a scaling one** [V]. Points only ever open a door
+  that `RaidStrategyWorker_WithRequiredPawnKinds.CanUseWith` has already unlocked: it refuses the
+  strategy unless the faction's `pawnGroupMakers` expose a `PawnKindDef` with `canBeSapper` or
+  `isGoodBreacher`. A faction without one never breaches at 10,000 points.
+
+So the escalation the claim describes is real, it is driven by **points and faction roster** rather
+than by the player's construction, and it is the reason §8's era gate is built out of
+`selectionWeightCurvesPerFaction` and pawn-kind flags rather than a tech field.
+
+**What does not exist:**
+
+- **No objective-bearing `RaidStrategyDef` in vanilla or any DLC.** Nine ship, all "assault the
+  colony", differing in approach and pathing only [V]. `RaidStrategyDefOf` registers four.
+- **No XML path to `canKidnap` or `canSteal`** [V]. Both are `IncidentParms` fields;
+  `QuestNode_Raid` exposes `canTimeoutOrFlee` and not the other two; the only vanilla XML mention
+  of any of the three is `$canTimeoutOrFlee` in `Scripts_Utility_ThreatsCore.xml`. This is the
+  negative that makes §8 owe code.
+- **No declared kidnap or steal objective anywhere.** Both are `LordJob_AssaultColony` subgraphs
+  entered on a runtime trigger, and only for a `humanlikeFaction` [V].
+
+**Corpus donors, read rather than grepped.** `VREArchon.RaidStrategyWorker_ArchonRaid`
+(`3067715093/1.6/Assemblies/VREArchon.dll`) shows the C# shape — `MakeLordJob` copied from
+`RaidStrategyWorker_ImmediateAttack`, `attackTargets` branch kept intact, hostile branch swapped for
+its own job with `canKidnap` hard-set [V]. **Tribal Siege Raids** (`3697533935`,
+`Defs/RaidStrategyDefs/TribalSiege_StrategyDef.xml`) shows the XML shape — a third-party
+`RaidStrategyDef` with its own `workerClass` and its own `letterLabelEnemy` [V].
+`VFEEmpire.RaidStrategyWorker_Deserters` shows a third: an objective expressed purely by returning
+a different `LordJob` (`LordJob_KillRoyalty`) from `MakeLordJob` [V].
+
+**Stated residual gap.** `RimPacts.LordJob_RptAssaultThings` — a `LordJob_AssaultThings` subclass
+that overrides `AddFleeToil` to `false`, which is itself the evidence that the base class has one —
+was **not** tier-4 read for its target set. Its callers are `Patch_RaidEnemy_*` pact machinery, so
+it is almost certainly still colony-assault rather than a stockpile or herd objective, but that is
+**[I]**, not read. If a donor for our target selector is wanted, it is the first thing to open.
+
 ### Wide pass
 
 `DefaultThreatPointsNow` appears in 26 mods across both corpus roots; `PlayerWealthForStoryteller`
 in 4; `StorytellerComp` in 12 plus VEF; `ChanceFactorNow` in 2; `IncidentCountThisInterval` in VEF
 and VFE Deserters only. `StorytellerDef` appears in the XML of 13 mods.
+
+**§8's sweeps**, over both corpus roots with `-a -i -g '*.dll' -g '!**/obj/**' -g '!**/Referenced/**'`,
+validated against a known hit (`RaidStrategyWorker_Deserters` → the three `VFEEmpire.dll` copies)
+before any negative was trusted. Nine mods ship a `RaidStrategyDef` in XML; sixteen carry a
+`RaidStrategyWorker` in an assembly; `LordJob_AssaultThings` is carried by RimPacts, VFE Tribals,
+VRE Archon and Mechanoids: Total Warfare; `canKidnap` by VRE Archon, Vehicle Framework, VFE Medieval
+2 and Worksites Expanded. All of those are **[I]** metadata-heap hits except VRE Archon, VFE Empire
+and Tribal Siege Raids, which were decompiled or read. **No mod in the corpus expresses a raid
+objective against the stockpile, the herd or the fields** — the three that define an objective at
+all define it against pawns (`LordJob_KillRoyalty`, `LordJob_ArchonRaid`).
 
 **Nothing in the corpus composes threat strength from *campaign state*.** That negative survives a
 tier-4 read and is the reason §2 owes a build. It is narrower than it first looked:
@@ -569,6 +920,24 @@ for two demigod founders is not a reading question.
    §3 owns this check).
 9. **Two clients.** Confirm no desync while the dev storyteller panel is open on one client and not
    the other — the direct-call path in §2.
+10. **The objective is legible before contact.** §8. Fire each authored objective raid and read the
+    letter: the title must name the objective, not the word "Raid", and the body's second paragraph
+    must be that strategy's `arrivalTextEnemy`. This is a def check, not a code check.
+11. **The herd raid ends, and on the right condition.** §8. Fire a livestock raid on stock
+    `Trigger_ThingsDamageTaken` and confirm it ends **only** when the last targeted animal is dead —
+    that is the predicted behaviour, not a defect, and confirming it is what justifies
+    `Trigger_ThingsLost`. Then fire the same raid on our trigger with a partial fraction and confirm
+    it leaves early.
+12. **Both silent no-ops are reproduced once, deliberately.** §8. In a dev game, point
+    `attackTargets` at (a) a factionless stockpiled item and (b) a `Wall`, and confirm in each case
+    that no trash job is issued, nothing is logged, and the group leaves only via auto-flee or not
+    at all. Then confirm the startup validator rejects both selectors. This is the check that proves
+    the traps are real rather than reasoned.
+13. **The Schism can still raid.** §8. With VFE Empire loaded, confirm an authored Deserters raid
+    using a pre-set strategy fires with **no** Empire-titled pawn on the map — the case where
+    `FactionCanBeGroupSource` rejects the faction for the storyteller's own raids.
+14. **Two clients, objective raids.** Confirm the same targets are chosen on both clients — the
+    selector draws from the shared `Rand` stream inside `MakeLordJob`.
 
 ## Outstanding decisions
 
@@ -590,7 +959,14 @@ for two demigod founders is not a reading question.
   and **the ticket this was previously handed to,
   [#13](https://github.com/cjd721/Rimworld-Archinity/issues/13), is closed.** This is a stated gap,
   not a hand-back: nothing currently owns the political behaviour that would settle it.
-- **[#77](https://github.com/cjd721/Rimworld-Archinity/issues/77)'s objectives.** `IncidentParms`
-  carries `raidStrategy`, `raidArrivalMode`, `canSteal`, `canKidnap`, `canTimeoutOrFlee` and
-  `attackTargets` [V] — the levers for *what a raid wants* rather than how big it is. Named here so
-  #77 does not re-derive them; the choice is #77's.
+- **Which objectives the campaign authors.** §8 settles what is *expressible* and at what price.
+  Which objectives exist, at which era, against which faction, and with what `damageFraction` and
+  selection weights is a **requirement**, and `docs/requirements/PRESSURE.md` does not state one —
+  it lists #77 under *Open questions* and its *Difficulty contributors* section names quality,
+  equipment, composition and numbers but never an objective. Handed back to that document; the
+  numbers are Balance's, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).
+- **Whether the opportunistic kidnap and steal branches stay on for ordinary raids.** §8 declares
+  objectives up front on authored strategies; vanilla's `Trigger_KidnapVictimPresent` and
+  `Trigger_HighValueThingsAround` branches remain live on every other raid unless a worker turns
+  them off [V]. Leaving both on is the default and costs nothing; turning them off is a design
+  call, not a capability one.

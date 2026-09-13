@@ -121,6 +121,25 @@ The requirement is that *research* opens classes of target — defenses, then re
 then low-tier mechs, then strong mechs, then androids. Ushanka gates on **target
 hardness only**; nothing reads the research state **[V]**. This is the second patch.
 
+> **The android class is not reachable by the shipped carrier, and this build does not
+> deliver it.** Everything below hangs off a target carrying `RimWorld.CompHackable`, and
+> the only thing that attaches one to a pawn is the injector row above — *a mechanoid or
+> drone `PawnKindDef` (`race.race.IsMechanoid || IsDrone`)*. Androids are **humanlike**:
+> `PawnKindDef VREA_AndroidBasic` declares `<race>Human</race>` and is a Biotech xenotype,
+> with nothing mechanoid-adjacent about it **[V, [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78),
+> `docs/specs/ANDROIDS.md` § *What an android is, mechanically*]**. So
+> `USH_HE.Patch_DefOfHelper_RebindAllDefOfs` never gives an android `CompHackable`, and the
+> research gate below has nothing to gate — a `HackTargetClass` mapped to androids would
+> refuse a hack that was never offerable in the first place.
+>
+> **This is a gap, not a design.** `docs/requirements/GLITTERTECH.md` asks for it twice —
+> *"eventually android systems"* and *"Network-level hacks of … androids"* — and no carrier
+> on disk supplies it. Closing it means making androids hackable at all, which is a
+> separate question from gating classes by research: either a fifth injector row of our own
+> keyed on the android xenotype rather than on `IsMechanoid`, or attaching `CompHackable`
+> to android *buildings* and reading the requirement as infrastructure rather than pawns.
+> **Naming it here; not designing it here.** No ticket currently owns it.
+
 - A `DefModExtension` — `Arch_HackTargetClassExtension { HackTargetClass targetClass; }` —
   is added to target defs by XML.
 - A postfix on `RimWorld.CompHackable.CanHackNow(Pawn)` returns

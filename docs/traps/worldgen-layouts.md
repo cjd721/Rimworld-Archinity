@@ -79,14 +79,22 @@ constant until it patches the ladder itself. **No mod in the corpus ships or pat
 Differentiating it is safe because the field's readers are enumerable and few. In
 `Assembly-CSharp` there are **exactly two**, both on `WorldGrid`:
 `GetRoadMovementDifficultyMultiplier` and
-`FindMostReasonableAdjacentTileForDisplayedPathCost`. There is a third, out of
-assembly: `Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier` takes the def's
-value as its base and lets `VehicleDef.properties.customRoadCosts` undercut it per road
-def — so under Vehicle Framework the two ladders multiply, and a patched road tier is
-read there too.
+`FindMostReasonableAdjacentTileForDisplayedPathCost`. There are **two more** out of
+assembly, and they are the two `RoadDef` overloads of
+`Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier` — `(List<VehicleDef>, …)`
+and `(List<VehiclePawn>, …)`, identical bodies, the second being what a live caravan
+reaches, so a patch aimed at one of them misses the other. Each takes the def's value as
+a base and lets `VehicleDef.properties.customRoadCosts` **replace** it outright: the
+first declaring vehicle wins whatever its direction, so the vehicle table is **not a
+floor** and the two ladders do **not** multiply. Under Vehicle Framework a patched road
+tier is read there and then discarded for any caravan carrying a declaring vehicle —
+**T-87**, whose remedy is `docs/specs/WORLD-INFRASTRUCTURE.md` § 4c.
 
 *[#68](https://github.com/cjd721/Rimworld-Archinity/issues/68),
-`docs/specs/WORLD-INFRASTRUCTURE.md`. 1.6.4871.*
+`docs/specs/WORLD-INFRASTRUCTURE.md`. 1.6.4871. The Vehicle Framework paragraph was
+corrected against `294100/3014915404/1.6/Assemblies/Vehicles.dll` when T-87 was
+registered: it had described `customRoadCosts` as undercutting the base and named one
+overload where there are two.*
 
 ### T-43 — `OverlayRoad` refuses to downgrade a road, and the refusal is silent
 
@@ -152,3 +160,47 @@ or the gravship.
 
 *[#71](https://github.com/cjd721/Rimworld-Archinity/issues/71),
 `docs/specs/ORBIT.md`. 1.6.4871.*
+
+### T-87 — A vehicle's `customRoadCosts` discards the road ladder, and it is not a floor
+
+`Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier` takes
+`roadDef.movementCostMultiplier` as a base and lets
+`VehicleDef.properties.customRoadCosts[roadDef]` **replace** it. The loop is
+`if (customRoadCosts.TryGetValue(roadDef, out value) && (!flag || value < num))`:
+`!flag` short-circuits the comparison on the first declaring vehicle, so **the first
+declarer overwrites the def value whatever its direction**, and "lower wins" applies
+only *among* declaring vehicles. A vehicle can therefore be **slower** on a road than
+the `RoadDef` says. There are **two** `RoadDef` overloads, `(List<VehicleDef>, …)` and
+`(List<VehiclePawn>, …)`, with identical bodies; the `VehiclePawn` one is what a live
+caravan reaches, and a patch aimed at one of them misses the other. **T-42** carries the
+same reading for the road half of the pair.
+
+The silent part is what fills that dictionary. `<customRoadCosts AssignDefaults="0.25"/>`
+is not a per-road table — `Vehicles.VehicleProperties.PostDefDatabase` hands it to
+`Vehicles.XmlHelper.FillDefaults_Def<RoadDef, float>`, which `TryAdd`s **one flat number
+for every `RoadDef` in the database**. Fourteen of Vanilla Vehicles Expanded's
+twenty-three vehicles declare it that way (0.25 to 0.85), so for most of the roster a
+dirt path and an ancient asphalt highway cost the same. **Patch the five-tier ladder in
+`Core/Defs/RoadDefs/RoadDefs.xml` and vehicle travel time does not change, anywhere, with
+no message.** It is indistinguishable in play from T-42 surviving the fix, which is what
+makes it expensive: the tooltip prints a road line either way, and it prints the same
+percentage on every tier.
+
+The remedy is `docs/specs/WORLD-INFRASTRUCTURE.md` **§ 4c** — hang
+`Vehicles.CustomCostDefModExtension` on each `RoadDef` with an empty `vehicles` list.
+It works because of an ordering that is easy to get backwards:
+`Vehicles.VehicleHarmony`'s `[StaticConstructorOnStartup]` constructor runs
+`PostDefDatabaseCalls` (the `TryAdd` fill) **before** `ApplyAllDefModExtensions`, and
+`Vehicles.PathingHelper.LoadDefModExtensionCosts` writes by **indexer**, not `TryAdd` —
+so the extension overwrites the `AssignDefaults` values rather than losing to them. An
+empty `vehicles` list means every `VehicleDef` in the database. **Do not instead delete
+the `customRoadCosts` nodes**: only one `CustomCostDefModExtension` per cost def is ever
+read (**T-06**), and a `VehicleDef` whose `defaultImpassable` contains `Roads` treats a
+missing key as impassable rather than as a lost multiplier.
+
+Read at `294100/3014915404/1.6/Assemblies/Vehicles.dll` and
+`294100/3014906877/1.6/Defs/VehicleDefs/`. Both mods ship 1.4 source only; none of it
+was read.
+
+*[#68](https://github.com/cjd721/Rimworld-Archinity/issues/68),
+`docs/specs/WORLD-INFRASTRUCTURE.md` § 4c. 1.6.4871.*

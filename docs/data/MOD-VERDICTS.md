@@ -553,11 +553,18 @@ silent failures in `docs/TRAPS.md`. Nothing below changes a bar or a decline.
   this is the shape point 4 above is about, at its worst. **T-18.**
   ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
 - **Vehicle Framework** — `Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier`
-  takes `RoadDef.movementCostMultiplier` as a base and lets
-  `VehicleDef.properties.customRoadCosts` undercut it per road def, lower winning [V]. Not a
-  bar question; it means any road-tier ladder we ship is silently bypassable per vehicle.
-  Handed to [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69).
-  ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68))
+  (**two `RoadDef` overloads**, one taking `List<VehicleDef>` and one `List<VehiclePawn>`; the
+  latter is the live-caravan path) takes `RoadDef.movementCostMultiplier` as a base and lets
+  `VehicleDef.properties.customRoadCosts` **replace** it per road def — the **first declaring
+  vehicle wins, in either direction**. It is **not** a floor and not "lower winning" [V].
+  Not a bar question; it means any road-tier ladder we ship is silently bypassable per
+  vehicle — **T-87**, and 14 of VVE's 23 vehicles flatten all five tiers through
+  `AssignDefaults`. VF also **publishes the fix**: `Vehicles.CustomCostDefModExtension` is a
+  supported pure-XML override hook, which is what
+  `docs/specs/WORLD-INFRASTRUCTURE.md` § 4c selects. Handed to
+  [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69).
+  ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68); *"undercut … lower winning"*
+  corrected 2026-09-12 against `3014915404/1.6/Assemblies/Vehicles.dll`, 1.6.4871)
 
 **Three collisions this batch tripped over.** Per `docs/agents/capability-research.md`,
 **conflicts are cargo, not verdicts** — they are filed against the mod here and change no

@@ -212,10 +212,26 @@ tickets in a row independently rediscovered this; it is written down now.
   `rg -a -l "F\x00o\x00o\x00"`. It matches the UTF-16LE bytes where they actually sit
   and does not ask ripgrep to decode a file that is not, as a whole, UTF-16. Ticket
   #52's only live hit came from the `#US` half.
+- **There is a THIRD heap, and it inverts the advice above.** **Custom-attribute
+  constructor arguments** live in the `#Blob` heap as **UTF-8, length-prefixed** — so a
+  plain ASCII sweep reaches them and a **null-interleaved pattern cannot**, because the
+  bytes are not interleaved. This covers everything a mod declares *by attribute* rather
+  than by code literal: every `[MpCompatFor("packageid")]`, and by extension any
+  attribute-declared identifier. Measured on the loaded
+  `1629973374/1.6/Assemblies/Multiplayer_Compat.dll`: `vanillaracesexpanded.android` is an
+  **ASCII hit and a UTF-16 miss** (it is an attribute argument), while `VREAndroids` is an
+  **ASCII miss and a UTF-16 hit** (it is an `AccessTools.TypeByName` literal). Each sweep
+  form missed exactly what the other found, and #78 shipped one error in each direction
+  before it was caught — a false *"MP Compat does not cover this mod"* and a false [V] zero.
+  **Run both encodings whenever the target could be an attribute argument, and treat a
+  single-encoding negative on one as no answer at all.**
 - **Type the `\x00` escapes into the pattern yourself.** A null-interleaved pattern
   **built through a shell command substitution `$(…)` silently degrades to an ASCII
   search**, because the shell strips NUL bytes out of the substitution — the sweep runs,
-  returns cleanly, and has searched for `Foo`. **A validator run the same way "passes"
+  returns cleanly, and has searched for `Foo`. **One tell exists**: Git Bash prints
+  `warning: command substitution: ignored null byte in input` to **stderr** while doing it —
+  easy to miss in a long run and absent from the result itself, so it is a confirmation
+  after the fact, never a safeguard. **A validator run the same way "passes"
   too**, since the known hit is found by the surviving ASCII half, so *Validate the
   sweep before you trust its negative* below does **not** catch this one. Write the
   escapes literally in the ripgrep pattern, or drive the sweep from a pattern file
@@ -278,6 +294,15 @@ invocation fail quietly.
 > Before reporting "nothing in the corpus does X", run the same sweep against a hit
 > you already know exists. If it does not come back, the sweep is broken, not the
 > corpus empty.
+
+**And the validator must come from the same heap as your target.** This check confirms that
+the sweep *form executes correctly*; it cannot confirm that *the class of string you are
+hunting lives in the heap you are searching*. #78's UTF-16 validator for the bare prefix
+`vanillaracesexpanded` **passed** — because other strings from that mod genuinely do sit in
+`#US` — while the actual query, an attribute argument in `#Blob`, was unanswerable in that
+encoding. A validator drawn from a different string class passes and tells you nothing. This
+is a distinct failure from the `$(…)` NUL-stripping case above, and the same check does not
+catch both.
 
 ## Stale source
 
@@ -427,3 +452,23 @@ parameter, and say which ticket sets it.
 - **`corpus.py --check` is worth running at the start and the end** of a ticket. A
   mod moved mid-ticket in the first batch, invalidating a pin that had just been
   cited.
+- **Iterating an lxml element yields its comments as children, and they parse as
+  defaults.** `list(element)` returns every child node, comments and processing
+  instructions included; a comment's `.tag` is not a string but the
+  `lxml.etree.Comment` cyfunction, so `isinstance(node.tag, str)` is the
+  discriminator. A comment node has no children, so `node.findtext("tier", "1")`
+  searches, finds nothing, and **returns the default you supplied** — silently, with
+  no exception and no `None`. Every comment becomes a phantom record whose every
+  field equals your defaults. **The result looks plausible rather than absurd
+  precisely because the defaults are legal values**: the phantoms land inside the
+  valid domain and distribute into your real histogram buckets instead of showing up
+  as a separate garbage class, so nothing is out of range, null, or the wrong type —
+  the three things a reader would catch. RimWorld def XML is heavily
+  section-banner-commented, so the inflation scales with how well-organised the file
+  is. In #110 this turned a true 50 entries / tier-1 = 1 / category-`None` = 0 into a
+  reported **"61 / 12 / 11"** — eleven banner comments, a 22% inflation, and a
+  smallest bucket taken from **1 to 12** — and those three fabricated figures were then used to
+  declare a prior ticket's correct finding stale. Filter on `isinstance(e.tag, str)`
+  before counting anything, and cross-check any parsed count against a cheap
+  independent one such as `grep -c '<li>'`. **A count with no second source is a
+  claim, not a measurement.**

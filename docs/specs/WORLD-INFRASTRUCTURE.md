@@ -68,20 +68,29 @@ assembly decompile, not sampled. `Caravan_PathFollower.CostToMove` reads it **li
 edge, per call** [V]; there is no cache, so nothing needs invalidating and a cached copy
 would be a bug of **the T-20 class**.
 
-**The "no blast radius" claim is scoped to `Assembly-CSharp`, and there is a third reader
-in the corpus.** Vehicle Framework's
-`Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier(List<VehicleDef>, RoadDef)`
-takes `roadDef.movementCostMultiplier` as a **base** and lets
+**The "no blast radius" claim is scoped to `Assembly-CSharp`, and there are two more readers
+in the corpus — both in Vehicle Framework, and §4c is what makes them obey.**
+`Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier` exists in **two `RoadDef`
+overloads, not one** [V] — `(List<VehicleDef>, RoadDef)` and `(List<VehiclePawn>, RoadDef)`,
+byte-for-byte the same loop. The `VehiclePawn` overload is the one a live caravan takes;
+an earlier draft of this section named only the `VehicleDef` one. Both take
+`roadDef.movementCostMultiplier` as a **base** and let
 `VehicleDef.properties.customRoadCosts[roadDef]` **replace** it [V]. The replacement is
 **unconditional and works in either direction**: the loop is
 `if (customRoadCosts.TryGetValue(roadDef, out value) && (!flag || value < num))`, so the *first*
-declaring vehicle overwrites the `RoadDef` base whatever its value, and "lower wins" applies only
-*among* declaring vehicles. A declaring vehicle can therefore be **slower** than the ladder says,
-not only faster. §4c carries the full reading and the fix; this section states it once and does
-not restate it as a caveat. A vehicle that declares `customRoadCosts` **bypasses the ladder
-silently** — the ladder still lands for caravans on foot and for every vehicle that declares
-nothing, but VF's per-vehicle table is a second, independent dial over the same tiers, and
-whoever sets the vehicle ladder must set it against this table and not only against `RoadDef`.
+declaring vehicle overwrites the `RoadDef` base whatever its value — `!flag` short-circuits the
+comparison — and "lower wins" applies only *among* declaring vehicles. A declaring vehicle can
+therefore be **slower** than the ladder says, not only faster.
+
+**As shipped that bypasses the ladder silently, and §4c closes it.** Fourteen of VVE's
+twenty-three vehicles declare `customRoadCosts`, so for most of the roster every tier resolves
+to one flat number and this section's five-step ladder is invisible. §4c hangs
+`Vehicles.CustomCostDefModExtension` on each of the five `RoadDef`s and overwrites that table
+with the ladder's own values, for every vehicle in the database. **§4c is selected, not
+optional**: without it the table below changes travel time only for caravans on foot, and the
+vehicle half of the mobility ladder reads a constant. §4c carries the full reading, the
+alternatives and the cost; this section states the dependency once and does not restate it as a
+caveat.
 
 A ladder, as a `PatchOperationReplace` per def (values are a starting proposal, not a
 balance ruling — the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2) owns the
@@ -368,27 +377,35 @@ that unlocks the first ground vehicle [V]. **VVE's own gating collapses the two 
 INDUSTRIAL.md asks for into one.** Move their `researchPrerequisites` to `VVE_AerialVehicles`
 and the ladder is restored.
 
-#### 4c. The interaction with §1 — vehicles currently flatten the road ladder entirely
+#### 4c. The interaction with §1 — the road-cost override, and the fix that closes it
 
-This is the item §1 handed to #69 by name, and the finding is worse than §1 expected.
+This is the item §1 handed to #69 by name. **The fix below is selected**, re-derived against
+`3014915404/1.6/Assemblies/Vehicles.dll` and `3014906877/1.6/` rather than inherited.
 
-- **The override rule in full. §1 now states the same thing, and the two agree.**
-  `Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier(List<VehicleDef>, RoadDef)`
-  takes `roadDef.movementCostMultiplier` as a base and lets
+##### What the assembly does
+
+- **The override rule in full, and there are two overloads, not one.**
+  `Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier` takes a `RoadDef` in **both**
+  a `(List<VehicleDef>, RoadDef)` and a `(List<VehiclePawn>, RoadDef)` form — identical
+  bodies, and the `VehiclePawn` one is what a live caravan reaches [V]. Each takes
+  `roadDef.movementCostMultiplier` as a base and lets
   `VehicleDef.properties.customRoadCosts[roadDef]` **replace** it [V] — **not "lower
   winning"**, which an earlier draft of §1 asserted and which is withdrawn there rather than
   merely contradicted here. The loop is
-  `if (customRoadCosts.TryGetValue(roadDef, out value) && (!flag || value < num))`: the
-  **first declaring vehicle replaces the `RoadDef` base unconditionally, in either
-  direction**, and "lower wins" applies only *among* declaring vehicles. A vehicle can make
-  itself **slower** than the ladder says, not only faster.
+  `if (customRoadCosts.TryGetValue(roadDef, out value) && (!flag || value < num))`: `!flag`
+  short-circuits the comparison on the first declaring vehicle, so the **first declaring
+  vehicle replaces the `RoadDef` base unconditionally, in either direction**, and "lower wins"
+  applies only *among* declaring vehicles. A vehicle can make itself **slower** than the ladder
+  says, not only faster.
 - **Fourteen of VVE's twenty-three vehicles declare `customRoadCosts` with
   `AssignDefaults="…"`** — one flat number applied to *every* road def, ranging 0.25 to 0.85
-  [V]. `VehicleProperties.PostDefDatabase` calls
+  [V] (`3014906877/1.6/Defs/VehicleDefs/`; Tier1 BangBus, Bunsen, Highwayman, Mule, Roadkill,
+  Scytheman, Traveller; Tier2 Bulldog, Charley, Roadrunner, Snatcher, Tango, Wagon, Wisent).
+  `VehicleProperties.PostDefDatabase` calls
   `XmlHelper.FillDefaults_Def<RoadDef, float>`, which `TryAdd`s the value for every def in
-  `DefDatabase<RoadDef>`. **So for those fourteen vehicles a dirt path and an ancient asphalt
-  highway are the same speed, and §1's five-step ladder is invisible.** The Traveller reads
-  0.25 on every tier — better than §1's proposed *highway* value, on a dirt track.
+  `DefDatabase<RoadDef>` [V]. **So for those fourteen vehicles a dirt path and an ancient
+  asphalt highway are the same speed, and §1's five-step ladder is invisible.** The Traveller
+  reads 0.25 on every tier — better than §1's proposed *highway* value, on a dirt track.
 - **There is a second dial, and §1 does not name it.** Off-road, `RoadCostHelper` returns
   `MaxRoadMultiplier(vehicles, VehicleOffRoadMultiplier)` — per-vehicle
   `properties.offRoadMultiplier`, further offset by the `OffRoadMultiplier` upgrade stat [V].
@@ -396,52 +413,188 @@ This is the item §1 handed to #69 by name, and the finding is worse than §1 ex
   `VehicleOffRoadMultiplier(VehiclePawn)` overload clamps **0.01–10**; the **`VehicleDef` path is
   unclamped**, and `MaxRoadMultiplier` clamps its own result **0.01–100** [V]. A `VehicleDef`
   value outside 0.01–10 therefore survives into the caravan maths. Note the asymmetry too:
-  **on-road takes the min across the
-  caravan (the fastest vehicle governs), off-road takes the max (the slowest governs)** [V].
+  **on-road takes the min across the *declaring* vehicles (a non-declaring vehicle contributes
+  nothing to that min), off-road takes the max across all of them (the slowest governs)** [V].
   Three VVE vehicles declare it (0.8, 0.8, 1.2); the rest inherit the base.
 
-**The fix is five XML operations, not fourteen.** VF ships
-`Vehicles.CustomCostDefModExtension { List<VehicleDef> vehicles; float cost; }`, hung on the
-**cost def** — here the `RoadDef` — and applied by
-`PathingHelper.LoadDefModExtensionCosts<RoadDef>` with a **direct assignment**
-(`dictFromVehicle(vehicleDef)[roadDef] = cost`), not `TryAdd` [V]. **An empty `vehicles` list
-means every `VehicleDef`** — `LoadDefModExtensionCosts` falls back to the whole
-`DefDatabase<VehicleDef>` when the list is null or empty [V, confirmed]. That is what makes five
-operations sound: without it the fix would be per-vehicle and would not cover a vehicle a later
-mod adds. The ordering is right:
-`VehicleHarmony`'s static constructor runs `PostDefDatabaseCalls` **before**
-`ApplyAllDefModExtensions` [V], so the extension overwrites the `AssignDefaults` fill rather
-than losing to it. One `<modExtensions>` block per `RoadDef`, `vehicles` left empty to mean
-*all*, restores §1's ladder for every vehicle in the set **and for any vehicle a later mod
-adds**:
+##### The build — five XML operations, not fourteen
+
+VF ships `Vehicles.CustomCostDefModExtension { List<VehicleDef> vehicles; float cost; }`, hung
+on the **cost def** — here the `RoadDef` — and applied by
+`Vehicles.PathingHelper.LoadDefModExtensionCosts<RoadDef>` (the `float` overload) with a
+**direct assignment** (`dictFromVehicle(vehicleDef)[roadDef] = cost`), not `TryAdd` [V].
+**An empty or null `vehicles` list means every `VehicleDef`** — the method falls back to
+`DefDatabase<VehicleDef>.AllDefsListForReading` [V]. That is what makes five operations sound:
+without it the fix would be per-vehicle and would not cover a vehicle a later mod adds.
+
+**The ordering is right, and it is the load-bearing fact.**
+`Vehicles.VehicleHarmony`'s `[StaticConstructorOnStartup]` constructor runs
+`PostDefDatabaseCalls` — which performs the `AssignDefaults` `TryAdd` fill — **before**
+`ApplyAllDefModExtensions`, which is where `LoadDefModExtensionCosts<RoadDef>` is called from
+[V]. The extension therefore overwrites the `AssignDefaults` fill rather than losing to it,
+and `TryAdd`-versus-indexer is what decides it. Both run once per launch, before any save
+loads.
+
+**The indexer write cannot NRE, and that is load-bearing rather than incidental.**
+`LoadDefModExtensionCosts` writes `dictFromVehicle(vehicleDef)[roadDef] = cost` into
+**every** `VehicleDef` in the database, including the nine VVE vehicles and every modded
+vehicle that declares no `customRoadCosts` at all.
+`Vehicles.VehicleProperties.ResolveReferences(VehicleDef)` news up
+`customRoadCosts = new SimpleDictionary<RoadDef, float>()` whenever the field is null [V],
+during def loading and therefore long before `VehicleHarmony`'s static constructor runs. A
+non-declaring vehicle presents an empty dictionary, not a null one, so the write lands. Were
+that not so, A would throw on the first non-declaring vehicle in the database and take VF's
+whole startup with it.
+
+**Five operations cover the entire corpus, not merely vanilla.** `rg -l '<RoadDef[ >]' -g '*.xml'`
+over both corpus roots returns **zero** [V]; the only file in the game that declares a `RoadDef`
+is `Core/Defs/RoadDefs/RoadDefs.xml`, and the pattern would also have caught one added inside a
+`PatchOperationAdd` `<value>`. So the five tiers are not a subset we are choosing to cover — they
+are the complete `RoadDef` vocabulary on disk, and A is exhaustive over it by construction rather
+than by luck. The `vehicles`-empty fallback extends that completeness forward over *vehicles*; this
+sweep is what closes it over *roads*.
+
+One extension per `RoadDef`, `vehicles` left empty to mean *all*, restores §1's ladder for
+every vehicle in the set **and for any vehicle a later mod adds**:
 
 ```xml
 <!-- expect: 1 -->
-<Operation Class="PatchOperationAdd">
+<Operation Class="PatchOperationAddModExtension">
   <xpath>/Defs/RoadDef[defName="DirtPath"]</xpath>
   <value>
-    <modExtensions>
-      <li Class="Vehicles.CustomCostDefModExtension">
-        <cost>0.75</cost>
-      </li>
-    </modExtensions>
+    <li Class="Vehicles.CustomCostDefModExtension">
+      <cost>0.75</cost>
+    </li>
   </value>
 </Operation>
 ```
 
-…and four more, one per tier, tracking §1's table. **The `<cost>` values are [I] and are §1's
-numbers, not new ones** — they exist to make the vehicle see the same ladder a caravan on foot
-sees, and the balance deferral owns both.
+…and four more, one per tier, tracking §1's table — **~50 lines** with the `<?xml?>`/`<Patch>`
+wrapper. **The `<cost>` values are [I] and are §1's numbers, not new ones** — they exist to make
+the vehicle see the same ladder a caravan on foot sees, and the balance deferral owns both.
+**They must be set in the same sitting as §1's `movementCostMultiplier` values and §4b's
+per-vehicle rungs**, because after this fix the two tables are required to hold the same numbers
+and a drift between them is invisible in play.
 
-> **Do not "fix" this by removing `customRoadCosts` instead.** The world path grid's
-> `PassableRoad` local function is
-> `vehicleDef.properties.customRoadCosts.ContainsKey(roadLink.road)` [V] — a vehicle with no
-> entry for a road gets **no road benefit on the world map at all**. Override the values;
-> never remove the keys.
+> **Whoever sets those numbers must know that §1's proposal *as written* is a large road-speed
+> nerf, and A is what delivers it.** §1 proposes `DirtPath` **0.75**. The fourteen declaring
+> vehicles read their own flat number on that tier today, so adopting §1 verbatim makes
+> **seven of them 3× slower on a dirt path** (BangBus, Highwayman, Traveller, Charley,
+> Roadrunner, Snatcher, Wagon — all `0.25` → `0.75`), Mule 2.5×, Roadkill/Bulldog/Tango
+> 1.9×, Bunsen/Wisent 1.5×, and the Scytheman alone slightly **faster** (`0.85` → `0.75`)
+> [V, from VVE's declared values]. On `AncientAsphaltHighway` §1 proposes `0.25` and those
+> same vehicles already read 0.25, so the top rung is **unchanged**. The whole effect of
+> A + §1 as proposed is therefore to *compress vehicles down onto the low rungs*, not to
+> speed them up anywhere. That may well be what the campaign wants — it is what makes paving
+> matter — but it is a balance decision with a 3× magnitude and it must be taken knowingly,
+> not inherited from a table that reads like a refinement.
+
+**Use `PatchOperationAddModExtension`, not a raw `PatchOperationAdd` of a `<modExtensions>`
+block.** `Verse.PatchOperationAddModExtension` creates `<modExtensions>` when the def has none
+and appends into it when it does [V]; a bare `PatchOperationAdd` appends a **second sibling**
+`<modExtensions>` element if anything else patched one in first, and
+`DirectXmlToObject.ObjectFromXmlReflection` then assigns the field twice, last block winning.
+That failure is **loud** — it logs `"XML … defines the same field twice: modExtensions"` [V] —
+so it is fragility rather than a trap, but it costs the same line count to avoid. No vanilla
+`RoadDef` carries `<modExtensions>` today [V], and **nothing in either corpus root hangs a
+`Vehicles.CustomCostDefModExtension` on a `RoadDef`** — VVE is the only third party that uses
+the extension at all and hangs it on two `ThingDef`s (`VVE_TankTrap` and, by patch, vanilla
+`AncientTankTrap`, both `cost 10000`) **[I]**, a corpus sweep rather than a read.
+
+##### The alternatives, and what separates them
+
+| | Build | Kind | Preserves VVE's per-vehicle road dial? | Covers a vehicle a later mod adds? |
+|---|---|---|---|---|
+| **A** | **This one** — `CustomCostDefModExtension` × 5 `RoadDef`s, empty `vehicles` | XML, 5 ops | **no** — every vehicle reads exactly the tier | **yes** |
+| B | Harmony postfix on both `RoadCostHelper.GetRoadMovementDifficultyMultiplier(…, RoadDef)` overloads, recomputing `movementCostMultiplier × (declared ÷ 0.5)` | C#, ~25 lines | yes | yes |
+| C | Strip the 14 `<customRoadCosts AssignDefaults="…"/>` nodes so every vehicle falls through to the base | XML, 14 ops | no | **no** |
+| D | Replace each of the 14 `AssignDefaults` attributes with an explicit five-entry dictionary | XML, 14 ops × 5 values | yes | **no** |
+
+**A is recommended.** What separates it from B and D — the two that keep the vehicle dial — is
+that **the campaign has not asked for one.** The mobility ladder INDUSTRIAL.md describes is
+per *era*, not per vehicle-on-road, and per-vehicle speed differentiation survives A untouched:
+it lives in `vehicleStats/MoveSpeed` and `properties/worldSpeedMultiplier`, which
+`VehicleCaravanTicksPerMoveUtility.GetTicksPerMove` folds into `ticksPerMove` **before** the
+road multiplier is applied in `Vehicles.VehicleCaravan_PathFollower.CostToMove` [V]. A flattens
+the *road-tier response*, which is the thing we want uniform, and leaves the *vehicle* response,
+which is §4b's, alone. B's cost is not its 25 lines but its hidden constant: `0.5` is VVE's
+authoring baseline and appears nowhere in any def, so B silently mis-scales if VVE ever
+re-authors. **If balance later wants road quality to matter differently per vehicle, B is the
+upgrade path and A is not in its way** — B would postfix over whatever the table holds.
+
+**C is strictly dominated by A** — same behavioural outcome, nine more operations, no coverage
+of future vehicles, and one latent silent failure (below). **D is the only XML build that keeps
+both dials** and is the fallback if balance rules that it wants them; it costs ~170 lines and
+14 defName couplings.
+
+##### The six, for A
+
+| | |
+|---|---|
+| **Mechanism** | Five `PatchOperationAddModExtension`s hanging `Vehicles.CustomCostDefModExtension` on the five vanilla `RoadDef`s, `vehicles` empty. No C#, no Harmony, no def of ours. |
+| **State** | None of ours. The value lands in VF's own `VehicleDef.properties.customRoadCosts`, rebuilt from defs at every launch. |
+| **Persistence** | Nothing scribed, and nothing to migrate. `customRoadCosts` is populated in `VehicleHarmony`'s static constructor before any save loads, so a save taken before or after the patch is byte-identical and reads the current table on load. |
+| **Change** | Nothing at runtime. Written once per launch by `ApplyAllDefModExtensions`; never mutated afterwards [V]. |
+| **Display** | Already there. `RoadCostHelper` writes `"{road.LabelCap}: {multiplier.ToStringPercent()}"` into the caravan tile-cost explanation [V] — the same tooltip line a foot caravan gets, on the vehicle code path. Without A it reads the same percentage on all five tiers. |
+| **Cost** | **XML, 5 operations, ~50 lines**, in `Patches/Roads_VehicleCosts.xml`. |
+
+##### Multiplayer
+
+**A introduces nothing unsynced, and it does not touch T-74.** The patch is def data, merged
+identically on both clients from identical files and read at
+`[StaticConstructorOnStartup]`-time; there is no `Rand`, no tick, no `SyncMethod` and nothing
+written at runtime. **`customRoadCosts` is *not* read through `SettingsCache`** [V] — unlike
+`offRoadMultiplier` and `worldSpeedMultiplier`, both of which are — so A's values cannot be
+diverged by one player's `config/ModSettings/` and A **narrows** the T-18 surface §4b widens.
+
+**A's data does not reach the thread-pool path at all**, and the reason is the one
+*The removal alternative* establishes below. `Vehicles.World.WorldVehiclePathGrid`'s async
+chain — `RecalculateAllPathCostsAsync` → `TaskManager.Run` →
+`RecalculateAllPerceivedPathCosts` → `RecalculateAllPerceivedPathCostsFor` →
+`CalculatedMovementDifficultyAt` — is the one place off the synced tick that touches
+`customRoadCosts`, and it touches it **only** through `PassableRoad`, which is reached only
+under `defaultImpassable & DefaultImpassable.Roads`. **No vehicle in the corpus sets that
+flag** [V], so the read never executes. Even if one did, what A writes is immutable read-only
+def data identical on both clients, so the strongest available statement is also the true one:
+**A puts nothing new on the unsynced path, and contributes nothing to the divergence that path
+already has.** That divergence is **T-74**, it is §4a's to fix, and the #69 finding behind it —
+`TaskManager.Run` landing on `Verse.Rand`'s unlocked global state via
+`VehicleRegionCostCalculator` — is on the **map** pathfind, which A touches no part of.
+
+##### The removal alternative, and why the stated reason for rejecting it was wrong
+
+> **An earlier draft of this section said:** *"a vehicle with no entry for a road gets **no road
+> benefit on the world map at all**. Override the values; never remove the keys."* **The
+> conclusion holds; that reason does not.**
 >
+> `PassableRoad` — `vehicleDef.properties.customRoadCosts.ContainsKey(roadLink.road)` — is a
+> local function inside
+> `Vehicles.World.WorldVehiclePathGrid.CalculatedMovementDifficultyAt`, and it is reached
+> **only** under `(vehicleDef.properties.defaultImpassable & DefaultImpassable.Roads) != 0`
+> [V]. **No vehicle in Vehicle Framework or VVE sets `Roads`** — there are exactly three
+> `defaultImpassable` declarations between the two mods: VF's `BaseSeaVehicle` declares
+> `Terrain` and `Biomes`, and VVE's `VVE_Smuggler` and `VVE_Warbird` declare **`Biomes` only**
+> [V] — so the key-presence requirement does not bite today at all. Where it *does* fire, the
+> consequence is also stronger than "no benefit": the tile
+> returns **`1000f`, impassable**, not a lost multiplier. Absent a `Roads` flag, a vehicle with
+> an empty `customRoadCosts` simply falls through to `roadDef.movementCostMultiplier` — which
+> is §1's ladder, exactly.
+>
+> So build C *works* on today's roster. It is rejected for the reasons in the table above —
+> nine more operations, no coverage of a future vehicle, and 14 defName couplings — plus this:
+> it arms a silent failure. The day any vehicle ships `<defaultImpassable><li>Roads</li>`, C
+> makes every road tile impassable for it with no message. A cannot do that, because A
+> guarantees a key on every road for every vehicle.
+
 > **The `expect: 1` annotations above are UNRUN**, for the same reason §2's are:
 > [#102](https://github.com/cjd721/Rimworld-Archinity/issues/102) must land before
 > `tools/patch_check.py` can measure a leading-`Defs/` xpath.
+>
+> **One shared-instrument caveat.** `LoadDefModExtensionCosts` reads the extension with
+> `Def.GetModExtension<CustomCostDefModExtension>()`, which returns the **first** match and
+> leaves a second inert — **T-06**. Only one `CustomCostDefModExtension` per `RoadDef` is ever
+> read, whoever authored it, which is also why builds B and D exist: per-vehicle-group costs
+> **cannot** be expressed as several extensions on one road def.
 
 ### Cost
 
@@ -463,7 +616,7 @@ sees, and the balance deferral owns both.
 | **§4a** `MP.IsInMultiplayer` gate and Harmony wiring | new C# | ~15 lines | `Archinity.Core` |
 | **§4b** air-rung re-gate, `VVE_Frog` / `VVE_Toad` | XML, 2 `PatchOperationReplace` | ~10 lines | `Patches/Vehicles_Gating.xml` |
 | **§4b** per-vehicle rung values (`MoveSpeed`, `worldSpeedMultiplier`, `FlightSpeed`) | XML, 1 op per value | ~5 lines each | `Patches/Vehicles_Ladder.xml` |
-| **§4c** `CustomCostDefModExtension` on the five `RoadDef`s | XML, 5 `PatchOperationAdd` | ~35 lines | `Patches/Roads_VehicleCosts.xml` |
+| **§4c** `CustomCostDefModExtension` on the five `RoadDef`s | XML, 5 `PatchOperationAddModExtension` | ~50 lines | `Patches/Roads_VehicleCosts.xml` |
 | **§4** vehicle content, gating research, world-travel maths, MP sync of caravans and flight | **none** — VF and VVE ship it, MP Compat syncs it | 0 | — |
 
 **Two builds, and what separates them.** *Build A* ships VFE Classical and inherits the
@@ -619,9 +772,15 @@ is [#107](https://github.com/cjd721/Rimworld-Archinity/issues/107).
   `VehicleCaravan`, `AerialVehicleInFlight`, `CompVehicleLauncher`, the upgrade trees, and
   `VehicleCaravanTicksPerMoveUtility` as the world-travel maths.
 - VVE's 23 vehicles, four research projects and five air vehicles.
-- `Vehicles.CustomCostDefModExtension` as the per-`RoadDef` override lever (§4c).
 - Multiplayer Compatibility's sync of vehicle caravans, aerial flight, cargo sessions,
   targeted landing, turrets, fuel and banishment.
+
+**Verified *and* selected** — the one item that has passed out of the list above:
+
+- `Vehicles.CustomCostDefModExtension` as the per-`RoadDef` override lever
+  ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68)'s reopen; §4c). §1's ladder
+  reaches no vehicle without it, so §4c ships whenever §1 does. Three alternatives were priced
+  and are in §4c's table.
 
 **Proposed, marked [I] by construction:** the tier ladder values, the era→tier mapping, the
 era rite's proximity selection rule and its `N`, the ledger component, the era-rite upgrade
@@ -663,9 +822,12 @@ gen step does **not** suppress `GenStep_ScatterRoadDebris`. See §2.
 
 ### Vanilla and DLC — the whole model is here
 
-Five `RoadDef`s in `Core/Defs/RoadDefs/RoadDefs.xml` [V] and **no others anywhere in the
-corpus** **[I]** — not one of the 155 mods ships a `<RoadDef>`, on a corpus sweep, which is an
-inference and not a read. `DirtPath` (priority 10),
+Five `RoadDef`s in `Core/Defs/RoadDefs/RoadDefs.xml` and **no others anywhere in the corpus**
+[V] — `rg -l '<RoadDef[ >]' -g '*.xml'` over both corpus roots returns **zero**, and that file
+is the only hit under `Data/`. This is a direct read of the def files rather than a
+metadata-heap inference, and the pattern also catches a `RoadDef` declared inside a
+`PatchOperationAdd` `<value>`. §4c depends on it: it is what makes five operations *exhaustive*
+over the road vocabulary rather than merely a choice to cover vanilla. `DirtPath` (priority 10),
 `DirtRoad` (20), `StoneRoad` (30), `AncientAsphaltRoad` (40, `ancientOnly`) and
 `AncientAsphaltHighway` (50, `ancientOnly`). The five vanilla tiers are the entire
 vocabulary the campaign has to work with, and that is sufficient: one per era with the
@@ -703,7 +865,7 @@ is who else sees it.
 
 | Mod | Path | Carries | Bearing on the build |
 |---|---|---|---|
-| **Vehicle Framework** `smashphil.vehicleframework` | `1.6/Assemblies/` | `Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier(List<VehicleDef>, RoadDef)` — takes `roadDef.movementCostMultiplier` as a base, **replaced** per vehicle by `VehicleDef.properties.customRoadCosts[roadDef]`, unconditionally and in either direction [V] | **A third reader of the field, and a silent bypass of the ladder — resolved in §4c**, which reads the override loop in full and finds that 14 VVE vehicles flatten all five tiers |
+| **Vehicle Framework** `smashphil.vehicleframework` | `1.6/Assemblies/` | `Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier` in **two** `RoadDef` overloads, `(List<VehicleDef>, …)` and `(List<VehiclePawn>, …)` — each takes `roadDef.movementCostMultiplier` as a base, **replaced** per vehicle by `VehicleDef.properties.customRoadCosts[roadDef]`, unconditionally and in either direction [V] | **Two more readers of the field, and a silent bypass of the ladder — closed by §4c**, which reads the override loop in full, finds that 14 VVE vehicles flatten all five tiers, and is **selected** |
 | **Better Traders Guild** `shunter.bettertradersguild` (`3684587591`) | `1.6/Assemblies/BetterTradersGuild.dll`, present under **both** roots | One `GetRoadMovementDifficultyMultiplier` reference **[I]** — a corpus byte-scan hit, which is an inference and not a read; apparently read-only for its own caravan costing [I] — not decompiled | None. Recorded for completeness of the reader set; no verdict changes |
 | **Rim War** `torann.rimwar` | `v1.6/Assemblies/` | One read-only `GetRoadMovementDifficultyMultiplier` reference; writes no roads [V] | Already barred and declined (`MOD-VERDICTS.md`); nothing here reopens it |
 | **Map Mode Framework** `nozome.mapmodeframework` | `1.6/Assemblies/` | References `WorldDrawLayer_Roads` as a layer name [I] | Not a road feature |
@@ -905,6 +1067,11 @@ Symbols: `RoadDef`, `WorldGenStep_Roads`, `WorldDrawLayer_Roads`, `OverlayRoad`,
 > however carefully the sweep is built. What is retracted is the claim that the
 > sweep was validated before its negatives were trusted. Any future re-run of this survey
 > must use the null-interleaved form.
+>
+> **One of those four has since been upgraded to [V].** "No mod-authored `<RoadDef>`" was
+> re-run by #68's reopen as a direct XML read — `rg -l '<RoadDef[ >]' -g '*.xml'` over both
+> roots, zero hits — which is a read of the def files rather than a byte scan of assemblies.
+> See *Vanilla and DLC*, above. The other three remain [I].
 
 **§4's pass ran the same way and validated its UTF-16 half before trusting a negative.**
 Symbols: `VehiclePawn`, `VehiclePathFollower`, `RequestNewPath`,
@@ -1083,10 +1250,19 @@ about the shape are not balance and are stated here deliberately:
   what makes the two rows above distinguishable in play, so **the rungs depend on §4b landing**
   the way the graded road rungs depend on §1.
 - **The element-wise max does the right thing without an interaction term.** A colony with
-  `VVE_AerialVehicles` and only dirt paths reaches 90; a colony with highways and no vehicles
-  reaches 34. That matches CHARTING § *Reach*'s *"two knobs with no interaction term"*, and it
-  is why neither ladder needs to know the other exists at the band level — even though, at the
-  *travel time* level, §4c says they multiply.
+  `VVE_AerialVehicles` and only dirt paths takes the aircraft rung's 90 over the road rung's
+  12; a colony with highways and no vehicles takes 34. **Both are pre-clamp figures and a
+  reader must not take them as delivered reach.** [`CHARTING.md`](CHARTING.md) §4 makes the
+  band *"the element-wise max over satisfied rungs, **clamped above by
+  `CompProperties_ChartingApparatus.maxAcceptedBand`**"*, so what either colony actually gets
+  is `Mathf.Min(90, maxAcceptedBand)` and `Mathf.Min(34, maxAcceptedBand)` — **whichever
+  apparatus is standing decides, and a colony with 90 rungs' worth of vehicles and a low-tier
+  apparatus reaches exactly what that apparatus allows.** The rung integers in the two tables
+  above are therefore ceilings this document *offers*, not distances it *delivers*. That is
+  CHARTING § *Reach*'s *"two knobs with no interaction term"* working as designed — the era
+  knob is the rung, the apparatus knob is `maxAcceptedBand` — and it is why neither ladder
+  needs to know the other exists at the band level, even though at the *travel time* level
+  §4c makes them multiply.
 
 **An optional fifth rung, if #57 wants roads that exist rather than roads that can be
 built.** A research rung says the player *may* pave; it does not say a road is actually

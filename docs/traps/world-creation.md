@@ -562,4 +562,109 @@ shop is short, this trap is the first thing to check — the log will not mentio
 *The purchasable quest catalogue*. `VEF.Storyteller.QuestWorker.GenerateQuests` from `VEF.dll`
 (`2023507013/1.6/Assemblies/`). 1.6.4871.*
 
+### T-88 — A factionless or inert `attackTargets` focus issues no job at all
+
+`IncidentParms.attackTargets` is the one lever that points a raid at something other than the
+colonists — `RaidStrategyWorker_ImmediateAttack.MakeLordJob` checks it first and routes to
+`LordJob_AssaultThings`, whose pawns take `DutyDefOf.AssaultThing`. **Two classes of target
+silently produce no job whatsoever**, and the obvious food-raid target set is both of them:
+
+- **Factionless.** `JobGiver_AITrashDutyFocus.TryGiveJob` returns null unless
+  `pawn.HostileTo(focus.Thing)`, and `GenHostility.HostileTo(Thing, Thing)` ends
+  `if (a.Faction == null || b.Faction == null) return false;`. A stockpiled item and a sown crop
+  have no `Faction`.
+- **Inert.** The same job giver calls `TrashUtility.TrashJob(pawn, focus.Thing,
+  allowPunchingInert: false, killIncappedTarget: true)`, and `TrashJob` returns **null** for a
+  `Building` whose `def.building.isInert` is true when `allowPunchingInert` is false. `Wall`,
+  `DoorBase`, `Fence` and `Column` all set it. `Shelf`, `ShelfSmall` and `Cooler` do not, and are
+  valid targets.
+
+`Trigger_ThingsDamageTaken` then never fires, and `LordJob_AssaultThings` has **no timeout
+transition of its own**. The group is not guaranteed to hang: `LordJob.AddFleeToil` is
+`virtual => true` and `LordJob_AssaultThings` does not override it, so `Lord`'s graph builder
+attaches a `LordToil_PanicFlee` off every toil when
+`faction.def.autoFlee && !faction.neverFlee && Map.CanEverExit`, fired by
+`Trigger_FractionPawnsLost`. **So they leave once enough of them are downed — and linger
+indefinitely for a never-flee or non-auto-flee faction, or against a player who does not
+engage.** The objective failing is unconditional either way, and nothing is logged in any case.
+
+Target faction-owned, non-inert Things: player buildings that are not structure, and
+player-faction pawns. `docs/specs/PRESSURE.md` § *The build* § 8 prices a startup validator over
+the selector, which is what converts this into a loud failure.
+
+*[#77](https://github.com/cjd721/Rimworld-Archinity/issues/77), `docs/specs/PRESSURE.md` § 8.
+`RimWorld.JobGiver_AITrashDutyFocus.TryGiveJob`, `RimWorld.TrashUtility.TrashJob`,
+`RimWorld.GenHostility.HostileTo`, `RimWorld.LordJob_AssaultThings`,
+`Verse.AI.Group.LordJob.AddFleeToil`; `Wall` in
+`Core/Defs/ThingDefs_Buildings/Buildings_Structure.xml`. 1.6.4871.*
+
+### T-89 — `Trigger_ThingsDamageTaken` cannot express a partial loss of pawns
+
+`Verse.AI.Group.Trigger_ThingsDamageTaken.ActivateOn` accumulates only over entries where
+`things[i].Spawned`. A dead pawn is despawned, so it leaves the **numerator and the
+denominator**, while every surviving spawned pawn contributes `1f`. The average is therefore
+pinned at exactly `1`, `num < 1f - damageFraction` is never true, and the transition fires
+**solely** through its `num2 == 0` branch — every target gone.
+
+**So `damageFraction` does nothing for a pawn target set.** An objective authored as "kill a third
+of the herd and leave" silently means "kill the entire herd", and reads in play as raiders who
+will not disengage. The same bias applies to buildings for a different reason: a destroyed
+building is excluded too, so the fraction only ever moves on *partial* damage to survivors.
+
+A partial-loss objective needs a trigger of our own that scores against the **original** list
+rather than the spawned one; `docs/specs/PRESSURE.md` § *The build* § 8 prices it.
+
+*[#77](https://github.com/cjd721/Rimworld-Archinity/issues/77), `docs/specs/PRESSURE.md` § 8.
+`Verse.AI.Group.Trigger_ThingsDamageTaken.ActivateOn`, `RimWorld.LordJob_AssaultThings`.
+1.6.4871.*
+
+### T-90 — A `RaidStrategyDef` authored without `arriveModes` is silently unselectable
+
+`IncidentWorker_RaidEnemy.ResolveRaidStrategy`'s local `CanUseStrategy` predicate returns
+**false** when `parms.raidArrivalMode` is null and the def's `arriveModes` is null — the fallback
+in that branch is a bare `return false`, not a default mode. A strategy we author without the
+list is therefore never selected by the storyteller, for any faction, forever.
+
+Nothing reports it. `ResolveRaidStrategy` does log an error and fall back to `ImmediateAttack`,
+but **only when no strategy at all passes**; while vanilla's nine remain selectable one of them is
+simply chosen instead, and the omission reads as a strategy that is merely unlucky. Every vanilla
+`RaidStrategyDef` declares `arriveModes`, so the field looks optional and is not.
+
+**The sibling failure on the other path is loud, and deliberately not a register entry.** A
+strategy *pre-set* on `parms` — the T-14 escape — reaches
+`PawnsArrivalModeWorker.CanUseWith`, which dereferences `parms.raidStrategy.arriveModes` with no
+null guard and throws. See `docs/engine/storyteller-and-incidents.md` § *`arriveModes` is not
+optional, and the two paths fail differently*.
+
+*[#77](https://github.com/cjd721/Rimworld-Archinity/issues/77), `docs/specs/PRESSURE.md` § 8.
+`RimWorld.IncidentWorker_RaidEnemy.ResolveRaidStrategy`, `RimWorld.RaidStrategyDef.arriveModes`.
+1.6.4871.*
+
+### T-91 — `VFEE_Deserters` stops raiding entirely without an Empire-titled pawn on the map
+
+**Companion to T-14, which stands as written.** T-14 records that VFE Empire blacklists every raid
+strategy but its own on the deserter faction. This is what that blacklist does when combined with
+the one surviving strategy's own gate.
+
+`VFEEmpire.RaidStrategyWorker_Deserters.CanUseWith` returns false unless a pawn holding a title in
+`Faction.OfEmpire` is spawned on the map. With every other strategy in
+`FactionDef.disallowedRaidStrategies`, `DesertersStrat` is the faction's only candidate — and
+`IncidentWorker_RaidEnemy.FactionCanBeGroupSource` rejects a faction outright when no
+`RaidStrategyDef` passes `CanUseWith`. **No titled pawn on the map, no passing strategy, no
+raid.** The faction is dropped from the eligible pool with no message, which is **T-17**'s
+fail-open-and-fail-quiet shape reached by a different route.
+
+This bites the campaign specifically: the deserter faction is the Schism, so its raids are
+political beats rather than ambient pressure, and a Schism that has gone quiet looks like the
+storyteller's variance. The remedy is not to satisfy the gate but to bypass the selection path
+entirely — author the raid and pre-set `parms.raidStrategy`, which is T-14's second escape and the
+one `docs/specs/PRESSURE.md` § *The build* § 8 selects. That makes authored raids the **only**
+route for this faction rather than a stylistic preference.
+
+*[#77](https://github.com/cjd721/Rimworld-Archinity/issues/77), `docs/specs/PRESSURE.md` § 8;
+companion to **T-14**, sibling of **T-17**. `VFEEmpire.RaidStrategyWorker_Deserters.CanUseWith`
+from `VFEEmpire.dll` (`2938820380/1.6/Assemblies/`);
+`RimWorld.IncidentWorker_RaidEnemy.FactionCanBeGroupSource`,
+`RimWorld.RaidStrategyWorker.CanUseWith`. 1.6.4871.*
+
 ---

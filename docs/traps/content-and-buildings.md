@@ -333,6 +333,63 @@ audit. `VEF.Buildings.WorkGiver_StudyBuilding.HasJobOnThing`,
 `VEF.Buildings.StudiableBuilding.GetGizmos` from `VEF.dll`
 (`2023507013/1.6/Assemblies/`). 1.6.4871.*
 
+### T-93 — `Window_AndroidCreation` rebuilds its ingredient list on every gene toggle
+
+`VREAndroids.Window_AndroidCreation.OnGenesChanged()` assigns `requiredItems` as a **fresh
+hardcoded `List<ThingDefCount>`** — `VREA_PersonaSubcore` ×1, `Plasteel` ×125, `Uranium` ×30,
+`ComponentSpacer` ×7. There is no `RecipeDef`, no def field and no mod extension behind an android's
+material cost; the numbers exist only as a C# literal.
+
+`VREAndroids.Window_CreateAndroidBase` calls `OnGenesChanged()` **from its constructor and from the
+gene click handler**, so the list is discarded and rebuilt in full every time the player adds or
+removes a single gene. `Window_AndroidCreation.AcceptInner()` then copies whatever the last toggle
+produced onto `VREAndroids.Building_AndroidCreationStation.requiredItems`, which is scribed.
+
+**The failure:** a Harmony patch that writes `requiredItems` at any other seam — on window open, on
+`AcceptInner`, on the station — is silently overwritten by the player's next gene click, and the
+overwrite is invisible because the cost row redraws from the same field
+(`AndroidStatsTable.Draw(…, requiredItems)`). The patch appears to work right up until the player
+touches a gene, and the wrong list is the one that gets saved.
+
+**The fix:** postfix `OnGenesChanged` itself and append there. Every other seam is downstream of a
+reassignment. This binds any Intel- or Glitterite-material price we put on android manufacture —
+see `docs/specs/ANDROIDS.md` § *The Intel gate*, Layer 2.
+
+*[#78](https://github.com/cjd721/Rimworld-Archinity/issues/78), `docs/specs/ANDROIDS.md`.
+`VREAndroids.Window_AndroidCreation.OnGenesChanged` / `.AcceptInner`,
+`VREAndroids.Window_CreateAndroidBase`, `VREAndroids.Building_AndroidCreationStation.requiredItems`,
+`VREAndroids.AndroidStatsTable.Draw` from `VREAndroids.dll`
+(`2975771801/1.6/Assemblies/` — the mod ships **1.4-only source**, so this is decompiled from the
+loaded assembly). 1.6.4871.*
+
+### T-94 — Mech gestation resolves its output pawnkind by reverse lookup, and a duplicate is silent
+
+`RimWorld.Bill_ProductionMech.CreateProducts` finds the pawn to build with
+`DefDatabase<PawnKindDef>.AllDefs.Where(pk => pk.race == recipe.ProducedThingDef).First()`.
+**No def field names the resulting pawnkind** — `RecipeDef` has none, and
+`Verse.RecipeDef.ProducedThingDef` is just `products[0].thingDef` (null when `specialProducts != null`
+or `products.Count != 1`). The recipe names a *race* `ThingDef`; the *kind* is inferred.
+
+**The failure:** if two `PawnKindDef`s declare the same `<race>`, `.First()` returns whichever
+`DefDatabase` ordering happens to yield first. That is load-order dependent, not modder-controllable,
+and produces no warning — the gestator completes normally and hands back a pawn of the wrong kind,
+with the wrong combat power, apparel and generation rules. `Verse.RecipeDef.ConfigErrors()` checks
+only `workerClass == null` and never validates the product at all. Vanilla never trips this because
+Biotech ships exactly one kind per mech race (`PawnKindDef Mech_Militor` ↔ `ThingDef Mech_Militor`).
+
+**The fix:** one `PawnKindDef` per gestated race. If a variant is needed for raids or quests, give it
+its own race `ThingDef` rather than a second kind on the shared one.
+
+Not traps, and recorded here so they are not filed as such — both are **loud**: zero matching kinds
+throws `InvalidOperationException` from `.First()`, and a `gestationCycles` recipe placed on a bench
+that is not a `Building_MechGestator` throws `InvalidCastException` from the unguarded cast in
+`RimWorld.Bill_Mech.Gestator`.
+
+*[#78](https://github.com/cjd721/Rimworld-Archinity/issues/78), found while pricing the
+non-VRE alternative; `docs/specs/ANDROIDS.md` § *Available mechanisms*.
+`RimWorld.Bill_ProductionMech.CreateProducts`, `RimWorld.Bill_Mech.Gestator`,
+`Verse.RecipeDef.ProducedThingDef` / `.ConfigErrors`, `RimWorld.BillUtility.MakeNewBill`. 1.6.4871.*
+
 ---
 
 ## Rituals and titles
@@ -468,12 +525,18 @@ have zero call sites, and `categoryBias` and `extraOptions` are computed in
 `AltarModifiers.For` and never read. The data model exists, the draw does not, and the gap
 between them is a success message.
 
-Until the lottery is built, an extension with a null `gene` must be refused loudly at the
-rite, not honoured quietly.
+**Remedy.** `gene: null` is the lottery's own marker, and the draw that consumes it is now
+specified: `docs/specs/ALTAR.md` § *The build — the repeatable lottery* routes `PerformRite`'s
+`ext.gene == null` arm into the offer instead of letting it fall through to the success
+message, which closes the silent no-op by giving the branch the behaviour its comment always
+claimed. **Until that lands**, an extension with a null `gene` must be refused loudly at the
+rite rather than honoured quietly.
 
-*[#59](https://github.com/cjd721/Rimworld-Archinity/issues/59); the lottery draw is
-unowned as of this entry. `Archinity.Building_Altar.PerformRite`,
-`Archinity.GeneVectorExtension`, `Archinity.GenePoolDef` in `ArchinityAltar.dll`.
-1.6.4871.*
+*[#59](https://github.com/cjd721/Rimworld-Archinity/issues/59), remedy replaced 2026-09-12
+from [#110](https://github.com/cjd721/Rimworld-Archinity/issues/110), which owns the lottery
+draw — the "unowned" note this entry previously carried is superseded; the trap statement
+itself is unchanged and still true of shipping code.
+`Archinity.Building_Altar.PerformRite`, `Archinity.GeneVectorExtension`,
+`Archinity.GenePoolDef` in `ArchinityAltar.dll`. 1.6.4871.*
 
 ---

@@ -254,6 +254,20 @@ founder behind `administratorSeen`, opened from synced code with a map context.
 >    **not** declare it on `Building_Altar` or on `CompFounderRecord`. The field-type rule
 >    applies on top: capture only the founder `Pawn` (an `ILoadReferenceable`) and
 >    primitives.
+> 3. ***Both*** **options set `resolveTree = true`** — **T-97**. An earlier draft gave it to
+>    *Return* alone, on the reasoning that returning *is* closing the dialog while *Leave*
+>    has work to do. That is backwards for the option that carries a delegate.
+>    `Multiplayer.Client.WindowStackTryRemove` is the **only** path that removes a
+>    `PersistentDialog` from `mapDialogs`, and it fires from `WindowStack.TryRemove` only when
+>    `Multiplayer.InInterface` is false — which, inside the `[SyncMethod]`
+>    `PersistentDialog.Click`, it is. What actually triggers that close is
+>    `Verse.DiaOption.Activate`'s `if (resolveTree) OwningDialog.Close();`, which runs
+>    **before** `action()` [V], so the cleanup does not depend on the crossing succeeding.
+>    **Without `resolveTree`, *Leave this universe* runs the crossing and strands its
+>    `PersistentDialog`**, and `Multiplayer.Client.ForceShowDialogs` re-adds it on every
+>    `MapDrawer.DrawMapMesh` — re-offering an answered ending forever, and, because
+>    `ForceShowDialogs` only ever shows `mapDialogs.First()`, hiding every later dialog on
+>    that map behind it. Silent, with no log line on either client.
 
 On *Leave this universe* — and identically on each later altar entry by a transcended
 founder — from the synced tick:
@@ -393,6 +407,7 @@ the cost table.**
 |---|---|---|
 | Comp is unsynced (MP changed its registration, or `RenamableLabel` is declared on a base class rather than the comp) | Dev action *Dump IRenameable types* lists it under "Unsynced" | Register explicitly with `MP.RegisterSyncMethod` behind `MP.enabled` |
 | A `DiaOption` action is declared on `Building_Altar` or `CompFounderRecord` | **Loud, but late** — `"Delegate deserialization: method not allowed"`, thrown on *load*, not at click, so it survives a whole playtest that never reloads | Move the action onto `CompAltarThreshold : ThingComp`, or drop the action and make the option `resolveTree`-only. §4 |
+| *Leave this universe* built without `resolveTree = true` | **Silent — T-97.** The crossing runs, the dialog never closes inside the synced `Click`, so `WindowStackTryRemove` never fires and `ForceShowDialogs` re-offers the answered ending on every map draw — and hides every later `PersistentDialog` behind it, since only `mapDialogs.First()` is shown | §4 rule 3. `resolveTree = true` on **both** options, without exception |
 | A player renames the founder with vanilla's rename window and wipes `story.title` | The label reverts to the backstory title | Nothing breaks: `claimedTitle` is authoritative and `titleClaimed` still gates the rite. Re-mirror on load, or leave it; both are correct |
 | The `comps` list on `Archinity_FounderRecord` is edited and the comp is dropped | **Silent.** Fields read as defaults on the next load and the founder appears never to have claimed anything | Prevention only: never edit that list. **T-34** |
 | `hediffClass` left at its default `Verse.Hediff` | Loud — `ConfigErrors`: "has comps but hediffClass is not HediffWithComps or subclass thereof". The store never initialises | Set `hediffClass: HediffWithComps`. §1 |

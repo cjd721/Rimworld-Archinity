@@ -75,6 +75,33 @@ its per-comp seed salt, and VEF's `forcedPointsRange` sentinel on the authored-r
 path. They are `docs/TRAPS.md` **T-65** and **T-66** — read both before adding a comp
 to a `StorytellerDef` or authoring a fixed-size raid.
 
+## `arriveModes` is not optional, and the two paths fail differently
+
+`RaidStrategyDef.arriveModes` has no default and no null guard on the path that consumes it
+second, so omitting it produces **two different failures depending on how the strategy was
+chosen** [V].
+
+- **Chosen by the storyteller — silent.** `IncidentWorker_RaidEnemy.ResolveRaidStrategy`'s local
+  `CanUseStrategy` returns `false` when `parms.raidArrivalMode` is null and `def.arriveModes` is
+  null. The strategy is never selected, one of vanilla's nine is picked instead, and nothing is
+  logged. That is the register's, not this file's — **`docs/TRAPS.md` T-90**.
+- **Pre-set on `parms` — loud.** `PawnsArrivalModeWorker.CanUseWith` evaluates
+  `parms.raidStrategy != null && !parms.raidStrategy.arriveModes.Contains(def)` with **no null
+  check on the list**, and throws a `NullReferenceException`. This is the path taken by VEF's
+  `IncidentWorker_RaidEnemySpecial` reading `IncidentDefExtension.forcedStrategy`, and by
+  **T-14**'s second escape — so an authored raid pinning a strategy is precisely the case that
+  hits it.
+
+The asymmetry is worth knowing because the loud half is the *good* one: an authored raid tells you
+immediately, while a storyteller-selected strategy that quietly never fires can survive a whole
+campaign. Both are fixed by the same one line of XML. Every vanilla `RaidStrategyDef` declares
+`arriveModes`, which is why the field reads as optional and is not.
+
+*`RimWorld.IncidentWorker_RaidEnemy.ResolveRaidStrategy`,
+`RimWorld.PawnsArrivalModeWorker.CanUseWith`, `RimWorld.RaidStrategyDef.arriveModes`.
+[#77](https://github.com/cjd721/Rimworld-Archinity/issues/77); the design that uses both paths is
+`docs/specs/PRESSURE.md` § *The build* § 8.*
+
 ## A live third-party collision on `DefaultThreatPointsNow`
 
 `NCL_Storyteller.Patch_StorytellerUtility` — **Mechanoids: Total Warfare**,

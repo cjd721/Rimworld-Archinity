@@ -31,8 +31,8 @@ table in [`docs/engine/world-time-and-layers.md`](../engine/world-time-and-layer
 is campaign design input rather than an engine fact. It does not own **what the capstone is**
 or what research it requires ([`RESEARCH.md`](RESEARCH.md) and
 [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41)). It does not own **the rite** —
-the altar interaction that calls `AdvanceEra()` lives in
-[`ALTAR.md`](ALTAR.md). It does not own **what becomes available at each era**
+**and no document currently does**; see *What calls it* below, where that gap is stated.
+It does not own **what becomes available at each era**
 ([`docs/progression/`](../progression/README.md)), nor the **filter set** WTL runs (#7 froze
 those twenty-four toggles and this document does not reopen them).
 
@@ -185,11 +185,31 @@ non-null → `AccessTools.Field(type, "<Current>k__BackingField")` → and, fail
 fact in *Cost* below is real and our shim must handle it; **the claim that this mod trips over it
 is false and is withdrawn.** Its defect is the missing second write, not the reflection.
 
-**What calls it.** The era capstone unlocks a rite at the altar; the rite's
-`RitualOutcomeEffectWorker` calls `AdvanceEra()` (#7 § 7, [`ALTAR.md`](ALTAR.md)). Ritual
-outcome application runs from `LordJob_Ritual` on the synced tick, which is what makes the call
-free of sync plumbing — see *Persistence and multiplayer*. **`AdvanceEra()` must have no other
-caller**; a debug route needs its own treatment, also below.
+**What calls it — and the honest answer is that nothing does yet.** #7 § 7 designs the era
+capstone as a rite at the altar whose `RitualOutcomeEffectWorker` calls `AdvanceEra()`, and an
+earlier draft of this section cited [`ALTAR.md`](ALTAR.md) as the home of that rite. **It is
+not.** `ALTAR.md` contains no era content of any kind — a search for `AdvanceEra`, or for the
+word *era* used as anything but a date, returns nothing — and it now specifies
+`Building_Altar.PerformRite` exhaustively: a named-gene grant, an `ext.gene == null` arm that
+opens the lottery, and a no-vector arm that is `TRANSCENDENCE.md`'s departure. There is no
+fourth branch, and adding one is a design question nobody has settled —
+[#109](https://github.com/cjd721/Rimworld-Archinity/issues/109) closed without it.
+
+**The sync argument in the paragraph above does not survive that.** `Building_Altar` is a
+`Building_Enterable` and its rites run from `Building_Altar.Tick`; there is no `LordJob_Ritual`
+and no `RitualOutcomeEffectWorker` anywhere on that path, so *"ritual outcome application runs
+from `LordJob_Ritual` on the synced tick"* describes a mechanism the altar does not use. It
+remains true of rituals in general — see *Persistence and multiplayer* — and it is simply not a
+statement about this method. **A caller reached through the altar's tick would need its own sync
+argument**, which is cheap (the tick is already synced) but is not the one written here.
+
+**So the era rite's owner is a gap**, recorded rather than filled. If a *ritual* is what is
+wanted, [`RELIGION.md`](RELIGION.md) § 3D is the document that actually builds one — a
+`RitualOutcomeEffectWorker` subclass calling `TryUpdateTitle`, with the
+`RitualPatternDef`/`RitualBehaviorDef`/`RitualOutcomeEffectDef` trio in XML — and is the shape to
+copy. If the altar is what is wanted, the branch belongs in `ALTAR.md` and does not exist there
+today. **`AdvanceEra()` must still have no other caller** whichever way that lands; a debug route
+needs its own treatment, also below.
 
 **Reversible? No.** The guard rejects a downgrade and rejects a skip. There is no `RetreatEra()`
 and the boundary log is append-only. Per `CODING_STANDARDS.md` § *The bar for a change*,
@@ -350,8 +370,10 @@ The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is co
 
 **What must be a synced command, and what already is.**
 
-- **`AdvanceEra()` called from a ritual outcome worker needs no sync plumbing** — and the
-  citation for that is the lord tick, not the component tick. `LordJob_Ritual.ApplyOutcome` fires
+- **`AdvanceEra()` called from a ritual outcome worker needs no sync plumbing** — a conditional,
+  and the condition is not yet met: **no document builds that ritual** (§ 3, *What calls it*). The
+  bullet establishes that the ritual route *would* be safe, not that it is the route. The
+  citation is the lord tick, not the component tick. `LordJob_Ritual.ApplyOutcome` fires
   from a `StateGraph` transition's pre-action, which runs under
   `LordManager.LordManagerTick()` → `Map.MapPostTick()` → `TickManager.DoSingleTick()` [V,
   `Verse.Map.MapPostTick` calls `lordManager.LordManagerTick()`]. That is simulation, executed

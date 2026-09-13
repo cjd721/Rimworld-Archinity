@@ -294,4 +294,74 @@ to the **abstract** `GoodwillSituationWorker`, so an omitted `workerClass` throw
 `RimWorld.Ideo.cachedPossibleGoodwillSituations`,
 `RimWorld.FactionUIUtility.GetNaturalGoodwillExplanation` / `.GetOngoingEvents`. 1.6.4871.*
 
+### T-92 — A research project joins the `Schematic` book's grant pool by declaring a modded tab
+
+`ReadingOutcomeDoerGainResearch.OnBookGenerated` picks the project a `Schematic` will advance from
+those that are `PrerequisitesCompleted && !IsFinished && TechprintCount == 0 && generalRules != null`
+**and sit in a `ResearchTabDef` the doer allows**. Vanilla `Schematic` allows `Main`. `OnReadingTick`
+then calls `AddProgress` for the picked project at 20–80 points per hour of reading and **never
+consults `CanStartNow`**. `IsProjectVisible` does consult it, but only when
+`BookOutcomeProperties_GainResearch.usesHiddenProjects` is true, and it defaults **false**.
+
+**The composition is the trap, and VEF supplies both halves of it.**
+`VEF.Research.ResearchProjectUtility.AutoAssignRules` does two things at startup, and the second is
+the one everybody notices:
+
+```csharp
+foreach (ResearchProjectDef allDef in DefDatabase<ResearchProjectDef>.AllDefs)
+    if (allDef.tab != ResearchTabDefOf.Anomaly && allDef.generalRules == null)
+        allDef.generalRules = value;          // VEF_Description_Schematic_Defaults' rulePack
+…
+ThingDefOf.Schematic … .doers.OfType<BookOutcomeProperties_GainResearch>()
+    .FirstOrDefault()?.tabs.Add(new BookTabItem { tab = <"VanillaExpanded"> });
+```
+
+**The first loop defeats the `generalRules != null` condition for the entire def database** — every
+research project in the game that is not on the Anomaly tab and does not set `generalRules` itself
+is given one, vanilla's and every mod's alike. That condition therefore filters nothing once VEF is
+loaded, and **the allowed-tab test is the only discriminator left.** So an author who writes
+`<tab>VanillaExpanded</tab>` on a project — a routine, innocent act, and the correct thing to do for
+a VE-adjacent mod — has thereby enrolled it in a grant pool that ignores `requiredAnalyzed`,
+techprints, the research bench and the mechanitor requirement. Four other mods add their own tabs to
+the same doer (Medieval Overhaul, Vanilla Cooking Expanded, VFE Tribals, Vanilla Vehicles Expanded),
+each widening the pool the same way.
+
+**The one condition that does still bind is `PrerequisitesCompleted`.** The book cannot reach a
+project whose prerequisites are unpaid, so the bypass opens the moment the *prerequisite* is
+finished — not from the start of a save. That is still a bypass of the Analysis gate, because an
+Analysis exemplar and a research prerequisite are independent locks: paying the cheap one unlocks
+the expensive one.
+
+**The failure:** a project you deliberately gated behind an Analysis exemplar is advanced to
+completion by a colonist reading a book. There is no message, no log line and nothing in the
+research UI that distinguishes a project reached legitimately from one reached this way. The gate
+still *looks* present, because `MainTabWindow_Research` honours it — only the book path does not.
+
+**The shipped instance:** `VREA_AndroidTech` declares `<tab>VanillaExpanded</tab>`, sets
+`generalRules` nowhere, and VRE – Android **hard-depends on VEF** — so all three of the picker's
+def-side conditions are satisfied for it by VEF's own startup pass. An Analysis gate on Ultra
+android manufacture is bypassable as soon as its prerequisite `HighMechtech` is complete, unless
+the fix below ships with it. **[V]**
+
+**The fix:** `usesHiddenProjects: true` on `Schematic`'s `BookOutcomeProperties_GainResearch` doer —
+one `PatchOperationAdd`, in `docs/specs/RESEARCH.md` § *The `Schematic` book*. It changes the *test*
+rather than the pool, so it covers all five tab-adding mods at once. Removing the doer outright is
+worse: it deletes the item's purpose.
+
+> The bare mechanism — `OnReadingTick` not consulting `CanStartNow` — is
+> [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83)'s finding and is written up in
+> `docs/specs/RESEARCH.md`. This entry exists for the part nothing else held: that **declaring a tab
+> is what makes a project reachable**, which is invisible at the point the author does it.
+
+*[#83](https://github.com/cjd721/Rimworld-Archinity/issues/83) (mechanism),
+[#78](https://github.com/cjd721/Rimworld-Archinity/issues/78) (composition, and the shipped
+instance). `docs/specs/RESEARCH.md` § *The `Schematic` book*, `docs/specs/ANDROIDS.md` § *The Intel
+gate*. `RimWorld.ReadingOutcomeDoerGainResearch.OnBookGenerated` / `.OnReadingTick` /
+`.IsProjectVisible`, `RimWorld.BookOutcomeProperties_GainResearch.usesHiddenProjects`,
+`RimWorld.ResearchProjectDef.CanStartNow` / `.generalRules` / `.PrerequisitesCompleted`;
+`VEF.Research.ResearchProjectUtility.AutoAssignRules` from `VEF.dll`
+(`2023507013/1.6/Assemblies/`), read for this entry — it assigns **both** `generalRules` across the
+whole database and the `VanillaExpanded` tab; defs `Schematic`, `VEF_Description_Schematic_Defaults`,
+`VREA_AndroidTech`. 1.6.4871.*
+
 ---

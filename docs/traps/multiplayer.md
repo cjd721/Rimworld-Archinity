@@ -677,13 +677,23 @@ in `curNode.options`.** Which one carries a given click depends on how the dialo
   **and** `SyncUtil.isDialogNodeTreeOpen` **and** `__instance.dialog is Dialog_NodeTree`. It
   routes the click through `[SyncMethod] internal static void SyncDialogOptionByIndex(int position)`
   — declared **on `NodeTreeDialogSync` itself**, not on `SyncMethods` — which re-activates
-  `curNode.options[position]` on every client.
+  `curNode.options[position]` on every client. **It re-resolves its target client-locally**:
+  the synced method finds the dialog with `Find.WindowStack.WindowOfType<Dialog_NodeTree>()` and
+  activates `options[position]` on whatever that returns. So when this path takes a click on a
+  stale `isDialogNodeTreeOpen`, the index lands on **a different dialog**, not merely a different
+  list — and building identical option lists, the fix below, does not save you.
 - `Multiplayer.Client.DiaOptionActivate.Prefix` fires when `Multiplayer.InInterface` **and**
   `PersistentDialog.FindDialog(__instance.dialog) != null`, and calls
   `persistentDialog.Click(persistentDialog.ver, persistentDialog.Dialog.curNode.options.IndexOf(__instance))`.
   `Multiplayer.Client.PersistentDialog.Click(int ver, int opt)` is itself `[SyncMethod]`, running
   `Dialog.curNode.options[opt].Activate()` behind a `ver` guard that drops a click made against a
   stale node.
+
+**Neither prefix declares a Harmony priority**, so on any surface where both gates hold at once
+the winner is patch order, and it is **not determinable from the decompile** [V on the absence of
+priority, [I] on which wins]. The stale-flag window is narrow but real, and it arrives from an
+unrelated incident: `isDialogNodeTreeOpen` is armed by the two caravan incident workers below and
+is not cleared by anything the *other* path runs.
 
 **For the faction comms console it is the second one.** `SyncUtil.isDialogNodeTreeOpen` is armed
 only by `SyncUtil.DialogNodeTreePostfix`, applied only by `SyncUtil.PatchMethodForDialogNodeTreeSync`
@@ -716,9 +726,13 @@ is exactly the kind that can differ between two clients mid-evaluation.
 - Two lists that merely *differ in order* produce no error at all on either side — the wrong
   action simply runs on one client.
 
-**Fix: disable an unavailable option; never omit it.** `DiaOption.Disable(string newDisabledReason)`
-keeps the option in the list and greys it with the reason concatenated into the label, which is what
-makes a gate on world state safe here.
+**Fix, and it covers the divergent-list cause only: disable an unavailable option; never omit it.**
+`DiaOption.Disable(string newDisabledReason)` keeps the option in the list and greys it with the
+reason concatenated into the label, which is what makes a gate on world state safe here. **It is
+necessary and not sufficient** — against the client-local re-resolution above, an identical list on
+both machines still activates against whichever `Dialog_NodeTree` each client's `WindowStack`
+happens to return. A reader who has already done this and is still diverging is looking at cause 2,
+not at a failure of the register.
 
 ⚠ **And do not reach for `AddAndDecorateOption` to do it.** Vanilla's helper is **not** a method on
 `FactionDialogMaker` — it is a **local function inside `FactionDialogFor(Pawn, Faction)`**, IL name
@@ -746,6 +760,163 @@ the observations [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16) o
 `Multiplayer.Client.Sync.RegisterSyncDialogNodeTree` — all from `Multiplayer.dll`
 (`2606448745/1.6/AssembliesCustom/`), decompiled 2026-09-12 with `ilspycmd` 8.2.0;
 `RimWorld.FactionDialogMaker.FactionDialogFor`'s local `AddAndDecorateOption`,
-`Verse.DiaOption.Disable` / `.OptOnGUI`. 1.6.4871.*
+`Verse.DiaOption.Disable` / `.OptOnGUI`. 1.6.4871.
+**Amended 2026-09-12 from [#110](https://github.com/cjd721/Rimworld-Archinity/issues/110)**: the
+second cause — `SyncDialogOptionByIndex` re-resolving its target through
+`Verse.Find.WindowStack.WindowOfType<Dialog_NodeTree>()`, which makes the index land on a different
+dialog rather than a different list — plus the absence of a Harmony priority on either prefix, and
+the consequent scoping of the fix to cause 1. Same assembly and build.*
+
+### T-95 — Subclassing `Dialog_NodeTree` drops it out of Multiplayer's bindings
+
+**Multiplayer wraps a `Dialog_NodeTree` only if its *exact* runtime type is in a lookup table,
+and a subclass of yours is not.** `Multiplayer.Client.CancelDialogNodeTree.Prefix` hands the
+window to `PersistentDialog.CreateInstance(Map, Dialog_NodeTree)`, which does
+`bindings.TryGetValue(dialog.GetType(), null)` — an exact-type dictionary lookup, no base-chain
+walk. `bindings` is filled by `PersistentDialog.BindAll(Assembly)` → `FindDialogForType` →
+`GenGeneric.GetTypeWithGenericDefinition(type, typeof(PersistentDialog<>))`, so it holds only the
+types Multiplayer ships a proxy for: `Dialog_NodeTree`, `Dialog_NodeTreeWithFactionInfo` and
+`Dialog_Negotiation` [V].
+
+**On a miss, `CreateInstance` returns `null`** and `CancelDialogNodeTree.Prefix` therefore
+returns `true` — the local `WindowStack.Add` proceeds, and the dialog exists on the adding
+client and nowhere else.
+
+**Every downstream door is then shut too, and none of them says so [V]:**
+
+- `Multiplayer.Client.DiaOptionActivate.Prefix` is gated on
+  `PersistentDialog.FindDialog(__instance.dialog) != null`; there is no such dialog, so it falls
+  through and `DiaOption.Activate` runs **client-locally**.
+- `Multiplayer.Client.NodeTreeDialogSync.Prefix` is gated on `SyncUtil.isDialogNodeTreeOpen`,
+  which is normally false (**T-82**), so it falls through as well.
+- `Multiplayer.Client.ForceShowDialogs` reads `mapDialogs`, which has no entry, so the other
+  client is never shown the window.
+
+**The one diagnostic is empty.** The miss branch is
+`Log.Warning($"Unknown Window Type {type}")` — and `type` is the **result variable of the failed
+`TryGetValue`**, so it is `null` at that point. The line prints `Unknown Window Type ` with no
+type name, which is unsearchable and reads as noise [V].
+
+**This is a constraint on the mod, not a limit of the engine, and the distinction matters.**
+`PersistentDialog.Bind(Type target, Type proxy)` and `PersistentDialog.BindAll(Assembly)` are both
+**public** [V], so a mod that takes a `Multiplayer.API` reference can register its own
+`Dialog_NodeTree` subclass together with its own `PersistentDialog<T>` proxy and get the whole
+path back. **Archinity takes no such reference** — `Archinity.Altar/Source/Archinity.Altar.csproj`
+references `Assembly-CSharp`, the Unity modules and Harmony, and nothing else [V] — so for us the
+vanilla types are the only bound ones.
+
+**Fix: use `Dialog_NodeTree` itself and carry per-dialog state somewhere else** — on the building,
+the comp or the def, not in fields on a window subclass. `docs/specs/ALTAR.md` § 10 does exactly
+this for the altar's lottery offer: the four drawn genes live on `Building_Altar` as scribed
+state, and the dialog is a plain `Dialog_NodeTree` built from them each time.
+
+*[#110](https://github.com/cjd721/Rimworld-Archinity/issues/110), `docs/specs/ALTAR.md` § 10.
+`Multiplayer.Client.PersistentDialog.CreateInstance` / `.Bind` / `.BindAll` / `.FindDialog`,
+`Multiplayer.Client.PersistentDialog_NodeTree`,
+`Multiplayer.Client.PersistentDialog_NodeTreeWithFactionInfo`,
+`Multiplayer.Client.CancelDialogNodeTree.Prefix`, `Multiplayer.Client.DiaOptionActivate.Prefix`,
+`Multiplayer.Client.NodeTreeDialogSync.Prefix`, `Multiplayer.Client.ForceShowDialogs.Prefix` —
+all from `Multiplayer.dll` (`2606448745/1.6/AssembliesCustom/`), decompiled 2026-09-12 with
+`ilspycmd` 8.2.0. 1.6.4871.*
+
+### T-96 — A modded `ChoiceLetter`'s options are synced by neither mechanism
+
+**Vanilla's choose-one-of-N letter is not a synced primitive; each vanilla letter was synced by
+hand, one lambda at a time.** `Multiplayer.Client.SyncDelegates.InitChoiceLetters` carries
+**13 registration calls covering eight `ChoiceLetter` subclasses** — `_ChoosePawn`,
+`_AcceptJoiner`, `_AcceptVisitors`, `_RansomDemand`, `_BabyToChild`, `_BabyBirth`,
+`_GrowthMoment`, `_AcceptCreepJoiner` — through `SyncDelegate.Lambda`,
+`SyncMethod.LambdaInGetter(type, "Choices", n)` and `SyncMethod.Register` [V]. **A modded
+subclass appears on none of them**, so each of its `DiaOption.action`s runs on the clicking
+client alone.
+
+**The second door is shut for a different reason.** `Verse.ChoiceLetter.OpenLetter()` builds a
+`DiaNode`, fills it from `Choices`, and adds a `Dialog_NodeTreeWithFactionInfo` — a **bound**
+type, so **T-95** is not the problem here [V]. But a letter is opened by a click in the letter
+stack, and `Multiplayer.Client.Multiplayer.MapContext` is
+`AsyncTimeComp.tickingMap ?? AsyncTimeComp.executingCmdMap`, both null in interface [V].
+`CancelDialogNodeTree.Prefix` returns immediately on a null map context, so **no
+`PersistentDialog` is created**, and `DiaOptionActivate.Prefix` then finds nothing to sync
+through.
+
+**So the letter looks right and acts wrong.** It is delivered to both clients by the letter
+stack, opens identically on both, shows the same options in the same order — and the button does
+something on one machine only. Nothing is logged on either side.
+
+**How much bespoke work a single letter actually takes, as the measure of what you are not
+getting [V]:** `ChoiceLetter_GrowthMoment` needed a whole
+`Multiplayer.Client.Persistent.GrowthMomentSession` (an `ExposableSession` in
+`map.MpComp().sessionManager`), a `GrowthMomentWindow`, a `[SyncMethod] UpdateChoices(int, List<int>)`
+carrying the selection as **indexes**, a `[SyncMethod] OpenSessionWindow` so the `Rand`-drawing
+`TrySetChoices` runs inside a command on every client, and a `Rand.PushState(Gen.HashCombineInt(
+pawn.thingIDNumber, letter.arrivalTick))` prefix to make the draw itself identical. None of that
+generalises to a letter Multiplayer has never heard of.
+
+**Fix: do not resolve a shared decision through a `ChoiceLetter` unless you take the MP API and
+register it.** Open a plain `Dialog_NodeTree` from **synced code with a map context** — a tick or
+a synced command — so `CancelDialogNodeTree` converts it into a `PersistentDialog` and
+`PersistentDialog.Click(int ver, int opt)` carries the click by index. `docs/specs/ALTAR.md` § 10
+takes that route for the altar's lottery and records why the `ChoiceLetter` shape was rejected
+despite fitting the problem better on paper.
+
+*[#110](https://github.com/cjd721/Rimworld-Archinity/issues/110), `docs/specs/ALTAR.md` § 10.
+`Multiplayer.Client.SyncDelegates.InitChoiceLetters` / `.PreLetterChoices`,
+`Multiplayer.Client.Persistent.GrowthMomentSession` / `.GrowthMomentWindow`,
+`Multiplayer.Client.Multiplayer.MapContext`, `Multiplayer.Client.CancelDialogNodeTree.Prefix`,
+`Multiplayer.Client.DiaOptionActivate.Prefix` — from `Multiplayer.dll`
+(`2606448745/1.6/AssembliesCustom/`), decompiled 2026-09-12 with `ilspycmd` 8.2.0;
+`Verse.ChoiceLetter.OpenLetter`, `RimWorld.ChoiceLetter_GrowthMoment.TrySetChoices`. 1.6.4871.*
+
+### T-97 — A `DiaOption` without `resolveTree` strands its `PersistentDialog` forever
+
+**Multiplayer has exactly one path that removes a dialog from `mapDialogs`, and it only runs when
+the close happens outside the interface.** `Multiplayer.Client.WindowStackTryRemove` postfixes
+`WindowStack.TryRemove(Window, bool)` and, when
+`Multiplayer.Client != null && !Multiplayer.InInterface`, does
+`PersistentDialog.FindDialog(window)?.map.MpComp().mapDialogs.Remove(...)` [V]. There is no other
+removal anywhere in the assembly.
+
+`Multiplayer.Client.Multiplayer.InInterface` is
+`Client != null && !Ticking && !ExecutingCmds && !reloading && Current.ProgramState == Playing &&
+LongEventHandler.currentEvent == null` [V]. So the removal fires **only** when the window is
+closed from inside a tick or inside a synced command — never when a player closes it by hand.
+That asymmetry is deliberate: it is what makes a `PersistentDialog` undismissable, because
+`Multiplayer.Client.ForceShowDialogs` prefixes `MapDrawer.DrawMapMesh` and re-adds
+`mapDialogs.First().Dialog` whenever no `Dialog_NodeTree` is open [V].
+
+**The trap is that answering the dialog is not by itself a close.** `PersistentDialog.Click(int
+ver, int opt)` is `[SyncMethod]`, so it executes as a command with `ExecutingCmds` true and
+`InInterface` false — the removal path is available. What actually closes the window is
+`Verse.DiaOption.Activate`, whose body is `if (resolveTree) OwningDialog.Close();` **before** it
+invokes `action` [V]. **An option built without `resolveTree = true` runs its action, resolves
+whatever it resolves, and never closes** — so `TryRemove` never fires, the entry stays in
+`mapDialogs`, and `ForceShowDialogs` re-opens an already-answered dialog on the next frame that
+map is drawn. Clicking again re-runs the action.
+
+**Nothing reports it.** There is no error, no warning, and the symptom appears only on a client
+that is looking at that map — so it can survive a whole session in which one player never
+switched colonies. The same applies to any code path that *resolves* the offer without closing
+the window: clearing the underlying state is not enough, the dialog has to be closed from the
+tick as well.
+
+**Two rules, and both are needed:**
+
+- **Every option on a `PersistentDialog` sets `resolveTree = true`**, including options that
+  exist only to run an action. Because `Activate` closes before it calls `action`, the removal is
+  not contingent on the action succeeding.
+- **Any tick-side resolution closes the window itself.** `docs/specs/ALTAR.md` § 10 states this
+  for the altar's lottery timeout, which must close the offer dialog from the tick and not merely
+  clear the pending draw.
+
+**Neighbouring hazard: T-82**, which is the other half of getting a `PersistentDialog` option
+right — it governs what the transmitted *index* means, where this entry governs whether the
+dialog ever goes away. An option list can be correct by T-82 and still strand its dialog here.
+
+*[#110](https://github.com/cjd721/Rimworld-Archinity/issues/110), `docs/specs/ALTAR.md` § 10.
+`Multiplayer.Client.WindowStackTryRemove.Postfix`, `Multiplayer.Client.Multiplayer.InInterface`,
+`Multiplayer.Client.PersistentDialog.Click` / `.FindDialog`,
+`Multiplayer.Client.ForceShowDialogs.Prefix`, `Multiplayer.Client.CancelDialogNodeTree.Prefix` —
+from `Multiplayer.dll` (`2606448745/1.6/AssembliesCustom/`), decompiled 2026-09-12 with
+`ilspycmd` 8.2.0; `Verse.DiaOption.Activate`. 1.6.4871.*
 
 ---
