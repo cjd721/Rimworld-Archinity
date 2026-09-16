@@ -56,8 +56,10 @@ lazily. See `docs/agents/domain.md`.
 ### Capability research
 
 Resolving a capability ticket. **A negative is half an answer** — if nothing carries a
-capability, the resolution owes a build. Also: a ticket is a behavior, never one
-implementation seam of one; the corpus, the wide pass and stale source; and how a claim
+capability, the resolution owes the routes we could build. **Route depth, not build
+depth** — answer the requirement as asked; verify routes exist, never design one. Also: a
+ticket is a behavior, never one implementation seam of one; the corpus, the wide pass and
+stale source; and how a claim
 gets marked. The active mod set is **not** the corpus, and every other tool in `tools/`
 narrows to it. See `docs/agents/capability-research.md`.
 

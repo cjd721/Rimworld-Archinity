@@ -326,9 +326,12 @@ need not share those limitations.
 ### Process
 
 **The map**:
-The wayfinder issue tracking the road to a locked design spec —
-[#2](https://github.com/cjd721/Rimworld-Archinity/issues/2). Its children are
-**tickets**, each one question.
+A wayfinder issue whose children are **tickets**, each one question. There are two,
+split on 2026-09-16:
+[#2](https://github.com/cjd721/Rimworld-Archinity/issues/2), the **capability map** —
+requirements stated and answered at route depth, ending in the capabilities document —
+and [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119), the **build map** —
+beats, grids, sourcing and route selection, ending in a buildable specification.
 
 **System**:
 A coherent area of campaign behavior — religion, Charting, the altar, Glittertech.
@@ -354,10 +357,23 @@ are requirements: _Reverence decays; Intel is spent; Charting prioritizes the
 ordered discoveries._
 
 **Technical specification**:
-How a system will satisfy its requirements — state ownership, hooks,
-persistence, synchronization, integration boundaries and the code we must write.
-Lives in `docs/specs/`, organized by system. A spec may record a _verified
-available mechanism_ long before that mechanism is selected.
+Whether a system's requirements can be satisfied, and by which **routes** — each with
+what it gets us, its carrier, XML or C#, its weight and whether it survives
+Multiplayer. Lives in `docs/specs/`, organized by system. A spec lists routes and never
+selects one; many written before 2026-09-16 also carry a designed build, kept for the
+build map.
+
+**Route**:
+One distinct way RimWorld 1.6 could satisfy a requirement — _an XML repoint of VFE
+Empire's tithe defs_, _a custom `WorldComponent`_ — weighed **Easy**, **Medium** or
+**Hard**. Verified to exist, not designed. Selecting one is a build-map decision.
+_Avoid_: option, build (for an unselected route). Not an acquisition route in a
+progression grid, and not a road.
+
+**Capabilities document**:
+`docs/CAPABILITIES.md` — one card per system summarising its spec: possible,
+Multiplayer, routes, what the story can do with it, what it cannot. The capability
+map's deliverable, and what a narrative session reads first.
 
 **Progression grid**:
 A domain charted as rows against era columns, each cell naming what is available

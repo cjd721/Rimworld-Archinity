@@ -7,49 +7,57 @@ How the answer gets built and how the evidence gets gathered. Where the answer l
 
 A capability ticket asks:
 
-> **Does the game already do this? If it does, what carries it, at what cost, and is it
-> multiplayer-safe? If it does not, what is the cheapest thing we can build — using which
-> levers, which donors and which workarounds — and what does that cost?**
+> **Can RimWorld 1.6 satisfy this requirement? Does it work in Multiplayer? By which routes —
+> and for each, what does it get us, what carries it, is it XML or C#, and how heavy is it?**
 
-Both halves are the ticket. Naming the provider mod is part of the first — the sourcing
-ledger (#14) consumes exactly that verdict, and "XML, a patch, or new C#" is unanswerable
-without it. Writing the patch belongs to whoever implements; **saying what to write belongs
-here.**
+That is the whole ticket. It exists so a narrative session can write a beat knowing what is
+possible. **It is not a build.** Nobody has chosen what to build yet; the next map does that,
+from a selected route and a written beat.
 
-### A negative is half an answer
+The answer's shape is fixed by `docs/specs/README.md` § *Lead with the answer*: a two-line
+verdict, then a routes table — what each route gets us, carrier, kind, weight (Easy · Medium ·
+Hard), multiplayer — then the levers, limits and consequences of each. Naming the carrier mod
+is part of it; "XML or C#" is unanswerable without it.
 
-**"Nothing carries this" does not resolve a ticket.** It is a finding on the way to one.
-A resolution whose headline is a confirmed negative is **unfinished** until it also proposes
-a build, and the proposal answers all six of these:
+### Answer the requirement, not a build you imagined
 
-| | |
-|---|---|
-| **Mechanism** | What the thing actually is — a `WorldComponent`, a Def plus a worker, a Harmony postfix on a named method. |
-| **State** | Where the number, the flag or the record lives, and what owns it. |
-| **Persistence** | How it is scribed, and what happens when it is added to a save that predates it. |
-| **Change** | What increments, decrements or writes it, and from which already-existing hook. |
-| **Display** | Where the player sees it. A number the player cannot see is not a feature. |
-| **Cost** | XML, a patch, or new C# — with a line estimate and the file it lands in. |
+**The failure this map paid for:** agents read a general requirement, assumed a particular
+design behind it, and verified *that design* to the method signature and the line count. The
+requirement said *vassals exist and pay tribute*; the spec came back with a `WorldComponent`'s
+scribe keys. None of that was asked, and every hour of it was an hour not spent answering the
+next requirement.
 
-If one of the six genuinely belongs to another ticket, say which ticket **by number**, and
-check that it exists. #52 wrote *"the UI half is a separate ticket"* about a ticket that had
-never been created, and the resulting spec could not answer the question that had been asked.
-**A deferral to a ticket that does not exist is a gap, not a hand-off.**
+The test for any line of investigation: **would a narrative session need this to know what is
+possible?** Whether a route exists, what it can and cannot do, whether it survives Multiplayer
+— yes. Which field stores the state, which hook increments it, how many lines — no, not until
+someone selects the route. Stop there and list the build questions as open, owned by the next
+map.
 
-If one of the six is a *requirement* rather than a mechanism, hand it back — see
-**Requirements stay where they live**, below. That is a different move from deferring it to
-a capability ticket, and it is also written down rather than left implicit.
+**Depth is still owed, and it is not optional.** An assumed route is wrong far more often than
+a read one. Everything below this section — the corpus, the wide pass, the heaps, stale source,
+evidence marking — stands in full. **Verify that the route exists and what it gets us. Do not
+design it.** Aim for the level of confidence where *"there are three ways; the second is right
+for Multiplayer"* is true nine times in ten.
 
-### Propose the build even when it is ugly
+### A negative still owes routes
 
-The point is not an elegant design; it is a *priced* one. "Reimplement ~40 lines of the mod
-we are not shipping", "one `GoodwillSituationDef` and a `workerClass`", "four Harmony
-postfixes in the assembly we already ship" are all complete answers. **"It would need custom
-code" is not** — every negative would need custom code, which is why saying so adds nothing.
+**"Nothing carries this" does not resolve a ticket.** It is a finding on the way to one. If no
+existing carrier does it, the routes are the things we could build — named at the level of
+*"a custom `WorldComponent` holding the balance, Medium"* or *"an XML repoint of VFE Empire's
+tithe defs, Easy, fixed schedule only"* — each with what it gets us and its weight.
 
-Where two builds are plausible, name both, recommend one, and say what separates them.
-Where the build is genuinely blocked by an engine fact, that fact **is** the answer: state
-it, and bring the conflict back rather than inventing a weaker substitute quietly.
+**"It would need custom code" is not a route.** Every negative would, which is why saying so
+adds nothing. Name the shape and the donor it copies, verify that the seams it relies on exist,
+and weigh it.
+
+Where a route is genuinely blocked by an engine fact, that fact **is** the answer: state it,
+and bring the conflict back rather than inventing a weaker substitute quietly.
+
+**A deferral to a ticket that does not exist is a gap, not a hand-off.** #52 wrote *"the UI
+half is a separate ticket"* about a ticket that had never been created. If part of the answer
+belongs elsewhere, name the ticket by number and check that it exists. If it is a
+*requirement* rather than a capability, hand it back — see **Requirements stay where they
+live**, below.
 
 ## Scoping: a ticket is a behavior, not a seam
 
@@ -100,10 +108,10 @@ session produces all three outputs the footer names — the resolution comment, 
 `docs/specs/` section, and any `docs/engine/` or `docs/TRAPS.md` entry — and reports a
 short summary upward.
 
-**The spec section leads with the build.** `docs/specs/README.md` carries the section order;
-follow it. The proposed mechanism comes first and the survey evidence supports it — not the
-other way round. A reader must not have to descend past a catalogue of absences to find out
-what we are going to do.
+**The spec section leads with the answer.** `docs/specs/README.md` carries the section order;
+follow it. The verdict and the routes come first and the survey evidence supports them — not
+the other way round. A reader must not have to descend past a catalogue of absences to find
+out what is possible.
 
 **An orchestrator running several of these reviews and merges; it does not re-derive.**
 Pulling four full resolutions back through one context to write four specs from them is
@@ -161,11 +169,11 @@ days. The asymmetry that follows:
 
 > A **positive** answer may stop the moment it is found.
 > A **negative** answer is not finished until the wide pass has run — and then it is still
-> not finished until it proposes a build.
+> not finished until it names the routes we could build.
 
 "Empire Honor carries this" — done, go read Empire. "Nothing carries this" — only
 worth something if you looked everywhere first, and only *finished* once you have said what
-we build instead.
+we could build instead.
 
 Four tiers, and most tickets stop at the second:
 
@@ -348,10 +356,10 @@ PARTS-BIN's convention, and it governs every claim in a resolution:
 
 Mark every claim one or the other. An unmarked claim reads as [V] and gets built on.
 
-**A proposed build is marked too.** The mechanisms it composes are [V] — you read
+**A route is marked too.** The mechanisms it composes are [V] — you read
 `WorldComponent.ExposeData`, you read the `workerClass` instantiation. The claim that they
 compose into the thing we want is **[I]** until something is built. Say which is which; a
-design presented at [V] is the expensive kind of confidence.
+route presented at [V] is the expensive kind of confidence.
 
 **Cite a stable anchor, never a line number.** A trap is `docs/TRAPS.md` T-14; an
 engine fact is its file and heading in `docs/engine/`. Line numbers rot — the
@@ -381,10 +389,10 @@ reduced to a one-client log check for a single absent warning string, because th
 mechanism had already been read end to end. A RUN that says "needs testing" without
 saying exactly what to observe has not done tier 2's work.
 
-**The evidence class grades the survey, not the build.** A READ ticket still owes a
-proposed build; the build is [I] by construction and that is fine. Do not downgrade a
-resolution to RUN because the *design* is unproven — RUN is for questions reading cannot
-answer, not for designs nobody has compiled.
+**The evidence class grades the survey, not the routes.** A READ ticket still owes its
+routes; a route that composes verified mechanisms is [I] by construction and that is fine.
+Do not downgrade a resolution to RUN because a route is unbuilt — RUN is for questions reading
+cannot answer, not for designs nobody has compiled.
 
 ## Conflicts are cargo, not verdicts
 
@@ -430,10 +438,10 @@ designing an era filter and found instead that no requirements document owns men
 legibility at all, and that `docs/progression/` (where the filter's key would live)
 is empty.
 
-**This is not a licence to hand back the build.** A missing *number* — what the decay rate
-is, where the band thresholds sit — is a requirement. A missing *mechanism* — what holds
-the number at all — is yours. Propose the build with the requirement stated as an open
-parameter, and say which ticket sets it.
+**This is not a licence to hand back the routes.** A missing *number* — what the decay rate
+is, where the band thresholds sit — is a requirement, and usually balance on the next map. A
+missing *mechanism* — what could hold the number at all — is yours. Name the routes with the
+number stated as an open parameter.
 
 ## Known tooling hazards
 
