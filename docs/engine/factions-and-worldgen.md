@@ -37,6 +37,34 @@ it.
 (`docs/TRAPS.md` T-09). The live levers are in *The roster is authorable as defs*
 below.
 
+### Runtime faction *instances* are ordinary — vanilla makes and removes temporary ones
+
+T-07 is about the **def roster**. It does not mean a faction instance cannot appear mid-game.
+Vanilla creates them routinely and cleans them up itself. Verified against 1.6.4871.
+
+- **Three quest roots create one each.** `QuestNode_Root_Beggars`, `QuestNode_Root_Bossgroup` and
+  `QuestNode_Root_Hospitality_Refugee` each call `FactionGenerator.NewGeneratedFactionWithRelations`,
+  set `faction.temporary = true` and call `Find.FactionManager.Add` [V].
+- **Only temporary factions can be removed.** `FactionManager.Remove` logs an error for any other
+  faction [V]. Removal is queued (`QueueForRemoval`) from `Notify_QuestCleanedUp`,
+  `Notify_PawnKilled`, `Notify_PawnLeftMap`, `Notify_PawnLeftFaction` and
+  `Notify_WorldObjectDestroyed`, whenever `FactionCanBeRemoved` holds [V]. `FactionCanBeRemoved`
+  requires the faction to be temporary, reserved by no quest, and referenced by no spawned or
+  caravan pawn and no world object [V]. The queue drains in `FactionManagerTick` [V].
+- **Many consumers skip temporary factions.** Among them are raid sources
+  (`FactionCanBeGroupSource`), the comms console list, and royal-favour and trader pickers [V].
+- **`QuestPart_InnerFactionFight` splits a map's pawns into two sides** [V]. It sends every other
+  pawn in a list into a freshly generated temporary faction and gives each side a
+  `LordJob_AssaultThings` against the other. It completes when one side is all downed or destroyed.
+  **Nothing in vanilla calls it**: only its `QuestGen` extension references it.
+- **`QuestPart_SetFactionHidden` writes `Faction.hidden` at runtime** [V]. This is how a faction
+  hidden at worldgen can be revealed from a quest. There is no XML node for it; the `quest.SetFactionHidden`
+  extension is C#.
+
+What forbids a new faction in the campaign is a **requirement**
+(`docs/requirements/RELIGION.md` § *Revolt*), not the engine.
+Established on [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131).
+
 ---
 
 ## How many settlements a faction gets
@@ -135,6 +163,14 @@ UI, before any save exists.
 > `forcePlayerToAddFactionIfMissing` run from a `GameComponentUtility.LoadedGame`
 > postfix — per client, outside any synced command, consuming `Rand` while
 > mutating `FactionManager` and `WorldObjects`. Never set them.
+>
+> **VFE Empire sets the forbidden fields on a faction it ships.** `VFEE_Deserters`
+> (`2938820380/1.6/Defs/FactionDefs/Factions_Hidden.xml`) carries `forcedFactionData` with
+> `requiredFactionCountDuringGameplay 1` and `forceAddFactionIfMissing true`, under
+> `MayRequire="OskarPotocki.VFE.Deserters"`. With VFE Deserters loaded, a world missing that
+> faction — World Tech Level strips it (**T-54**) — gets it re-created by
+> `VanillaExpandedFramework_GameComponentUtility_LoadedGame_Patch` on each client's load. A world
+> that already holds it is untouched. ([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130))
 
 ### Faction Customizer cannot remove factions
 
@@ -293,6 +329,15 @@ Two further constraints on anything authored here: `RaidStrategyDef` has no
 and any `RaidStrategyDef` we author is silently excluded from the VFE Empire
 deserter faction (`docs/TRAPS.md` T-14).
 
+**`IncidentWorker_PawnsArrive.MustHaveSettlementOnLayer` is dead in 1.6.** The base
+`FactionCanBeGroupSource` does reject a non-hidden faction with no settlement on the map's layer
+when the property is true. But it is `protected virtual bool … => false`, and **no class
+overrides it**: not in `Assembly-CSharp.dll` 1.6.4871, and not in any corpus dll (both
+encodings, `-i`). A landless, visible faction is therefore a valid arrival source. The one live
+settlement-on-layer gate is `QuestNode_GetPawn.mustHaveSettlementOnLayer`, an XML field.
+This corrects [#70](https://github.com/cjd721/Rimworld-Archinity/issues/70)'s resolution.
+([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130))
+
 ---
 
 ## Faction composition and containment
@@ -416,6 +461,78 @@ the window in which a `WorldComponent` may not yet hold its records.
 Established on [#73](https://github.com/cjd721/Rimworld-Archinity/issues/73); the system built on it
 is `docs/specs/RELIGION.md` § *The build — religious institutions inside foreign factions*.
 
+---
+
+## Hidden factions, alliances, and what holds a relation
+
+Verified against RimWorld 1.6.4871 (`Assembly-CSharp.dll`), on
+[#130](https://github.com/cjd721/Rimworld-Archinity/issues/130).
+
+**A hidden faction has no goodwill.** `Faction.HasGoodwill => !Hidden && !temporary`. While a
+faction is hidden:
+
+- `CanChangeGoodwillFor` refuses every change, in both directions, so quest goodwill rewards
+  no-op.
+- `CheckReachNaturalGoodwill` returns early.
+- `GoodwillSituationManager.RecalculateAll` skips the faction.
+- `Faction.SetRelationDirect` is the only way to set its relation kind. It works only while
+  one side has no goodwill; when both do, it `Log.Error`s and returns.
+
+**Revealing a faction hands its relation back to goodwill.** The relation keeps the
+`baseGoodwill` worldgen gave it. `TryMakeInitialRelationsWith` → `GetInitialGoodwill` gives
+−100 for permanent-enemy defs, −80 for `naturalEnemy`, and otherwise 0. The next recalculation
+runs `CheckKindThresholds` against that number, so **a kind set directly while the faction was
+hidden is re-derived on reveal**. An Ally at goodwill 0 becomes Neutral. Write goodwill in the
+same command as the reveal.
+
+**The reveal part.** `QuestPart_SetFactionHidden` flips `faction.hidden` on a signal. Vanilla
+uses it for mid-game reveals: beggars, refugees, reliquary pilgrims, the worshipped terminal. No
+`QuestNode` wraps it. Its `hidden` flag is unscribed (**T-116**).
+
+**Alliance hysteresis.** `FactionRelation.CheckKindThresholds`:
+
+| From | To | When |
+|---|---|---|
+| any but Hostile | Hostile | goodwill ≤ −75 |
+| any but Ally | Ally | goodwill ≥ 75 |
+| Hostile | Neutral | goodwill ≥ 0 |
+| Ally | Neutral | goodwill ≤ 0 |
+
+`Faction.CheckReachNaturalGoodwill` (every `FactionTick`, i.e. every tick) counts a timer while
+base goodwill sits outside `[natural − 50, natural + 50]`. At 3,000,000 it steps at most 10
+toward the band. **So drift alone cannot end an alliance while natural goodwill is ≥ −49 and no
+situation caps max goodwill at ≤ 0.** Losses that are not drift:
+
+- `Notify_MemberDied` / `Notify_MemberCaptured` → `GoodwillToMakeHostile`
+- `GoodwillSituationWorker_AttackingSettlement`: a cap of −80 while the player attacks
+- `SettlementProximityGoodwillUtility`: −30/−20/−10 every 900,000 ticks for a player settlement
+  within 2/3/4 tiles
+
+Natural goodwill is the sum of situation offsets: `NaturalEnemy` −130, `SameIdeo` +10, meme
+pairs from −50 to +10.
+
+**`Faction.defeated` has one vanilla writer**, `SettlementDefeatUtility.CheckDefeated`, when the
+last base falls on a map. A faction emptied by `SetFaction` transfers is not defeated.
+
+## Vanilla saves who started the game
+
+`Game.InitNewGame` copies `GameInitData.startingAndOptionalPawns` into
+`GameInfo.startingAndOptionalPawns`. That happens after `GameInitData.PrepForMapGen` has trimmed the
+list to `startingPawnCount` and passed the left-behind optional pawns to the world with
+`wasLeftBehindStartingPawn`. `GameInfo.ExposeData` saves the list by reference and drops nulls on
+load. Vanilla reads it during play (`Pawn_InfectionVectorTracker`). The same method then calls
+`Scenario.PostGameStart` and `GameComponentUtility.StartedNewGame`, the two game-start hooks. [V]
+
+`ScenPart_ConfigPage_ConfigureStartingPawns_Xenotypes` with `requiredAtStart` fills
+`GameInitData.startingXenotypesRequired`. `Page_ConfigureStartingPawns.ExtraCanDoNextReport` refuses
+unless each required xenotype's count among the starting pawns **equals** its `count`. Quick-test
+play (`Root_Play.SetupForQuickTestPlay`) bypasses the page. [V] Multiplayer's multifaction path
+writes none of this (**T-114**, § 1d).
+
+Established on [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134).
+
+---
+
 ## A `WorldObjectComp` added by XML patch backfills into an existing save
 
 Verified against RimWorld 1.6.
@@ -437,3 +554,27 @@ reaches every settlement in the game. `WorldObjectComp` then offers `CompTick`, 
 fails loudly.
 
 Established on [#73](https://github.com/cjd721/Rimworld-Archinity/issues/73).
+
+## Subordination — what the engine has, and what it does not
+
+Verified against RimWorld 1.6 (`Assembly-CSharp.dll`, the build `docs/data/MOD-SNAPSHOT.md` pins).
+Established on [Vassals — can we, and by which routes](https://github.com/cjd721/Rimworld-Archinity/issues/120);
+the routes are `docs/specs/TERRITORY.md` §3.
+
+- **There is no vassal relation.** `RimWorld.FactionRelationKind` is `Hostile`, `Neutral`, `Ally` —
+  nothing else. Any overlord/vassal state is stored by whoever builds it.
+- **Conquering a faction's last settlement marks the faction defeated.**
+  `SettlementDefeatUtility.CheckDefeated(Settlement)` replaces the settlement with a
+  `DestroyedSettlement` of the same faction and destroys it; if `HasAnyOtherBase` is false it sets
+  `Faction.defeated = true` (a plain public field) and appends the "faction destroyed" line to its
+  letter. A defeated faction then fails `Faction.CanChangeGoodwillFor` for every counterparty. Code
+  that replaces settlements itself does not pass through this method.
+- **Vanilla's ally perks key on `PlayerRelationKind == Ally`.**
+  `IncidentWorker_RaidFriendly.FactionCanBeGroupSource` admits only allies;
+  `StorytellerComp_FactionInteraction.MakeIntervalIncidents` scales incident counts by
+  `StorytellerUtility.AllyIncidentFraction(fullAlliesOnly)` and **passes no faction** — the incident
+  worker chooses; `VisitorGiftForPlayerUtility.ChanceToLeaveGift` is `0.25 ×` a wealth curve `×` a
+  goodwill curve, zero while hostile.
+- **A quest cannot be routed to a named faction from XML.** `QuestNode_GetFaction.IsGoodFaction`
+  filters on hidden, `ofPawn`, `exclude`, permanent-enemy, relation kind, attack state and
+  goodwill-reward flags — never on `FactionDef` or on any stored record.

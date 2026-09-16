@@ -547,3 +547,155 @@ itself is unchanged and still true of shipping code.
 `Archinity.GenePoolDef` in `ArchinityAltar.dll`. 1.6.4871.*
 
 ---
+
+### T-104 — `CompStudiable` progress does not survive stacking
+
+`RimWorld.CompStudiable` keeps its study progress on the comp: `studyPoints` (saved as
+`studiedAmount`), `studyInteractions` and `lastStudiedTick`. It overrides **none** of
+`ThingComp.AllowStackWith`, `PreAbsorbStack` or `PostSplitOff`, and `AllowStackWith`
+defaults to `true`. So on any stackable def carrying the comp:
+
+- **Merging two stacks.** `ThingWithComps.TryAbsorbStack` gives each comp only a
+  `PreAbsorbStack` call, which `CompStudiable` ignores. The absorbing stack keeps its own
+  progress, and the absorbed stack's progress disappears with it.
+- **Splitting a stack.** `ThingWithComps.SplitOff` makes the new piece through
+  `ThingMaker.MakeThing`, then calls `PostSplitOff`, which `CompStudiable` ignores. The
+  split piece starts at 0.
+
+Nothing is logged, and the inspect pane simply shows the surviving number. A payout
+keyed to study thresholds (`IThingStudied.OnStudied`) can therefore lose progress the
+player already paid for in pawn-hours. It can also re-pay a threshold, if the record of
+what was paid does not travel with the progress.
+
+**Fix:** give every studiable item `stackLimit 1`, or override all three members on a
+subclass.
+
+*[#115](https://github.com/cjd721/Rimworld-Archinity/issues/115). 1.6.4871.*
+
+---
+
+### T-105 — A believer count on a `Precept_RoleMulti` def is inert, and the tooltip still advertises it
+
+`Precept_RoleMulti.Init` sets `active = true`, and `Precept_RoleMulti.RecacheActivity` only
+drops holders failing `ValidatePawn`. Neither reads `activationBelieverCount` or
+`deactivationBelieverCount`. `Precept_Role.GetTip` prints `RoleBelieverCountDesc` whenever
+`activationBelieverCount != -1` on a non-leader role. So a multi-holder role authored with
+`activationBelieverCount: 3` is assignable with one believer, while its tooltip tells the player
+it needs three.
+
+**Remedy.** Leave both counts unset on multi-holder defs, as `PreceptRoleMultiBase` does. Gate a
+multi-holder role through a `RoleRequirement`.
+
+*[#114](https://github.com/cjd721/Rimworld-Archinity/issues/114). `RimWorld.Precept_RoleMulti.Init`,
+`.RecacheActivity`, `RimWorld.Precept_Role.GetTip` in `Assembly-CSharp.dll`. 1.6.4871.*
+
+---
+
+### T-106 — A `Precept_RoleSingle` with `activationBelieverCount` −1 never activates, and nothing says so
+
+`PreceptDef.activationBelieverCount` defaults to −1, and only `PreceptRoleSingleBase` sets 3.
+`Precept_RoleSingle.RecacheActivity` activates only when `def.activationBelieverCount >= 0`, and
+`Precept_RoleSingle.Init` does not set `active`. So a single-holder role def that does not
+inherit the base is never active:
+- The inactive letter needs `active` to have been true, so no letter is sent.
+- `SocialCardUtility.DrawPawnRoleSelection` greys the role but prints a believer reason only when
+  `activationBelieverCount` exceeds the believer count, so the menu shows no reason.
+- The tooltip's believer line is suppressed at −1.
+
+**Remedy.** Inherit `PreceptRoleSingleBase`, or set `activationBelieverCount` ≥ 0 explicitly.
+Keep `deactivationBelieverCount` *below* it: at activation ≤ deactivation the role flips off and
+on every world tick (loud, see `docs/engine/ideology.md`).
+
+*[#114](https://github.com/cjd721/Rimworld-Archinity/issues/114). `RimWorld.Precept_RoleSingle.RecacheActivity`,
+`RimWorld.SocialCardUtility.DrawPawnRoleSelection`, `RimWorld.PreceptDef` in `Assembly-CSharp.dll`. 1.6.4871.*
+
+---
+
+### T-107 — A custom `RoleEffect` subclass does nothing, and the tooltip lists it anyway
+
+`RimWorld.RoleEffect`'s only hooks are `Label`, `CanEquip` (read by
+`EquipmentUtility.RolePreventsFromUsing`) and `Notify_Tended`. Every other role effect is
+applied by a reader that type-tests a concrete vanilla class:
+- `StatWorker` looks for `RoleEffect_PawnStatOffset` / `RoleEffect_PawnStatFactor`;
+- `QualityUtility.GenerateQualityCreatedByPawn` looks for `RoleEffect_ProductionQualityOffset`;
+- `PawnUtility` looks for `RoleEffect_HuntingRevengeChanceFactor`.
+
+A new subclass is loaded, and its label appears under *Role effects* in `Precept_Role.GetTip`,
+but it changes nothing. The corpus ships no `RoleEffect` subclass to copy.
+
+**Remedy.** Express the effect through the vanilla subclasses against an existing `StatDef`, or
+ship the reader: a `StatPart` keyed on the holder, as in VIE Memes' `StatPart_Pattisier`, or a
+Harmony patch at the consuming site.
+
+*[#114](https://github.com/cjd721/Rimworld-Archinity/issues/114). `RimWorld.RoleEffect`, `RimWorld.StatWorker`,
+`RimWorld.QualityUtility`, `RimWorld.Precept_Role.GetTip` in `Assembly-CSharp.dll`. 1.6.4871.*
+
+---
+
+### T-108 — `Ideo.GetRole` returns one role; a second role on the same pawn is held and inert
+
+`Ideo.GetRole(p)` returns the first `Precept_Role` in `RolesListForReading` whose `IsAssigned(p)`
+is true. Stat effects, production quality, conversion power, weapon bans, the role menu and
+ritual role matching all read it. `Precept_RoleMulti.Assign` and `Precept_RoleSingle.Assign`
+do not check whether the pawn already holds another role. Only the role-change ritual unseats
+first (`RitualOutcomeEffectWorker_RoleChange.Apply`). So code that seats a pawn in two roles
+leaves them listed as a holder of both, while only the first in precept sort order has any
+effect.
+
+**Remedy.** Treat one role per pawn as an engine rule. When seating from code, `Unassign` the
+pawn's current `GetRole` first, as the ritual does.
+
+*[#114](https://github.com/cjd721/Rimworld-Archinity/issues/114). `RimWorld.Ideo.GetRole`, `RimWorld.Precept_RoleMulti.Assign`,
+`RimWorld.RitualOutcomeEffectWorker_RoleChange.Apply` in `Assembly-CSharp.dll`. 1.6.4871.*
+
+---
+
+### T-111 — A pawn's xenotype is not identity
+
+A custom `XenotypeDef` reads like a durable marker for "this pawn is one of ours". Two vanilla
+calls rewrite it with no message.
+
+- **`GeneUtility.ReimplantXenogerm(caster, recipient)`** calls
+  `recipient.genes.SetXenotype(caster.genes.Xenotype)`. **Every pawn a sanguophage-style reimplanter
+  converts carries the caster's xenotype.**
+- **`GeneUtility.ImplantXenogermItem(pawn, xenogerm)`** calls `pawn.genes.SetXenotype(Baseliner)`.
+  `Pawn_GeneTracker.SetXenotype` runs `ClearXenogenes()` before adding the new xenotype's genes. A
+  xenotype with `inheritable false` places its genes as **xenogenes**
+  (`AddGene(gene, !xenotype.inheritable)`), so implanting any xenogerm into such a pawn **erases the
+  xenotype and every gene that came with it**.
+- Anomaly's `GameComponent_PawnDuplicator.Duplicate` copies xenotype, xenogenes and endogenes onto
+  the duplicate.
+
+Gene-based markers fail the same way. Vanilla `Sanguophage` already carries `Ageless` and
+`Deathless`, so "has these genes" also matches every vanilla sanguophage.
+
+**This bites Archinity directly.** The founders are `Archinity_ArchonianSanguophage`
+(`inheritable false`), and `GenePool_Archite.xml`'s `founderOnlyGenes` are `Deathless` and
+`Ageless`. Neither is a founder predicate once reimplanting returns.
+
+**Remedy.** Record identity in state that none of these calls touches. `docs/specs/RELIGION.md`
+§ *Founders*, route A1, stamps a founder hediff at game start with `duplicationAllowed: false`.
+
+*[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). `RimWorld.GeneUtility.ReimplantXenogerm`
+/ `.ImplantXenogermItem`, `Verse.Pawn_GeneTracker.SetXenotype`,
+`RimWorld.GameComponent_PawnDuplicator.Duplicate`; `Biotech/Defs/GeneDefs/XenotypeDefs.xml`. 1.6.4871.*
+
+---
+
+### T-113 — An Anomaly duplicate inherits every record hediff unless the def opts out
+
+`GameComponent_PawnDuplicator.CopyHediffs` clears the duplicate's hediffs and re-adds every source
+hediff whose `def.duplicationAllowed` is true and whose body part exists on the duplicate. Added
+parts and implants are copied only if `organicAddedBodypart`. `HediffDef.duplicationAllowed`
+**defaults to `true`**. A hediff used as a per-pawn store therefore appears on the duplicate as a
+second copy, and nothing reports it. The one we specify is `Archinity_FounderRecord` /
+`CompFounderRecord` (`docs/specs/TRANSCENDENCE.md`). The duplicate then reads as a second founder to
+every gate.
+
+**Remedy.** Set `<duplicationAllowed>false</duplicationAllowed>` on any identity- or record-bearing
+`HediffDef`.
+
+*[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). `RimWorld.GameComponent_PawnDuplicator.CopyHediffs`,
+`Verse.HediffDef.duplicationAllowed`. 1.6.4871.*
+
+---

@@ -21,7 +21,7 @@ colony physically studied a named item, and what happens to the item
 ([#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)). It is the mechanism behind
 the Glitterite loop in
 [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md). Destructive Glitterite
-analysis is a different activity owned by [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115).
+analysis is a different activity, not part of that gate: its carrier question is answered in [*Destructive artifact analysis*](#destructive-artifact-analysis), which shares no state with §§1–6.
 
 It also owns **research bypasses** — every route in the bin that advances or completes a
 research project without the colony spending research points at a bench, and the shutoff for
@@ -718,6 +718,152 @@ a rebuild without counting the thing being rebuilt is how both numbers went wron
 
 **[I] on the composition.** Every mechanism above was read [V]; the claim that they compose into
 a working on-ramp is inferred until it is built and a colonist is watched failing to mine.
+
+---
+
+## Destructive artifact analysis
+
+### Purpose and scope
+
+Answers [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) § *Intel Is Capability, Not Exposition*: *"a one-use device that a colonist brings home and analyzes over a long period. That destructive analysis consumes the device, produces Intel as its secrets are uncovered, and raises Trace. It does **not** add research progress and is distinct from the surviving Exemplar route."* `CONTEXT.md` calls this act **Glitterite analysis**. Established on [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115).
+
+**This section owns** what carries the job, and whether payouts survive interruption, destruction, moving maps, save/load and Multiplayer.
+
+**It does not own:**
+- The Intel balance, which it reaches only through `Credit` ([`CURRENCIES.md`](CURRENCIES.md)).
+- The Trace number, which it reaches only through `Notify_Trace` ([`TRACE.md`](TRACE.md)).
+- The Exemplar gate (§§1–6 above, [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)). It shares no state with it.
+- The artifact catalogue, yields or Trace amounts ([#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)).
+- Where the pre-commit warning is drawn ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)).
+
+### Verdict
+
+- **Possible? Yes.** Vanilla's Core study loop (`CompStudiable`, no Anomaly) keeps partial progress on the item across many sessions. One payout comp of ours, on the existing `IThingStudied` hook, adds Intel, Trace and consumption.
+- **Multiplayer? Yes.** On the recommended route, progress and payouts are on the synced tick, and the only state-writing control (the study toggle) is already synced by Multiplayer.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — Vanilla study loop plus a payout comp** | Colonists study the specific artifact over many sessions, where it lies or at a research bench. Progress is saved on the item. Intel and Trace are paid in increments; the item is destroyed at the end | vanilla `CompStudiable` + Core `WorkGiver_StudyInteract`, plus our `ThingComp : IThingStudied` | XML + C# | **Medium** | Yes |
+| B — Our subclass of `CompAnalyzable` | The "Analyze…" order at a bench; payouts per completed session; item destroyed | vanilla `CompAnalyzable`, plus our subclass | XML + C# | Medium | Yes — **not recommended**: the in-flight session is lost on interruption, and it shares `AnalysisManager` with the Exemplar gate |
+| C — A production bill with an unfinished item | Long bill; `workLeft` saved; payout on completion; increments only by staged recipes | vanilla `unfinishedThingDef`, plus our `RecipeWorker` and a workstation def | XML + C# | Medium | Yes |
+| D — A use-item job (`CompUsable`) | One timed use, one payout | vanilla, plus a `CompUseEffect` | XML + C# | Medium | Yes — **not recommended**: interruption loses all progress |
+| E — VEF `StudiableBuilding` | A building, not an item | VEF | C# | Medium | With work — **not recommended**: fixed 1200 ticks, no saved progress, T-59 to T-62 |
+| F — A fully custom interactable | What A gets | ours | C# | Medium–Hard — **not recommended**: rebuilds A's vanilla half |
+
+#### Route A — vanilla study loop plus a payout comp
+
+**Levers:**
+- **The specific item.** `CompProperties_Studiable.studyAmountToComplete` sets the duration, scaled by `ResearchSpeed` [V].
+- **Opt-in commitment.** With `studyEnabledByDefault false` + `showToggleGizmo true`, nobody touches the artifact until the player turns study on. Vanilla's own precedent is Ideology's `GrandArchotechStructure` [V].
+- **Payouts in increments.** `IThingStudied.OnStudied` fires after every interaction, reached from `StudyManager.Study` → `ThingWithComps.Notify_Studied` [V]. Our comp calls `Credit` and `Notify_Trace` at thresholds and destroys the item on the last one [I].
+- **Trace timing.** Trace at start (the first `OnStudied`), at each increment, and at completion, all from the tick [I].
+- **Free readouts.** "Study progress: x / y" in the inspect pane and on the info card [V].
+- **The `"Researched"` quest signal** to the item's `questTags` on completion [V].
+- **Place.** Where the artifact lies, with no further code, via the Core WorkGiverDef `StudyArchotechStructures` [V]. Or at a research bench, via the shipped but never-issued `StudyItem` JobDef / `JobDriver_StudyItem` plus one small WorkGiver of ours [V that the driver exists; I that this composes].
+
+**Cannot:**
+- Pay anything without our comp [V].
+- Study an artifact that is not spawned [V].
+- Keep separate progress per item within a stack, so artifacts need `stackLimit 1` [V; see Constraints].
+
+**Consequences:**
+- It uses no `AnalysisManager`, `analysisID` or `requiredAnalyzed`, so it is structurally separate from the Exemplar gate [V].
+- On the bench variant, `ResearchSpeed` applies twice and the bench's `ResearchSpeedFactor` is ignored [V]. That is balance, not a blocker.
+- If More Realistic Research ever ships, its `Patch_CompStudiable_Study` postfix sees every completed `CompStudiable` [V]; whether it ignores ours is [I] (#14).
+
+#### Route B — our subclass of `CompAnalyzable`
+
+**What it gets us:**
+- Vanilla's "Analyze…" gizmo and float menu with their refusal reasons, and a mandatory research bench [V].
+- `OnAnalyzed` is `public virtual` and `destroyedOnAnalyzed` consumes the item [V].
+- Payouts per session, provided our subclass keeps its own saved per-item count [I].
+
+**Cannot:**
+- Keep the time spent on an interrupted session. `JobDriver_AnalyzeItem` is one `Toils_General.Wait` [V].
+- Count per item through vanilla's counter. `AnalysisManager` counts per `analysisID`, with `required` frozen at the first spawn (§3, T-41) [V].
+
+**Consequences:**
+- It puts destructive analysis on the same manager, verb and ID space as the Exemplar gate. That is what `CURRENCIES.md` § *The interface to #67* forbids folding together.
+
+#### Route C — a production bill with an unfinished item
+
+**What it gets us:**
+- `UnfinishedThing` saves `workLeft` and a deep copy of `ingredients` [V].
+- `RecipeWorker.Notify_IterationCompleted` is the completion hook [V].
+- Multiplayer syncs `BillStack.AddBill`/`Delete`/`Reorder` and the `UnfinishedThing` cancel gizmo [V].
+- Increments by staging, one intermediate item per stage [I].
+
+**Cannot:**
+- Target one specific instance. Bills choose ingredients by filter.
+- Pay part-way through a stage without a Harmony patch.
+- Run at a research bench. `Building_ResearchBench` is not an `IBillGiver` [V].
+
+**Consequences:**
+- A "do X times" bill can burn artifacts, and Trace, unasked [I].
+- Cancelling returns the artifact at `GenMath.RoundRandom(0.75)`, so it is lost 25% of the time [V].
+- It needs a workstation def.
+
+#### Payout survival
+
+| | A | B | C |
+|---|---|---|---|
+| Interruption | progress and completed interactions kept on the item [V] | in-flight session lost [V] | `workLeft` kept [V]; no mid-stage payout [V] |
+| Artifact destroyed mid-way | paid Intel stays; remainder lost; no double payment [I] | as A [I] | lost with the `UnfinishedThing`; a cancel returns it 75% of the time [V] |
+| Moving maps | progress travels on the saved comp [V on save, I on transfer]; pauses while despawned [V] | needs a bench on the destination [V] | the unfinished item is haulable [I] |
+| Save/load | vanilla fields saved [V]; our record of what was paid must be saved | our count must be saved | saved [V] |
+| Multiplayer | tick-driven; toggle synced [V] | `OrderForceTarget` synced for game-assembly types; job synced [V] | bills synced [V] |
+
+**Recommendation — not a selection.** Route A. It is the only route with per-item progress on the tick, increments from a hook vanilla already calls, and no new synced command, and it keeps destructive analysis apart from the Exemplar gate. C is the fallback if an ordinary bill is wanted. Where-it-lies versus at-a-bench is a lever inside A.
+
+### Constraints
+
+- **Artifacts must be `stackLimit 1` on any `CompStudiable` route** [V]. `CompStudiable` overrides none of `AllowStackWith`, `PreAbsorbStack` or `PostSplitOff`. A merge silently keeps one stack's progress, and a split starts the new piece at 0. Proposed trap, unnumbered.
+- **Leave `knowledgeCategory` and `anomalyKnowledge` unset** on the artifact [V]. `WorkGiver_StudyInteract` refuses things with a knowledge category, which then route to the Anomaly-only `WorkGiver_DarkStudyInteract`. `StudyAnomaly` is the one path in this loop that writes research knowledge.
+- **No route resumes a destroyed artifact.** "Recoverable" can only mean *what was already paid is kept* [V by construction]. The requirement is handed to #117.
+- **Every payout and Trace write must stay on the tick** (`OnStudied`, `Notify_IterationCompleted`, `OnAnalyzed`). Any confirmation dialog the build adds is client-local, and its commit action must go through a synced path [I]. The vanilla toggle already is one [V].
+- **T-41** and **T-40** bind Route B only. **T-59 to T-62** bind Route E only.
+
+### Available mechanisms
+
+**Vanilla, `Assembly-CSharp.dll` 1.6.4871 [V]:**
+- `CompStudiable` saves `studiedAmount`, `studyInteractions`, `lastStudiedTick` and `studyEnabled`. On completion it sends the `"Researched"` quest signal, the `completedLetter*` letter and `completedMessage`.
+- `StudyManager.Study` calls `Thing.Notify_Studied`, which `ThingWithComps` passes to `IThingStudied` comps. `CompStudyUnlocks` is vanilla's threshold-letter user of it.
+- `JobDriver_StudyInteract` runs sessions of 5 × `Study(pawn, 0.87)`, with interactions carried over by `AddFinishAction`, and fails when the item is despawned or forbidden. `WorkGiver_StudyInteract.HasJobOnThing` has no faction test.
+- `JobDriver_StudyItem` hauls the item to a bench and studies per tick. Its Core JobDef `StudyItem` has no issuer.
+- `CompAnalyzable` / `JobDriver_AnalyzeItem` / `AnalysisManager`, as §§2–3. `CompUsable` / `JobDriver_UseItem` is one `Wait(useDuration)`.
+- `UnfinishedThing` / `Toils_Recipe` / `RecipeWorker`, as Route C.
+
+**Multiplayer, `2606448745/1.6/AssembliesCustom/Multiplayer.dll`, md5-identical under both roots [V]:**
+- `SyncDelegates.Init` registers `CompStudiable.CompGetGizmosExtra` lambda 1 as non-debug, and the `UnfinishedThing.GetGizmos` lambdas.
+- `SyncFields.CompStudiableEnabledCheckbox` watches `studyEnabled`.
+- `SyncMethods.Init` registers `OrderForceTarget` on every game-assembly `ITargetingSource` type, plus `Pawn_JobTracker.TryTakeOrderedJob` and `BillStack`.
+
+**VFE Deserters, `3025493377/1.6/Assemblies/VFED.dll` [V]: not carriers.**
+- `CompIntelExtract` is one 3600-tick wait that spawns `VFED_Intel` sized by a settings slider (T-18), and it does not consume the thing.
+- `CompIntelScraper` is 10 timed pulses with weighted-random Intel, Visibility or raid outcomes, then self-destruction. It is a donor for the shape of increments plus Trace, with no colonist labour.
+- Multiplayer Compat syncs both comps' gizmos (`Multiplayer.Compat.VanillaFactionsDeserters`, `Referenced/`).
+
+**VEF `StudiableBuilding`:** as [`CHARTING.md`](CHARTING.md) § 10 — buildings only, `totalTime = 1200` constant, no saved progress.
+
+**Corpus.** No mod ships a destructive, long, per-item analysis job. The wide pass over both roots covered `#Strings` identifiers, `#US` null-interleaved literals and XML, with validators `StudiableBuilding` (ASCII) and `VFED.ExtractIntel` (UTF-16). It returned only the carriers above plus More Realistic Research's `CompStudiable` patches (§ *More Realistic Research*). The method is on #115's resolution.
+
+### Status
+
+READ. Every mechanism cited is [V]. Each route's composition (payout comp → `Credit` / `Notify_Trace`) is [I] until built. [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115).
+
+### Open questions
+
+- **#117 (requirement):** whether "recoverable" means "paid so far is kept"; where analysis happens (in place or at a bench); what moves Trace (start, increments, completion) and by how much.
+- **#61 (requirement):** where the projected yield and the Trace warning appear before commitment.
+- **Build map ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)):**
+  - where the record of paid increments lives and its save key;
+  - how `stackLimit 1` is enforced;
+  - our own WorkGiverDef label versus reusing `StudyArchotechStructures`;
+  - the bench variant's WorkGiver and its doubled `ResearchSpeed`;
+  - destroying the item in `OnStudied` or through a quest part on `"Researched"`.
+- **RUN (unowned, narrow):** `StudyManager.UpdateStudiableCache` keeps a despawned, still-studiable thing in its unsaved per-map cache [V]. Whether `WorkGiver_StudyInteract` on the origin map logs an error after a partly studied artifact leaves in a caravan is [I]. To settle it, watch that map's log for about a day.
 
 ---
 

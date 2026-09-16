@@ -80,6 +80,20 @@ role precept inheriting it — vanilla's moral guide included — is inactive be
 believers and is unassigned on the next recache if assigned anyway [V]. `leaderRole:
 true` short-circuits the count on both the activation and deactivation branches.
 
+**All of the above is `Precept_RoleSingle`.** `PreceptRoleMultiBase` sets no believer
+counts. `Precept_RoleMulti.Init` sets `active = true`, and `Precept_RoleMulti.RecacheActivity`
+only drops holders that fail `ValidatePawn`, so a multi-holder role is active at any believer
+count [V]. A believer count written on a multi-holder def is inert. `Precept_Role.GetTip`
+still prints it whenever it is not −1 [V].
+
+**Two edges on the single-holder gate** [V, `Precept_RoleSingle.RecacheActivity`]:
+- With `activationBelieverCount` −1 (the `PreceptDef` default for a def not inheriting
+  `PreceptRoleSingleBase`), the role never activates.
+- With activation ≤ deactivation, at that exact believer count the deactivation branch and
+  then the activation branch both fire in the same call. That happens every world tick,
+  sending `LetterLabelRoleInactive` and `LetterLabelRoleActive` and unseating the holder each
+  time.
+
 ## Nothing restricts a ritual role to `Precept_RoleSingle`
 
 `RitualRole.precept` is a bare `PreceptDef`, and `AppliesToRole` compares
@@ -90,6 +104,131 @@ that the only two role precepts referenced by any vanilla ritual behaviour are
 which is a fact about vanilla's content, not a constraint in the code.
 
 `RimWorld.RoleRequirement` is the live extension point for role eligibility: a
-three-member abstract whose only override is `bool Met(Pawn, Precept_Role)`, selected
-per role in XML as `<li Class="…">`. `VanillaMemesExpanded` ships five subclasses of
+four-member abstract — `labelKey`, `virtual string GetLabel(Precept_Role)`, `GetLabelCap`,
+`abstract bool Met(Pawn, Precept_Role)` — selected per role in XML as `<li Class="…">` [V].
+`GetLabel` is overridable, and it is what the role menu prints as the reason a pawn cannot
+take the role (`SocialCardUtility.DrawPawnRoleSelection` → `Precept_Role.GetFirstUnmetRequirement`) [V]. `VanillaMemesExpanded` ships five subclasses of
 it in its 1.6 assembly [V].
+
+## Role precepts: what the two classes hold, and how a role enters a live ideology
+
+From [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114).
+
+**Holders.**
+- `Precept_RoleSingle` holds one pawn (`chosenPawn`).
+- `Precept_RoleMulti` holds a list (`chosenPawns`), and its `Assign` has no cap. No reader
+  outside the class caps it either [V].
+- `PreceptDef.maxCount` limits *instances of a def* in the ideology editor
+  (`IdeoUIUtility.AddPrecept`, default 1), not holders [V].
+
+**`leaderRole` is a single-holder concept** [V]:
+- `Precept_RoleSingle.Assign` is the only writer of `Faction.OfPlayer.leader` among roles, and
+  it unseats every other `leaderRole` precept across `Faction.OfPlayer.ideos.AllIdeos`.
+- `Precept_RoleMulti.Assign` does neither.
+- `RitualUtility.AllRolesForPawn` offers only the primary ideology's first `leaderRole`
+  precept.
+
+**Two multi-holder roles per ideology, where `CanAdd` is asked.** [V]
+- `IdeoFoundation.CanAdd` returns `"MaxMultiRolesCount"` when the def's
+  `preceptClass == typeof(Precept_RoleMulti)` (exact type) and the ideology already holds two
+  *visible* `Precept_RoleMulti` (`IdeoFoundation.MaxMultiRoles = 2`).
+- `CanAdd` sits behind the editor and reform listings (`IdeoUIUtility.CanListPrecept` →
+  `Ideo.CanAddPreceptAllFactions`) and behind generation (`CanAddForFaction`).
+- `Ideo.AddPrecept` performs no check, and a subclass of `Precept_RoleMulti` is not caught by
+  the exact-type test.
+
+**One role per pawn, as every reader sees it.** [V]
+- `Ideo.GetRole(p)` returns the first role whose `IsAssigned(p)` is true.
+- `StatWorker` (role stat effects), `QualityUtility.GenerateQualityCreatedByPawn`,
+  `StatPart_RoleConversionPower`, `EquipmentUtility.RolePreventsFromUsing`, the role menu and
+  ritual roles all read `GetRole`.
+- `RitualOutcomeEffectWorker_RoleChange.Apply` unseats the current role before assigning.
+
+**Effects** [V]:
+- `RoleEffect` is abstract, with virtual `Label`, `CanEquip` and `Notify_Tended`. Every other
+  effect is applied by a reader that type-tests a concrete vanilla subclass
+  (`RoleEffect_PawnStatOffset`/`Factor` in `StatWorker`, `RoleEffect_ProductionQualityOffset` in
+  `QualityUtility`, `RoleEffect_HuntingRevengeChanceFactor` in `PawnUtility`).
+- `RoleEffect_ProductionQualityOffset` applies to every quality roll the pawn makes, not per
+  recipe.
+- Vanilla tailoring (`ApparelMakeableBase`) and armour-smithing (`ArmorSmithableBase`) both
+  use `workSpeedStat` `GeneralLaborSpeed`.
+
+**Adding a role to a live ideology.**
+- `Ideo.AddPrecept(PreceptMaker.MakePrecept(def), init: true)` adds the precept, re-sorts, and
+  calls `RecachePrecepts` → `RecachePossibleRoles`. It sends no letter or message [V].
+- `Precept.Init` draws `Rand.Int` and `UniqueIDsManager.GetNextPreceptID`, and `Precept_Role.Init`
+  draws a name and apparel requirements [V]. It is simulation work.
+- Vanilla calls exactly this on loaded ideologies in `Ideo.ExposeData` (PostLoadInit), but only
+  to backfill a missing ritual seat and missing hidden ritual precepts [V]. Nothing backfills
+  roles.
+
+**Generation places special role precepts everywhere.** [V]
+- `IdeoFoundation.AddSpecialPrecepts` adds every def with `countsTowardsPreceptLimit` false and
+  `canGenerateAsSpecialPrecept` true that passes `CanAddForFaction`, to every generated ideology,
+  NPC ones included. That is how the moral guide and leader reach every ideology.
+- `PreceptDef.enabledForNPCFactions` is not consulted there.
+
+**A reform rebuilds every precept instance.** [V]
+- `Ideo.CopyTo` makes new `Precept` objects via `PreceptMaker.MakePrecept` + `Precept.CopyTo`,
+  copying `ID`, holders (`chosenPawn` / `chosenPawns`) and `active`.
+- References to a `Precept` instance do not survive a reform. `Ideo` identity does (see
+  *Moving a pawn's ideology*).
+- `Precept.DrawPreceptBox` offers *Remove* in the editor and at reform only when
+  `def.canRemoveInUI`.
+
+**Fluid reform needs a fluid ideology.** [V]
+- `IdeoDevelopmentUtility.ApplyChangesToIdeo` calls `ideo.development.Notify_PreReform` before
+  `newIdeo.CopyTo(ideo)`.
+- `Ideo.development` is created only by the `Fluid` setter, `ExposeData` (when fluid) and
+  `CopyTo` (when the source is fluid).
+- A non-fluid target therefore throws before anything is mutated.
+- At reform, `Dialog_ReformIdeo` limits memes, structure and styles to one change, but lets the
+  player add and remove precepts freely, roles included.
+
+**A removed role def.** A precept whose def no longer loads is dropped in `Ideo.ExposeData` with
+*"Some ideoligion precepts were null after loading"* [V].
+
+## An NPC faction's faith, and who follows it
+
+Established on [#133](https://github.com/cjd721/Rimworld-Archinity/issues/133). Verified against
+RimWorld 1.6.4871.
+
+**The label and the people are separate state.** `FactionIdeosTracker.SetPrimary` changes the
+faction's primary and nothing else. No NPC faction ever has its primary recomputed from its members [V]
+(§ *One field, two lifecycles*). Members change only through `Pawn_IdeoTracker.SetIdeo`.
+
+**How pawns pick a faith** [V]:
+- Fresh generation (`PawnGenerator`, both sites): `request.FixedIdeo`, else
+  `faction.ideos.GetRandomIdeoForNewPawn()`, weighted **4 for the primary, 1 per minor**. Babies get none
+  until `TryJoinIdeoFromExposures`.
+- Redress of an existing world pawn: re-rolled only when `pawn.Faction != request.Faction` **and** the
+  new faction does not `Has` the pawn's faith. A same-faction redress keeps whatever the pawn held.
+- A new leader (`Faction.TryGenerateNewLeader`) is ordinary generation, with `FixedGender` from the
+  primary's `SupremeGender`. Worldgen generates the first leader right after the faction's faith is chosen
+  (`FactionGenerator.NewGeneratedFaction`).
+
+**Minors on NPC factions exist but vanilla never writes them.** `ChooseOrGenerateIdeo` clears
+`ideosMinor`, and there is no public add. `IdeosMinorListForReading` returns the backing list, which is
+the only write path [V].
+
+**Sharing a primary is vanilla's normal state** [V]. `ChooseOrGenerateIdeo` reuses an existing
+compatible, non-`solid` `Ideo` at `Rand.Chance(0.2f)`, always for a `hidden` faction, and always once
+ten non-solid faiths exist. `IdeoGenerator.MakeFixedIdeo` sets `solid = true`, so a `fixedIdeo` faith
+is never reused at world creation. Two effects of sharing:
+- `Ideo.Color` is `primaryFactionColor`, set once from the generating faction.
+- `Ideo.CanAddPreceptAllFactions`, which the precept editor calls through `IdeoUIUtility.CanAddPrecept`,
+  refuses a precept if **any** faction listing the faith has a `FactionDef` that disallows it. A player
+  faith shared with an NPC faction is edited under that faction's def restrictions.
+
+**What reads the label, not the people** [V]:
+- `GoodwillSituationWorker_SameIdeo` (+10 natural goodwill when a faction's primary is the player's
+  primary, by reference) and `GoodwillSituationWorker_MemeCompatibility`, both recalculated every 1000
+  ticks;
+- `Faction.LeaderTitle`;
+- xenotype weights from primary memes in `PawnGenerator`;
+- `StockGenerator_Slaves`;
+- `IdeoUtility.GetIdeoColorForBuilding`;
+- the Factions-tab ideo icons.
+
+**A faith nobody lists is deleted, and its holders are moved** — `docs/TRAPS.md` T-109.

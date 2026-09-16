@@ -23,8 +23,8 @@ It does **not** own:
 
 - **Roads and vehicles** — [`WORLD-INFRASTRUCTURE.md`](WORLD-INFRASTRUCTURE.md) owns the
   world-map mobility ladder outright. Nothing here re-derives a road fact.
-- **Vassalage and tithe** — [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35).
-  §3 states the boundary.
+- **What a vassal must be** — [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) states it;
+  §3 answers what is possible for every shape ([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120)).
 - **The territory model itself** — which tiles a faction claims.
   [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2 settled that it is
   *"a claimed tile is one within a small radius of a visible settlement or outpost"*, and
@@ -411,23 +411,381 @@ assemblies read**. A `MapParent` subclass, a `DefModExtension`, a production tic
 methods: ~400 lines. **Not recommended** — the harness is a third of that against a module VEF
 already gives us.
 
-### 3. The boundary with vassalage — [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)
+### 3. Vassals — every shape, by route
 
-**The line is who supplies the labour.**
+#### Purpose and scope
 
-- **An outpost consumes your colonists.** Pawns leave the colony, live at the tile, and their count
-  and skills *are* the yield formula. A logistics decision with an opportunity cost. **#81, and this
-  document.**
-- **A vassal consumes nobody.** Tribute accrues per outpost per day against the vassal's tech level,
-  and the vassal can then be invaded. A political relationship with a political cost. **#35's, and
-  `POLITICS.md`'s.**
+**What this section answers:** whether the colony can hold vassals, and by which routes. It covers
+every shape named on
+[Vassals — can we, and by which routes](https://github.com/cjd721/Rimworld-Archinity/issues/120).
+None of the shapes is selected.
 
-Different verbs; shipping both is not duplication. They share §0's pattern, and **#35 should be
-built against it rather than inventing a second one.** Note that #8 already declined FT&V's
-vassalage *as designed* — `scratch/recon-vassalage-territory.md` records it as one-directional,
-without obligations or an end state, with an exploitable purchase path. **That FT&V would also
-supply #35's half is an argument for reversing the #8 decline, not a benefit currently in hand**,
-and on the recon's reading it is a weak one.
+1. **A settlement vassal by conquest.** Break a `Settlement`, pay to rebuild it, and it then yields.
+   A cap and a cooldown apply. This is [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)
+   session 2's shape, and Conrad's preference if only one shape exists.
+2. **A friendly faction that submits at high Reverence**
+   ([`requirements/RELIGION.md`](../requirements/RELIGION.md) § *Reverence*).
+3. **A whole faction as a vassal,** after the player conquers or liberates all of it, or after a
+   [revolt](../requirements/RELIGION.md#revolt).
+4. **Payouts from a friendly faction that is not a vassal:** the Schism's successor, a permanent
+   ally ([`requirements/RELIGION.md`](../requirements/RELIGION.md) § *The Schism Path*).
+
+**What this section does not own:**
+- **What a vassal must be and owe:**
+  [Vassalage and the tithe catalogue](https://github.com/cjd721/Rimworld-Archinity/issues/35).
+- **What a successful revolt makes of a faction:**
+  [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131).
+- **Faith changes:** [#133](https://github.com/cjd721/Rimworld-Archinity/issues/133).
+- **Keeping founders out of transfers:** [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134).
+- **Pinning the successor's alliance:** [#130](https://github.com/cjd721/Rimworld-Archinity/issues/130).
+
+**Boundary with §2.** An outpost uses up colonists: its yield formula is its occupants. A vassal uses
+none. Both can share §0's pattern.
+
+#### Verdict
+
+- **Possible?** **Yes, for all four shapes, but nothing on disk delivers any of them as it ships.**
+  Shape 1 is a build with a complete donor to copy. Shapes 2 to 4 are one build: a per-faction record
+  plus a payout clock. **XML alone gets none of the four.**
+- **Multiplayer?** **With work.** Every action the player takes goes through a synced command
+  (**T-80**, **T-82**, **T-95**, **T-96**), and every clock runs on the world tick (§0 P1/P3). The one
+  shipped system that is already synced, VFE Empire's vassals through MP Compat, serves none of the
+  shapes and has one unverified ordering hazard (RUN, under *Open questions*).
+
+#### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **R0** VFE Empire's tithe catalogue, restatted | Church settlements within 100 tiles pay tithe to a colonist holding an Empire title. None of the four shapes | VFE Empire + MP Compat | XML | Easy | Yes, one [I] hazard |
+| **R1** Settlement vassal as a player-held world object | Shape 1: a conquered `Settlement` becomes ours. It yields once the rebuild is paid, and remembers its parent faction | ours; donor Faction Territories, catalogue shape from VFE Empire | C# + XML defs | Medium (Hard with a vassal shop) | With work |
+| **R2** Settlement vassal as a marked NPC settlement | Shape 1, with the vassal still part of its faction. The only route where part of a faction can be a vassal | ours; donors VFE Empire `TitheInfo`, Faction Territories cede path | C# + XML patch | Medium | With work |
+| **R3** VFE Empire's vassals widened by patch | Any settlement in reach becomes a vassal of a Church-titled colonist, using VFE Empire's UI and sync. **Not recommended** | VFE Empire + MP Compat + our patches | patch C# | Medium | Yes, one [I] hazard |
+| **R4** Faction-level vassal record | Shapes 2, 3 and 4 through one record and one payout clock | ours; donors RimPacts' tribute treaty, VFE Empire `TitheWorker` | C# + XML defs | Medium | With work |
+| **R5** Vanilla ally machinery | Shape 4 in part: gifts from visitors, traders, and allies sending help when raided | vanilla | XML | Easy | Yes |
+| **R6** RimPacts as shipped | Shapes 2 and 3 as military tributaries. **Not recommended**: no sync, settings inside `Rand` paths, creates factions at runtime | RimPacts | as shipped | Hard | No |
+| **R7** Faction Territories as shipped | Shape 1 as that mod designed it. **Not recommended**: declined on #8, and its prompt, pause and purchase door all fail under Multiplayer | Faction Territories | as shipped | Hard | No |
+
+| Carries shape → | 1 conquest | 2 submission | 3 whole faction | 4 ally payouts |
+|---|---|---|---|---|
+| R0 | — | — | — | — |
+| R1 | **yes** | — | only settlement by settlement | — |
+| R2 | **yes** | as a set of its settlements | as all its settlements | — |
+| R3 | no conquest gate | — | — | — |
+| R4 | — | **yes** | **yes** | **yes** |
+| R5 | — | — | — | partial |
+| R6 | — | military gate | yes | — |
+| R7 | yes (declined) | — | — | — |
+
+##### R0: VFE Empire's tithe catalogue, restatted
+
+**Gets us [V]:**
+- Seven `TitheTypeDef`s: steel 25, wood 40, gold 5, silver 50, meals 2, honor (5, every 5 days), and
+  `VFEE_Slavery`, which gives 1 slave every 10 days and needs Ideology.
+- XML reaches each def's `item`, `count`, `deliveryDays`, `workerClass` and labels, and
+  `vassalagePointsAwarded` on the Empire title rungs (seven award 1, one awards 0).
+- `TitheWorker_Slaves` generates a new `PawnKindDefOf.Slave` pawn as the player's slave. It never
+  takes a colonist.
+
+**Cannot [V]:**
+- **Choose who can be a vassal.** `WorldComponent_Vassals.AllPossibleVassals` filters on
+  `Faction == Faction.OfEmpire`.
+- **Choose what a settlement pays.** `GetTitheInfo` draws a random `TitheTypeDef` and speed (0.5× to
+  2.5×).
+- **Open vassalage without a title.** `RoyaltyTabWorker_Vassals.DoMainSection` requires
+  `VassalagePointsAvailable(Faction.OfEmpire) >= 1` and 100-tile reach from a player home or a held
+  vassal.
+- **End a vassalage.** Outside debug, only the tab's *Release all* button calls
+  `ReleaseAllVassalsOf`.
+- **Deliver anywhere but the lord.** `TitheWorker.DeliverInt` delivers only into the lord's caravan
+  or by drop pod beside the lord on a player home map.
+
+**Consequences:**
+- **It is a Church perk.** If VFE Empire ships, it is live content on the Church path regardless of
+  this section [I].
+- **MP Compat's `Multiplayer.Compat.VanillaFactionsEmpire` syncs it** [V]: vassalising, the
+  `DoVassal` settings, release, and a `GetTitheInfo` seed of `Gen.HashCombineInt(settlement.ID, tile)`.
+- **Ordering hazard** [I]. `DoDay` walks a dictionary filled in the order each client first draws the
+  tab, and each delivery draws `Rand`.
+
+##### R1: Settlement vassal as a player-held world object
+
+**Mechanisms [V]:**
+- `SettlementDefeatUtility.CheckDefeated(Settlement)` swaps the settlement for a
+  `DestroyedSettlement` of the same faction, destroys it, and sets `Faction.defeated = true` if it
+  was the faction's last base.
+- Faction Territories prefixes that method (`InterceptBaseDestroyedLetterPatch`).
+- `VassaliseUtility.ExecuteVassalisationAtTile` replaces the ruin with a
+  `FactionTerritories_VassalOutpost : WorldObject` owned by the player, keeping the original faction,
+  name and def.
+- `VassalagePointsComponent` accrues a per-original-faction ledger once a day.
+- A build-cost check against the caravan exists in VEF's `Outposts.Utils.CanSpawnOnWithExt`
+  (`CostToMake`), per §2.
+
+**Levers:**
+- `Settlement`-only by construction [V].
+- Pay then yield; cap and cooldown are counts plus a tick stamp, with no roll [I].
+- A catalogue we assign, including people on a clock in the manner of `TitheWorker_Slaves` [I].
+- A goodwill hit on the parent, subject to `Faction.CanChangeGoodwillFor` [V].
+- Consequences can point at the remembered parent [V].
+
+**Cannot:**
+- **Keep the place in its faction.** It leaves; the object is a plain `WorldObject` with no people,
+  trader or map [V].
+- **Make part of a faction a vassal.**
+- **Raise raid weight through XML.** Raid-faction selection weighs only `RaidCommonalityFromPoints`
+  and a last-raider penalty ([`engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md)
+  § *Raid faction selection*) [V], so this needs a patch.
+
+**Consequences:**
+- **A faction's last base still marks the faction defeated** unless we intercept before the write
+  [V for where it is written].
+- **Copy only the vassalise half of Faction Territories.** Its invasions against vassals are what #8
+  session 2 excluded.
+- **Create the object inside a synced command** (T-80), and never offer the choice as a modded
+  `ChoiceLetter` (T-96).
+
+##### R2: Settlement vassal as a marked NPC settlement
+
+**Mechanisms [V]:**
+- The vassal stays a `Settlement` of its faction, with a `WorldObjectComp` patched onto
+  `WorldObjectDef Settlement`. The comp backfills into existing saves
+  ([`engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md) § *A `WorldObjectComp`
+  added by XML patch backfills into an existing save*).
+- VFE Empire's `TitheInfo` is the precedent for marking a settlement rather than replacing it.
+- Conquest destroys the settlement. Faction Territories' `ExecuteCedeToFactionAtTile` shows the
+  recreation: a new `WorldObjectDefOf.Settlement`, `SetFaction` (a bare field write), and the old
+  name.
+
+**Levers:**
+- The vassal keeps its people, trader, map and faction faith [I].
+- Part of a faction can be a vassal with no new faction, which is load-bearing for #131.
+- Payouts work as in R1.
+
+**Cannot:**
+- **Escape its parent's relation.** `FactionUtility.CanTradeWith` rejects hostility
+  ([`RELIGION.md`](RELIGION.md) § *Exaltation — the donor is vanilla Royalty's own Empire*) [V].
+- **Resolve a hostile parent owning a vassal** without a rule from requirements [I].
+
+**Consequences:**
+- **The recreated settlement generates a new map on its next visit** (**T-33**).
+- **`defeated` must be cleared** if the recreated settlement was the faction's last base. It is a
+  plain public field [V].
+
+##### R3: VFE Empire's vassals widened by patch
+
+**What it would take [V]:**
+- A postfix on `AllPossibleVassals`.
+- Replacing the Empire checks in `RoyaltyTabWorker_Vassals.DoMainSection` and
+  `HonorWorker_Vassal.SettlementValid`.
+- MP Compat's sync keys on `Settlement` / `TitheInfo`, so it should follow [I].
+
+**Cannot [V]:** no conquest, cost or cooldown at entry; nothing ends a vassalage when its settlement
+falls; vassals held only by a titled lord; delivery only where that lord is.
+
+**Consequences:** vassalage becomes a Church-title privilege, which sits badly with the Schism and
+Independent paths [I]. **Not recommended.**
+
+##### R4: Faction-level vassal record
+
+**Mechanisms [V]:**
+- `FactionRelationKind` is `Hostile`, `Neutral`, `Ally` only.
+- `Faction` has no comps, so per-faction state is a `WorldComponent` list keyed by `Faction`
+  ([`RELIGION.md`](RELIGION.md) § *The build — Reverence* §1).
+- **Entry surfaces:**
+  - a gated diplomacy option ([`POLITICS.md`](POLITICS.md) § *Standing as a content gate* §3);
+  - a quest from the vassal, which needs a node of ours, because
+    `QuestNode_GetFaction.IsGoodFaction` filters on relation, hidden, permanent-enemy and exclude,
+    never on def or on a record.
+- **Lifecycle donor: RimPacts' `TreatyWorker_Tribute`.**
+  - `WouldAccept` weighs a power ratio and `Submission`.
+  - `OnSigned` enforces non-aggression.
+  - `OnQuarter` pays, or rolls a revolt that breaks the treaty.
+  - `OnBroken` handles release: +10 goodwill and a 1,800,000-tick cooldown.
+- **Delivery donors:** `WorldComponent_RimPacts.DeliverTributeQuarter` (silver or settlement
+  specialties at `Find.AnyPlayerHomeMap`'s trade drop spot) and VFE Empire's
+  `TitheWorker.DeliverInt`.
+- **Perks vanilla gives an Ally:**
+  - `IncidentWorker_RaidFriendly.FactionCanBeGroupSource` requires `PlayerRelationKind == Ally`;
+  - `StorytellerComp_FactionInteraction` scales by `AllyIncidentFraction`;
+  - `VisitorGiftForPlayerUtility.ChanceToLeaveGift` scales on goodwill.
+
+**Levers:**
+- Submission, whole-faction vassalage and the successor's payouts are one record with different
+  entry acts and a kind [I].
+- A vassal kept at Ally gets vanilla aid, visitors and gifts [I].
+- A vassal can throw off its overlord, on RimPacts' model [V].
+
+**Cannot:**
+- **Make part of a faction a vassal.** That needs R2.
+- **Create a faction** (**T-07**).
+- **Hold the relation still.** Pinning belongs to #130 [I].
+
+**Consequences:**
+- **Whole-faction conquest collides with `defeated`.** `CheckDefeated` writes it on the last base,
+  and a defeated faction fails `CanChangeGoodwillFor` [V]. Intercept before the write, or define
+  conquest as every settlement except those held [I].
+- **Multiplayer:** T-82 / T-95 / T-96 on the entry dialogs, and §0 P4 for any revolt-out roll.
+
+##### R5: Vanilla ally machinery
+
+**Gets us [V]:**
+- `StorytellerCompProperties_FactionInteraction` (`incident`, `baseIncidentsPerYear`,
+  `minSpacingDays`, `fullAlliesOnly`, `minWealth`) schedules trader and visitor incidents weighted
+  toward allies.
+- Visitors leave gifts at a base 25%, scaled by goodwill and wealth curves.
+- Allies send help when the colony is raided.
+
+**Cannot [V]:** address a named faction, because `MakeIntervalIncidents` passes none; or pay on a
+schedule.
+
+**Consequences:** free background under any choice. It touches the storyteller that
+[#60](https://github.com/cjd721/Rimworld-Archinity/issues/60) owns.
+
+##### R6 and R7: shipped carriers, not recommended
+
+**R6, RimPacts.**
+- **Gets us:** `Rpt_Treaty_Tribute`, the only shipped faction-level vassalage in the corpus [V].
+- **Its gate is military** (`WouldAccept`) [V].
+- **No Multiplayer sync.** `RimPacts.dll` has no Multiplayer reference in either encoding and no MP
+  Compat coverage [V].
+- **Rolls behind settings.** `OnQuarter` rolls `Rand.Chance` in a component gating `Rand` behind 57
+  settings (**T-18**).
+- **Creates factions mid-game.** `CreatePuppet` calls `FactionGenerator.CreateFactionAndAddToManager`
+  (**T-07** / **T-15**) [V].
+- **Verdict:** a donor for R4.
+
+**R7, Faction Territories.** Declined as a dependency on #8 session 2
+([`data/MOD-VERDICTS.md`](../data/MOD-VERDICTS.md) § *Declined*). Beyond the decline, all [V]:
+- a `MapDeiniter.Deinit` postfix opens a modded `ChoiceLetter_VassaliseDestroyedSettlement` (T-96)
+  and calls `Find.TickManager.Pause()`;
+- points come from `ModSettings` (T-18);
+- `TryPurchaseVassalisation` keeps the goodwill-purchase door #8 removed;
+- MP Compat covers none of it.
+
+##### Coexistence
+
+**Yes** [I]:
+- **R1 or R2 with R4.** They key on a world object and on a faction respectively, so they never
+  collide, and one delivery path can serve both.
+- **The only overlap is a rule for #35:** a settlement vassal whose parent later becomes a vassal
+  faction.
+- **R1 and R2 answer the same question two ways** (does a conquered settlement leave its faction?),
+  so they coexist only as two different actions.
+- **R0 coexists by accident** if VFE Empire ships.
+
+##### What each route implies for the sibling tickets
+
+- **Revolt ([#131](https://github.com/cjd721/Rimworld-Archinity/issues/131)).**
+  - R4: success writes one record and moves no world objects; it cannot hand over part of a faction.
+  - R2: success marks some of the faction's settlements, or `SetFaction`s them to an existing faction
+    first.
+  - R1: success turns settlements into player-held objects. Code replacement does not run
+    `CheckDefeated`, so `defeated` is not written [I].
+  - R0 and R3 cannot install a vassal after a revolt [V].
+- **Faith ([#133](https://github.com/cjd721/Rimworld-Archinity/issues/133)).** Faith lives on
+  `Faction.ideos` ([`engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md)).
+  - Under R2 and R4, the vassal's people hold the faction's faith, so a vassal's faith change is
+    #133's faction-level change [I].
+  - Under R1, the vassal object has no population to hold one [I].
+- **Founders ([#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)).** No payout route
+  takes colonists; `TitheWorker_Slaves` generates pawns [V]. Only a rebuild cost paid in pawns, or a
+  revolt contribution, could reach a founder.
+
+##### Recommendation (not a selection)
+
+- **If only shape 1 exists:** R1. It is closest to #8 session 2's settled rules and has a donor read
+  end to end.
+- **R2 instead** if a conquered vassal should stay part of its faction, and it is the only route that
+  lets a revolt hand over part of a faction.
+- **For shapes 2 to 4:** R4, since one record and one clock cover all three.
+- **R5 underneath any choice.**
+- **R0 and R3 are the Church's perk, not our vassals.**
+
+#### Constraints
+
+- **No vassal relation exists in the engine.** `FactionRelationKind` has three values [V]. Every
+  route stores vassalage itself.
+- **A faction cannot be created after worldgen (T-07).** No shape may need one, and R6's puppets break
+  this.
+- **Conquering a faction's last settlement sets `Faction.defeated`** in
+  `SettlementDefeatUtility.CheckDefeated`, and a defeated faction fails `CanChangeGoodwillFor` [V].
+  Shape 3 by conquest must plan for it.
+- **Every player act is a synced command.**
+  - A caravan gizmo or a dialog is not synced (**T-80**).
+  - Diplomacy options sync by index (**T-82**).
+  - Subclassed node-tree dialogs lose sync (**T-95**).
+  - Modded choice letters are unsynced (**T-96**).
+  - World objects created from UI get client-local IDs (§ *Persistence and multiplayer*).
+- **Clocks go on `WorldObject.Tick` / `WorldComponentTick`,** gated by `IsHashIntervalTick` (§0 P1,
+  P3). Never override `UpdateRateTicks` (**T-81**).
+- **No per-faction raid weight is reachable from XML** [V, § *Raid faction selection*].
+- **Settings may not steer yields or rolls (T-18).** This rules out R6 and R7 as shipped.
+
+#### Available mechanisms
+
+| Mechanism | What it is | Used by | Evidence |
+|---|---|---|---|
+| `SettlementDefeatUtility.CheckDefeated` | Settlement → `DestroyedSettlement`; `defeated` on the last base | R1, R2, R4 | [V] `Assembly-CSharp.dll` |
+| `Faction.CanChangeGoodwillFor` | fails for `defeated` factions | R4 | [V] `Assembly-CSharp.dll` |
+| `FactionRelationKind` | `Hostile`, `Neutral`, `Ally` | all | [V] |
+| `IncidentWorker_RaidFriendly.FactionCanBeGroupSource` | Ally only | R4, R5 | [V] |
+| `StorytellerComp_FactionInteraction` + props | scheduled faction incidents; the worker picks the faction | R5 | [V] |
+| `VisitorGiftForPlayerUtility` | 25% base gift chance × goodwill and wealth curves | R5 | [V] |
+| `QuestNode_GetFaction.IsGoodFaction` | no def or record filter | R4 | [V] |
+| VFE Empire `WorldComponent_Vassals`, `TitheInfo`, `TitheTypeDef`, `TitheWorker`, `TitheWorker_Slaves`, `VassalUtility`, `RoyaltyTabWorker_Vassals` | per-settlement tithe to a titled lord; Empire-only; random catalogue; release only by button | R0, R3; donor R1, R2, R4 | [V] `294100/2938820380/1.6/Assemblies/VFEEmpire.dll`, `1.6/Defs/Misc/TitheTypeDefs.xml` |
+| MP Compat `Multiplayer.Compat.VanillaFactionsEmpire` | syncs vassalise, settings, release; seeds `GetTitheInfo` | R0, R3 | [V] `294100/1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll` |
+| Faction Territories `VassaliseUtility`, `FactionTerritories_VassalOutpost`, `VassalagePointsComponent`, `InterceptBaseDestroyedLetterPatch`, `ShowVassalisePromptOnMapRemovedPatch` | conquest → player-held vassal object; points ledger; cede path | R7; donor R1, R2 | [V] `294100/3626725895/Assemblies/FactionTerritories.dll` |
+| RimPacts `TreatyWorker_Tribute`, `WorldComponent_RimPacts.DeliverTributeQuarter` / `Submission` / `CreatePuppet` | faction-level tributary lifecycle; runtime faction creation | R6; donor R4 | [V] `294100/3762723122/Assemblies/RimPacts.dll` |
+| VEF `Outposts.Outpost.Tick`, `Outposts.Utils.CanSpawnOnWithExt` | empty outpost destroyed; settlement-adjacent tiles rejected | ruled out as carrier; §2 | [V] `294100/2023507013/1.6/Assemblies/Outposts.dll` |
+
+**Read and cleared, all [V]:**
+- **Rim War.** `WorldUtility.IsVassalFaction` is a `"PColony"` defName check, and Rim War is barred.
+- **Worksites Expanded.** `ApplyTributeReward` / `ApplyRoyalTitheReward` are one-off parley rewards.
+- **VFE Classical.** `Tributum` is a senate perk.
+- **Royalty's tribute collector** points the other way, from the colony to the Empire
+  ([`CURRENCIES.md`](CURRENCIES.md)).
+
+#### Status
+
+**Evidence class: READ**, established on [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120).
+- **Every mechanism in the table is [V].**
+- **Every route is [I] by construction.**
+- **The corpus negative** ("no shipped carrier for shapes 1–4 that runs under Multiplayer") rests on
+  sweeps across both roots in ASCII and hand-typed null-interleaved UTF-16, each validated against a
+  known hit in the same heap. They narrowed to VFE Empire, Faction Territories, RimPacts, Rim War,
+  Worksites Expanded and VFE Classical, and all six were depth-read.
+
+**Premises corrected:**
+1. **VFE Empire's vassals are not "unsynced."** MP Compat syncs them.
+2. **Their only removal is a UI button,** not a lord losing standing.
+3. **The catalogue has seven defs, including slaves,** and is assigned at random.
+4. **XML alone yields no vassal.**
+5. **RimPacts is a faction-level donor.**
+6. **This section's earlier boundary described Faction Territories' design,** invasions included, as
+   what a vassal is.
+
+#### Open questions
+
+- **Requirements → [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35):**
+  - does a conquered vassal leave its faction or stay in it (R1 against R2);
+  - what happens to a settlement vassal whose parent faction becomes a vassal;
+  - how vassalage ends;
+  - where tribute arrives;
+  - which perks a vassal faction gives beyond tribute;
+  - adjacent: the colony paying tribute, which
+    [`requirements/POLITICS.md`](../requirements/POLITICS.md) § *Campaign progression* points at #35.
+- **RUN (only if R0 or R3 is selected).** Two clients. Client A alone opens the Royalty vassal page.
+  Vassalise two Empire settlements in reverse list order, on the same weekly schedule, with fractional
+  amounts. On the first shared delivery day, expect identical stacks, or a desync naming
+  `GenMath.RoundRandom` under `WorldComponent_Vassals.DoDay`. **Unowned.**
+- **Build map (unowned until a route is selected):**
+  - the storage shape, and whether R1/R2/R4 share one delivery path;
+  - our own catalogue def, or `VFEEmpire.TitheTypeDef`;
+  - where to intercept the defeat of a last base;
+  - the raid-weight patch target;
+  - how the rebuild cost is charged;
+  - the display surface (#8's gizmo, or the faction row);
+  - whether VFE Empire's Church vassals stay enabled.
 
 ### Cost
 
@@ -451,7 +809,7 @@ and on the recon's reading it is a weak one.
 | **§2** `Outpost_Scavenging`, `Outpost_Town` | **XML cannot reach them** — a C# override of ours, or drop them from the set | ~40 lines each if kept | `Archinity.Core` |
 | **§2** era-gate rows | XML, one `<modExtensions>` block per def | ~6 lines each | `Patches/Outposts_Gating.xml` |
 | — *§2 Build B, if VEF's Outposts module is declined* | new C# | ~400 lines | `Archinity.Core` |
-| **§3** vassalage and tithe | **[#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)'s** | — | — |
+| **§3** vassals | **unpriced** — routes only, none selected ([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120)) | — | — |
 
 **Total new C# on the plan of record: roughly 560–760 lines**, of which §1's reimplementation is
 the bulk and §2's is harness.
@@ -561,6 +919,8 @@ the bulk and §2's is harness.
 **Evidence class: READ.** Settled from `Core` defs and decompiled 1.6 assemblies —
 `RimWorldWin64_Data/Managed/Assembly-CSharp.dll`,
 `294100/3626725895/Assemblies/FactionTerritories.dll`,
+`294100/2938820380/1.6/Assemblies/VFEEmpire.dll`,
+`294100/1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll`,
 `294100/2023507013/1.6/Assemblies/Outposts.dll`,
 `294100/2688941031/1.6/Assemblies/VOE.dll`,
 `294100/3687071198/Assemblies/MiningOutpost.dll`,
@@ -570,7 +930,7 @@ the bulk and §2's is harness.
 `294100/2606448745/1.6/AssembliesCustom/Multiplayer.dll` and all 18
 `Multiplayer_Compat*.dll` builds under `1629973374`.
 
-§1 established by [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), §2 by
+§3 by [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120). §1 established by [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), §2 by
 [#81](https://github.com/cjd721/Rimworld-Archinity/issues/81), both revised after an adversarial
 audit. No source tree was read as 1.6 fact: VOE ships 1.3-era source, [SR]Factional War's `Source/`
 calls a `TileFinder.TryFindNewSiteTile` overload absent from 1.6, and VEF ships none.

@@ -108,11 +108,21 @@ reclaim recipe.
 ## `Verse.Book` is a core, non-Anomaly authored-record carrier
 
 Worth recording so the next ticket reaching for "studiable" or "readable" does not
-re-run the Anomaly rejection against the wrong type: **`RimWorld.CompStudiable` is
-the unrelated Anomaly class** — its `AnomalyKnowledge` and `KnowledgeCategory` both
-return early on `!ModsConfig.AnomalyActive` and its whole payload is
-`anomalyKnowledgeGained` against a `KnowledgeCategoryDef` [V]. `Verse.Book` shares
-nothing with it.
+re-run an Anomaly rejection against the wrong half of the wrong type.
+**`RimWorld.CompStudiable` has an Anomaly branch and a Core branch** [V]:
+
+- **The Anomaly branch.** `AnomalyKnowledge` and `KnowledgeCategory` return early on
+  `!ModsConfig.AnomalyActive`, and `anomalyKnowledgeGained` feeds `StudyManager.StudyAnomaly`,
+  worked by the Anomaly-only `WorkGiver_DarkStudyInteract`.
+- **The Core branch.** `studyPoints` against `studyAmountToComplete`, saved on the item,
+  is worked by `WorkGiver_StudyInteract` through the **Core** WorkGiverDef
+  `StudyArchotechStructures` (`workType Research`), and reports each interaction to
+  `IThingStudied` comps through `Thing.Notify_Studied`. It has no Anomaly dependency.
+  Ideology's `GrandArchotechStructure` and More Realistic Research both use it. It is the
+  recommended carrier for destructive Glitterite analysis:
+  `docs/specs/RESEARCH.md` § *Destructive artifact analysis*.
+
+`Verse.Book` shares nothing with either branch. Corrected on [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115).
 
 `Book` is core, per-instance and readable: `DescriptionDetailed` renders it in the
 info card, `GenerateBook(Pawn, long?)` is `public virtual`, and `OnBookReadTick`

@@ -70,6 +70,14 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-91 | `VFEE_Deserters` silently stops raiding whenever no Empire-titled pawn is on the map |
 | T-98 | Swapping a faction's `Faction.def` nulls `Faction.OfEmpire` (and every `FactionManager` singleton) at the next load or faction add/remove, not at the swap |
 | T-100 | An "allied factions" filter over NPC pairs is empty in vanilla — no NPC↔NPC `Ally` relation ever exists, and nothing says so |
+| T-101 | A quest reward option whose rewards draw no stack element is never shown and can never be accepted — and any `QuestPart_Choice` hides the plain Accept button |
+| T-102 | `QuestGen_Rewards.GiveRewards` silently drops royal favour (Exaltation) unless the asker holds a title in its own faction |
+| T-103 | A VEF `QuestGiverDef` never refills after a purchase unless `resetEveryTick` is set — and a reset discards every unbought offer |
+| T-109 | Unlisting a faith from its last faction deletes it at the next holder's death or map exit, silently moving every world pawn that held it to its faction's primary |
+| T-110 | A positive goodwill write returns `false` with no message while any player map sits on that faction's settlement — a revolt, liberation or battle reward paid on the map never lands |
+| T-112 | A humanlike joining the player faction has its `kindDef` reset to `basicMemberKind`, and a run-wild break sets `WildMan` — a `PawnKindDef` used as a marker silently vanishes |
+| T-115 | A `StorytellerDef` carrying VEF's `storytellerThreat` replaces every faction's natural goodwill with one number (0 by default) — every `GoodwillSituationWorker` natural offset is discarded |
+| T-116 | `QuestPart_SetFactionHidden` does not scribe `hidden` — a part that hides a faction becomes one that reveals it after a save and load |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -97,6 +105,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-95 | Subclassing `Dialog_NodeTree` drops it out of Multiplayer's `PersistentDialog` bindings — options never sync, and the one log line names no type |
 | T-96 | A modded `ChoiceLetter`'s options are synced by neither mechanism — identical on both clients, acting on one |
 | T-97 | A `DiaOption` without `resolveTree = true` strands its `mapDialogs` entry, and `ForceShowDialogs` re-opens an already-answered dialog forever |
+| T-114 | Multiplayer's multifaction faction creation runs no `GameComponent.StartedNewGame`, only two `ScenPart.PostGameStart`s, and never writes `GameInfo.startingAndOptionalPawns` — a game-start stamp silently misses a joining player's pawns |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -123,7 +132,14 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-63 | Overriding `Gene.Label` reaches the tooltip header only; the tile and info card are typed on the def |
 | T-64 | A `GeneVectorExtension` with `gene: null` spends the charge, grants nothing and reports success |
 | T-93 | `Window_AndroidCreation.OnGenesChanged()` reassigns `requiredItems` wholesale on every gene toggle, discarding any write that is not a postfix on it |
+| T-104 | `CompStudiable` progress does not survive stacking — a merge keeps one stack's study, a split starts at zero |
+| T-105 | A believer count on a `Precept_RoleMulti` def is inert — and the role's tooltip still advertises it |
+| T-106 | A `Precept_RoleSingle` with `activationBelieverCount` −1 never activates, sends no letter and shows no reason |
+| T-107 | A custom `RoleEffect` subclass does nothing — every reader type-tests a vanilla class — while the tooltip lists its label |
+| T-108 | `Ideo.GetRole` returns one role; a second role assigned to the same pawn is held and contributes nothing |
 | T-94 | `Bill_ProductionMech.CreateProducts` resolves the gestated pawnkind by reverse-lookup `.First()` — two `PawnKindDef`s sharing a race yield whichever `DefDatabase` ordering returns |
+| T-111 | A pawn's xenotype is not identity — reimplanting gives the recipient the caster's `XenotypeDef`, and implanting a xenogerm resets the target to Baseliner and deletes every xenogene |
+| T-113 | `HediffDef.duplicationAllowed` defaults to `true` — an Anomaly duplicate silently inherits every per-pawn record hediff, comps and fields included |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 

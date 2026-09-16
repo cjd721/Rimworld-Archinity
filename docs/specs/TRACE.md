@@ -173,6 +173,8 @@ fields, `Notify_QuestSignalReceived` **[V]**. This is *"repeated raids… teach 
 Glitterites who is attacking them"*: a raid that raises Trace does it by firing a
 quest signal, which is inside the synced quest machinery.
 
+**Raise C — an artifact is analysed.** Destructive Glitterite analysis calls `Notify_Trace` from the synced tick, at start, per increment or at completion, as [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) decides. The carrier is [`RESEARCH.md`](RESEARCH.md) § *Destructive artifact analysis* ([#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)). Add it to § *Multiplayer*'s writer table as "`IThingStudied.OnStudied` → job tick".
+
 **Lower — a Trace-reducing quest.** The same part with a negative `traceChange`.
 Requirements rule 7 (*"Glitterite quests provide opportunities to reduce Trace"*) is
 the same mechanism with the sign flipped, which is why it is one part and not two.

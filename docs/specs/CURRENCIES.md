@@ -46,7 +46,7 @@ of currencies, because nothing in it names either fiction.
 | **Exaltation** and **Reverence** | [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) / [`RELIGION.md`](RELIGION.md). Threshold ladders, not spends. |
 | **Trace** | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md). A band ladder, not a balance. #56 has now **ruled** on whether sharing one store with Intel couples it to Church standing — see *What is shared*. |
 | **Which quests are for sale, and what they contain** | Authoring. The **machinery** that offers and sells a quest is [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s and is **in this document**, at *The purchasable quest catalogue* — because it is a purchase, and purchases live here. |
-| The **ordered campaign chain** that Schism operations advance | **No owning ticket yet.** Its separation from spending is this document's business; its carrier is not, and nothing currently owns it — see *Outstanding decisions*. |
+| The **ordered Schism chain** that Influence purchases advance | Routes, stranding and the marking act: *The Schism catalogue — a spend that advances the plot*, from [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132). The reveal, ground and finale are [#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)'s. |
 | Cross-cutting political-UI layout | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61). The readout for these two numbers is here. |
 
 **Why this is its own document rather than a section of [`RELIGION.md`](RELIGION.md).**
@@ -54,6 +54,119 @@ The verdict is that one mechanism serves both currencies. Filing it under religi
 make Glittertech reach into the religion spec for Intel's storage, persistence and
 readout, and would file a Glitterite mechanism under Church politics — the shape #56
 exists to guard against. Two systems consume this; neither owns it.
+
+## The Schism catalogue — a spend that advances the plot
+
+### Purpose and scope
+
+Answers [`RELIGION.md` § *The Schism Path*](../requirements/RELIGION.md): *"Influence is spent with the Schism: on the missions that advance its plot against the Church, and on favors… techprints"*, plus the marking act that commits the founders and turns the Church permanently hostile. Established on [Influence — earned as a chosen reward, spent to advance the Schism plot](https://github.com/cjd721/Rimworld-Archinity/issues/132).
+
+**This section owns:** how a spend can advance an ordered chain, whether spending elsewhere can strand it, and what each route allows as the marking act.
+
+**It does not own:**
+- Influence as a reward option: [Credit for a deed, chosen with the quest's reward](https://github.com/cjd721/Rimworld-Archinity/issues/135).
+- The reveal, ground passing to the Schism, and the finale: [The Schism — revealed, taking the Church's ground, allied for good](https://github.com/cjd721/Rimworld-Archinity/issues/130).
+- Church suspicion in general: [The Church after the reskin](https://github.com/cjd721/Rimworld-Archinity/issues/123).
+
+### Verdict
+
+- **Possible? Yes.** VFE Deserters already ships a paid ordered chain: each step is accepted by spending Intel, and only the step's outcome advances the index **[V]**. **Under every route, spending elsewhere stalls the plot and never strands it.** Stranding comes down to income stopping or a step failing to generate.
+- **Multiplayer? Yes** for A (the existing synced `TryPurchase`) and D (MP Compat syncs VFED's paid plot accept **[V]**). **With work** for B, where the price check runs before the synced `Quest.Accept` and is not repeated inside it **[V]**, and for C.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — A paid ordered chain in the catalogue** | Ordered Schism blows. The current step waits in the catalogue, and buying it debits and accepts in one synced command. Success moves on; failure re-offers the same step. Favours and techprints are rows beside it | Ours; donor VFED `WorldComponent_Deserters` + `DeserterTabWorker_Plots` | C# + XML | Medium | Yes |
+| **B — The price sits on an ordinary offer** | Steps arrive as normal quest offers showing *"Requires N Influence"*, debited on accept. Ordered by VEF `QuestChainExtension` or by A's list | Vanilla `QuestPart_RequirementsToAccept` + a debit part | C# + XML | Medium | With work |
+| **C — One VEF `QuestGiverDef` for plot and favours** | Steps and favours as purchasable offers in one contract window | VEF `VEF.Storyteller` + a gate node + a refill hook | C# + XML | Medium | With work — **not recommended** |
+| **D — Adopt VFE Deserters' network as the Schism** | Its plot tab, services, techprint contraband and one-way hostility | VFE Deserters + patches | patch + C# | Hard (to fit) | Yes — **not recommended as shipped** |
+
+**Route A.**
+
+*Levers:*
+- Chain order and length are an authored list.
+- Several approaches per blow, each with its own price, combat level and exposure. VFED's `VFED_PlotMission` authors `raid` / `shootDown` / `falseInvitation` this way **[V]**.
+- Re-pay or refund on a failed blow. VFED makes the player re-pay **[V]**.
+- One advance hook, where #130's ground transfer and finale attach.
+- Either marking act.
+- A second `CurrencyDef` as a plot-only accumulator, if Conrad wants #39's two-accumulator shape **[I]**.
+
+*Cannot:*
+- Produce Influence.
+- Keep *Structural separation* layer 3 as it was written. The plot purchase must reach the current step; only the index's single writer (the quest outcome) survives.
+
+*Consequences:* spending stalls, never strands. Strands only on lost income or a step whose generation throws (VFED's `GeneratePlotQuest` has no retry **[V]**).
+
+**Route B.**
+
+*Levers:*
+- Free presentation: offer letter, quest-tab row, and a locked-requirement line carrying the price.
+- Chain topology in VEF XML.
+- The same gate can price any deed.
+
+*Cannot:*
+- Show steps in the Schism window unless drawn there too.
+- Enforce the price where `Quest.Accept` is called directly — VFED's plot tab and VEF's `ActivateQuest` do that **[V]**.
+- Use VEF's expiry features (**T-72**, **T-73**), or its XML gates on the chain path (**T-71**).
+
+*Consequences:*
+- An offer that expires while unaffordable strands the plot under VEF ordering, so plot offers must not expire.
+- In Multiplayer, two founders spending in the same tick can let a step through free unless the check moves inside a synced call **[I]**.
+
+**Route C — not recommended.** `QuestWorker.GenerateQuests` draws `RandomElement` without replacement, so the giver has no order. Order can come only from `CanRun` gates, which do run on this path (unlike **T-71**), but no shipped node reads chain progress. The pool fills only at `Init` and `Reset`, and `Reset` clears every unbought offer. `ActivateQuest` regenerates nothing. So the next step waits for a reset that discards every favour, and with `resetEveryTick = -1` it never comes. A capped pool can omit the step at random, and a step that throws vanishes (**T-77**). All **[V]**. It needs A's code anyway, behind a worse surface.
+
+**Route D — not recommended as shipped.** The network is a comms-console target only after joining, and it counts Intel only on powered orbital trade beacons. Both buildings require `MicroelectronicsBasics`, while the Schism arrives in the Medieval era. The marking act is fixed at accepting `VFED_ChasedDeserter`, so no Schism work is possible before commitment. `VFED_EmpireBargain` offers a betrayal after plot successes, which contradicts *"no option to sell the Schism out"*. And Influence would be items, not this document's balance. All **[V]**. Its value is as A's donor.
+
+**The marking act.**
+- **Both acts work under A, B and C.** Under D the act is joining.
+- **The hostility carrier is the same for both.** VFED's `JoinDeserters` sets goodwill to `GoodwillToMakeHostile`, then `GoodwillPatches.CanChangeGoodwillFor_Postfix` freezes Empire↔player goodwill while a stored flag is set **[V]**. Vanilla hostility alone is recoverable through gifts and peace talks (`RELIGION.md` § *Exaltation — hostility and the techprint supply*) **[V]**.
+- **First Influence gained** makes banking while favoured impossible by construction. Operations before commitment then pay no Influence, and the Influence option must warn at acceptance, as `VFED_ChasedDeserter` does **[V]**.
+- **First plot spend** lets Influence bank without limit while the Church stays friendly. That contradicts the requirement's own *"cannot bank Influence and keep the Church's favor"* and has been handed back.
+
+**Recommendation, not a selection:** A for the plot, with favours and techprints as rows in the same catalogue. B as a complement if blows should arrive as ordinary offers. First Influence gained as the marking act, because it alone meets the requirement's banking clause by construction.
+
+### Constraints
+
+- **The index moves only on a quest outcome, in every route.** A purchase gates a step; it never writes the index **[I — route property]**.
+- **Stranding reduces to income and generation.** The routes add these failure surfaces:
+  - B: an expiring offer (**T-72**, **T-73**).
+  - C: a pool that never resets, and swallowed generation errors (**T-77**).
+  - A: no retry when a step fails to generate.
+- **One-way hostility needs a goodwill freeze.** Vanilla hostility alone does not hold.
+- **An unaccepted plot step never expires in the donor.** VFED shelves steps with `acceptanceExpireTick = -1` and handles `EndedFailed` / `EndedInvalid` only **[V]**.
+- **#39 is analogy, not rule.** Its *"never paid for out of the economy's supply"* governs Charting's site pools **[V]**. Here one balance pays for plot and favours by design. The difference that makes sharing survivable: Influence banks, labour does not **[I]**.
+
+### Available mechanisms
+
+| Mechanism | What it does | Evidence |
+|---|---|---|
+| **VFED paid plot chain** — `WorldComponent_Deserters.InitializePlots` / `GeneratePlotQuest` / `Notify_PlotQuestEnded`; `HarmonyPatches.MiscPatches.CheckForPlotEnd` (`Quest.End` postfix); `DeserterTabWorker_Plots.DoMainPart` | Ordered list built from `VFEEmpire.WorldComponent_Hierarchy.Titles` ≥ Knight. Steps are shelved hidden with no expiry. *Select* runs `TrySpendIntel(cost, useCriticalIntel)`, then `Choose`, then `Accept`. `EndedSuccess` (4) generates index + 1; `EndedFailed`/`EndedInvalid` (5/6) regenerate the same index | [V] `…/294100/3025493377/1.6/Assemblies/VFED.dll`; `QuestState` in `Assembly-CSharp.dll` |
+| **VFED approaches** — `QuestNode_ApproachChoices`, `PlotMission.xml` | Per-approach `intelCost`, `combatLevel`, `visibilityGain`, and `UseCriticalIntel` (only `falseInvitation`) | [V] |
+| **VFED join / betray** — `QuestPart_JoinDeserters` (in `VFED_ChasedDeserter`), `JoinDeserters`, `GoodwillPatches`, `QuestPart_BetrayDeserters` (in `VFED_EmpireBargain`) | Joining force-hostiles the Empire, allies the Deserters and strips titles, and goodwill stays frozen while `Active`. Betrayal sets `Locked` and ends every Deserter quest | [V] |
+| **VFED access** — `GetCommTargets_Postfix`, `Dialog_DeserterNetwork.PostOpen` | A comms-console target only while `Active`; Intel counted on powered orbital trade beacons; both buildings require `MicroelectronicsBasics` (Core `Buildings_Misc.xml`) | [V] |
+| **MP Compat for VFED** — `Multiplayer.Compat.VanillaFactionsDeserters` (`1629973374/1.6/Referenced/`) | Transpiles the plot button to `SyncedAcceptPlot` (spend → `Choose` → `Accept`) and registers `InitializePlots` and `EnsureQuestListFilled` | [V] |
+| **VEF quest giver** — `QuestWorker.GenerateQuests`, `QuestGiverManager.Init` / `Tick` / `Reset` / `ActivateQuest`, `StorytellerWatcher.AddQuestGiverManager`, `CompQuestGiver.Use`, `QuestInfo..ctor` | Random draw without replacement, capped, with `CanRun` live. Refills only at `Init` and `Reset`, and `Reset` clears unbought offers. `ActivateQuest` does not refill. Offers carry a pre-rolled reward | [V] `…/294100/2023507013/1.6/Assemblies/VEF.dll` |
+| **VEF quest chains** — `GameComponent_QuestChains.TryScheduleQuest`, `QuestChainExtension` | `conditionSucceedQuests` ordering, working `grantAgainOnFailure`, and a live-duplicate refusal. Any quest whose root carries the extension is recorded by the `QuestManager.Add` postfix, whatever granted it | [V]; hazards **T-71–T-73** |
+| **Vanilla accept gate** — `QuestPart_RequirementsToAccept`, `QuestUtility.CanAcceptQuest`, `Quest.Accept` → `PreQuestAccept` | The price can be an accept requirement plus a debit before `Initiate` | [V]; `docs/engine/quests.md` § *The accept-time gate* |
+| **Multiplayer** — `Multiplayer.Client.SyncMethods` | `SyncMethod.Register(typeof(Quest), "Accept")` and `PatchQuestChoices.Choose` are synced; `CanAcceptQuest` is not re-checked inside | [V] `…/294100/2606448745/1.6/AssembliesCustom/Multiplayer.dll` |
+
+**What does not exist:**
+- No shipped `QuestNode` reads quest history or our state. VEF's are `QuestNode_ForceMusic`, `QuestNode_GetFaction` and `QuestNode_Site`, and vanilla's `QuestNode_GetFieldValue` reads only an instance field of an object already on the slate **[V]**.
+- Outside VFED and VEF, the wide pass for chain identifiers (`plotmission|questchain|questline|storyline|campaignstage|plotstage`, ASCII, both roots, `.dll`) found only RimPacts' `WorldWarQuestLine`, a status string **[V]**. The residual is a chain named otherwise.
+
+### Status
+
+**Evidence class: READ.** The mechanisms above are **[V]**; routes A–C are **[I]** as compositions. From [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132).
+
+### Open questions
+
+| Question | Owner |
+|---|---|
+| First plot spend as the marking act lets Influence bank while the Church stays favourable, contradicting the banking clause | Requirements → [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122) (closed; reopening is Conrad's call) |
+| Does a failed blow cost its price again, refund it, or retry free? | Requirements → [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122) |
+| Influence decay: a steady state below a step's price strands the plot | Existing unowned gap under *Outstanding decisions* |
+| Chain state storage; shelving in `QuestManager` vs deep save; per-approach price snapshot; retry on generation failure; the synced accept check (B); plot rows and cooldowns in the window | Build map, on selection |
 
 ---
 
@@ -156,10 +269,7 @@ This is the requirement that *"the same mission family can support radically dif
 approaches"* — a covert operation offers a `Reward_Currency` for Influence, a public
 miracle offers Reverence, and both rows appear in the same quest-choice list.
 
-**Credit B — an artifact is decoded.** *The carrier is now
-[#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)'s, which asks for a long
-destructive job rather than an instant use; whatever it selects reaches this document only
-through `Credit`. The comp below stays a verified available mechanism, not a selection.*
+**Credit B — an artifact is decoded.** *[#115](https://github.com/cjd721/Rimworld-Archinity/issues/115) has answered the carrier: [`RESEARCH.md`](RESEARCH.md) § *Destructive artifact analysis*. The recommended route calls `Credit` from an `IThingStudied` comp on the tick. The comp below stays a verified mechanism for a one-shot use item, which that section lists as route D and does not recommend for a long, interruptible job.*
 `CompUseEffect_GainCurrency`
 (`{CurrencyDef currency, int amount}`) on the recovered-artifact `ThingDef`, paired with
 vanilla `CompUseEffect_DestroySelf` so the artifact is consumed.
@@ -932,40 +1042,16 @@ and open-category flags are static mutable fields **[V]**.
 > stored state. A stored `int` on a `WorldComponent` reduces all of that to one
 > `[SyncMethod]`.
 
-### Structural separation — requirement, answered structurally
+### Structural separation — what survives the reopened requirement
 
-> *"Plot progression is tracked separately, so spending Influence never reverses the ordered
-> campaign. That separation is load-bearing and must be structural, not a convention."*
-> — [`RELIGION.md`](../requirements/RELIGION.md)
+**Superseded on 2026-09-16** by [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122): spending Influence is now how the Schism's plot advances. Routes, stranding and the marking act are in *The Schism catalogue — a spend that advances the plot*.
 
-> **Premise reopened on 2026-09-16.** The requirement quoted above no longer stands:
-> [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122) made spending Influence the way
-> the Schism's plot advances. This section, and *Failure and recovery*'s no-softlock claim that rests
-> on it, describe the earlier requirement. The routes under the new one are
-> [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)'s.
+What survives:
+1. **Different owners.** Balances live in `WorldComponent_Currencies`; chain state lives in its own component under its own `Scribe` key.
+2. **The spending API still has no vocabulary for progression.** `TrySpend(CurrencyDef, int, string)` names no chapter, quest or step.
+3. **The chain index has exactly one writer, and it is a quest outcome.** A purchase may *accept* the current step. It never writes the index — checkable by grep.
 
-Three layers, none of them a convention:
-
-1. **Different owners.** Balances live in `WorldComponent_Currencies`. The ordered Schism
-   chain lives in whatever carrier is eventually built for it — **and no ticket owns that
-   yet**; see *Outstanding decisions*. Separate components and separate `Scribe` keys,
-   whichever carrier wins.
-2. **The spending API has no vocabulary for progression.** `TrySpend(CurrencyDef, int,
-   string) → bool` takes a currency and a number. It cannot name a chapter, a chapter
-   index, a quest or a mission; there is no argument to pass and no return value to
-   interpret.
-3. **The chain has exactly one writer, and it is a quest outcome.** Purchases add to a
-   *pool*; pool membership is a different field from the chain index. A purchase worker
-   that wanted to touch the chain would have to acquire the progression component, a
-   reference nothing hands it.
-
-The donor demonstrates the same split and is worth citing for it: `VFED` keeps a
-purchasable pool (`ServiceQuests`, refilled by `EnsureQuestListFilled`) separate from an
-ordered chain (`PlotMissions`), and the only writer of the chain index is
-`WorldComponent_Deserters.Notify_PlotQuestEnded`, which no spend path reaches **[V]**.
-
-Layer 3 is **checkable rather than asserted**: no type in the purchase-worker namespace may
-reference the progression component. That is a grep, not a review habit.
+The donor was mis-cited here before. VFED's `Notify_PlotQuestEnded` is the only writer of its index **[V]**, but `DeserterTabWorker_Plots.DoMainPart` gates every step but the free endgame (`VFED_DeserterEndgame`) on `TrySpendIntel` **[V]**. It shows *spend gates, outcome writes*, not that spending cannot move the campaign.
 
 ### The interface to [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)
 
@@ -1064,10 +1150,7 @@ to it.
 | A drop pod has nowhere good to land | `Log.Error("Could find no good TradeDropSpot near dropCenter …")`, then a random standable unfogged cell **[V]** | Loud and self-recovering on a planet. On a gravship or orbit map: **RUN**. The table venue does not drop. |
 | Shelved offers bloat the save | **Silent** — the save grows and nobody looks | `QuestGen.Generate` runs pawn and site generation up front **[V]**. `TargetCount` is a `CurrencyDef` field, not the donor's hardcoded 10, so the pool size is a tuning decision rather than an accident. Worth measuring once with a real save. **[I]** |
 
-**No campaign softlock is reachable from this document.** Spending cannot move campaign
-state — see *Structural separation* — so no sequence of purchases can strand the player.
-**Reopened:** the Schism's plot now advances by spending Influence, so whether a purchase can
-strand it is [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)'s to answer.
+**Spending stalls the Schism plot; it never strands it.** Under Routes A and B a purchase elsewhere leaves the balance short of the current step's price, and the index never moves backward. What can strand the plot is Influence income stopping, a step failing to generate (A), an expired offer (B) or a pool that never resets (C). See *The Schism catalogue — a spend that advances the plot* § *Constraints*.
 
 ---
 
@@ -1283,28 +1366,13 @@ it** — all **[V]**:
 
 ### The ordered-operation surface, and why it is not this document's
 
-`VFED.WorldComponent_Deserters.InitializePlots` builds `List<PlotMissionInfo>` once, and
-`Notify_PlotQuestEnded` advances by **index**: on `QuestState.EndedSuccess` it generates
-`PlotMissions[IndexOf(info) + 1]`; on failure or expiry it regenerates *the same index*
-**[V]**. One live quest at a time, no skipping, no reversing. **The shape is exactly right
-and is worth copying.**
+`VFED.WorldComponent_Deserters.InitializePlots` builds `List<PlotMissionInfo>` once, and `Notify_PlotQuestEnded` (reached from the `Quest.End` postfix `HarmonyPatches.MiscPatches.CheckForPlotEnd`) advances by **index**. On `EndedSuccess` it generates `PlotMissions[IndexOf(info) + 1]`; on `EndedFailed` or `EndedInvalid` it regenerates *the same index*. `EndedOfferExpired` is not handled and needs no handling, because steps are shelved with `acceptanceExpireTick = -1` **[V]**. **Each step but the endgame is bought**: `DeserterTabWorker_Plots.DoMainPart` spends Intel before `Accept`; `VFED_DeserterEndgame` starts free after a confirmation **[V]**. This is the donor for Route A of *The Schism catalogue*, which owns the chain's routes.
 
 The **driver** is not: `InitializePlots` iterates `VFEEmpire.WorldComponent_Hierarchy.Titles`
 filtered on `seniority >= RoyalTitleDefOf.Knight.seniority`, and the branch chance is a
 `switch` on literal seniority integers 700/701/800/801/802/900/901 **[V]**. Repointing it to
 Schism operations replaces the method rather than patching it — roughly 50–60 lines **[I]**,
 and the rewrite drops the Empire coupling entirely.
-
-**That answers #54's question and hands the build to nobody, which is the honest statement.**
-An earlier draft handed it to [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40).
-**#40 does not own it:** its body scopes it to *"the implementation surface for the
-**Chronicle** and **nothing else**"*, it carries `wayfinder:grilling` + `hitl`, and it is
-deliberately **last** in the Chronicle chain **[V]**. The Schism ordered-operation chain is a
-different chain. A deferral needs a ticket that can actually answer the question, and widening
-#40's scope to cover this is Conrad's call, not this document's. **So: gap, no owner.**
-
-What the currency side needs from that carrier, whichever ticket eventually owns it, is
-*nothing* — and that is the point.
 
 ### Delivery surfaces for the Intel exchange
 
@@ -1602,8 +1670,8 @@ this document.
   *"different approaches, different reward profiles"* requirement, visible.
 - Decoding a recovered artifact destroys it and raises the Intel readout by the def's
   amount, with no research project involved.
-- A purchase debits the readout and the catalogue entry goes on cooldown; **the campaign's
-  ordered chain does not move** — checkable by grep as well as by play, per *Structural
+- A purchase debits the readout and the catalogue entry goes on cooldown; **a favour purchase
+  does not move the Schism chain's index; only a step's quest outcome does** — checkable by grep as well as by play, per *Structural
   separation*.
 - The number survives a save/reload, and survives the colony moving map.
 - **A shelved quest offer does not appear in the quests tab, does not send a letter, and
@@ -1643,4 +1711,4 @@ this document.
 | **Does VEF ship?** | Build A is ~95 lines of new C#; Build B is ~290 and re-derives the pool, persistence, refill, price display, challenge-rating row, choice resolution and accept sequence. | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14). **VEF is already required** by [`PRESSURE.md`](PRESSURE.md) § 4 and by [`HACKING.md`](HACKING.md)'s carrier, so this adds no new mod — but the ledger owns the decision, not this document. |
 | **Is the always-visible readout (D3) the right surface, or does the campaign UI absorb it?** | D3's layout arithmetic is the maintenance cost; a tab of our own removes it. | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) rules on the shape; D1 and D2 ship regardless. |
 | **Which quests are purchasable, and what each contains** | Decides what the catalogue actually holds. The machinery is built here and the membership test is one `DefModExtension`; the contents are not this document's. | Authoring, alongside the era content. [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) settled the mechanism. |
-| **Which carrier holds the ordered Schism chain?** | This document requires only that it is *not* `WorldComponent_Currencies` — a requirement reopened on 2026-09-16, when spending Influence became how the chain advances. | [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132) owns its routes. [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40) is the Chronicle's implementation surface and *"nothing else"* **[V]**. |
+| **Which route carries the Schism chain, and which marking act commits the founders?** | Routes A–D and the marking-act comparison are in *The Schism catalogue — a spend that advances the plot*. | Selection on the next map. The banking-clause tension is handed to [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122). |

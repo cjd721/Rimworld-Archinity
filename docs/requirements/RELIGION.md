@@ -153,12 +153,17 @@ routes. What holds whichever route is chosen:
 
 - **A founder can never be given away.** If founders cannot be reliably excluded, a revolt takes
   no pawns at all.
-- **Success makes some or all of that faction the colony's vassal**, holding the player faith. How
-  much of it follows may reflect Reverence and what the player committed. A revolt never needs a
-  faction the world was not created with: settlements that do not follow go to a faction that
-  already exists, or are removed.
-- **A vassal is a whole faction, and it gives its overlord perks.**
-  [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120)
+- **What success makes of the faction is open.** Vassalage is one candidate; an ally, a replaced
+  government in an independent faction, settlements passing to another faction, or a change of
+  faith alone are others. How much of the faction follows may reflect Reverence and what the
+  player committed. A revolt never needs a faction the world was not created with.
+  [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131) answers what is possible;
+  the choice waits for its routes.
+- **What a vassal is stays open.** A settlement taken by conquest, a friendly faction that
+  submits, and a whole faction after a revolt or a conquest are all candidates, and they may
+  coexist. [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120) answers what is
+  possible; [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) states what a vassal
+  must be once it has.
 - **Failure** drops that faction's Reverence sharply and collapses its Goodwill, and what was
   committed is lost. The faction can revolt again once its Reverence is rebuilt.
 - **An offer declined or left to expire stays away for about thirty days**, so an eligible faction

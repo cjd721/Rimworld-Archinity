@@ -459,6 +459,92 @@ build* § 6b. `WorldTechLevel.Window_AddFactions.OpenIfAnyAvailable` / `.DoWindo
 
 ---
 
+### T-109 — Unlisting a faith from its last faction is a deferred, silent mass conversion
+
+`RimWorld.IdeoManager.CanRemoveIdeo` treats an `Ideo` as garbage when no faction lists it (primary
+or minor) **and no pawn on a map** holds it. It checks `PawnsFinder.AllMaps` only, so **world pawns
+and caravan members do not keep a faith alive**. `Pawn.ExitMap` → `IdeoManager.Notify_PawnLeftMap` and
+`Pawn.Kill` → `Notify_PawnKilled` queue the removal. On the next `World.WorldTick` → `IdeoManagerTick`,
+`IdeoManager.Remove` calls `Pawn_IdeoTracker.Notify_IdeoRemoved` on
+`PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead`. That `SetIdeo`s every holder to `FallbackIdeo`
+(the pawn's faction's primary, or a random `Ideo` for a factionless pawn) and strips the faith from
+every `previousIdeos`. No letter is sent. The only log line (`"Faction … contains ideo … which was
+removed!"`) fires when a faction *still* lists it, which is exactly the case that is not happening.
+
+**How it bites.** `FactionIdeosTracker.SetPrimary` on an NPC faction whose old faith no other faction
+holds, with the old faith not kept in `ideosMinor`, looks like a label-only change. The faction's
+people still hold the old faith, and nothing complains. The next time one of its trader, visitor or raid
+groups walks off a map, or its last on-map member dies, the old faith is deleted and **every one of that
+faction's world pawns converts to the new primary at once**. A design that meant "the government changed
+and the people did not" has silently become "everyone converted", at a moment nobody chose. RimPacts'
+`ResolveMissionary` and `EnsurePuppetIdeo` and VFE Classical's `GainFavorOf` all set up exactly this
+state.
+
+**It survives play-testing** because the delay depends on traffic: in a quiet stretch the old faith
+lingers for days, and when it goes it leaves no trace except its absence from the Ideoligions tab.
+
+**Fix:** never unlist a faith that still has believers. Keep it as a minor
+(`IdeosMinorListForReading.Add`), or convert its holders first. If anything of ours stores an `Ideo`
+reference, treat null-on-load as "removed", not "never set".
+
+*[#133](https://github.com/cjd721/Rimworld-Archinity/issues/133), `docs/specs/RELIGION.md`
+§ *An NPC faction's faith changes*. `RimWorld.IdeoManager.CanRemoveIdeo` / `.TryQueueIdeoRemoval` /
+`.Remove` / `.IdeoManagerTick`, `RimWorld.Pawn_IdeoTracker.Notify_IdeoRemoved` / `.FallbackIdeo`,
+`Verse.Pawn.ExitMap` / `.Kill`, `RimWorld.PawnsFinder.AllMaps` from `Assembly-CSharp.dll`. 1.6.4871.
+Confirmable in one client: unlist a faction's unique faith, let one of its groups leave the map.*
+
+---
+
+### T-110 — Positive goodwill is refused while the player is on that faction's settlement
+
+`Faction.CanChangeGoodwillFor(other, goodwillChange)` returns `false` for any **positive** change when
+`IsPlayer && SettlementUtility.IsPlayerAttackingAnySettlementOf(other)` or the mirror. The check is
+*"`other` is hostile to the player and any loaded map's parent is a `Settlement` of `other`"*.
+`TryAffectGoodwillWith` then returns `false`, **with no message, log line or letter**, and the
+goodwill is unchanged.
+
+A reward, a liberation, a revolt's *"the new government is friendly"* or an alliance written while
+the players are still standing on that faction's settlement map is silently discarded. Nothing in
+the UI says a write was attempted. It reads as a balance bug.
+
+**Pay it on map exit.** FT&V's reference scribes a pending reward and applies it in
+`ApplyPendingExitReward` (`docs/specs/TERRITORY.md` § *Persistence and multiplayer*). Or write it
+after the faction has stopped being hostile by another path.
+
+The same method also refuses **every** goodwill change when either def is `permanentEnemy` (and the
+permanent-enemy-except gates), which is equally silent.
+
+*[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92),
+[#131](https://github.com/cjd721/Rimworld-Archinity/issues/131).
+`RimWorld.Faction.CanChangeGoodwillFor`, `RimWorld.Planet.SettlementUtility.IsPlayerAttackingAnySettlementOf`.
+1.6.4871.*
+
+---
+
+### T-112 — A `PawnKindDef` used as a marker silently resets
+
+Scenarios can give starting pawns a custom kind
+(`ScenPart_ConfigPage_ConfigureStartingPawns_Xenotypes.overrideKinds`; Biotech's *The Sanguophage*
+uses `Sanguophage_Player`), and `QuestNode_GetPawn.mustBeOfKind` filters on it from XML. That makes
+the kind look like a free marker. It does not last:
+
+- **`Pawn.SetFaction(newFaction)`** calls `ChangeKind(newFaction.def.basicMemberKind)` whenever
+  `newFaction == Faction.OfPlayer`, the pawn is humanlike and it is not a quest lodger. A marked
+  colonist who leaves the faction and rejoins becomes a `Tribesperson` (PlayerTribe) or `Colonist`.
+  That covers a captured colonist who is re-recruited, and a kidnapped one:
+  `KidnappedPawnsTracker.KidnappedPawnsTrackerTick` moves kidnapped pawns to the kidnapper's
+  faction on a 30-day MTB.
+- **`MentalBreakWorker_RunWild`** calls `ChangeKind(WildMan)`. Re-taming then goes through
+  `SetFaction` and resets the kind again.
+- `GameComponent_PawnDuplicator.Duplicate` copies `kindDef`, so a duplicate carries the marker.
+
+No log line in any case.
+
+*[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). `Verse.Pawn.SetFaction`, `Verse.Pawn.ChangeKind`,
+`Verse.AI.MentalBreakWorker_RunWild`, `RimWorld.GameComponent_PawnDuplicator.Duplicate`. 1.6.4871.*
+
+---
+
 ## Incidents, quests and goodwill
 
 ### T-65 — VEF's `forcedPointsRange` sentinel is `IntRange.One`, not its own default
@@ -719,5 +805,140 @@ companion to **T-14**, sibling of **T-17**. `VFEEmpire.RaidStrategyWorker_Desert
 from `VFEEmpire.dll` (`2938820380/1.6/Assemblies/`);
 `RimWorld.IncidentWorker_RaidEnemy.FactionCanBeGroupSource`,
 `RimWorld.RaidStrategyWorker.CanUseWith`. 1.6.4871.*
+
+---
+
+### T-101 — A reward option with nothing to draw cannot be chosen
+
+`RimWorld.MainTabWindow_Quests.DoRewards` builds each option's row from its rewards'
+`StackElements` and **`continue`s past an option whose list is empty**. No row is drawn,
+so that option's "Accept for:" button never exists. Meanwhile `DoAcceptButton` returns
+early (outside dev mode) for **any** quest carrying a `QuestPart_Choice`. There is no
+plain Accept button to fall back on.
+
+Nothing is logged. The option is still in `QuestPart_Choice.choices`, still counts toward
+`PreventsAutoAccept`, and still has its parts in the quest. It just cannot be picked from
+the window. If *every* option draws nothing, the quest cannot be accepted from the quest
+window at all.
+
+It is the shape two specs reach for: a custom `Reward_*` that forgets to override
+`StackElements` (the base returns `Enumerable.Empty`), and a choice branch carrying
+consequence parts but no reward (`POLITICS.md` § *Paired rival demands*). Give every option
+at least one reward whose `StackElements` yields
+`QuestPartUtility.GetStandardRewardStackElement(…)`, as `VFED.Reward_Visibility` does.
+
+Related and also silent: `DoRewards` and `DoAcceptButton` both stop at the **first**
+`QuestPart_Choice` in the parts list. A second choice part's options are never drawn,
+and at acceptance its `PreQuestAccept` auto-picks option 0. That last step logs a red error.
+
+*[#135](https://github.com/cjd721/Rimworld-Archinity/issues/135), `docs/specs/RELIGION.md`
+§ *Credit for a deed*. `RimWorld.MainTabWindow_Quests.DoRewards`, `.DoAcceptButton`,
+`RimWorld.Reward.StackElements`, `RimWorld.QuestPart_Choice.PreQuestAccept`. 1.6.4871.*
+
+---
+
+### T-102 — `GiveRewards` drops Exaltation unless the asker is titled
+
+`RimWorld.QuestGen.QuestGen_Rewards.GiveRewards` — the method behind `QuestNode_GiveRewards`
+and six vanilla C# roots — sets `allowRoyalFavor = false` **before** generating when any of
+these holds: `giverFaction == null`, `asker.royalty == null`,
+`!asker.royalty.HasAnyTitleIn(asker.Faction)`, or the giver is hostile to the player.
+`RewardsGenerator.DoGenerate`'s own gate (`giverFaction.allowRoyalFavorRewards &&
+def.HasRoyalTitles`) never gets a vote.
+
+So a Church (Empire) quest whose asker is untitled offers **no Exaltation option**. It gets
+goodwill and items instead, with no message. `docs/specs/RELIGION.md` §4 stated only the
+generator's gate. Royalty's scripts ask for a titled asker with
+`QuestNode_GetPawn.mustHaveRoyalTitleInCurrentFaction`, for example in `Scripts_Utility.xml`,
+`Scripts_RewardRaid.xml` and `Script_PawnLend.xml`. A hand-built Church deed must do
+the same, or construct `Reward_RoyalFavor` directly, as `QuestNode_GiveRoyalFavor` does.
+
+*[#135](https://github.com/cjd721/Rimworld-Archinity/issues/135).
+`RimWorld.QuestGen.QuestGen_Rewards.GiveRewards`, `RimWorld.RewardsGenerator.DoGenerate`.
+1.6.4871.*
+
+---
+
+### T-103 — A VEF `QuestGiverDef` never refills after a purchase, and its reset throws away what it did not sell
+
+`VEF.Storyteller.QuestGiverManager` fills its pool in three places only:
+- `Init()`, called by `CompQuestGiver.Use` when the manager is first created
+- `StorytellerWatcher.AddQuestGiverManager`, when `generateOnce` is set
+- `Reset()`, called from `Tick()` only when `def.resetEveryTick != -1`
+
+`ActivateQuest` adds, accepts and charges the bought offer, then `availableQuests.Remove(questInfo)`. **It generates nothing.**
+
+So a giver authored with the default `resetEveryTick = -1` gets **one** pool for the life of the save. Each purchase shrinks it, and when it is empty the window shows no rows. Nothing logs.
+
+Setting `resetEveryTick` is not a clean fix. `Reset()` begins with `availableQuests.Clear()`, so every refresh **discards every unbought offer** — including one the player was saving for — before `QuestWorker.GenerateQuests` redraws by `RandomElement`.
+
+This bites hardest on anything sequential. A step whose `CanRun` gate opens only after the previous step succeeded cannot appear until the next reset, and that reset wipes everything else on offer.
+
+**Fix:** decide per giver whether offers are perishable. If a new offer must appear promptly after a purchase or a quest outcome, call `GenerateQuests()` (which appends, not `Reset()`) from a hook of ours on the synced path — a `Quest.End` postfix or our purchase command — never from the window.
+
+*[#132](https://github.com/cjd721/Rimworld-Archinity/issues/132), `docs/specs/CURRENCIES.md` § *The Schism catalogue — a spend that advances the plot*. `VEF.Storyteller.QuestGiverManager.Init` / `.Tick` / `.Reset` / `.GenerateQuests` / `.ActivateQuest`, `VEF.Storyteller.StorytellerWatcher.AddQuestGiverManager`, `VEF.Storyteller.CompQuestGiver.Use` from `VEF.dll` (`2023507013/1.6/Assemblies/`). 1.6.4871.*
+
+---
+
+### T-115 — VEF's `storytellerThreat` replaces every faction's natural goodwill, silently
+
+`VEF.Storyteller.VanillaExpandedFramework_Faction_NaturalGoodwill_Patch` is a postfix on the
+`RimWorld.Faction.NaturalGoodwill` **getter** — the `#Blob` attribute names `RimWorld.Faction`,
+`NaturalGoodwill`, `MethodType.Getter`. For any non-player faction it reads the **active**
+storyteller's `StorytellerDefExtension`. If `storytellerThreat` is non-null, it sets `__result` to
+`storytellerThreat.naturallGoodwillForAllFactions.Average`. That field is a non-nullable
+`IntRange` defaulting to `0~0`: the null check compiles away, and the override applies the moment
+the object exists.
+
+So a storyteller that adds `storytellerThreat` for any of its **other** fields
+(`disableThreatsAtPopulationCount`, `allDamagesMultiplier`, `goodIncidents`,
+`raidWarningRange`) also pins every faction's natural goodwill to 0. That discards every
+`GoodwillSituationWorker.GetNaturalGoodwillOffset` term the vanilla sum would have produced:
+`NaturalEnemy`'s −130, `SameIdeo`, every Ideology meme situation, and any worker of ours,
+including the Church suspicion offset (`docs/specs/RELIGION.md` § *The build — Exaltation* §6).
+
+Every reader goes through the patched getter:
+
+- `Faction.CheckReachNaturalGoodwill` (drift)
+- `Faction.CalculateAdjustedGoodwillChange`
+- `FactionUIUtility`'s natural-goodwill column
+
+So drift, change scaling and the Factions tab all agree on the wrong number, and nothing looks
+inconsistent. `GoodwillSituationManager.GetNaturalGoodwill` itself is not patched, and
+`GetMaxGoodwill` caps are unaffected.
+
+No corpus XML sets `storytellerThreat` today, so the trap is armed only by a storyteller we
+author. `docs/specs/PRESSURE.md` plans ours on the same extension.
+**Leave `storytellerThreat` unset**, or set `naturallGoodwillForAllFactions` knowing that it
+replaces the vanilla sum for every faction.
+
+*[#130](https://github.com/cjd721/Rimworld-Archinity/issues/130), `docs/specs/RELIGION.md` § *The
+Schism* § *Constraints*. `VEF.Storyteller.VanillaExpandedFramework_Faction_NaturalGoodwill_Patch.Postfix`,
+`VEF.Storyteller.StorytellerThreat`, `VEF.Storyteller.StorytellerDefExtension`
+(`2023507013/1.6/Assemblies/VEF.dll`); `RimWorld.Faction.NaturalGoodwill` /
+`.CheckReachNaturalGoodwill` / `.CalculateAdjustedGoodwillChange`,
+`RimWorld.GoodwillSituationManager.GetNaturalGoodwill`. 1.6.4871.*
+
+---
+
+### T-116 — `QuestPart_SetFactionHidden` forgets which way it points across a save
+
+`RimWorld.QuestPart_SetFactionHidden` holds `inSignal`, `faction` and `bool hidden`, and on its
+signal writes `faction.hidden = hidden`. Its `ExposeData` scribes **`inSignal` and `faction`
+only**. After a load, `hidden` is the C# default, `false`.
+
+Vanilla never notices. Its only constructor, `QuestGen_Factions.SetFactionHidden(quest,
+faction, hidden = false, …)`, is called only to **reveal**: from `QuestNode_Root_Beggars`,
+`_Hospitality_Refugee`, `_ReliquaryPilgrims` and `_Hack_WorshippedTerminal`. A reveal survives a
+reload by accident. **A part built with `hidden: true` that is still waiting on its signal
+when the game is saved reveals the faction instead.** There is no error, and the
+`faction.Hidden != hidden` guard makes the flip look deliberate.
+
+Hide a faction with our own write, or our own part that scribes the flag. Use the vanilla part
+only to reveal.
+
+*[#130](https://github.com/cjd721/Rimworld-Archinity/issues/130). `RimWorld.QuestPart_SetFactionHidden.ExposeData`
+/ `.Notify_QuestSignalReceived`, `RimWorld.QuestGen.QuestGen_Factions.SetFactionHidden`
+(`Assembly-CSharp.dll`). 1.6.4871.*
 
 ---

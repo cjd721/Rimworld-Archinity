@@ -347,6 +347,24 @@ one, ticking synced or not. Against that: it is the only thing in the bin that
 already implements treaties, vassalage, tribute and a humiliating peace, which is
 close to what [religion and politics](../requirements/RELIGION.md#political-pressure) asks the political board to do.
 
+**Added on [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131) [V]:**
+
+- **Multiplayer Compat carries no class for it.** `RimPacts` and `wowgag` return zero hits in both
+  encodings across `1629973374/1.6/**`, `Referenced/` included. The sweep was validated in the same
+  dll by `vanillaracesexpanded.android` (ASCII) and `VREAndroids` (UTF-16).
+- **It creates factions at runtime** in two places: the civil-war split
+  (`ResolveCivilWarSplit` → `FactionGenerator.CreateFactionAndAddToManager(mother.def)`) and the
+  player's puppet (`Rpt_Puppet_*` defs). Both conflict with the campaign's no-new-faction rule (T-07's
+  requirement), which is conflict cargo.
+- **Its civil war is the corpus's only faction-revolt system**:
+  - eligibility in `CivilWarEligible`, which excludes `categoryTag` Empire, orbital and puppet factions;
+  - a `Rand.Chance(0.08 × a stability factor)` in `TryStartCivilWarQuarter`;
+  - resolution after 1,200,000 ticks into quelled, coup (`TryGenerateNewLeader`) or split;
+  - a 7,200,000-tick cooldown after any outcome;
+  - a player-initiated *Incite rebellion* spy op.
+
+  It has no player-joined fight.
+
 ### Range Finder — the one place this batch touches the bar **[V]**
 
 `brrainz.rangefinder` (`1332119637`). **Not barred, and the reasoning matters more than
@@ -710,6 +728,13 @@ returns zero **[V]**.
 [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92),
 [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93))
 
+**The vassalise prompt is unsyncable as shipped [V].** `ShowVassalisePromptOnMapRemovedPatch`
+postfixes `MapDeiniter.Deinit`, opens a modded `ChoiceLetter_VassaliseDestroyedSettlement`
+(**T-96**) and calls `Find.TickManager.Pause()`. `InterceptBaseDestroyedLetterPatch` prefixes
+`SettlementDefeatUtility.CheckDefeated`. `ExecuteCedeToFactionAtTile` recreates a
+`WorldObjectDefOf.Settlement` for a recipient faction — the donor for handing a ruin back to an NPC
+faction. ([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120))
+
 **VFE Empire** — `OskarPotocki.VanillaFactionsExpanded.Empire`. `WorldComponent_Hierarchy`, named on
 [#73](https://github.com/cjd721/Rimworld-Archinity/issues/73) as the nearest analogue for a
 per-faction ledger, **is not one**. Its state is `List<Pawn> TitleHolders` plus a `bool initialized`,
@@ -722,11 +747,34 @@ nor `MakePawnFor`. ⚠ **The ticket's "147 lines" is the 1.4 `Source/` file, not
 — the exact failure `docs/agents/capability-research.md` § *Stale source* names.
 `WorldComponent_Vassals` + `TitheInfo` (a `Dictionary<Settlement, TitheInfo>` scribed
 Reference→Deep, lazily decorating an existing Empire settlement) is the nearer analogue and has
-**no suppression path at all** — nothing can raid, contest or reduce a vassal; the only removals are
-`ReleaseAllVassalsOf(Pawn)` and a debug action. **Neither VFE Empire nor VFE Deserters references
+**no suppression path at all** — nothing can raid, contest or reduce a vassal. The only
+non-debug caller of `ReleaseAllVassalsOf(Pawn)` is the Royalty tab's *Release all* confirmation
+button; nothing releases a vassal on title loss or when its settlement falls **[V]**. **Neither VFE Empire nor VFE Deserters references
 `Multiplayer`, `SyncMethod` or `SyncWorker` anywhere**: both assemblies reference only mscorlib,
-Assembly-CSharp, UnityEngine and 0Harmony (plus KCSG for VFED). **[V]**
+Assembly-CSharp, UnityEngine and 0Harmony (plus KCSG for VFED). **[V]** — **but the vassals are synced from outside.** `Multiplayer.Compat.VanillaFactionsEmpire`
+(`1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll`, `[MpCompatFor("OskarPotocki.VFE.Empire")]`)
+reroutes vassalising through `[SyncMethod] SyncedVassalizeSettlement`, registers
+`RoyaltyTabWorker_Vassals.DoVassal` lambdas 2–4, syncs `WorldComponent_Vassals.ReleaseAllVassalsOf`,
+and wraps `GetTitheInfo` in `Rand.PushState(Gen.HashCombineInt(settlement.ID, tile))` **[V]**.
+Residual [I]: `DoDay` iterates a `Dictionary<Settlement, TitheInfo>` minted lazily from the tab's
+draw path, so insertion order can differ per client while each delivery draws `Rand` — RUN item on
+[#120](https://github.com/cjd721/Rimworld-Archinity/issues/120).
 ([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73))
+
+**What the vassal system is, in 1.6 [V]:**
+- **Empire only.** `AllPossibleVassals` filters `Settlement.Faction == Faction.OfEmpire`.
+- **Held by a titled pawn.** `VassalUtility.VassalagePointsAvailable` sums `vassalagePointsAwarded`
+  down the title chain (seven Empire rungs award 1, one awards 0) minus vassals held. Reach is 100
+  tiles from a player home or a held vassal.
+- **Catalogue drawn at random.** `GetTitheInfo` picks a random `TitheTypeDef` and a
+  weighted-random speed (0.5×–2.5×).
+- **Delivered only where the lord is.** `TitheWorker.DeliverInt` delivers into the lord's caravan
+  (refused over mass capacity) or by drop pod near the lord on a player home map; otherwise nothing.
+- **Seven `TitheTypeDef`s, not six**, the seventh being `VFEE_Slavery` (Ideology): `TitheWorker_Slaves`
+  generates a new `PawnKindDefOf.Slave` pawn as the player's slave every 10 days.
+
+XML reaches the catalogue and the title points, never which factions can be vassals.
+([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120))
 
 **Rim War** — `2222935097`, `v1.6/Assemblies/RimWar.dll`. Player heat is stored **per settlement**:
 `RimWar.Planet.RimWarSettlementComp.playerHeat`, a private `int` scribed `"playerHeat"`, clamped
@@ -738,6 +786,9 @@ reusable idea is pacing: on firing an action, `PlayerHeat = 0; minimumHeatForPla
 GetHeatForAction(...)` — spend heat and raise the bar, so the next strike costs more. Verdict
 unchanged: **barred and declined**.
 ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56))
+
+Its "vassal" is not a mechanism: `RimWar.Planet.WorldUtility.IsVassalFaction` is
+`f.def.defName == "PColony"` **[V]**. ([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120))
 
 **Ushanka's Glittertech Expansion** — `3522676478`. `_instability` is on
 **`USH_GE.Hediff_CryogenicNexus : Hediff_AddedPart`** — a pawn hediff — as a private `float` scribed
@@ -758,6 +809,21 @@ than test `is Bill_Production`. Cite the **1.6** assembly specifically,
 version folder; About declares 1.6 only). **Verdict unchanged: not barred; Cheap + settings; the
 whole/fork/ours question is [#13](https://github.com/cjd721/Rimworld-Archinity/issues/13)'s.** Three
 findings against the dedicated section above, all **[V]**:
+
+- **The only shipped faction-level vassalage in the corpus [V].** `Rpt_Treaty_Tribute` makes a whole
+  NPC faction the player's tributary (`WorldComponent_RimPacts.IsMyTributary`).
+  - `TreatyWorker_Tribute.WouldAccept` gates on a power ratio and `Submission` (military collapse,
+    economic pressure, diplomatic vulnerability, shocks) — not on anything religious.
+  - `OnSigned` enforces non-aggression.
+  - `OnQuarter` either pays via `DeliverTributeQuarter` (silver, or the faction's settlement
+    specialties, at `Find.AnyPlayerHomeMap`'s trade drop spot) or rolls `Rand.Chance` for a revolt
+    that breaks the treaty and may schedule a revenge raid.
+  - `OnBroken` by the player gives +10 goodwill and a 1,800,000-tick cooldown.
+
+  ⚠ **`CreatePuppet` calls `FactionGenerator.CreateFactionAndAddToManager` mid-game** — the
+  **T-07** / **T-15** shape. `RimPacts.dll` contains no "multiplayer" string in either encoding, and
+  MP Compat covers no RimPacts packageId or type literal. Donor for `docs/specs/TERRITORY.md` §3 R4,
+  not a carrier. ([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120))
 
 - **The corpus's only other world-scoped player heat meter.**
   `WorldComponent_RimPacts.playerNotoriety`, an `int` scribed `"playerNotoriety"`, 0–100. Decay is
@@ -787,6 +853,12 @@ findings against the dedicated section above, all **[V]**:
   **It is the transaction half of a mission with none of the institution half** — no persistent
   object, no decay offset. **[V]** on the symbols, **[I]** on the numbers.
   ([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73))
+- **It postfixes `CompShuttle.IsAllowed`** (`RimPacts.Patch_ShuttleAllowMech`), flipping
+  `false→true` only for player mechanoids on its own combat-dispatch ships, and returning early when
+  the result is already true. **No collision** with a founder-refusing postfix (#134's route C2):
+  it never re-admits a humanlike. The consequence runs the other way. Such a refusal also keeps
+  founders off RimPacts' own dispatch shuttles. [V]
+  ([#134](https://github.com/cjd721/Rimworld-Archinity/issues/134))
 
 **A sweep hazard that touches every negative in this file, added to the method doc.** Ripgrep is
 case-sensitive and C# identifiers are not written the way you type them: `notoriety` returns
@@ -807,9 +879,9 @@ a verdict or a mod's price, and **conflicts are cargo, not verdicts**. No bar or
 the 1.6 decompile**: `WorldComponent_Hierarchy` reads `VFEEmpireMod.Settings.noblesPerTitle` inside
 the daily `WorldComponentTick` → `RefreshPawns` → `MakePawnFor` → `PawnGenerator.GeneratePawn` chain
 **[V]**. Under the in-place Church build it follows the Church unchanged and brings that defect with
-it. `docs/specs/RELIGION.md` § *Persistence and multiplayer* § *Exaltation*. ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
+it. `docs/specs/RELIGION.md` § *Persistence and multiplayer* § *Exaltation*. ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53)) Its 1.6 `QuestNode_Root_GrandBall`, `QuestNode_Root_RoyalParade` and `Questnode_Root_ArtExhibit` gate acceptance on a specific player colonist, the most senior titled host, through vanilla `QuestPart_RequirementsToAcceptPawnOnColonyMap`. It is the corpus's only mod use of that part, and it is C#. [V] ([#134](https://github.com/cjd721/Rimworld-Archinity/issues/134))
 
-**VFE Deserters** — `oskarpotocki.vfe.deserters` (`3025493377`, `1.6/Assemblies/VFED.dll`). Five
+**VFE Deserters** — `oskarpotocki.vfe.deserters` (`3025493377`, `1.6/Assemblies/VFED.dll`). Seven
 findings **[V]**, none changing its standing:
 
 - `VFED.HarmonyPatches.MiscPatches` — `CheckBiosecurity`, a postfix on `WorkGiver_Open.HasJobOnThing`,
@@ -845,6 +917,24 @@ findings **[V]**, none changing its standing:
   `Referenced/` reports it absent. The sync is real but fragile: `PreDoPurchaseButton` dispatches on
   **translated button-text equality**, so a locale change breaks it silently. A balance debit we own
   and sync ourselves is strictly safer. ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54))
+- **Its plot tab is a paid ordered chain — the only shipped one — and it is Medieval-unreachable as shipped.** `WorldComponent_Deserters.InitializePlots` builds the chain from `VFEEmpire.WorldComponent_Hierarchy.Titles` ≥ Knight, so it targets the Church hierarchy under the reskin. `DeserterTabWorker_Plots.DoMainPart` runs `TrySpendIntel(approach.intelCost, useCriticalIntel)` → `Choose` → `Accept`, and `MiscPatches.CheckForPlotEnd` (a `Quest.End` postfix) advances on `EndedSuccess` and regenerates the same step on `EndedFailed`/`EndedInvalid` **[V]**. Four things stand against it:
+  - Commitment is fixed at accepting `VFED_ChasedDeserter`. While `Active`, `GoodwillPatches.CanChangeGoodwillFor_Postfix` freezes Empire↔player goodwill.
+  - `VFED_EmpireBargain`, rolled after plot successes, carries `QuestPart_BetrayDeserters`, which sets `Locked` and ends every Deserter quest.
+  - The network is reachable only as a comms-console target while `Active`.
+  - Intel is counted only on powered orbital trade beacons. Both buildings require `MicroelectronicsBasics` **[V]**.
+
+  MP Compat's `SyncedAcceptPlot` carries the plot accept through a call-site transpiler and an approach-index counter — not the button-text dispatch the contraband sync uses **[V]**. `docs/specs/CURRENCIES.md` § *The Schism catalogue — a spend that advances the plot*. ([#132](https://github.com/cjd721/Rimworld-Archinity/issues/132))
+- **Its Intel extraction is not a destructive-analysis carrier** **[V]**.
+  - `VFED.CompIntelExtract` is one fixed 3600-tick `WaitWith` (`JobDriver_ExtractIntel`), gated by
+    a saved `intelExtracted` bool. It spawns `VFED_Intel` items whose count is the
+    `DesertersMod.IntelFromExtraction` settings slider (**T-18**), and it does not consume the thing.
+  - `VFED.CompIntelScraper` is the nearer shape: 10 pulses, each 3600 ticks, each a weighted
+    random draw among Intel, Critical Intel, +Visibility or a quarter-strength Empire raid, then
+    wick or destroy. But no colonist does any work.
+  - Multiplayer Compatibility syncs both comps' gizmos (`Multiplayer.Compat.VanillaFactionsDeserters`,
+    `Referenced/`).
+  - `docs/specs/RESEARCH.md` § *Destructive artifact analysis*.
+    ([#115](https://github.com/cjd721/Rimworld-Archinity/issues/115))
 
 **RimPacts** — `wowgag.RimPacts` (`3762723122`). **Not an NPC road builder**, correcting #68's first
 resolution. `WITab_RptTrade` sells a **player-financed** road from a player colony to any non-hostile
@@ -871,6 +961,106 @@ recorded so it is not re-derived:** it is one of only three mods on disk declari
 but its `heldByFactionCategoryTags` are **Mountainfolk** and **Hillfolk**, not Empire **[V]**, so it
 neither adds to nor rescues the Empire-tagged supply. Verdict unchanged.
 ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
+
+## What the 2026-09-16 capability batch found
+
+**World Tech Level** — `m00nl1ght.WorldTechLevel` (`3414187030`, `1.6/Lunar/Components/WorldTechLevel.dll`).
+`WorldTechLevel.Patches.Patch_IdeoFoundation.CanAdd_Postfix` (patch group `Filters`, gated on
+`Settings.Filter_Ideoligions`) refuses any `PreceptDef` whose `MinRequiredTechLevel` exceeds
+`WorldTechLevel.Current` **[V]**. It is the shipped donor for a progress gate on precept
+availability. It is also cargo: while the filter is on, it hides any Archinity role def whose
+derived tech level is above the world's from the editor, the reform dialog and generation. How
+`TechLevelDatabase<PreceptDef>` derives that level is **[I]**. Direct `Ideo.AddPrecept` does
+not pass through it **[V]**. ([#114](https://github.com/cjd721/Rimworld-Archinity/issues/114))
+
+**Vanilla Ideology Expanded – Memes and Structures** — `VanillaExpanded.VMemesE` (`2636329500`).
+Ships the corpus's meme-gated role defs (`requiredMemes`) and five `RoleRequirement` subclasses
+**[V]**. `StatPart_Pattisier.Applies` keys on `Precept_Role.ChosenPawnSingle()`, which
+`Precept_RoleMulti` returns as null, so that holder-keyed bonus pattern does not port to a
+multi-holder role unchanged **[V]**. Its `IdeoUIUtility.AddPrecept` transpiler raises the
+*ritual* cap only; nothing in the corpus lifts the two-multi-role cap **[V]**. Covered by
+`Multiplayer.Compat.VanillaIdeologyMemes` (`[MpCompatFor("VanillaExpanded.VMemesE")]`) **[V]**.
+([#114](https://github.com/cjd721/Rimworld-Archinity/issues/114))
+
+**Vanilla Expanded Framework** — `2023507013`, `1.6/Assemblies/VEF.dll`.
+`VEF.Memes.VanillaExpandedFramework_Ideo_ExposeData_Patch` is a transpiler on `Ideo.ExposeData`.
+It locates the backfill's `Ideo.AddPrecept` call **[V]** and, by its shape, reroutes it to
+`CheckIfCanAdd` **[I]**; the transpiler body did not decompile. `CheckIfCanAdd` adds a precept
+only when `foundation.CanAdd` accepts and the def has `canGenerateAsSpecialPrecept` **[V]**.
+Cargo: with VEF loaded, a missing hidden ritual that `CanAdd` refuses is probably no longer
+backfilled **[I]**. ([#114](https://github.com/cjd721/Rimworld-Archinity/issues/114))
+
+**RimPacts** — `wowgag.rimpacts` (`3762723122`, `Assemblies/RimPacts.dll`). The `Missionary`
+operation's conversion is **label only**: `WorldComponent_RimPacts.ResolveMissionary` calls
+`faction.ideos?.SetPrimary(player primary)` on `Rand.Chance(num)`. `num` is 0.1, +0.1 at leader favour
+≥ 60, and −0.1 at `techLevel ≥ 4`. `EnsurePuppetIdeo` pins a puppet state's primary the same way. No
+pawn converts and no minor is kept, so both arm **T-109** **[V]**. The chance is now [V]; the other
+`RptTuning` numbers stay [I]. ([#133](https://github.com/cjd721/Rimworld-Archinity/issues/133))
+
+**VFE Classical — the senators' "won-over government" [V]** (`2787850474/1.6/Assemblies/VFEC.dll`;
+the shipped source is stale ⚠). When the last senator is won, `WorldComponent_Senators.GainFavorOf`:
+
+- adds +1000 goodwill;
+- sets `Permanent[faction]`;
+- calls `faction.ideos.SetPrimary(Faction.OfPlayer.ideos.PrimaryIdeo)` — label only, keeping no minor, so it arms **T-109** ([#133](https://github.com/cjd721/Rimworld-Archinity/issues/133));
+- nulls every one of the faction's `Settlement.cachedMat`.
+
+Its constructor postfixes `Faction.GoodwillWith` (→ 100), `Faction.CanChangeGoodwillFor` (→ false)
+and `Faction.RelationKindWith` (→ Ally) for permanent factions. **Conflict cargo:** any other patch
+on those three methods, ours included, composes with a forced result.
+Multiplayer Compat's `VanillaFactionsClassical` lives in `Referenced/` and patches its senator dialog buttons.
+
+**Faction Customizer** — `azravos.factioncustomizer` (`3336572602`). `Dialog_ModifyFaction`, opened
+from `FCDialog_FactionDuringLanding`, changes a faction's primary **and** `SetIdeo`s every world pawn of
+that faction. It misses map pawns and keeps no minor **[V]**. Pre-landing and unsynced, consistent with
+its existing entry. ([#133](https://github.com/cjd721/Rimworld-Archinity/issues/133))
+
+**VFE Deserters** — `oskarpotocki.vfe.deserters` (`3025493377`). Three findings **[V]**, none
+changing its standing:
+
+- **Its finale ends the game and takes both factions with it.**
+  `VFED.MapComponent_FlagshipFight.DamageFlagship`:
+  - sets `Faction.OfEmpire` `defeated` and `hidden`, and the Deserters `defeated`
+  - hands every Empire settlement to `TryGetRandomNonColonyHumanlikeFaction`
+  - kills or re-factions every Empire pawn, and removes Empire titles and permits
+  - calls `ShipCountdown.InitiateCountdown`
+  
+  Under the in-place Church that is the Church's destruction and the campaign's end.
+- **It never reveals its faction.** The Deserters stay hidden. `JoinDeserters` sets them Ally
+  through `SetRelationDirect`, which is legal only because a hidden faction has no goodwill.
+  VFED's only faction `hidden` write is the finale's hide of the Empire.
+- **Its commitment is a latch on the Church.** `HarmonyPatches.GoodwillPatches.CanChangeGoodwillFor_Postfix`
+  refuses every player↔Empire goodwill change while `WorldComponent_Deserters.Active` is set.
+  That freezes the Church at the −75 `JoinDeserters` wrote, below any suspicion cap.
+  `VisibilityEffect_Goodwill` meanwhile drops a random faction's goodwill daily while `Active` is
+  set. `BetrayDeserters` reverses the whole thing (+200 Church goodwill).
+
+`docs/specs/RELIGION.md` § *The Schism*. ([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130))
+
+**VFE Empire** — `OskarPotocki.VanillaFactionsExpanded.Empire` (`2938820380`). Two findings **[V]**:
+
+- **`VFEEmpire.GameComponent_Empire.GameComponentTick` rewrites the player↔`VFEE_Deserters`
+  relation kind with `SetRelationDirect` every 6,000 ticks**, from Church hostility, Deserter
+  hostility and whether any colonist holds a title. Inert while the faction is hidden. Once it is
+  revealed, each call whose conditions hold is a `Log.Error` ("Tried to use SetRelationDirect for
+  factions which use goodwill").
+- **`VFEE_Deserters` sets VEF's gameplay-backfill fields under `MayRequire` VFE Deserters**
+  (`docs/engine/factions-and-worldgen.md` § *The roster is authorable as defs*). The def is also
+  `Ultra`, `hidden`, `fixedName Deserters`, `Sophian`, with `Collectivist` and `Loyalist` required.
+
+([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130))
+
+**RimPacts** — `wowgag.RimPacts` (`3762723122`). **It gates the Ally relation on its own
+declared alliances [V].** `Patch_RptAllianceDeclaredOnly` (prefix and postfix on
+`FactionRelation.CheckKindThresholds`) demotes an Ally that `WorldComponent_RimPacts.IsDeclaredAlly`
+does not list, for any diplomacy-listed faction. `LapseAllianceIfGoodwillFell` clears a declared
+alliance at goodwill ≤ 0. A permanent ally we hold would be demoted to Neutral if RimPacts ships
+undeclared. Verdict unchanged. ([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130))
+
+**VEF** — `oskarpotocki.vanillafactionsexpanded.core` (`2023507013`).
+`VanillaExpandedFramework_Faction_NaturalGoodwill_Patch` replaces every faction's natural goodwill
+whenever the active storyteller carries `storytellerThreat` (**T-115**) **[V]**. No corpus
+storyteller sets it. ([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130))
 
 ## Open
 

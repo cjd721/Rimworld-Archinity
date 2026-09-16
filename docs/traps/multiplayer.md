@@ -920,3 +920,27 @@ from `Multiplayer.dll` (`2606448745/1.6/AssembliesCustom/`), decompiled 2026-09-
 `ilspycmd` 8.2.0; `Verse.DiaOption.Activate`. 1.6.4871.*
 
 ---
+
+### T-114 — Multifaction faction creation skips the game-start hooks
+
+`Multiplayer.Client.Factions.FactionCreator.CreateFaction` (a `[SyncMethod]`) generates a joining
+player's faction, map and starting pawns without `Game.InitNewGame`. Its own `InitNewGame(Scenario)`
+calls:
+- `GiveAllStartingPlayerPawnsThought`;
+- `ApplyPlayerStartingResearch`;
+- `PostGameStart` restricted to `ScenPart_StartingResearch`;
+- `ScenPart_GameStartDialog`, issuer only, via `InitLocalVisuals`.
+
+It **never** calls `GameComponentUtility.StartedNewGame`. Every other `ScenPart.PostGameStart` is
+skipped, and `Find.GameInfo.startingAndOptionalPawns` is not updated. Anything a mod does "at game
+start" through those hooks happens for the host's faction and silently not for the joiner's.
+Backfilling from `GameInfo.startingAndOptionalPawns` misses them too.
+
+A single shared faction is unaffected: it starts through vanilla `Game.InitNewGame`, or is converted
+from a single-player save.
+
+*[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). `2606448745/1.6/AssembliesCustom/Multiplayer.dll`,
+`Multiplayer.Client.Factions.FactionCreator.CreateFaction` / `.InitNewGame` / `.PostGameStart` /
+`.InitLocalVisuals`; vanilla `Verse.Game.InitNewGame`. 1.6.4871.*
+
+---

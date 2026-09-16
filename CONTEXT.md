@@ -123,6 +123,18 @@ the Church over it. Part of the Church in the fiction until it breaks away; pres
 and landless from world creation until then. [Religion](docs/requirements/RELIGION.md)
 _Avoid_: the Deserters, the Witnesses, the other faction
 
+**The Church remnant**:
+Whatever of the Church does not convert when the Schism's plot ends: permanently hostile, left
+for the player to finish or ignore. Which faction instance carries it is open (#130's routes).
+[Religion](docs/requirements/RELIGION.md)
+_Avoid_: the old Church, the loyalists
+
+**Credit**:
+Who a public deed is attributed to, chosen by the player as the quest's reward when accepting
+it: the Church (Exaltation), the founders (Reverence) or the Schism (Influence). One option may
+mix rewards. [Religion](docs/requirements/RELIGION.md)
+_Avoid_: attribution reward, faction reward, reward type
+
 **The mark**:
 The founders' direct Archon inheritance and the key to core vectors. A head start,
 not a cosmological requirement for transcendence. [Altar](docs/requirements/ALTAR.md)
@@ -242,8 +254,15 @@ Spendable leverage with the Schism, taken as a reward from its operations. It bu
 missions that advance the Schism's plot, and its favors. [Religion](docs/requirements/RELIGION.md)
 
 **Revolt**:
-A reverent population rising against its hostile government, leaving some or all of that
-faction the colony's vassal. Never against the Church, whose revolt is the Schism.
+A reverent population rising against its hostile government. What success makes of the
+faction is open. Never against the Church, whose revolt is the Schism.
+
+**Vassal**:
+A holding or a faction that owes the colony tribute. What a vassal is — a settlement taken by
+conquest, a friendly faction that submits, a whole faction — is open, and the shapes may coexist.
+[Religion](docs/requirements/RELIGION.md)
+_Avoid_: outpost (a site the colony staffs with its own people), ally (the Schism's successor pays
+the colony and is not a vassal), tithe (VFE Empire's Church-only mechanism)
 
 **Intel**:
 Accumulated Glitterite technical intelligence. The player converts or trades it for

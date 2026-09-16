@@ -683,10 +683,11 @@ copy the game actually loads — which, per T-22, the mod list does not tell you
 
 **[V] No Anomaly coupling — the worry that sank the Analysis carrier does not apply here.**
 Nothing in those five types references `ModsConfig.AnomalyActive`, `KnowledgeCategoryDef` or
-`anomalyKnowledge`. The Anomaly carrier is a *different and unrelated* class,
-`RimWorld.CompStudiable`, whose `AnomalyKnowledge` and `KnowledgeCategory` properties both
-return early on `!ModsConfig.AnomalyActive` and whose entire payload is
-`anomalyKnowledgeGained`. VEF's studiable is not a reskin of it and inherits none of
+`anomalyKnowledge`. `RimWorld.CompStudiable` is unrelated to VEF's studiable, and only its Anomaly branch is
+Anomaly-bound: `AnomalyKnowledge` and `KnowledgeCategory` return early on
+`!ModsConfig.AnomalyActive`, but its Core branch (`studyPoints`, `WorkGiver_StudyInteract`) has
+no Anomaly dependency ([#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)). VEF's
+studiable is not a reskin of it and inherits none of
 [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)'s problem.
 
 > **[V] The signal split is real, and it is worse than `LootableBuilding_Custom`'s — T-60.**
@@ -1030,9 +1031,10 @@ Medieval Overhaul defines such a type, which is the *metadata hit is [I], not [V
 for itself. Vanilla's `Book` is the nearest shipped mechanism and is a carried item, not a site
 fixture; see §10.
 
-**Ruled out for §10.** `RimWorld.CompStudiable` / `CompAnalyzable` — Anomaly, per
-[#6](https://github.com/cjd721/Rimworld-Archinity/issues/6) and the same coupling that sank
-[#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)'s candidate.
+**Not taken for §10.** `RimWorld.CompStudiable` (Core branch) / `CompAnalyzable` — not
+Anomaly-bound ([#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)); not taken because
+the selected route already carries the study verb on VEF's studiable, with the readout ours either
+way. `WorkGiver_StudyInteract.HasJobOnThing` has no faction test, so T-62 would not apply to it.
 `Verse.Dialog_NodeTree` — a real authored-passage window shipped by ten mods, but a per-client
 `Window` whose options run client-local code; usable only with a single read-only Close option,
 at which point the archived letter is strictly better because it persists.
