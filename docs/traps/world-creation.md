@@ -941,4 +941,68 @@ only to reveal.
 / `.Notify_QuestSignalReceived`, `RimWorld.QuestGen.QuestGen_Factions.SetFactionHidden`
 (`Assembly-CSharp.dll`). 1.6.4871.*
 
+### T-118 — A faction set in `IncidentParms` is ignored or overwritten by all three caravan encounters
+
+**Setting `parms.faction` and calling `TryExecute` on a vanilla caravan encounter does not choose
+who you meet.** The faction is drawn at random in all three, and nothing is logged [V]:
+
+- `IncidentWorker_CaravanMeeting.CanFireNowSub` and `.TryExecuteWorker` both call the private
+  `TryFindFaction(out Faction)`. It draws `RandomElement` from every non-player, non-hostile,
+  non-hidden, non-temporary humanlike faction with `caravanTraderKinds` and `pawnGroupMakers`.
+  **`parms.faction` is never read.**
+- `IncidentWorker_Ambush_EnemyFaction.GeneratePawns` (and `.CanFireNowSub`) **assigns**
+  `parms.faction` from `PawnGroupMakerUtility.TryGetRandomFactionForCombatPawnGroup(parms.points,
+  out parms.faction)`, overwriting the value passed in. The lord, the letter and the attackers all
+  use the random one.
+- `IncidentWorker_CaravanDemand.TryExecuteWorker` does the same overwrite before it builds the
+  demand dialog.
+
+The encounter still fires, and the letter or dialog names a faction, so the result looks
+deliberate. Only the faction is wrong.
+
+**Fix:** pin the faction in the vanilla method rather than in the parms. The shipped technique is
+Faction Territories': prefixes on `CaravanMeeting.CanFireNowSub` / `.TryExecuteWorker` and
+`Ambush_EnemyFaction.GeneratePawns` / `.TryExecuteWorker`, reading a faction held in a per-caravan
+scope around `TryExecute` [V]. For the ambush, which opens no dialog, a subclass overriding the
+protected `GeneratePawns` also works. **For the meeting and the demand, keep the vanilla method
+running** (a replacing prefix, or a patch on `TryFindFaction`), not a subclass overriding
+`TryExecuteWorker`: Multiplayer syncs those two dialogs only through a postfix registered on the
+vanilla `MethodInfo` (`docs/engine/storyteller-and-incidents.md` § *Caravan encounters*).
+
+*[#136](https://github.com/cjd721/Rimworld-Archinity/issues/136), `docs/specs/POLITICS.md` §
+*Settlements meet passing caravans*. `RimWorld.IncidentWorker_CaravanMeeting.TryFindFaction` /
+`.CanFireNowSub` / `.TryExecuteWorker`, `RimWorld.IncidentWorker_Ambush_EnemyFaction.GeneratePawns`
+/ `.CanFireNowSub`, `RimWorld.IncidentWorker_CaravanDemand.TryExecuteWorker` (`Assembly-CSharp.dll`);
+`FactionTerritories.CaravanTerritoryIncidents`,
+`FactionTerritories.Patch_AmbushEnemyFaction_GeneratePawns_ForceFaction` from
+`294100/3626725895/Assemblies/FactionTerritories.dll`. 1.6.4871.*
+
+### T-119 — A caravan incident never fires in a biome its `mtbDaysByBiome` omits
+
+**Caravan-targeted incidents are rolled per biome, and a biome with no entry is skipped, not
+defaulted.** `StorytellerComp_CategoryIndividualMTBByBiome.MakeIntervalIncidents` takes the target
+tile's `PrimaryBiome` and runs `incidentDef.mtbDaysByBiome.Find(x => x.biome == biome)`. On `null`
+it `continue`s: no roll, no fallback MTB, no log [V]. A def with no `mtbDaysByBiome` at all is
+skipped the same way [V]. This comp is the one vanilla storytellers use for the `Caravan` /
+`Map_TempIncident` target tags in the Misc, ThreatSmall and ThreatBig categories (`Storytellers.xml`) [V].
+
+**So an authored caravan incident, or a vanilla one such as `CaravanMeeting`, `Ambush` or
+`CaravanDemand`, is simply absent from every biome it does not name.** That includes **every biome
+a mod adds, and Odyssey's own surface biomes.** `Incidents_Caravan_All.xml` lists only Core
+biomes, from `TemperateForest` to `SeaIce`. `Grasslands`, `Glowforest`, `Scarlands`, `GlacialPlain`
+and `LavaField` (`Data/Odyssey/Defs/BiomeDefs/`) appear in none of its three caravan encounters.
+No DLC or corpus file adds them: the only XML under `Data/` or either mod root that contains
+`mtbDaysByBiome` is that Core file and VFE Deserters' own `Incidents_Visibility.xml` [V].
+**A caravan crossing an Odyssey grassland meets nobody and is never ambushed**, which reads as a
+quiet road, not a fault.
+
+**Fix:** list every biome that should carry the incident, modded ones included, with an XML patch
+per biome mod or a generated patch. Otherwise, fire the incident from a comp or trigger of our own
+that does not key on biome. A per-biome value of our own is also where frequency balance lives.
+
+*[#136](https://github.com/cjd721/Rimworld-Archinity/issues/136), `docs/specs/POLITICS.md` §
+*Settlements meet passing caravans*. `RimWorld.StorytellerComp_CategoryIndividualMTBByBiome.MakeIntervalIncidents`
+(`Assembly-CSharp.dll`); `Data/Core/Defs/Storyteller/Incidents_Caravan_All.xml`,
+`Data/Core/Defs/Storyteller/Storytellers.xml`. 1.6.4871.*
+
 ---

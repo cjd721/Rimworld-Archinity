@@ -617,6 +617,99 @@ READ. The mechanisms are [V]; the claim that they compose into the credit choice
 - **Requirement, unowned (Conrad):** are public deeds authored quests only (A), or every faction quest (A + B)?
 - **Build, next map:** the node's XML surface; `Reward_Reverence` / `Reward_Currency` pricing and stack elements; a live Schism option; B's rule for which option gains credit and its ordering against VFE Empire and VFE Classical; paying Exaltation to the Church from a non-Church deed.
 
+#### Decrees — what failing one costs, set per decree
+
+##### Purpose and scope
+
+This answers [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md) § *The Church Path*, *"Titles carry decrees"*: decrees work as vanilla's do for titled colonists; what failing one costs is set per decree — a mood penalty, lost Exaltation or lost Goodwill with the Church; decrees end at betrayal. Established on [#137](https://github.com/cjd721/Rimworld-Archinity/issues/137). This section owns the decree's **cost and its ending**. Exaltation itself is §4; betrayal's permanent hostility is §7's row and § *The Schism*.
+
+##### Verdict
+
+- **Possible? Yes.** All three costs are vanilla quest nodes usable from XML, and a decree's failure branch is authored per `QuestScriptDef` [V]. **One piece is not XML in vanilla:** putting the Church faction into the decree's slate. VFE Deserters' `VFED.QuestNode_GetEmpire` does it from XML; without VFED it is a trivial node of ours [V].
+- **Multiplayer? Yes** [I]. Decrees are auto-accepted quests generated on the tick, and every cost runs in a quest part on a quest signal. No player click is involved. Neither `Multiplayer.dll` nor MP Compat names decrees at all [V, sweep].
+
+##### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A. Author the failure branch per decree** | Each Church decree names its own cost on missing the deadline: mood (any size, asker or listed pawns), lost Exaltation, lost Goodwill, or a mix; its own warning text; its own deadline behaviour | vanilla `QuestNode_SituationalThought` / `QuestNode_AddMemoryThought`, `QuestNode_GiveRoyalFavor` (negative), `QuestNode_ChangeFactionGoodwill`; Church faction from VFED `QuestNode_GetEmpire` or our one-line node | XML (+ one trivial node without VFED) | Easy with VFED · Medium without | Yes [I] |
+| **B. Decrees end with the Church** | No new decree while the Church is hostile; running decrees end the moment it turns hostile | vanilla `QuestNode_IsFactionHostileToPlayer` + `QuestNode_CannotRun`, and the `<faction>.BecameHostileToPlayer` signal; same Church-faction carrier as A | XML patch on `DecreeSetup` | Easy (with A's carrier) | Yes [I] |
+| C. A generic cost hook in C# | One cost applied to *any* decree, including ones nobody authored for it | our Harmony on `IssueDecree` / the decree quest parts | C# + Harmony | Medium | With work — **not recommended**: no corpus mod issues decrees, so there is nothing for "generic" to reach |
+| D. Church-issued decrees on a schedule | Decrees that arrive without a breakdown | `decreeMtbDays > 0` on Church titles (XML, conceited titleholders only), or our trigger calling `IssueDecree` (C#) | XML · C# | Easy · Medium | Yes [I] |
+
+**A — author the failure branch per decree**
+
+*What it gets us*
+- **Mood, of chosen size and reach.** A new `ThoughtDef` on `ThoughtWorker_QuestPart` with a fixed `baseMoodEffect` replaces the hardcoded −5 → −15 ramp; `Thought_DecreeUnmet` keeps the ramp. `QuestNode_AddMemoryThought` takes a `pawns` list, so a one-off hit can land on more than the asker [V nodes; composition I].
+- **Lost Exaltation.** `QuestNode_GiveRoyalFavor` takes an `int amount`, and `QuestPart_GiveRoyalFavor` calls `Pawn_RoyaltyTracker.GainFavor(faction, amount)`, which adds a negative amount without a clamp [V]. The loss lands on `giveTo` — naturally `$asker`. **It never costs a title:** `UpdateRoyalTitle` only promotes, so lost Exaltation sets back the next rung and can leave favour below zero [V].
+- **Lost Goodwill.** `QuestNode_ChangeFactionGoodwill` with a negative `change` and a `reason`. Vanilla's own `Script_ChangeRoyalHeir` and the monument quests do exactly this from XML [V].
+- **A real failure moment, if wanted.** The deadline delay's inner node can be the cost plus `QuestNode_End Fail`, instead of vanilla's open-ended ramp [I].
+- **Church-only decrees.** A Church `decreeTags` value on the new scripts and on Church titles keeps them off any other ladder [V mechanism].
+- **The words match the cost.** `decreeThreatInfo` is a rule in `DecreeSetup`. Each script can state its own [V].
+
+*What it cannot do*
+- **Get the Church faction from vanilla XML.** `QuestNode_GetFaction` has no def filter, and `QuestNode_GiveRoyalFavor` / `QuestNode_ChangeFactionGoodwill` need `faction` or `factionOf`. `factionOf $asker` resolves to the **player** [V]. Hence VFED's node or ours.
+- **Resize vanilla's ramp in XML.** The curve is a `private static readonly` field of `Thought_DecreeUnmet` [V].
+
+*Consequences*
+- **A Goodwill cost can make the Church hostile without betrayal.** `TryAffectGoodwillWith` flips Hostile at ≤ −75, and B then halts decrees. The requirement says only betrayal is final (Open questions).
+- **The four vanilla decrees keep their mood-only cost** unless patched the same way. That is a `PatchOperation` on each `Decree_*` script, same nodes.
+
+**B — decrees end with the Church**
+
+*What it gets us*
+- **No new decrees while hostile.** Both triggers draw from `PossibleDecreeQuests`, which runs `QuestScriptDef.CanRun` → `root.TestRun`. A `QuestNode_IsFactionHostileToPlayer` whose `node` is `QuestNode_CannotRun` makes every decree unrunnable, so `WildDecree.BreakCanOccur` is false and the break is not even drawn [V pieces; composition I].
+- **Running decrees end at once.** `Faction` sends `BecameHostileToPlayer` to its `questTags` when it turns hostile to the player, and any slate faction named in an `inSignal` is tagged at generation. Royal Ascent's `faction.BecameHostileToPlayer` → `QuestNode_End` is the XML precedent [V].
+- **One patch covers every decree.** All four vanilla decrees and any new one run `DecreeSetup` [V].
+
+*What it cannot do*
+- **Tell betrayal from ordinary hostility.** It reads relations. Under §7's betrayal (permanent hostility) the two coincide; a reversible hostility would pause decrees and they would return with peace [I].
+
+##### Recommendation — not a selection
+
+**A with B**, on VFED's `QuestNode_GetEmpire` if VFED ships and a one-line node of ours otherwise. The cost is XML per decree, the ending is one patch. **D** only if the fiction needs the Church, rather than a stressed noble, to issue decrees.
+
+##### What vanilla does today [V]
+
+- **Failing a decree costs mood, on the asker alone, and nothing else.** When `decreeDays` passes, the quest does **not** fail. `isQuestTimeout` only labels the delay "expires in". The delay enables `QuestPart_SituationalThought` → `DecreeUnmet`, whose `Thought_DecreeUnmet.MoodOffset` ramps from **−5** at the deadline to **−15** fifteen days later (a hardcoded `SimpleCurve`), on the titled asker only. It lasts until the decree is done or `DecreeSetup` "forgets" it **80 days** after it was issued (outcome Fail, no further cost). The monument decree adds a `DecreeFailed` memory (−4, 15 days) if the monument is destroyed within the keep window. Success gives the asker `DecreeMet` (+6).
+- **The cost lives in the decree's own script.** It is not on `RoyalTitleDef`, not a global setting. Four decrees ship, all in `Royalty/Defs/QuestScriptDefs/Decree/`: `Decree_ProduceItem`, `_HarvestCrop`, `_HuntAnimal` and `_BuildMonument`, sharing the `DecreeSetup` sub-script.
+- **A decree is the noble's demand on the colony.** The asker is the titled colonist, and the text reads *"[asker], your [title], has issued a royal decree"*. Two triggers call `Pawn_RoyaltyTracker.IssueDecree`: the `WildDecree` major mental break (commonality = the highest `decreeMentalBreakCommonality` among the pawn's titles: 2 / 4 / 8 / 12 on Knight → Count), and `RoyalTitle.RoyalTitleTick` on `decreeMtbDays`. That second trigger is **disabled on every Empire title**, vanilla and VFE Empire's (`-1`), and when enabled fires only for `conceited` titleholders. **So a vanilla decree arrives only from a titled colonist's breakdown.**
+- **Which ladder issues which decrees is `decreeTags`.** `PossibleDecreeQuests` pools the tags of every title the pawn holds and offers every `QuestScriptDef` sharing one whose `CanRun` passes.
+- **Nothing ends decrees when the title's faction turns hostile.** `IssueDecree`, both triggers and `AllTitlesInEffectForReading` never read faction relations. A running decree ends only on the asker changing faction, dying, being kidnapped, a title change that makes the decree impossible, `Incompletable`, or the 80 days.
+
+##### Constraints
+
+- **`CanRun` memoises per tick and threat points, not per asker** (`lastCheckCanRunTick` / `lastCheckCanRunPoints`, **T-39**) [V]. A decree gate that depends on *which* titleholder asks returns the first asker's answer to every other asker on that map that tick. Route per ladder with `decreeTags`, never with a per-asker `TestRun`.
+- **`decreeDays` is not a failure.** It starts the mood ramp; the quest runs on until done or 80 days (above). An inherited reading of it as a deadline (`PARTS-BIN.md` §10.3) is half right.
+- **Goodwill writes obey `Faction.CanChangeGoodwillFor`** — §2's `permanentEnemyToEveryoneExcept` warning applies to a Goodwill cost too.
+
+##### Available mechanisms
+
+| Mechanism | What it provides | Evidence |
+|---|---|---|
+| `Royalty/Defs/QuestScriptDefs/Decree/Scripts_Decree.xml`, `Scripts_Decree_Utility.xml` | The four decrees, `DecreeSetup` (80-day forget, asker-loss ends), `Decree_Util_Reward` | [V] |
+| `RimWorld.Pawn_RoyaltyTracker.IssueDecree` / `PossibleDecreeQuests` | Draw by `decreeTags` across every held title, weighted by `decreeSelectionWeight`; no faction-relation check | [V] `Assembly-CSharp.dll` |
+| `Verse.AI.MentalBreakWorker_WildDecree`; `RimWorld.RoyalTitle.RoyalTitleTick` | The two triggers: break commonality, and `decreeMtbDays` for conceited free colonists | [V] |
+| `RimWorld.Thought_DecreeUnmet`, `ThoughtWorker_QuestPart`, `QuestPart_SituationalThought` | The hardcoded −5 → −15 ramp; a situational thought keyed to an enabled quest part and one pawn | [V] |
+| `QuestNode_GiveRoyalFavor` → `Pawn_RoyaltyTracker.GainFavor` | Signed favour change; no clamp; never demotes | [V] |
+| `QuestNode_ChangeFactionGoodwill` → `QuestPart_FactionGoodwillChange` | Signed goodwill change with a history-event reason, `ensureHostile` option | [V] |
+| `QuestNode_IsFactionHostileToPlayer`, `QuestNode_CannotRun`, `Faction` → `BecameHostileToPlayer` | The hostility gate and the in-flight end signal | [V] |
+| VFED `QuestNode_GetEmpire` (`3025493377/1.6/Assemblies/VFED.dll`) | Stores `Faction.OfEmpire` in the slate; `TestRun` fails when it is null; used by VFED's 1.6 XML | [V] |
+| VFE Empire `1.6/Defs/RoyalTitles/RoyalTitles_Empire.xml` | Nine title entries (six `VFEE_` titles, three on the `DukeBase` / `ConsulBase` / `StellarchBase` parents), each `decreeMtbDays -1`, commonality 12, tag `All`; no decree scripts or code | [V] |
+
+**What does not exist:** a decree `QuestScriptDef`, or any code naming decrees, in any 1.6 corpus mod. The sweep covered XML and both assembly heaps (ASCII and null-interleaved `-i`, validated on `Assembly-CSharp.dll`) over both roots. The only assembly hits are `AchievementsExpanded.dll` copies in 1.2–1.4 folders [V].
+
+##### Status
+
+READ. The mechanisms are [V]; that they compose into per-decree costs and a hostility ending is [I] until built. Established on [#137](https://github.com/cjd721/Rimworld-Archinity/issues/137).
+
+##### Open questions
+
+- **Requirement, unowned (Conrad):** *"the Church lays obligations on titled colonists"* — vanilla's decree is the titled colonist's demand on the colony, raised by their own breakdown. Is that the fiction, or must the Church issue them (route D)?
+- **Requirement, unowned (Conrad):** may a decree's Goodwill cost push the Church hostile short of betrayal, and if so do decrees pause or end?
+- **Requirement, balance:** which cost each decree carries, and its size; whether the deadline becomes a hard failure.
+- **Build, next map:** a Church decree catalogue; the `decreeTags` value; whether the four vanilla decrees are re-costed or withheld from Church titles; how a pending bestowing ceremony behaves when favour drops back below its rung [unverified].
+
 ### 5. Privileges — native now, and trade is already one of them
 
 - **Permits.** Every delivery worker takes the faction as a parameter [V], so vanilla's permits
@@ -714,7 +807,7 @@ suspicion ratchets is a requirement, and a ratchet needs one stored high-water m
 | Safe passage, political privileges | **Answered** — privileges are §5's permits; safe passage is [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136) (decision 10) |
 
 **Aggregate: zero Harmony patches, one small goodwill-situation worker and one saved bit for
-betrayal (#123), no new Def type.** Decrees are [#137](https://github.com/cjd721/Rimworld-Archinity/issues/137)'s. The XML is mostly *authoring* — names, creed, catalogue — and none of it waits on
+betrayal (#123), no new Def type.** Decrees are XML plus the Church-faction node — §4 *Decrees* ([#137](https://github.com/cjd721/Rimworld-Archinity/issues/137)). The XML is mostly *authoring* — names, creed, catalogue — and none of it waits on
 mechanism.
 
 ## Superseded build — replacing the player faith with Church doctrine

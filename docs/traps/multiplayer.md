@@ -226,10 +226,23 @@ quest-part code** on the ticked path, where both clients execute it in the same 
 spend the same draws. Calling `CanRun` is not the error. Calling it from a path only one
 client walks is.
 
-*[#57](https://github.com/cjd721/Rimworld-Archinity/issues/57).
+**The same memo is blind to everything in the slate except `points` — including who asks.**
+This one is single-player and needs no second client. `Pawn_RoyaltyTracker.PossibleDecreeQuests`
+builds a slate with `asker` set to the titled pawn and calls `CanRun` on every decree script
+sharing a tag. The memo key has no `asker`. So on one tick, every titled colonist on a map
+at the same threat points gets the **first** colonist's answer for each script. A decree
+gate that reads the asker in a `TestRunInt` — their title, their traits, their faction
+standing — silently answers for the wrong noble. **Route decrees per ladder with
+`RoyalTitleDef.decreeTags` / `QuestScriptDef.decreeTags`, which are read before `CanRun`, and keep
+`TestRun` gates to state every asker shares.**
+
+*[#57](https://github.com/cjd721/Rimworld-Archinity/issues/57); the per-asker case
+[#137](https://github.com/cjd721/Rimworld-Archinity/issues/137).
 `RimWorld.QuestScriptDef.CanRun`, `RimWorld.Planet.TileFinder.TryFindNewSiteTile` and
 `RimWorld.QuestPart_SubquestGenerator_ArchonexusVictory.GetNextSubquestDef`, all read from
-`Assembly-CSharp.dll` 1.6.4871 rev590 with `ilspycmd` 8.2.0, 2026-09-12.
+`Assembly-CSharp.dll` 1.6.4871 rev590 with `ilspycmd` 8.2.0, 2026-09-12;
+`RimWorld.Pawn_RoyaltyTracker.PossibleDecreeQuests` / `IssueDecree` and
+`Verse.AI.MentalBreakWorker_WildDecree.BreakCanOccur`, same build and tool, 2026-09-16.
 `docs/engine/determinism.md` § *Presentational separation between the two players* is the
 general rule this is a case of.*
 

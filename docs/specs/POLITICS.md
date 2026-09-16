@@ -11,7 +11,10 @@ will be built. This document owns three capabilities, kept in separate parts bel
   moving a second faction on resolution.
 - **[Standing as a content gate](#standing-as-a-content-gate)** — refusing an action until the
   player's standing on some axis reaches a threshold, and showing the threshold before it is
-  reached. The final part of this document.
+  reached.
+- **[Settlements meet passing caravans](#settlements-meet-passing-caravans)** — a caravan near a
+  settlement meets its faction: attacked if hostile, offered trade otherwise. The final part of
+  this document.
 
 It does not own Reverence, which is a second per-faction axis and belongs to
 [`RELIGION.md`](RELIGION.md) — but the **gate** that reads Reverence is here, not there, and
@@ -1347,3 +1350,146 @@ comms-console action below its threshold is present, greyed, and names the numbe
    this build always shows it. A campaign beat that must stay secret until it is reachable needs
    the opposite behaviour, its mechanism is different — `TestRunInt` returning `false`, §2 — and it
    is deliberately not the default. No ticket owns the question of which beats, if any, want it.
+
+---
+
+## Settlements meet passing caravans
+
+### Purpose and scope
+
+Answers [`requirements/POLITICS.md`](../requirements/POLITICS.md) § *Required behavior*,
+*Settlements meet passing caravans*: a caravan within a few tiles of a settlement meets its faction.
+A hostile faction attacks it; a neutral or allied faction offers to trade. **Safe passage** is simply
+the absence of hostility. Established on
+[A caravan near a settlement meets it](https://github.com/cjd721/Rimworld-Archinity/issues/136).
+
+**This section owns:** the proximity trigger, choosing the settlement's own faction, which branch a
+relation gets, and what the encounter can offer, including to a caravan with no title holder.
+
+**It does not own:**
+- Title-gated Church trade itself: [`RELIGION.md`](RELIGION.md) § *The build — Exaltation* §5.
+- Vehicles as the mobility ladder: [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69), [`WORLD-INFRASTRUCTURE.md`](WORLD-INFRASTRUCTURE.md).
+- Range, reaction frequency and threat size, which are balance.
+
+### Verdict
+
+- **Possible? Yes, with C#.** Vanilla already stages both encounters on a world-map caravan: a meeting that offers trade, and an ambush. But it picks their faction **at random** and never reads where the caravan is **[V]**. No XML route exists. The work is a proximity trigger plus pinning the faction, and Faction Territories and Vassalage ships exactly that shape **[V]**.
+- **Multiplayer? Yes for B, with work for A, No for C as shipped.** In world context the meeting's buttons stay synced only while the encounter runs through vanilla's own `IncidentWorker_CaravanMeeting.TryExecuteWorker` / `IncidentWorker_CaravanDemand.TryExecuteWorker` **[V]**. Both A and B keep that. A adds state that must be saved.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — Tile-entry trigger** | The moment a moving caravan enters a tile within range of a settlement, that settlement's faction reacts, subject to a per-settlement cooldown. A reliable meeting on every pass | Ours; donor Faction Territories `CaravanTerritoryIncidents` | C# (2 postfixes + faction pin + a saved `WorldComponent`) | Medium | With work — cooldown saved, range in defs not `ModSettings` |
+| **B — Storyteller-fired proximity incidents** | A second `IncidentDef` using vanilla's own worker class, which can fire only near a settlement and pins that settlement's faction. Frequency is authored per biome in XML. Also catches a parked caravan, and vehicle caravans with no extra patch | Vanilla storyteller comp + ours | C# (faction pin + a `CanFireNowSub` gate) + XML | Medium | Yes **[I]** — no new state |
+| **C — Faction Territories as shipped** | Territory-keyed encounter table in XML (`CaravanIncidentEntryDef` with relation and tech-level flags), a tile-entry trigger, and the territory overlay | `jaeger972.factionterritories` | XML | Easy | No — **not recommended** |
+
+**Route A.**
+
+*Levers:*
+- Range per settlement, per faction or per era. The distance measure is `WorldGrid.TraversalDistanceBetween(…, maxDist)`, which vanilla uses for settlement-proximity goodwill **[V]**.
+- A reaction chance and cooldown per settlement: *how often a settlement reacts*.
+- Branch by relation. Hostile gets the vanilla `Ambush` (a straight fight) or `CaravanDemand` (pay or fight). Neutral and allied get `CaravanMeeting`. All three are vanilla workers **[V]**.
+- Trade stock: the met trader caravan vanilla generates from the faction's `caravanTraderKinds` **[V]**, or the settlement's own stock, opened the way `CaravanVisitUtility.TradeCommand` opens it on-tile **[V seam, I composition]**.
+- The meeting's options. Vanilla offers Trade, Attack and Move on **[V]**. Replacing the body, as Faction Territories does, lets the story add or drop options.
+
+*Cannot:*
+- React to a parked caravan. The hook runs only when the caravan enters a tile **[V]**.
+- Reach Vehicle Framework caravans from the vanilla hook. `VehicleCaravan` moves through its own sealed `VehicleCaravan_PathFollower`, and VF's `StartPath` prefix diverts the vanilla pather **[V]**. A second postfix on VF's private `TryEnterNextPathTile` is needed **[V seam exists]** (**T-117**).
+
+*Consequences:*
+- The cooldown is shared state and must be saved. Faction Territories keeps its cooldowns in static dictionaries that are never saved **[V]**, so a joining or reloading client starts from empty dictionaries while the host does not **[I]**.
+
+**Route B.**
+
+*Levers:*
+- Frequency is XML: `mtbDaysByBiome` on the new def, read by `StorytellerComp_CategoryIndividualMTBByBiome` for caravan targets **[V]**.
+- On the hostile branch, `applyCaravanVisibility` divides the MTB by `Caravan.Visibility` **[V]**, so a small, quiet caravan slips past a hostile settlement more often. That is a free story lever.
+- The vanilla random meeting and ambush stay separate defs, to keep, retune or zero in XML **[V]**.
+- Same branch, stock and option levers as A.
+
+*Cannot:*
+- Guarantee a meeting on a quick pass. Firing is a roll per storyteller interval (`Rand.MTBEventOccurs(mtb, 60000, 1000)`) **[V]**.
+- Fire in a biome its `mtbDaysByBiome` does not list. The comp skips it silently **[V]**, so every modded biome must be listed (**T-119**). The vanilla caravan encounters already miss Odyssey's five surface biomes **[V]**.
+
+*Consequences:*
+- Rides on the storyteller carrying the caravan comps. Vanilla's storytellers do **[V]**; a custom campaign storyteller must keep them **[I]**.
+- **Vehicle caravans are covered.** `VehicleCaravan : Caravan` lands in `Find.WorldObjects.Caravans`, and so in `Storyteller.AllIncidentTargets` **[V]**. VF patches `CaravanEnterMapUtility.Enter` and `BestCaravanPawnUtility.FindBestNegotiator` for vehicles **[V]**, so the vanilla workers' map entry and negotiator search reach a vehicle caravan **[I]**.
+
+**Route C — not recommended.**
+- Conrad declined it as a dependency in [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) (`MOD-VERDICTS.md`).
+- Its range, check interval and per-incident weights are client-local `FactionTerritoriesSettings : ModSettings` **[V]**. Its cooldowns are static and never saved **[V]**. `VassaliseComponent` pauses the game from a tick (PARTS-BIN §6.2).
+- MP Compat carries no class for it: `factionterritories` returned zero in both encodings across `1629973374`, validated in the same dll **[V]**.
+- Its trigger postfixes only `Caravan_PathFollower`, so vehicle caravans never trigger it **[V]** (**T-117**).
+- "Territory" is a terrain-weighted flood fill (`radiusSteps` × 100 cost), not *"a few tiles"* **[V fields, I semantics]**.
+- Its shipped `CaravanMeeting` entry filters by tech level only, and its `IsValidMeetingFaction` does not check hostility. A hostile territory can therefore produce a meeting whose trade is disabled, not an attack **[V]**. An `andFlags` `NeutralAndAllied` entry would fix that in XML.
+- Its value is as A's donor.
+
+**Recommendation, not a selection:** B if a passing caravan need not meet anyone every time, because it adds no state and covers vehicles for free. A if every pass must produce an encounter.
+
+### What a Church settlement offers a caravan with no title holder
+
+Read through the vanilla meeting, which both A and B use **[V]**:
+- **Trade is shown and disabled.** No colonist passes `Pawn.CanTradeWith` for `Empire_Caravan_TraderGeneral`, whose `permitRequiredForTrading` is `TradeCaravan`. The option is disabled with `CaravanMeeting_NoPermit`, naming the first title in seniority order that grants the permit (Knight in vanilla's ladder).
+- Attack and Move on remain.
+- The settlement-stock variant is refused the same way (`CommandTradeFailNeedPermit`, on `Base_Empire_Standard` → `TradeSettlement`).
+- A hostile Church takes the attack branch; `FactionUtility.CanTradeWith` refuses hostile factions anyway.
+- **Vanilla offers nothing else.** A gift, a toll or a message is an authored `DiaOption`, disabled rather than omitted (**T-82**).
+
+### Constraints
+
+- **No XML-only route.** Three vanilla behaviours rule it out **[V]** (**T-118**):
+  - `IncidentWorker_CaravanMeeting.TryFindFaction` draws a random non-hostile faction and never reads `parms.faction`.
+  - `IncidentWorker_Ambush_EnemyFaction.GeneratePawns` overwrites `parms.faction` with a random combat faction.
+  - `IncidentWorker_CaravanDemand.TryExecuteWorker` does the same.
+- **Faction pinning has a shipped technique.** Faction Territories prefixes `CaravanMeeting.CanFireNowSub` / `TryExecuteWorker` and `Ambush_EnemyFaction.GeneratePawns` behind a per-caravan scope **[V]**.
+- **Not on the settlement's own tile.** The `Settlement` `WorldObjectDef` lacks `allowCaravanIncidentsWhichGenerateMap`, so `CaravanIncidentUtility.CanFireIncidentWhichWantsToGenerateMapAt` refuses that tile **[V]**. Range starts at 1.
+- **The encounter must run through the vanilla method, or the meeting's buttons desync.** Multiplayer's world-context sync comes only from `Sync.RegisterSyncDialogNodeTree` on the two vanilla `TryExecuteWorker`s. A world tick has no map context, so no `PersistentDialog` is created (**T-95**, **T-96**), and Archinity takes no MP API reference (**T-95**) **[V]**.
+  - A worker subclass overriding `TryExecuteWorker` loses that sync **[I]**.
+  - A prefix that replaces the body keeps it, because MP's hook is a postfix **[I]**.
+  - An ambush opens no dialog, so subclassing it is safe **[I]**.
+- **Trade from a meeting becomes an MP trade session.** `DialogTradeCtorPatch` builds an `MpTradeSession` inside the synced click **[V]**. The window opens by itself only for a `Settlement` trader in world view, or for a negotiator on the current map **[V]**. For a met caravan, whether the clicker sees the window is a RUN check.
+- **Safe passage is not yet whole.** Vanilla's random `Ambush` and `CaravanDemand` still fire from any hostile faction on any tile **[V]**. A caravan can be ambushed beside a friendly settlement unless those defs are retuned or gated. That decision is a requirement, not balance (see *Open questions*).
+- **Aircraft in flight meet nobody.** `AerialVehicleInFlight` is not a `Caravan` **[V]**.
+
+### Available mechanisms
+
+| Mechanism | What it does | Evidence |
+|---|---|---|
+| `IncidentWorker_CaravanMeeting` | Generates a `Trader` pawn group for the faction and opens a `Dialog_NodeTreeWithFactionInfo` with Trade, Attack and Move on. Attack sets goodwill to `GoodwillToMakeHostile` and generates a 100×100 map | [V] `Assembly-CSharp.dll` 1.6.4871 |
+| `IncidentWorker_Ambush` / `_EnemyFaction` | Protected abstract `GeneratePawns`. Caravan target: `SetupCaravanAttackMap` inside a `LongEvent`; lord `LordJob_AssaultColony` | [V] |
+| `IncidentWorker_CaravanDemand` | Pay-or-fight dialog, random combat faction | [V] |
+| `Incidents_Caravan_All.xml` | `Ambush` (ThreatBig), `CaravanMeeting` (Misc), `CaravanDemand` (ThreatSmall). Each targets `Caravan` and uses `mtbDaysByBiome` | [V] `Data/Core/Defs/Storyteller/` |
+| `StorytellerComp_CategoryIndividualMTBByBiome`; `Storyteller.AllIncidentTargets` | Per-def MTB for the target's biome, with optional visibility. The target list includes every player-controlled `Caravan` | [V] |
+| `Caravan_PathFollower.TryEnterNextPathTile` (private) | Sets `caravan.Tile`; called from `PatherTickInterval` | [V] |
+| `WorldGrid.TraversalDistanceBetween(start, end, passImpassable, maxDist, canTraverseLayers)` | Bounded tile distance; used by `SettlementProximityGoodwillUtility` | [V] |
+| Faction Territories — `CaravanTerritoryIncidents` (+ `Patch_AmbushEnemyFaction_*`, `CaravanIncidentFilterUtility`, `CaravanIncidentEntryDef`) | Tile-entry postfix, then claimed factions, a cooldown, a weighted candidate roll, and vanilla `TryExecute` with the faction pinned. Relation flags: `Hostile` / `Neutral` / `NeutralAndAllied` / `Allied` | [V] `…/294100/3626725895/Assemblies/FactionTerritories.dll` |
+| Vehicle Framework — `VehicleCaravan : Caravan`, `VehicleCaravan_PathFollower` (sealed), `Patch_WorldPathing.StartVehicleCaravanPath`, `Patch_CaravanHandling.EnterMapVehiclesCatchAll1/2`, `.FindBestNegotiatorInVehicle` | Its own pather, a diverted vanilla `StartPath`, and vehicle-aware map entry and negotiator | [V] `…/294100/3014915404/1.6/Assemblies/Vehicles.dll` |
+| Multiplayer — `SyncMethods` (`RegisterSyncDialogNodeTree` ×2), `SyncUtil.PatchMethodForDialogNodeTreeSync` (postfix), `DialogTradeCtorPatch`, `MpTradeSession.TryCreate` | Meeting and demand clicks synced by index (**T-82**); trade opened in a synced click becomes a session | [V] `…/2606448745/1.6/AssembliesCustom/Multiplayer.dll` |
+
+**Prior art that does not ship:**
+- **Rim War** (barred, `MOD-VERDICTS.md`). `WarObject.ScanAction` engages player caravans in range with raids, demands or meetings chosen by relation, through copies of the vanilla workers. The actors are moving war objects, not settlements **[V]**.
+- **RimPacts.** `RptPassageUtility.InPassageZone` covers tiles within 7 traversal steps of a settlement whose faction has a Passage treaty. `Patch_Ambush_TreatyExemptGate` cancels unforced ambushes by treaty factions, and the zone also speeds caravans **[V]**. That is safe passage *bought by treaty*, which the requirement rules out.
+
+**The wide pass.** ASCII, `-i`, `.dll`, both roots, excluding `obj/` and `Referenced/`:
+- **`CaravanMeeting`:** Rim War, Faction Territories, Multiplayer.
+- **`IncidentWorker_Ambush`:** adds VFE Insectoids 2 (`IncidentWorker_Ambush_RoamingInsectoids`, a creature ambush by type name **[I]**) and RimPacts.
+- **`SetupCaravanAttackMap` / `CanFireIncidentWhichWantsToGenerateMapAt`:** adds VFE Deserters (`IncidentWorker_ImperialPatrol`) and Worksites Expanded (`MiningOutpost.dll`, worksite defence). Neither is a proximity trigger by type name **[I]**.
+- **`TryEnterNextPathTile`:** Rim War, Faction Territories, Vehicle Framework, and VEF, whose `MovingBase` pather is its own copy, not an encounter **[V]**.
+- **UTF-16 `CaravanMeeting`**, null-interleaved and typed literally: Rim War and Faction Territories. **UTF-16 `TryEnterNextPathTile`:** zero, with the same sweep form validated by the previous hit.
+- **XML** defs naming a caravan incident worker or targeting `Caravan` appear in 12 mods, all random-MTB incidents **[I by filename]**.
+- **Residual:** a proximity trigger named otherwise.
+
+### Status
+
+**Evidence class: READ.** The mechanisms above are **[V]**. Routes A and B are **[I]** as compositions. From [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136).
+
+### Open questions
+
+| Question | Owner |
+|---|---|
+| Does the random road ambush and demand survive? If it does, may a hostile faction ambush a caravan beside a non-hostile settlement, or does safe passage suppress it within range? | Requirements → `requirements/POLITICS.md` (Conrad) |
+| Does a meeting trade from a met caravan's stock or the settlement's own? Does a neutral meeting keep vanilla's Attack option? | Story, on selection |
+| Range, reaction chance, per-settlement cooldown, per-biome MTB | Balance |
+| With a caravan trade opened from a meeting on two clients, does the clicker's window open? | RUN, on [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16) |
+| Hook choice, cooldown storage, pin technique (prefix vs `TryFindFaction` patch vs ambush subclass), the VF second postfix | Build map, on selection |

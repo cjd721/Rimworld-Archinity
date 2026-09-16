@@ -893,7 +893,7 @@ register:
   `TickDoesFind`, before returning true.** Vanilla's own ordered generator already works this
   way — see `QuestPart_SubquestGenerator_ArchonexusVictory.GetNextSubquestDef` in §2.
 - **T-39 — `QuestScriptDef.CanRun` consumes the shared `Rand` stream and memoises per
-  tick.** `CanRun` → `root.TestRun(...)` → `TileFinder.TryFindNewSiteTile` →
+  tick and threat points.** `CanRun` → `root.TestRun(...)` → `TileFinder.TryFindNewSiteTile` →
   `list.RandomElement()`, with the result cached in `[Unsaved]` tick/points fields. Calling
   it from any client-local path makes two clients draw a different number of values in the
   same tick. The name reads as a pure predicate and is not one. This build has three `CanRun`

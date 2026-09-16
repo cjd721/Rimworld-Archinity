@@ -204,3 +204,33 @@ was read.
 
 *[#68](https://github.com/cjd721/Rimworld-Archinity/issues/68),
 `docs/specs/WORLD-INFRASTRUCTURE.md` § 4c. 1.6.4871.*
+
+### T-117 — A `Caravan_PathFollower` patch never runs for a Vehicle Framework caravan
+
+**`VehicleCaravan` is a `Caravan`, but it does not move through `Caravan_PathFollower`.**
+`Vehicles.Patch_WorldPathing.StartVehicleCaravanPath` prefixes `Caravan_PathFollower.StartPath`.
+For a `VehicleCaravan` it calls `vehicleCaravan.vehiclePather.StartPath(…)` and returns `false`.
+From then on, movement runs through `Vehicles.World.VehicleCaravan_PathFollower`, a **sealed** class
+unrelated to vanilla's, with its own private `TryEnterNextPathTile` and `PatherTick` [V]. The
+vanilla follower on the same caravan never starts a path, so `PatherTickInterval` never reaches
+`TryEnterNextPathTile` for it [V].
+
+**So any postfix on `Caravan_PathFollower.TryEnterNextPathTile`, or on the rest of vanilla's
+per-tile movement, does nothing for vehicle caravans, and nothing says so.** The caravan still
+counts as a `Caravan` for type tests, `Find.WorldObjects.Caravans` and
+`Storyteller.AllIncidentTargets` [V]. A hook that works on a walking caravan therefore looks
+correct until a vehicle is formed.
+Faction Territories' encounter trigger (`CaravanTerritoryIncidents`, a `TryEnterNextPathTile`
+postfix) is exactly this, and never fires for a vehicle caravan [V].
+
+**Fix:** patch `VehicleCaravan_PathFollower.TryEnterNextPathTile` as well, by name through
+`AccessTools`, because it is private. Better, use a hook that reads `Caravan.Tile` on a tick or a
+storyteller comp and does not care which follower moved the caravan. Aircraft in flight are
+`AerialVehicleInFlight`, not a `Caravan`, and neither hook reaches them [V].
+
+*[#136](https://github.com/cjd721/Rimworld-Archinity/issues/136), `docs/specs/POLITICS.md` §
+*Settlements meet passing caravans*. `Vehicles.Patch_WorldPathing.StartVehicleCaravanPath`,
+`Vehicles.World.VehicleCaravan_PathFollower.TryEnterNextPathTile` / `.PatherTick`,
+`Vehicles.World.VehicleCaravan`, `Vehicles.World.AerialVehicleInFlight` from
+`294100/3014915404/1.6/Assemblies/Vehicles.dll`; `RimWorld.Planet.Caravan_PathFollower.StartPath` /
+`.PatherTickInterval` / `.TryEnterNextPathTile` (`Assembly-CSharp.dll`). 1.6.4871.*

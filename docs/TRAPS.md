@@ -78,6 +78,8 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-112 | A humanlike joining the player faction has its `kindDef` reset to `basicMemberKind`, and a run-wild break sets `WildMan` — a `PawnKindDef` used as a marker silently vanishes |
 | T-115 | A `StorytellerDef` carrying VEF's `storytellerThreat` replaces every faction's natural goodwill with one number (0 by default) — every `GoodwillSituationWorker` natural offset is discarded |
 | T-116 | `QuestPart_SetFactionHidden` does not scribe `hidden` — a part that hides a faction becomes one that reveals it after a save and load |
+| T-118 | A faction set in `IncidentParms` is ignored by `CaravanMeeting` and overwritten by `Ambush_EnemyFaction` and `CaravanDemand` — the encounter fires with a random faction |
+| T-119 | A caravan incident never fires in a biome its `mtbDaysByBiome` omits — vanilla's three caravan encounters are absent from every Odyssey and modded biome |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -89,7 +91,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-21 | Filter at draw time, never at list-membership time |
 | **T-22** | **77 mods have a second copy on disk under one `packageId`; six have drifted apart — VEF among them — and `corpus.py --check` reports the corpus clean** |
 | **T-33** | **KCSG generates settlements from an unseeded `System.Random` — two clients get different maps, and MP's checksum cannot see it** |
-| T-39 | `QuestScriptDef.CanRun` draws on the shared `Rand` stream and memoises per tick — calling it from render code desyncs |
+| T-39 | `QuestScriptDef.CanRun` draws on the shared `Rand` stream and memoises per tick and threat points — calling it from render code desyncs, and a per-noble decree gate answers every titled colonist with the first one's result |
 | **T-51** | **MP Compat's Unity-RNG transpiler rewrites 4 members and half-fixes the rest in silence — unlike its `System.Random` sibling, it is not all-or-nothing** |
 | T-52 | `Dialog_Rename<T>.OnRenamed` runs client-locally, ahead of the synced setter |
 | T-53 | `Window.forcePause` does not pause a Multiplayer session |
@@ -154,6 +156,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-44 | A road in an `allowRoads = false` biome is drawn but inert |
 | T-48 | On an orbit layer the pool collapses to 18 of 91 incidents and 18 of 139 quests, unannounced |
 | T-87 | A `RoadDef.movementCostMultiplier` patch is discarded for any caravan carrying a vehicle that declares `customRoadCosts` — the first declarer replaces the value in either direction |
+| T-117 | A `Caravan_PathFollower` patch never runs for a Vehicle Framework caravan — VF diverts `StartPath` to its own sealed `VehicleCaravan_PathFollower` |
 
 ---
 

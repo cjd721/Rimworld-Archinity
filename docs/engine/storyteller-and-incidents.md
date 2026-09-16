@@ -109,3 +109,29 @@ campaign. Both are fixed by the same one line of XML. Every vanilla `RaidStrateg
 injecting an additive term and replacing the hardcoded `10000f` ceiling [V]. Anything
 of ours that postfixes the same method composes with a body that is no longer
 vanilla's, and the ceiling it assumes may not be there.
+
+## Caravan encounters: the faction is random, and the position is never read
+
+Vanilla stages three encounters on a world-map caravan, defined in
+`Core/Defs/Storyteller/Incidents_Caravan_All.xml`: `Ambush` (ThreatBig), `CaravanMeeting` (Misc)
+and `CaravanDemand` (ThreatSmall). Each targets `Caravan` and fires by `mtbDaysByBiome` [V].
+
+- **None of them honours `IncidentParms.faction`** [V]:
+  - `IncidentWorker_CaravanMeeting.TryFindFaction` draws a random non-player, non-hostile, non-hidden, humanlike faction with `caravanTraderKinds` and `pawnGroupMakers`. Allied and neutral are both eligible, and `parms.faction` is never read.
+  - `IncidentWorker_Ambush_EnemyFaction.GeneratePawns` and `IncidentWorker_CaravanDemand.TryExecuteWorker` both **overwrite** `parms.faction` with `PawnGroupMakerUtility.TryGetRandomFactionForCombatPawnGroup`.
+  - A faction passed in is therefore discarded silently.
+- **None of them reads where the caravan is**, beyond the biome MTB and `CaravanIncidentUtility.CanFireIncidentWhichWantsToGenerateMapAt`. That check refuses a tile holding a map or a world object whose def lacks `allowCaravanIncidentsWhichGenerateMap`. `Settlement` lacks it, so nothing fires on a settlement's own tile [V].
+- **`StorytellerComp_CategoryIndividualMTBByBiome` skips any def with no `mtbDaysByBiome` entry for the target's biome** [V]. A biome a def does not list never fires it, and nothing is logged. Vanilla's three caravan encounters list Core biomes only, so they never fire in Odyssey's `Grasslands`, `Glowforest`, `Scarlands`, `GlacialPlain` or `LavaField` (**T-119**). With `applyCaravanVisibility`, the MTB is divided by `Caravan.Visibility`. The roll is `Rand.MTBEventOccurs(mtb, 60000, 1000)`.
+- **`Storyteller.AllIncidentTargets` adds every `Find.WorldObjects.Caravans` entry with `IsPlayerControlled`** [V]. Vehicle Framework's `VehicleCaravan : Caravan` is included. Its `AerialVehicleInFlight` is not a `Caravan` and is not included [V].
+- **The per-tile movement hook is `Caravan_PathFollower.TryEnterNextPathTile` (private)** [V], called from `PatherTickInterval`. **A Vehicle Framework caravan never runs it.** VF's `Patch_WorldPathing.StartVehicleCaravanPath` prefixes `Caravan_PathFollower.StartPath` and diverts to `VehicleCaravan.vehiclePather`, a sealed `VehicleCaravan_PathFollower` with its own private `TryEnterNextPathTile` [V].
+- **Multiplayer syncs the meeting and demand dialogs by method.** `SyncMethods` calls `Sync.RegisterSyncDialogNodeTree` on exactly `IncidentWorker_CaravanMeeting.TryExecuteWorker` and `IncidentWorker_CaravanDemand.TryExecuteWorker`. Registration is a postfix (`SyncUtil.PatchMethodForDialogNodeTreeSync`) on those `MethodInfo`s [V]. A subclass that overrides `TryExecuteWorker` without calling base is outside it [I] (**T-82**, **T-95**). A `Dialog_Trade` constructed inside the synced click becomes an `MpTradeSession` (`DialogTradeCtorPatch`) [V].
+
+*[#136](https://github.com/cjd721/Rimworld-Archinity/issues/136), `docs/specs/POLITICS.md` §
+*Settlements meet passing caravans*. `RimWorld.IncidentWorker_CaravanMeeting`,
+`RimWorld.IncidentWorker_Ambush` / `_EnemyFaction`, `RimWorld.IncidentWorker_CaravanDemand`,
+`RimWorld.Planet.CaravanIncidentUtility`, `RimWorld.StorytellerComp_CategoryIndividualMTBByBiome`,
+`RimWorld.Storyteller.AllIncidentTargets`, `RimWorld.Planet.Caravan_PathFollower` —
+`Assembly-CSharp.dll` 1.6.4871; `Vehicles.World.VehicleCaravan` / `VehicleCaravan_PathFollower`,
+`Vehicles.Patch_WorldPathing.StartVehicleCaravanPath` from `3014915404/1.6/Assemblies/Vehicles.dll`;
+`Multiplayer.Client.SyncMethods`, `SyncUtil`, `DialogTradeCtorPatch` from
+`2606448745/1.6/AssembliesCustom/Multiplayer.dll`; decompiled 2026-09-16 with `ilspycmd` 8.2.0.*

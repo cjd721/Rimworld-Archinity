@@ -1,8 +1,8 @@
 # Quests
 
 What the vanilla quest system can be made to do from XML: fixed rewards, standing
-parent quests with sub-quests, what the quest tab will and will not show, and the
-two mods that already ship a player-initiated quest generator.
+parent quests with sub-quests, what the quest tab will and will not show, the
+two mods that already ship a player-initiated quest generator, and Royalty's decrees.
 
 Verified against decompiled RimWorld 1.6.4871 unless an entry says otherwise.
 These are *verified available mechanisms*, not commitments to use them —
@@ -336,3 +336,38 @@ Verified against 1.6.4871 and `Multiplayer.dll` (`2606448745`).
   `MultiplayerAsyncQuest` caches the quest against a map on accept [V].
 
 Established on [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131).
+
+---
+
+## Decrees: who issues them, what missing one costs, what ends one
+
+Verified against decompiled `Assembly-CSharp.dll` and Royalty's
+`Defs/QuestScriptDefs/Decree/` [V throughout].
+
+- **A decree is a titled colonist's demand on the colony, and in vanilla it comes only from a
+  breakdown.** `Pawn_RoyaltyTracker.IssueDecree` has two callers: `MentalBreakWorker_WildDecree`
+  (commonality = highest `RoyalTitleDef.decreeMentalBreakCommonality` held; colonists only) and
+  `RoyalTitle.RoyalTitleTick` on `decreeMtbDays`, which fires only for `conceited` free colonists
+  and is `-1` (off) on every Empire title, vanilla's and VFE Empire's.
+- **Selection is by tag across every ladder.** `PossibleDecreeQuests` pools `decreeTags` from all
+  titles in effect and keeps each `QuestScriptDef` sharing a tag whose `CanRun` passes. `CanRun`'s
+  memo is keyed on tick and `points`, not on the `asker` in the slate (**T-39**), so a per-asker
+  `TestRun` gate answers every titleholder on a map with the first one's result that tick.
+- **`decreeDays` is not a deadline that fails the quest.** `isQuestTimeout` on `QuestNode_Delay`
+  only sets `isBad` and the "expires in" label. On completion the delay enables
+  `QuestPart_SituationalThought` → `DecreeUnmet`, whose `Thought_DecreeUnmet.MoodOffset` ramps
+  −5 → −15 over 15 days (private static curve) on the asker only. `DecreeSetup` ends the quest
+  as Fail 80 days in, with no further cost. That mood ramp is vanilla's entire failure cost, plus
+  `DecreeFailed` (−4) if a completed monument is destroyed early.
+- **Signed favour and goodwill changes are XML.** `QuestNode_GiveRoyalFavor.amount` feeds
+  `Pawn_RoyaltyTracker.GainFavor`, which adds a negative without clamping; `UpdateRoyalTitle` only
+  promotes, so lost favour never costs a title. `QuestNode_ChangeFactionGoodwill.change` feeds
+  `TryAffectGoodwillWith`. Both need `faction` or `factionOf`; vanilla XML has no node that
+  yields `Faction.OfEmpire` (`QuestNode_GetFaction` has no def filter) — VFED's
+  `QuestNode_GetEmpire` does.
+- **Nothing ends decrees on hostility.** No trigger or `PossibleDecreeQuests` reads relations.
+  `Faction` sends `BecameHostileToPlayer` to its `questTags` on turning hostile to the player, and
+  `QuestNode_IsFactionHostileToPlayer` + `QuestNode_CannotRun` can fail a `TestRun` from XML.
+
+Established on [#137](https://github.com/cjd721/Rimworld-Archinity/issues/137); the routes are
+`docs/specs/RELIGION.md` § *Decrees — what failing one costs, set per decree*.
