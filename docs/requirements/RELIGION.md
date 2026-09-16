@@ -206,6 +206,28 @@ powers, hidden factions and the Schism are excluded. Peoples raised in the Churc
 living gods are what Reverence and revolt work on. The founders may serve the Church, but the player
 faith never becomes the Church's. [#133](https://github.com/cjd721/Rimworld-Archinity/issues/133)
 
+## Faith inside the colony
+
+**Belief and conversion inside the colony are vanilla's.** Certainty holds and moves by vanilla's
+rules, with no campaign upkeep or decay, and colonists convert by vanilla's means. The founders
+convert better only through what they already are — their skills and genes — not through a
+campaign rule.
+
+**A rival faith in the colony is the player faith's business.** How colonists feel about someone of
+another faith is set by the player faith's own precepts. There is no campaign suppression system;
+the cost of an unconverted colonist is already that they cannot give Devotion.
+
+**Converting a colonist moves no Reverence.** Reverence moves only when a believer carries the faith
+home — apostles, released prisoners, pilgrims.
+
+**Exploring, not chosen: a campaign base for the player faith.** The player faith may be built on a
+campaign-authored ideology that forces its required precepts and sets a minimum on others — tolerance
+of other faiths no more tolerant than intolerant, for example — which the player may make stricter but
+never looser. [#140](https://github.com/cjd721/Rimworld-Archinity/issues/140) answers what is
+possible.
+
+[#124](https://github.com/cjd721/Rimworld-Archinity/issues/124)
+
 ## Political pressure
 
 Moved to [faction politics](POLITICS.md), settled on

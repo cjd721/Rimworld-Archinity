@@ -88,7 +88,7 @@ doing. The warning is losing contact with the meaning of power, not that power o
 blood automatically corrupts. Feeding on taken blood does not itself cloud the channel.
 
 No hidden morality, purity or sincerity ledger evaluates the player. Conversion,
-conviction, willing participation and a declared identity have gameplay expressions;
+certainty, willing participation and a declared identity have gameplay expressions;
 the founders' private reasons remain roleplay. A claimed title has no correct wording.
 
 Bloodletting lets worship continue without killing every participant: a little,

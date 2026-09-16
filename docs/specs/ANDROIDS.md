@@ -10,6 +10,12 @@
 > unconditional psylink block is a carrier constraint, not permission to generalize the
 > Glitterite condition to every android in the fiction.
 
+> **Premise reopened — 2026-09-16.** The psylink block is **not** shown to be unconditional. A
+> read on [#124](https://github.com/cjd721/Rimworld-Archinity/issues/124) found the `ChangeLevel(int)`
+> prefix misses vanilla's main `ChangeLevel(int, bool)` path, and the first psylink is refused by a
+> gene-gated settings list instead. §2, *Status*, *Verification* and decision 3 stand unrevised until
+> [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141) answers; do not cite them as settled.
+
 This document owns **player-manufactured android bodies as a production capability** —
 what an android is mechanically, what builds one, what gates it, and how the campaign's
 final argument rests on it.

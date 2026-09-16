@@ -109,7 +109,7 @@ rite. `titleClaimed` is the only prerequisite the altar may read.
 
    **Scope caveat, and it matters for #49.** `Archinity_FounderRecord` is a *founder-only*
    hediff. #49's volunteer eligibility is evaluated on pawns who will never carry it —
-   `ALTAR.md` § *Conversion and conviction* scopes #49 to "volunteer eligibility against
+   `ALTAR.md` § *Conversion and certainty* scopes #49 to "volunteer eligibility against
    the final rite, including volunteers sent by reverent factions". Rule 1 does not reach
    those pawns and must not be read as forbidding a per-volunteer store; choosing that
    home is #49's, not this document's. What #49 reads *here* is the founder side of the
@@ -662,7 +662,7 @@ solely on "no free colonists anywhere", never on a victory.
 † **These five are unassigned on purpose.** An earlier draft routed all of them to
 [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49). #49 exists and is open, but
 it is titled *The altar's choosing, and the anti-habituation gates*, it is `hitl` /
-`layer:requirements`, and `docs/requirements/ALTAR.md` § *Conversion and conviction* scopes
+`layer:requirements`, and `docs/requirements/ALTAR.md` § *Conversion and certainty* scopes
 it to "volunteer eligibility against the final rite, including volunteers sent by reverent
 factions". Epithet length, one-way-ness, renunciation, "does the founder leave the map" and
 credits replay are not obviously inside that scope, and nobody asked #49's owner. Each

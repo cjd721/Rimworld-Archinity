@@ -34,10 +34,10 @@ psylink is Medieval; the unresolved final rank becomes Claim Yourself in Ultra.
 Exact intermediate rites, requirements and levels remain to be specified.
 Cultivation is the framing for meditation at the altar and its dead.
 
-## Conversion and conviction
+## Conversion and certainty
 
 Building a congregation is intended play: recruit, convert, teach and raise
-conviction. Willingness and high conviction determine who can give Devotion;
+certainty. Willingness and high certainty determine who can give Devotion;
 coercion still supplies raw Life. The receiving founder's selfhood is not a hidden
 purity score. The final alignment commitment is explicit in the ending, while
 the player's reasons remain theirs.

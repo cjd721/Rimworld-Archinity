@@ -15,6 +15,12 @@ post-vanilla technology from nothing.
 
 Ultra also opens advanced android manufacture. The campaign does not treat artificial bodies as inherently inferior; that distinction is essential to the final cosmology.
 
+**Whether an android can hold a psylink is open.** If a route lets it, the campaign may take it;
+if none does, the asymmetry
+stands and the fiction leaves the reason to interpretation — the soul, not the body, is what
+connects to the channel. [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141) answers
+what is possible. [#124](https://github.com/cjd721/Rimworld-Archinity/issues/124)
+
 ## Intel Is Capability, Not Exposition
 
 Intel is accumulated technical understanding recovered from Glitterite raids. A raid may
@@ -82,6 +88,18 @@ High Trace: the gravship and its signatures are understood; Glitterites actively
 Late Ultra: the emotional inversion is not that Glitterites become trivial, but that the player eventually stops needing to run every time the enemy finds them.
 
 This gives the gravship a late-game narrative beyond transport: for part of Ultra the campaign is “run, hide, steal, learn.” The player survives long enough to make the enemy’s advantages comprehensible.
+
+## A captured Glitterite
+
+**A Glitterite holds no faith and believes nothing.** Captured, it can be held as a prisoner and
+nothing more: it is never recruited, enslaved or converted. It is never hackable from the hacking
+console. [#142](https://github.com/cjd721/Rimworld-Archinity/issues/142)
+
+**Exploring, not chosen: the jailbreak.** A captured Glitterite taken home, opened up and given back
+the persona and free will it removed may become an ordinary android colonist. Whether this ships, and
+what it would mean for the Ultra revelation, waits for its routes
+([#143](https://github.com/cjd721/Rimworld-Archinity/issues/143)).
+[#124](https://github.com/cjd721/Rimworld-Archinity/issues/124)
 
 ## Saved state and remaining work
 

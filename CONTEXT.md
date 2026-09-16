@@ -112,6 +112,11 @@ roles and precepts baked into it. Its theology and presentation remain the playe
 It is the faith measured by Reverence.
 _Avoid_: the Church, Church ideology
 
+**Certainty**:
+How firmly one pawn holds their faith — vanilla's measure, unchanged. High certainty is
+part of what lets a believer give Devotion.
+_Avoid_: conviction, faith strength
+
 **The Church**:
 The Roman-Catholic-like external faction the vanilla Empire becomes wholesale. It is
 an institution the founders may serve, oppose or replace; it is never shorthand for
@@ -351,6 +356,11 @@ A member of the Glitterite civilization, which deliberately removed the emotiona
 individual faculties needed for sincere fervor and connection to the channel. Glitterites
 run on anima-rich neutroamine, cannot receive psylinks and are not hackable. Other androids
 need not share those limitations.
+
+**Jailbreak**:
+Physically breaking a captured Glitterite's own security and installing the persona and free
+will it removed. An operation on a prisoner, never a hack from the console.
+_Avoid_: hacking a Glitterite, restoration
 
 ### Process
 
