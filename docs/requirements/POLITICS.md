@@ -38,7 +38,10 @@ and a tile the player can travel to. Wars exist once the player has been told ab
 them; there is no background model of conflicts they never see.
 
 **Standing** is what accumulated Goodwill has bought. It unlocks relationships —
-access, people, passage, knowledge — never discounts.
+access, people, knowledge — never discounts.
+
+**Safe passage** is not being attacked by a faction's settlements when a caravan passes
+them. Every faction that is not hostile gives it; nothing buys it separately.
 
 ## Required behavior
 
@@ -77,8 +80,14 @@ found this carried more than simulated warfare did, for far less. Prefer it wher
 a choice between factions is wanted.
 
 **Standing buys relationships, never discounts.** Tech transfer, a loaned specialist,
-a granted site, safe passage, candour about who a faction hates. Where the world map
+a granted site, candour about who a faction hates. Where the world map
 expresses standing, it does so through which factions thrive.
+
+**Settlements meet passing caravans.** A caravan that travels within a few tiles of a
+settlement meets its faction. A hostile faction attacks it; a neutral or allied faction
+offers to trade. This is faction-generic — the Church is no different. Range and how
+often a settlement reacts are balance work.
+[#136](https://github.com/cjd721/Rimworld-Archinity/issues/136)
 
 **Aid is requested at a place.** An ally under attack names a tile and a short window.
 Attending makes it a real fight; declining resolves it without the player and reports
@@ -145,6 +154,8 @@ A manageable number of live diplomatic situations prevents notification fatigue.
   — the world object, resolution in absentia, and the attendance path.
 - [Standing as a content gate](https://github.com/cjd721/Rimworld-Archinity/issues/93)
   — whether standing can gate content at all, and on which surfaces.
+- [A caravan near a settlement meets it](https://github.com/cjd721/Rimworld-Archinity/issues/136)
+  — proximity encounters, attack or trade by relation.
 - **Ownership of the quest board under Multiplayer.** Either founder can accept any
   quest and choose its rewards, and one shared faction leaves no ownership to restore.
   Whether that is accepted as design or arbitrated is unowned. From

@@ -12,6 +12,15 @@
 > reaction. The capability evidence below remains useful, but those builds must be
 > reselected against the corrected requirements.
 
+> **Correction — 2026-09-16, [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123).**
+> **There is no Church suspicion.** The requirement withdrew it: before betrayal the Church's
+> hostility is ordinary Goodwill, and betrayal is an authored, final act at a Global Reverence
+> threshold. Its latch keeps a route [#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)
+> route A already named: one stored bit, read by a `GoodwillSituationWorker` that caps Church goodwill
+> at −100 once set — §6's verified engine facts, without the Reverence curves — or VFED's latch if VFED
+> ships. Every mention below of the suspicion worker, its cap or its curves, wherever it appears, is
+> withdrawn evidence, kept for its engine facts. Do not build it.
+
 How the religious systems in [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md)
 will be built. This document owns six behaviours end to end:
 
@@ -19,7 +28,7 @@ will be built. This document owns six behaviours end to end:
   and the surfaces the player reads it on.
 - **Exaltation and the sacred titles** — the Church (Royalty's Empire, transformed in place), its
   rising scale, the thresholds that confer permanent titles by rite, the privileges those titles
-  unlock, and the Church's suspicion derived from Global Reverence
+  unlock, and the Church's permanent hostility at betrayal
   ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53)).
 - **The player faith's role hierarchy** — founder-special seats, several core-disciple
   preacher/converter seats, crafting and other specialist seats, and how those roles unlock
@@ -632,10 +641,17 @@ READ. The mechanisms are [V]; the claim that they compose into the credit choice
   hostile.** That is the
   requirement's *"titles unlock acquisition routes"*. The earlier claim that those three permits are
   inert (no `<faction>`, no worker) was true only of a Church *copy*.
-- **Safe passage and political privileges** still have no vanilla worker and no `RoyalAid` field
-  (inherited [I]). They remain unpriced; see § *Outstanding decisions* 10.
+- **Safe passage and political privileges — answered by the requirement
+  ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)).** Political privileges are
+  the permits above, authored for flavour; nothing more is asked. Safe passage is not a title perk
+  but every faction's settlement encounter — [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136),
+  landing in `POLITICS.md`.
 
 ### 6. Suspicion and hostility — derived from Global Reverence, never stored
+
+> **Withdrawn — [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123).** The requirement
+> has no suspicion; see the correction at the top of this document. Kept for the reasoning and its
+> engine facts — don't act on it.
 
 **Mechanism.** One `GoodwillSituationDef` in XML, whose `workerClass` is a new
 `GoodwillSituationWorker_ChurchSuspicion : GoodwillSituationWorker`. It overrides
@@ -690,14 +706,15 @@ suspicion ratchets is a requirement, and a ratchet needs one stored high-water m
 | WTL roster exemption | **XML** — ~8 lines, unconditional (§3) |
 | Exaltation, quest rewards, the rite, gizmo, character card | **Nothing** — vanilla |
 | Title-gated trade | **Nothing** — vanilla (§5) |
-| Church suspicion and hostility | **New C#** — one `GoodwillSituationWorker`, ~30 lines, + 1 `GoodwillSituationDef`, + a `RecalculateAll` call on every Reverence write (~2 lines) |
+| Church suspicion | **Withdrawn** ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)) — was one `GoodwillSituationWorker`, ~30 lines |
+| Betrayal's permanent hostility | **New C# + one saved bit** — a `GoodwillSituationWorker` capping at −100 once betrayed (§6's facts; #130 route A), or VFED's latch if VFED ships. Unpriced in lines |
 | Permits-card seed (**T-35**) | **Deleted** — `Faction.OfEmpire` always exists |
 | Bestowing-quest suppressor | **Deleted** — the ceremony is the Church's rite (alternative in §4: ~35 lines) |
-| Royal Ascent ending | **XML** — keep or strip the storyteller comp (decision 18) |
-| Safe passage, political privileges | **Unpriced** — no carrier (decision 10) |
+| Royal Ascent ending | **XML** — strip the storyteller comp (decision 18, [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)) |
+| Safe passage, political privileges | **Answered** — privileges are §5's permits; safe passage is [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136) (decision 10) |
 
-**Aggregate: zero Harmony patches, ~30 lines of C# in the existing assembly, no new saved state, no
-new Def type.** The XML is mostly *authoring* — names, creed, catalogue — and none of it waits on
+**Aggregate: zero Harmony patches, one small goodwill-situation worker and one saved bit for
+betrayal (#123), no new Def type.** Decrees are [#137](https://github.com/cjd721/Rimworld-Archinity/issues/137)'s. The XML is mostly *authoring* — names, creed, catalogue — and none of it waits on
 mechanism.
 
 ## Superseded build — replacing the player faith with Church doctrine
@@ -2218,7 +2235,7 @@ What this section does not own:
 - **The spend that advances the plot, and the commitment act:** [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132).
 - **The Schism's faith change:** [#133](https://github.com/cjd721/Rimworld-Archinity/issues/133).
 - **What the ally pays:** [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120).
-- **Whether Church suspicion ratchets in general:** [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123). This section only states what each route implies for it.
+- **Church hostility off the Schism route:** [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123) — there is no suspicion; betrayal is final and shares this section's latch.
 
 ### Verdict
 
@@ -3580,14 +3597,12 @@ that is *closed* ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7),
 9. **Whether ordinary colonists can hold Church titles, or only the founders.** Vanilla imposes no
    limit, and `Reward_RoyalFavor` lets a quest ask which colonist is exalted [V, #53]. It is a
    requirement that `docs/requirements/RELIGION.md` does not state.
-10. **Safe passage and political privileges — what they do to the simulation.** There is no vanilla
-    carrier (§5). Unpriced until the requirement says what they are. Gap, no owner.
-11. **Suspicion — the curve, and whether it ratchets.** The build is §6; the thresholds are open
-    parameters. If suspicion must not forgive a falling Global Reverence, the worker needs one
-    scribed high-water mark. That is not a tolerance currency, but it *is* saved state, and the
-    requirement's "no separate … threat currencies" should say whether it is allowed.
-    [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97) (open) owns how Reverence touches
-    Goodwill *per faction*, which is adjacent context. It does not own this *global* coupling. Gap.
+10. **Resolved ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)): safe passage and
+    political privileges.** Privileges are vanilla-kind title permits (§5). Safe passage is every
+    non-hostile faction's, through the settlement encounter —
+    [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136).
+11. **Resolved ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)): there is no
+    suspicion.** §6 is withdrawn. Betrayal at a Global Reverence threshold is authored and final.
 17. **The Church's per-era presentation and first contact.** An Ultra-tech Church is contactable
     from the Neolithic, because Ignorance Is Bliss's `empireIsAlwaysEligible` defaults true [I]. The
     plot introduces it in Medieval. The band configuration is
@@ -3597,7 +3612,9 @@ that is *closed* ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7),
 18. **Which Empire-fiction content the Church keeps.** None of it breaks, and all of it will appear
     unless cut:
     - the **Royal Ascent ending** — a `StorytellerCompProperties_RefiringUniqueQuest` on every vanilla
-      storyteller, day 35, refiring every 22 days [V], which competes with the campaign's own ending;
+      storyteller, day 35, refiring every 22 days [V], which competes with the campaign's own ending.
+      **Resolved ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)): stripped**; the
+      Church's own ending recurs from the top title and closes at betrayal or the orbital reveal;
     - shuttle arrivals — the bestower, the tribute collector, shuttle-crash rescues, lend-colonists;
     - landing pads and throne rooms in Church settlements (`GenStep_Settlement`);
     - Royalty's Empire intro quests;
@@ -3615,7 +3632,13 @@ that is *closed* ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7),
     Church titles and early psychic states may share language"* wants any title-linked psychic
     effect is a requirement. Gap.
 
-21. **Techprint supply after the Church turns hostile — owed to Conrad under "no silent loss", and
+21. **Resolved ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)): the loss is
+    accepted.** Betrayal is one-way, so Church techprints close for good; the Schism's catalogue
+    replaces them, and a run that declines the Schism keeps only vanilla's other sources — the
+    intended consequence. The reasoning that led here follows; its open question and "gap, no
+    owner" are answered by this banner.
+
+    **Techprint supply after the Church turns hostile — owed to Conrad under "no silent loss", and
     now narrowed to one question.** §6 makes the Church hostile from Global Reverence, which closes
     the Church trader route for the 14 Empire-only projects (§ *Verification*); the route also needs
     a Knight while it is open. What survives is the map-gen lottery, the Traders Guild's orbital

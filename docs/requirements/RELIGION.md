@@ -70,7 +70,18 @@ quests award Exaltation. At Exaltation thresholds, the founders perform a rite a
 the next sacred title. Exact names and counts are still authoring work; the structural rule
 is locked. Church titles are institutional standing, not psychic power.
 
-Titles permanently unlock access to things that should matter: elite equipment, rare resources, military aid, specialists, political privileges, safe passage, requisitions and other powers that ordinary RimWorld acquisition routes are deliberately made less trivial. The Church route is attractive because the rewards are legitimately excellent.
+Titles permanently unlock access to things that should matter: elite equipment, rare resources, military aid, specialists, requisitions and other powers that ordinary RimWorld acquisition routes are deliberately made less trivial. The Church route is attractive because the rewards are legitimately excellent.
+
+**Title perks are vanilla's kind.** A title lets its holder ask the Church for what a vanilla
+title lets its holder ask the Empire for — aid, items, trade and the like — authored for the
+campaign's flavour. A title never earns trust with another faction and never lets the founders
+direct the Church's diplomacy. Safe passage is not a title perk; it belongs to every faction
+([faction politics](POLITICS.md#required-behavior)).
+[#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)
+
+**Titles carry decrees.** As in vanilla, the Church lays obligations on titled colonists. What
+failing one costs is set per decree: a mood penalty, lost Exaltation or lost Goodwill with the
+Church. [#137](https://github.com/cjd721/Rimworld-Archinity/issues/137)
 
 The Church also reveals the missing half of the altar. Willingly given blood/anima behaves differently and widens the psychic channel. This is where the first psylink belongs. Early Church titles and early psychic states may share language or symbolism so the institution can plausibly present itself as the source of the founders’ divinity before the two ladders visibly diverge.
 
@@ -85,6 +96,21 @@ accepting the quest means; the player then carries the deed out on their own jud
 **The bargain**
 
 The Church is not the obviously stupid route. It feeds, equips, protects and exalts the founders because they are useful sacred assets. In return, it wants the founders to remain inside the institution’s interpretation of what they are.
+
+**Betrayal is final.** When Global Reverence passes a threshold, the Church moves against the
+founders in authored beats — a mission that gives them the rope to harm it, then the betrayal
+itself. There is no suspicion stat behind it. Betrayal turns the Church permanently hostile,
+closes the Church path and brings the Schism's offer at once. Titles remain; every perk and
+decree ends. Church techprints end with it, and a run that then declines the Schism keeps only
+vanilla's other sources, the intended consequence of the player's choice. A run
+that keeps Global Reverence low is never betrayed and can win on the Church path.
+[#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)
+
+**The Church's ending.** At the top of the title ladder the Church offers sanctioned apotheosis
+([Spacer](../plot/SPACER.md)); accepting ends the run. The offer recurs while the top title is
+held and closes for good at betrayal or at the orbital reveal. Vanilla's Royal Ascent does not
+ship beside it. What accepting takes is narrative.
+[#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)
 
 ## The Schism Path — Influence + Reverence
 
@@ -122,7 +148,7 @@ serving the Church, and can stop and return to the Church path. They cannot bank
 keep the Church's favor: a defined act — the first Influence gained or the first plot spend,
 whichever the routes allow — commits them and turns the Church permanently hostile. There is no
 way back to the Church after it, and no option to sell the Schism out. On the Church path the
-Church still betrays founders whose Reverence grows too dangerous.
+Church still betrays founders whose Global Reverence grows too high (*Betrayal is final*, above).
 
 **The Church falls in stages.** Each advance is a blow against the hierarchy, and the blows vary:
 blackmail that turns a leader, a preaching tour where the founders take the credit, a figure of
@@ -199,10 +225,9 @@ Glitterites instead use [Trace](GLITTERTECH.md#trace--the-glitterites-learn-you-
 
 ## Saved state and remaining work
 
-Church state includes Exaltation, title and privileges. Its suspicion and eventual
-hostility are derived from Global Reverence rather than stored as separate tolerance or
-threat currencies: broad penetration makes the Church progressively more hostile until
-betrayal or open attack. Schism
+Church state includes Exaltation, titles, perks and whether the Church has betrayed the
+founders. Before betrayal its hostility is ordinary Goodwill; there is no suspicion, tolerance
+or threat state. Schism
 state includes contact, whether the founders have committed, Influence and how far its plot has
 advanced.
 Reverence is per faction, with institutional sustain/decay and derived attention
@@ -228,5 +253,13 @@ route depth: [the Schism's reveal, ground and alliance](https://github.com/cjd72
 [founder-required beats](https://github.com/cjd721/Rimworld-Archinity/issues/134),
 [credit as a reward choice](https://github.com/cjd721/Rimworld-Archinity/issues/135) and
 [vassals](https://github.com/cjd721/Rimworld-Archinity/issues/120).
+
+Title perks, decrees, betrayal and the Church's ending were stated on
+[#123](https://github.com/cjd721/Rimworld-Archinity/issues/123). Perks are answered by
+`docs/specs/RELIGION.md` §5; betrayal's permanent hostility has a named route (one saved bit and a
+goodwill cap, #130 route A);
+[decrees with a chosen failure cost](https://github.com/cjd721/Rimworld-Archinity/issues/137)
+is open. Whether Church titles grant psylinks is Conrad's to decide later; every shape is
+already possible.
 
 Final volunteer alignment is defined in [the ending](../plot/ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly).
