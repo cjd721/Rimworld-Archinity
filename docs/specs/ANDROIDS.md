@@ -2,6 +2,14 @@
 
 ## Purpose and scope
 
+> **Authority correction — 2026-09-13.** “Android” is a body/person category;
+> “Glitterite” is a civilization and origin. Other androids can be sincere believers and
+> can be essentially ordinary people. Glitterites deliberately removed emotion, fervor
+> and the faculties needed to connect to the channel; they run on anima-rich
+> neutroamine, cannot receive psylinks and are not hackable. The VRE donor's
+> unconditional psylink block is a carrier constraint, not permission to generalize the
+> Glitterite condition to every android in the fiction.
+
 This document owns **player-manufactured android bodies as a production capability** —
 what an android is mechanically, what builds one, what gates it, and how the campaign's
 final argument rests on it.
@@ -16,11 +24,9 @@ this document load-bearing on the ending, not on a side system.
 **Where adjacent systems take over.** The Analysis research gate itself is
 `docs/specs/RESEARCH.md`'s; the spendable Intel balance is `docs/specs/CURRENCIES.md`'s;
 whether an android can hold Devotion is a consequence stated here and owned by
-`docs/specs/RELIGION.md`. Android *hacking* as a Glitterite target is
-`docs/specs/HACKING.md`'s — and it is **currently unbuildable for the reason this document
-establishes**: Ushanka attaches `CompHackable` only to mechanoid or drone `PawnKindDef`s, and
-androids are humanlike. See `HACKING.md` § *Gating target classes by research*, where the negative
-is stated.
+`docs/specs/RELIGION.md`. Player-made androids may hold an ideology and be sincere
+believers. Glitterites are explicitly excluded from hacking; there is no missing
+android-hacking capability to build.
 
 Established by [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78). Evidence
 class **READ**.
@@ -154,7 +160,7 @@ no display half to build.** **[V]**
 ### 5. The Intel gate
 
 Manufacture must hang off the exemplar loop rather than be a research project the player
-simply reaches. Two layers are available and they compose; **only the first is recommended.**
+simply reaches. Two layers were surveyed; **the first ships and the second is struck.**
 
 **Layer 1 — the research gate. Pure XML, and it is [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)'s shipped mechanism.**
 `VREA_AndroidTech` is a `ResearchProjectDef` like any other, so
@@ -200,23 +206,22 @@ it exists.
 > `modDependencies`, so the gate cannot silently evaporate while the capability exists —
 > the two stand or fall together. **T-40** applies to the general case, not to this one.
 
-**Layer 2 — a per-unit currency price. Not free, and not recommended as the primary gate.**
-The tempting move is to add an Intel item to `subcoreScannerFixedIngredients`, since that
-field is XML. **It does not work**, and the reason is a cross-spec fact:
-[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) deliberately rejected the
-VFED "warehouse" model and made Intel a **stored `int` balance** in
-`WorldComponent_Currencies`, keyed by `CurrencyDef`. `subcoreScannerFixedIngredients` takes
-a `ThingFilter` and can only consume a physical `Thing`. A per-android Intel debit must
-therefore go through `WorldComponent_Currencies.TrySpend`, which is C# — a Harmony prefix on
-`Window_AndroidCreation.AcceptInner` refusing the order when the balance is short, plus the
-debit. ~30–40 lines in `ArchinityAltar.dll`. **If that price is ever expressed as an
-ingredient rather than a balance debit, it must be appended in a postfix on `OnGenesChanged`
-— T-93.**
+**Layer 2 — a per-unit Intel debit. Struck.** An earlier draft priced each android through
+`WorldComponent_Currencies.TrySpend` — a Harmony prefix on `Window_AndroidCreation.AcceptInner`
+refusing the order when the balance is short, plus the debit. **That is withdrawn.**
+[`CURRENCIES.md`](CURRENCIES.md) § *What changes it* names exactly two Intel debit sites — the
+Intel exchange and #106's quest catalogue — and a per-android debit would be a third. If
+manufacture should cost Intel at all, the shape is a one-time **exchange for an Instruction
+item**: a `CurrencyPurchaseDef` at [`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange*
+delivering a techprint for `VREA_AndroidTech` (which must then declare `techprintCount`), priced by
+[#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). `subcoreScannerFixedIngredients`
+cannot carry Intel either way: it takes a `ThingFilter` and consumes only a physical `Thing`.
+**If any per-android price is ever expressed as an ingredient, it must be appended in a postfix on
+`OnGenesChanged` — T-93.**
 
 **Recommendation: ship Layer 1 only.** It costs nothing, it is the mechanism the rest of the
 Glittertech tree already uses, and it puts manufacture behind the exemplar loop as the ticket
-requires. Layer 2 is a pricing decision, not a gating one, and the number it would spend is
-not ours to invent — see *Outstanding decisions*.
+requires.
 
 ### 6. Scoping the bleed
 
@@ -276,7 +281,7 @@ it adds a xenotype chance to an existing faction, not a faction to the roster.
 | Multiplayer safety | **none — shipped** | 0 | Multiplayer Compatibility (`1629973374`) |
 | Analysis gate on `VREA_AndroidTech` | XML patch | ~6 lines | `Archinity.Glitterites/Patches/Analysis_GlittertechGate.xml` (exists per #67) |
 | Bleed scoping *(optional, fiction call)* | XML patch | ~10 lines | `Archinity.Glitterites/Patches/VREAndroid_Scope.xml` (new) |
-| Per-unit Intel debit *(optional, not recommended)* | new C# | ~30–40 lines | `ArchinityAltar.dll` |
+| ~~Per-unit Intel debit~~ *(struck — Intel is exchanged for Instruction items, see §5)* | — | 0 | — |
 
 **Total for the recommended build: ~6 lines of XML.** The capability itself is a sourcing
 decision, not an implementation one — it belongs to
@@ -381,7 +386,7 @@ argument is a **penalty** applied to android colonists — see *Outstanding deci
 - **Proposed** — the Analysis gate on `VREA_AndroidTech`. The mechanism is #67's and is
   **[V]**; its application here is **[I]**.
 - **Proposed, and a fiction call** — scoping the outlander/pirate xenotype bleed.
-- **Not selected** — the per-unit Intel debit.
+- **Struck** — the per-unit Intel debit (§5; [`CURRENCIES.md`](CURRENCIES.md) § *What changes it*).
 
 Evidence class **READ**: settled by the 1.6 defs of `2975771801`, its decompiled
 `1.6/Assemblies/VREAndroids.dll`, the decompiled
@@ -569,11 +574,10 @@ that patch is written.
    `docs/requirements/GLITTERTECH.md`'s owner. This has implications for
    `docs/specs/TRANSCENDENCE.md` if the endgame assumes any colonist can be a psycaster.
 
-4. **What an android costs in Intel, if anything.** A **number**, not a mechanism — it is not
-   this ticket's to invent. If the answer is "nothing, the research gate is the gate", the build
-   above is complete as written. Owner: `docs/requirements/GLITTERTECH.md` for the rule,
-   [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)'s `CurrencyDef` for the
-   machinery.
+4. **Resolved: an android costs no Intel per unit.** Intel is exchanged for Instruction items,
+   and [`CURRENCIES.md`](CURRENCIES.md) admits no other debit (§5). Whether `VREA_AndroidTech`
+   also requires an Instruction item bought with Intel is exchange-catalogue authoring, owned by
+   [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117).
 
 5. **Does the campaign want the per-android material cost changed?** It cannot be done in XML
    (the list is a C# literal). If Ultra manufacture should cost a Glitterite material rather

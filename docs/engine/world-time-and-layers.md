@@ -57,5 +57,27 @@ orbit factions share one base type by default. Better Traders Guild works around
 this with a `PatchOperationSequence` on `SpaceSettlement` — same approach
 available to us.
 
+## Road network — the runtime write, the pather and the redraw
+
+Read for [#68](https://github.com/cjd721/Rimworld-Archinity/issues/68)'s second reopen; the build
+that uses them is `docs/specs/WORLD-INFRASTRUCTURE.md` § 3.
+
+- **`WorldPathing.FindPath(PlanetTile, PlanetTile, Caravan, Func<float, bool>)`** — one pather per
+  layer (`PlanetLayer.Pather`). The A\* edge cost is
+  `ticksPerMove × WorldPathGrid.layerMovementDifficulty[tile] × WorldGrid.GetRoadMovementDifficultyMultiplier(from, to)`,
+  with 3300 for a null caravan, so **the live road multiplier is inside the cost** and new paths
+  prefer existing roads. It rejects only `World.Impassable` tiles, draws **no `Rand`**, and returns a
+  pooled `WorldPath` the caller must `ReleaseToPool()`.
+- **`WorldGrid.OverlayRoad(from, to, def)`** is the only road writer: null def → `Log.ErrorOnce`;
+  same def → return; existing `priority` ≥ new → **silent** return (**T-43**); otherwise both
+  symmetric links are replaced. **It marks nothing dirty** — every caller redraws for itself.
+- **`WorldPathGrid` has no road term**, and `Caravan_PathFollower.CostToMove` reads the multiplier
+  live, so a road write leaves no cache to clear.
+- **Redraw.** `WorldRenderer.SetDirty<T>(PlanetLayer)` flags one layer type
+  (`WorldDrawLayer_Roads` for roads), regenerated on its next draw; there is no per-edge redraw.
+  `SetAllLayersDirty()` also dirties `WorldDrawLayer_Terrain`, and the *"GeneratingPlanet"* long
+  event is queued only from `WorldRenderer.DrawWorldLayers`, when a visible `WorldDrawLayer_Terrain`
+  is dirty.
+
 See also `docs/engine/factions-and-worldgen.md` for faction generation, and
 `docs/engine/quests.md` for how day gates and `rootMinPoints` are consumed.

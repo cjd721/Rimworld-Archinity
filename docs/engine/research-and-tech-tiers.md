@@ -363,3 +363,41 @@ That is a property of `Visible`, not a limit of the surface: a Harmony gate that
 because the opposite was asserted on
 [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93) and would have ruled the surface out
 entirely. Established on [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93). 1.6.4871.
+
+## Faction-tagged techprint supply closes on hostility and reopens on neutrality
+
+`ResearchProjectDef.heldByFactionCategoryTags` is matched against `faction.def.categoryTag` in
+`TechprintUtility.GetResearchProjectsNeedingTechprintsNow` alone, which tests no tech level. In
+vanilla + Royalty **13 projects carry the Empire tag** — the tag is declared once on abstract
+`BaseBodyPartEmpire_TierA` and inherited by 11 concrete implants, plus `CataphractArmor` and
+`JumpPack`; `JumpPack` also carries the Outlander tag, so 12 are Empire-only. [V]
+
+**Hostility with the tagged faction closes the steerable supply.** `FactionUtility.CanTradeWith`
+rejects on `faction.HostileTo` **before** the permit check;
+`IncidentWorker_TraderCaravanArrival.TryExecuteWorker` returns false while hostile; and
+`TraderKindCommonality` is 0 with no permit holder — the Empire's own permits being Knight for
+`TradeSettlement` and `TradeCaravan`, Baron for `TradeOrbital`. Quest rewards close the same way:
+`Reward_Items.InitFromValue` sets `makingFaction = parms.giverFaction`, and `QuestNode_GetFaction`
+rejects a hostile faction unless `allowEnemy` is set, which Royalty's Empire scripts do not. [V]
+
+**Faction-less generators bypass the tag test and are unaffected** — orbital trade ships
+(`TradeShip.GenerateThings` builds `ThingSetMakerParams` with no `makingFaction`), the map-gen
+setmakers `MapGen_AncientTempleContents` and `MapGen_AncientComplexRoomLoot_Default`, and
+asker-less quest rewards. That bypass is **T-99**. Books are never a route in either state:
+`ReadingOutcomeDoerGainResearch.IsValid` returns false when `project.TechprintCount == 0` and
+`CanStartNow` requires `TechprintRequirementMet`. [V]
+
+**Neutrality reopens it, and vanilla ships two ways back.** The Empire is not `permanentEnemy`, and
+its `permanentEnemyToEveryoneExcept` lists `PlayerColony` and `PlayerTribe`, so
+`CanChangeGoodwillFor` passes; hostile is ≤ −75 and neutral ≥ 0. Natural drift alone stalls at
+natural − 50 (`CheckReachNaturalGoodwill`), but **gifts work** — `CanOfferGiftsTo` *requires*
+hostility, and `Settlement_TraderTracker.CanTradeNow` has neither a hostility nor a permit gate
+(~40 silver per goodwill point, +25 % amplified) — and **peace talks admit an enemy faction**
+(`allowEnemy true`; success +60~70, triumph +100~110). [V]
+
+**Titles survive hostility.** Neither `Notify_RelationKindChanged` nor `Pawn_RoyaltyTracker`
+carries any royalty-stripping path for a relation change, so permits and titles persist and the
+trade route reopens with the same pawns the moment goodwill is neutral. Applied techprints are not
+faction state either: this is supply closure, never confiscation. [V]
+
+Established on [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53). 1.6.4871.

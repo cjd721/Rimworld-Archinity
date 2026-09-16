@@ -33,6 +33,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-83 | `GoodwillSituationDef.baseMaxGoodwill` is declared and read nowhere — setting it in XML does nothing |
 | T-84 | `PreceptComp_GoodwillSituation` is inert in 1.6 — the list its only reader writes to is never read |
 | T-92 | Declaring a modded research tab silently enrols a `requiredAnalyzed`-gated project into the vanilla `Schematic` book's grant pool, bypassing the gate |
+| T-99 | Declaring `techprintCount` puts the techprint into every faction-less generator — orbital trade ships, map-gen loot and asker-less rewards skip `heldByFactionCategoryTags` |
 
 ## World creation and factions — [`docs/traps/world-creation.md`](traps/world-creation.md)
 
@@ -67,6 +68,8 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-89 | `Trigger_ThingsDamageTaken` cannot express a partial loss of pawns — "destroy a fraction" silently means "destroy all of them" |
 | T-90 | A `RaidStrategyDef` authored without `arriveModes` is silently unselectable forever, and a vanilla strategy is picked in its place |
 | T-91 | `VFEE_Deserters` silently stops raiding whenever no Empire-titled pawn is on the map |
+| T-98 | Swapping a faction's `Faction.def` nulls `Faction.OfEmpire` (and every `FactionManager` singleton) at the next load or faction add/remove, not at the swap |
+| T-100 | An "allied factions" filter over NPC pairs is empty in vanilla — no NPC↔NPC `Ally` relation ever exists, and nothing says so |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -157,8 +160,8 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole. **Four of the five are over that line: `world-creation.md` (29),
-`content-and-buildings.md` (22), `multiplayer.md` (22) and `defs-and-patching.md` (15).
+read whole. **Four of the five are over that line: `world-creation.md` (31),
+`content-and-buildings.md` (22), `multiplayer.md` (22) and `defs-and-patching.md` (16).
 `worldgen-layouts.md` (9) is the only one still short of it.**
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
@@ -168,5 +171,5 @@ T-65, T-70 through T-73, T-76/T-77 and now **T-88 through T-91** sit in
 *Incidents, quests and goodwill* heading inside it — and T-39 and T-48 are the same
 subject filed under determinism and worldgen respectively. **That is eleven entries
 inside `world-creation.md` and thirteen across the register**, against a host file
-whose remaining eighteen are genuinely about factions and worldgen. Adding a group
+whose remaining twenty are genuinely about factions and worldgen. Adding a group
 changes this index's shape and is Conrad's call; it is recorded here rather than taken.

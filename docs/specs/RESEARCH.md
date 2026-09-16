@@ -2,18 +2,26 @@
 
 ## Purpose and scope
 
+> **Authority correction — 2026-09-13.** This document's `requiredAnalyzed` mechanism is
+> the campaign's **Exemplar** route: studying a physical likeness unlocks a project and
+> the item survives. It does not add research progress, produce Intel or consume the
+> item. **Glitterite analysis** is a separate, destructive, long-running activity that
+> consumes a one-use artifact, produces Intel and raises Trace. Any section below that
+> prices this exemplar gate in Intel or treats the two activities as one is superseded.
+> [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115) owns the destructive carrier.
+
 How research is *earned* in this campaign. `CONTEXT.md` settles three routes to knowledge —
 **Practice** (resource cost alone), **Instruction** (a techprint, a book, a teacher) and
-**Analysis** (a physical example you took apart). Practice is the vanilla default and needs no
-spec. Instruction is solved and shipped: techprints are vanilla Royalty, and
+**Exemplar** (a surviving physical example that the colony studies). Practice is the vanilla
+default and needs no spec. Instruction is solved and shipped: techprints are vanilla Royalty, and
 `QuestNode_GiveTechprints` with `fixedProject` is pure XML.
 
-This document owns **Analysis**: what forces a research project to require that the colony
-physically studied a named item, and what happens to the item
+This document owns the **Exemplar gate**: what forces a research project to require that the
+colony physically studied a named item, and what happens to the item
 ([#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)). It is the mechanism behind
 the Glitterite loop in
-[`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) § *Acquire → Analyze →
-Research → Manufacture*.
+[`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md). Destructive Glitterite
+analysis is a different activity owned by [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115).
 
 It also owns **research bypasses** — every route in the bin that advances or completes a
 research project without the colony spending research points at a bench, and the shutoff for
@@ -30,11 +38,10 @@ Neolithic on-ramp, and it meets the other two halves at the same seam they do: e
 them is keyed on `ResearchProjectDef.IsFinished`, so a bypass that finishes a project also
 hands over the verbs it grants.
 
-It does **not** own the Intel balance
+It does **not** own the Intel balance or exchange surface
 ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)) — the interface between the two
-is stated in *The build* § **The seam with Intel** and nothing more. It does not own whether
-Analysis is *priced* in Intel, which is a requirements question
-(the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)). It does not own the
+is stated in *The build* § **The seam with Intel** and nothing more. The Exemplar gate is not
+priced in Intel. It does not own the
 exemplar **catalogue** — which artifact gates which branch is authoring work and belongs to
 [Act V](https://github.com/cjd721/Rimworld-Archinity/issues/47). It does not own research
 **pacing**, tier totals or the era ladder
@@ -170,29 +177,24 @@ All vanilla, all free [V]:
 
 ### 6. The seam with Intel ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54))
 
+> **Corrected seam.** Research never calls `CanAfford` or `TrySpend` on Intel. Accumulated
+> Intel is exchanged elsewhere for a techprint or other unlocking item; the resulting
+> item then uses the ordinary Instruction path. The exemplar gate remains independent.
+
 What this gate needs to know about a recovered exemplar, stated as a contract so #54 can build
 against it:
 
 1. **The gate's entire input is a `ThingDef` on a colony map.** It cannot read a balance and
    does not need to.
-2. **Spending Intel and consuming an exemplar are two different acts, and this gate performs
-   neither *as built*.** Analysis spends nothing. It flips one colony-global boolean per
-   `analysisID`, permanently. Intel is a fungible, decrementable scalar; an analysed exemplar is
-   a one-way latch. Do not model one on the other.
-   **Whether Analysis should *additionally* cost Intel is not decided here, and an earlier draft
-   of this spec was wrong to decide it.** That draft ruled *"do not price analysis in Intel"*;
-   **the ruling is withdrawn.** #67 is a capability ticket and pricing is a gameplay rule — an
-   open **requirements parameter** owned by
-   [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) and tracked as
-   **the Analysis-pricing question**, parked in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2).
-   [`docs/specs/CURRENCIES.md`](CURRENCIES.md) has dropped the matching half of the interface —
-   its expectation that this gate calls `CanAfford`/`TrySpend` — in the same pass. Everything
-   below, and the cost table, assumes the **unpriced default**.
-3. **The clean split** — *under the unpriced default.* The exemplar answers *may this branch be
-   researched at all* — binary, per branch, irreversible. Intel answers *how much of this branch
-   can you afford now* — scalar, spent, replenished. One `requiredAnalyzed` entry at each branch
-   root; Intel priced across the projects beneath it. If Analysis is ever priced, the
-   split moves and this spec grows a C# leg (see *Cost*).
+2. **Intel exchange and studying an exemplar are different acts.** Studying spends
+   nothing and leaves the item intact. It flips one colony-global boolean per
+   `analysisID`, permanently. Intel is an accumulated scalar exchanged elsewhere for
+   an Instruction item; do not model one on the other.
+3. **The clean split.** The exemplar answers *may this branch be researched at all* —
+   binary, per branch, irreversible. Intel answers *which instruction can the colony
+   obtain now*. One `requiredAnalyzed` entry may sit at a branch root; a techprint or
+   authored unlock item may gate a different node. Destructive analysis belongs to
+   [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115), not this manager.
 4. **What #54 may rely on.** `Find.AnalysisManager.TryGetAnalysisProgress(id, out details)` and
    `details.Satisfied` are public, scribed and multiplayer-safe, callable from any C# #54 writes.
    That is the supported "this branch is unlocked" read, and it costs nothing.
@@ -865,12 +867,17 @@ the vanilla mechanism delivers the Glitterite loop is **[I]** until something is
 - [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) — owns the `sae.researchmod`
   verdict and the TechBlock question.
 - [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) — the Intel side of the seam.
-- the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2) — whether Analysis is priced
-  in Intel at all. The cost line above is conditional on its default.
+  **Resolved: Analysis is never priced in Intel.** Research and hacking never debit it; Intel is
+  exchanged for Instruction items ([`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange*). The
+  cost line above is unconditional.
+- [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53) / [`RELIGION.md`](RELIGION.md) —
+  Instruction *supply* for Empire-tagged techprints. The Church keeps `categoryTag Empire`, so its
+  trader route stays open only while the Church is non-hostile and a colonist holds Knight (Baron
+  for its orbital trader). Orbital trade ships generate stock with no faction and bypass
+  `heldByFactionCategoryTags` altogether (**T-99**).
 
 **Open parameters, not mechanisms:** how many analyses per exemplar, the duration, which branch
-roots carry a gate, which artifact gates which branch, and whether Analysis costs Intel. Named
-in *Outstanding decisions*.
+roots carry a gate and which artifact gates which branch. Named in *Outstanding decisions*.
 
 ### Bypasses ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83))
 
@@ -1526,7 +1533,7 @@ the project finishes, all three change, in that order, without a reload.
 |---|---|---|
 | **Which branch roots carry a gate, and which artifact gates each** | The whole shape of the Glitterite loop. The mechanism is settled; the catalogue is authoring. `GLITTERTECH.md` says only "every major Glittertech branch" and defers the catalogue itself | [Act V #47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | **Does analysis consume the exemplar** — as a stated rule, not an implementation default | Recommended here as **no**, on `GLITTERTECH.md`'s own "bring home armor" and on the double-charge argument. It is a gameplay rule and belongs in `docs/requirements/GLITTERTECH.md` as one line rather than living only in a spec | requirements gap, → [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
-| **Does Analysis cost Intel** | Not settled, and **not settleable here** — #67 is a capability ticket. The build, the seam in §6 and the "New C# = none" cost line all assume **unpriced**; a priced gate adds two Harmony postfixes and moves the split in §6.3 | the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2), owned by `docs/requirements/GLITTERTECH.md` |
+| **Resolved: does the Exemplar gate cost Intel?** | No. Studying a surviving exemplar and exchanging accumulated Intel for an Instruction item are different acts. Destructive analysis produces Intel and Trace; it does not satisfy `requiredAnalyzed` | [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115) and [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) |
 | **`analysisRequiredRange` per exemplar, and `analysisDurationHours`** | Pacing dials only. Default `1~1` and 0.5 h match Biotech. A campaign-central exemplar may want `2~2` — **if it does, the three `progressedLetter*` fields become mandatory** (see *Failure and recovery*), which is a real authoring cost, not a dial | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) / [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30) |
 | **Our reserved `analysisID` block** | Collision with a third-party mod is silent (**T-41**). Pick a block, record it here when the first exemplar is authored | this document |
 | **Whether `requiredResearchFacilities` also gates the Glittertech tree** | Ushanka already imposes `MultiAnalyzer` on all 18 and `USH_ResearchProbe` on 14. Composing a second facility gate on top is a pacing choice, not a capability question | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |

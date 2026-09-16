@@ -26,7 +26,9 @@ The Church relationship is systemic rather than a fixed “quest six betrays you
 
 Other Medieval factions react to era, research, Goodwill, Church title, Reverence and prior choices; they can ally, feud and go to war without each needing a bespoke linear questline.
 
-Roads become political infrastructure. Medieval powers maintain serious routes, contest trade corridors and can request or finance road construction. The world begins visibly connecting itself.
+Roads become political infrastructure. On each era advance, civilizations begin upgrading
+routes to allied neighbors over time. The founders can finance those projects to accelerate
+or extend them and can build roads directly. The world begins visibly connecting itself.
 
 Reverence starts producing actual religious movement: converted visitors return as apostles, pilgrims arrive, and factions with growing faith become places where permanent religious institutions may later be established.
 
@@ -60,5 +62,6 @@ Independent route: reject both institutions and build authority through the play
 
 The final Schism name, Church title names and exact public-deed scenes remain to
 be authored. Successful Schism succession is fixed; its autonomy or subordination
-is the player's outcome. The Church route's later faith commitment is described
-in [the ending](ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly).
+is the player's outcome. Final volunteer alignment is described in
+[the ending](ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly); serving the
+Church never replaces the colony's player-chosen faith.

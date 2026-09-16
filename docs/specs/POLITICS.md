@@ -205,7 +205,7 @@ The full set [V]:
 
 | Faction | Flag | Consequence |
 |---|---|---|
-| `Empire` (Royalty) | `permanentEnemyToEveryoneExcept`, 9 entries | **Empire↔Glitterites and Empire↔Free Companies are unwritable in both directions, forever.** Player↔Empire is fine |
+| The Church — Royalty's `Empire`, transformed in place ([`RELIGION.md`](RELIGION.md) § *The build — Exaltation*) | `permanentEnemyToEveryoneExcept`, 9 vanilla entries plus entries appended by **eleven** mods (VFE Insectoids 2, VFE Medieval 2 and VQE Ancients among them) | **Church↔Glitterites and Church↔Free Companies are unwritable in both directions, forever.** Player↔Church is fine. **Our patches may only ever `PatchOperationAdd` to this list** — a Replace erases the eleven mods' entries and freezes goodwill with every one of their factions |
 | `Archinity.Glitterites` | `permanentEnemy` | **No goodwill write to or from them ever succeeds**, player included |
 | Archons (patched) | `permanentEnemy`, deliberately | Same |
 | `Archinity.Drifters` free companies | neither, deliberately | Neutral and fully writable |
@@ -221,7 +221,7 @@ no-ops a ripple write.
 **It can therefore never return ≥75, so it can never produce `FactionRelationKind.Ally`.
 There is not one NPC↔NPC alliance edge anywhere in a fresh vanilla world, and nothing in
 vanilla ever creates one** — all 48 `TryAffectGoodwillWith` call sites have `Faction.OfPlayer`
-on a side. **The alliance ripple has zero edges to follow.** [V]
+on a side. **The alliance ripple has zero edges to follow.** [V] Registered as **T-100**.
 
 The rivalry side is not empty but is useless as a political signal: the only negative edges
 are the blanket `naturalEnemy` (−80, hostile to everyone) and `permanentEnemy` (−100, and

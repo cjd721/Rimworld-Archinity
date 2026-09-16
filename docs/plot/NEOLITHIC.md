@@ -57,15 +57,15 @@ cost limbs and months of usefulness.
 **The founders can die, and the campaign can end.** Deathlessness removes the
 ordinary causes and rapid regrowth and accelerated healing carry them through
 injuries that would kill anyone else, but destruction of the brain kills them
-permanently. That holds from the prologue until the altar authors the Transcendent
-Archogene, after which death becomes temporary absence. The resilience is genetic,
+permanently. The final altar rite later grants the shipped `VRE_Transcendent` gene but
+does not add a custom return-after-death system. The resilience is genetic,
 not narrative armor: it is what makes losing a founder to one bad afternoon
 unlikely rather than what makes it impossible. Hard to kill, not unkillable.
 
 The gene package that delivers this is [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31)'s
 to select, and the deathless-plus-brain-destruction behavior needs verifying
 against 1.6 rather than assuming; the post-transcendence gene is described in
-[the ending](ENDING.md#the-transcendent-archogene).
+[the ending](ENDING.md#transcendence).
 
 Discovery mechanics are in [Charting](../requirements/CHARTING.md); founder rewards and
 the altar's separate progression tracks are in [the altar specification](../requirements/ALTAR.md).

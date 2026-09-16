@@ -106,6 +106,17 @@ Campaign sequence: [PLOT.md](docs/PLOT.md). Shared system requirements: [require
 The two player pawns the Archons marked. Protagonists and progress bar both.
 _Avoid_: the chosen ones, the mains, the player characters
 
+**The player faith**:
+The player-chosen ideology followed by the colony, with Archinity's required campaign
+roles and precepts baked into it. Its theology and presentation remain the player's.
+It is the faith measured by Reverence.
+_Avoid_: the Church, Church ideology
+
+**The Church**:
+The Roman-Catholic-like external faction the vanilla Empire becomes wholesale. It is
+an institution the founders may serve, oppose or replace; it is never shorthand for
+the colony's player-chosen faith.
+
 **The mark**:
 The founders' direct Archon inheritance and the key to core vectors. A head start,
 not a cosmological requirement for transcendence. [Altar](docs/requirements/ALTAR.md)
@@ -179,8 +190,9 @@ A named capability jump within an era. Exact Industrial and later partitions
 remain subject to the campaign and progression specifications.
 
 **The coda**:
-The concluding phase around transcendence and the threshold. Returning permits
-continued Ultra research and play. [Ending](docs/plot/ENDING.md)
+The concluding phase around transcendence and the threshold. Entering the new reality
+ends the game; staying leaves the transcendent pawn and colony unchanged and permits
+continued play. [Ending](docs/plot/ENDING.md)
 _Avoid_: the Archotech era, the endgame
 
 **Chapter close**:
@@ -224,8 +236,9 @@ Spendable leverage earned through Schism operations and used in its anti-Church
 network. Ordered mission progress is separate.
 
 **Intel**:
-Spendable Glitterite technical intelligence used by advanced research and hacking;
-completed knowledge persists. [Glittertech](docs/requirements/GLITTERTECH.md)
+Accumulated Glitterite technical intelligence. The player converts or trades it for
+techprints or other authored instruction items; research never spends Intel directly.
+[Glittertech](docs/requirements/GLITTERTECH.md)
 
 **Trace**:
 How well the Glitterites can correlate and hunt the colony, distinct from their
@@ -259,7 +272,9 @@ The one synced command that raises the ceiling, writes the player faction's tier
 stamps the era-start tick. The only writer of an era anywhere in the project.
 
 **The trigger**:
-What the player does to earn the advance — a capstone that unlocks a rite at the altar.
+Completing the era's capstone research project. The project's prerequisites can encode
+whatever story conditions that boundary requires; no altar rite sits between completion
+and the advance.
 
 **Capstone**:
 The research project whose prerequisites are an era's named Spine nodes. Always declared
@@ -286,11 +301,27 @@ What a node is worth. **Spine** — you cannot go forward without it. **Muscle**
 and you will be measurably weaker for it. **Comfort** — you would never miss it if you
 did not know it existed.
 
-**Practice** · **Instruction** · **Analysis**:
+**Practice** · **Exemplar** · **Instruction**:
 How a node is earned, chosen by asking _how would you actually figure this out?_
-**Practice** — resource cost alone, the default. **Instruction** — a techprint, a book, a
-teacher. **Analysis** — a physical example you took apart.
+**Practice** — a resource cost paid through research, such as cloth consumed by trial and
+error. **Exemplar** — study a physical likeness to unlock the project; the exemplar
+survives. **Instruction** — outside knowledge such as a techprint or a specific authored
+event.
 _Avoid_: gating, hunt requirements
+
+**Glitterite analysis**:
+Long, destructive investigation of a recovered one-use artifact. It produces Intel and
+raises Trace; it never counts as research progress and is not the Exemplar route above.
+
+**Android**:
+An artificial person or body. Androidhood does not by itself remove belief, emotion,
+personhood or access to the channel.
+
+**Glitterite**:
+A member of the Glitterite civilization, which deliberately removed the emotional and
+individual faculties needed for sincere fervor and connection to the channel. Glitterites
+run on anima-rich neutroamine, cannot receive psylinks and are not hackable. Other androids
+need not share those limitations.
 
 ### Process
 

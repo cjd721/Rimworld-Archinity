@@ -29,6 +29,21 @@ and `Game.UpdatePlay()`** — the Unity frame loop, not the tick.
 | `WorldComponentUpdate` | frame loop | **No** |
 | `GameComponentUpdate` | frame loop | **No** |
 
+**The world half, in order.** `World.WorldTick` runs `WorldPathGrid.WorldPathGridTick` **before**
+`WorldComponentUtility.WorldComponentTick`, so a world component reads the day's refreshed tile
+difficulty. **Under Async Time the world is still ticked through the same method:**
+`Multiplayer.Client.AsyncTime.AsyncWorldTimeComp.Tick` → `DoSingleTick`
+(`2606448745/1.6/AssembliesCustom/Multiplayer.dll`).
+
+**Multiplayer's world-grid cache patches are dormant.** `Multiplayer.Client.WorldGridExposeDataPatch`
+— a prefix on `WorldGrid.ExposeData` that would copy every tile's `potentialRoads` from a cached grid
+instead of the save — and its siblings `WorldGridCachePatch` and `WorldRendererCachePatch` act only
+when a static `copyFrom` is set. The only writes to any of the three are `copyFrom = null` inside
+their own prefixes, and no string literal names the field in Multiplayer or MP Compat. So the save's
+road arrays are what load; re-check on a Multiplayer update.
+([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68), `docs/specs/WORLD-INFRASTRUCTURE.md`
+§ *Persistence and multiplayer*)
+
 ## Why `Rand` inside a synced tick is safe
 
 There is **no per-tick reseeding**. Multiplayer runs deterministic lockstep: both

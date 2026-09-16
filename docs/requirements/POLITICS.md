@@ -90,6 +90,14 @@ increasingly follows the founders' ideology reacts politically to that, whether 
 it is allied. The measure itself, its decay and its religious consequences belong to
 [religion](RELIGION.md).
 
+**The planetary resolution produces an immutable outcome.** At the moment the early-Spacer
+political struggle resolves, authored rules evaluate the live campaign state and snapshot:
+the route taken, every faction that ascends into orbit, and any faction defeated or absorbed
+by that result. The snapshot may name zero, one or multiple ascending factions. It is not a
+binary choice fixed at world creation, and later changes to Goodwill, Reverence or settlement
+ownership do not rewrite it. [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100)
+owns the route predicates and tie rules.
+
 ## Campaign progression
 
 Faction involvement should be common rather than occasional — hosting requests,
@@ -144,3 +152,6 @@ A manageable number of live diplomatic situations prevents notification fatigue.
 - Threat pressure — raid strength, composition and frequency — is
   [difficulty and pursuit](PRESSURE.md), not this document. Glitterites use
   [Trace](GLITTERTECH.md#trace--the-glitterites-learn-you-back).
+- [The planetary political outcome](https://github.com/cjd721/Rimworld-Archinity/issues/100)
+  — which live-state predicates select each route and ascending faction, and how multiple
+  satisfied paths compose into one immutable snapshot.

@@ -260,20 +260,24 @@ tickets in a row independently rediscovered this; it is written down now.
   (`rg -a -i "n\x00o\x00t\x00o\x00r\x00i\x00e\x00t\x00y\x00"`) — or sweep a case-neutral
   substring from the middle of the word. A negative from a single-casing sweep is not a
   negative.
-- **Multiplayer Compatibility ships a reference stub that forges ASCII hits for every mod
-  it patches.** `Multiplayer_Compat_Referenced.dll` sits under `1629973374/<version>/Referenced/`
-  for **1.3 through 1.6 — eight files across both corpus roots, four distinct binaries
-  mirrored** — and carries other mods' metadata so the compat project can compile against
-  them. **It is never loaded.** A `.dll` wide pass therefore reports MP Compat as carrying any
-  type or member name belonging to a mod it patches, while the `.dll` the game *actually* loads
-  (`1.6/Assemblies/Multiplayer_Compat.dll`) returns zero for the same symbols — a sweep for
-  `PurchaseQuest` returns the six stubs that carry it and nothing else, a 100% false-positive
-  result. This is the same class of artifact as the four vendored `Assembly-CSharp.dll` copies
-  above, with two things that make it worse: **`-g '!**/obj/**'` does not exclude it** — the
-  path segment is `Referenced/` — and the binary carries **no `ReferenceAssemblyAttribute`**, so
-  nothing inside it marks it as a stub. Only the path does. **Pass
-  `-g '!**/Referenced/**'`** alongside the `obj/` exclusion, or confirm every MP Compat hit
-  against the loaded assembly before attributing it.
+- **Multiplayer Compatibility ships a second, conditionally loaded assembly, and its hits mean
+  something different from every other `.dll`'s.** `Multiplayer_Compat_Referenced.dll` sits under
+  `1629973374/<version>/Referenced/` for **1.3 through 1.6 — eight files across both corpus roots,
+  four distinct binaries mirrored** — and carries other mods' metadata so the compat project can
+  compile against them. **It is loaded, not a stub.** `MpCompatLoader.Load` (called from the
+  `MpCompat` constructor before `PatchAll`) runs `MpCompatLoader.LoadConditional`, which reads that
+  file with Cecil, **strips every type whose `MpCompatFor`/`MpCompatRequireMod` names no running
+  mod**, loads the remainder from memory and initialises it (#68, audited). Some compat classes
+  live **only** there — `VanillaFactionsClassical` and `VehicleFramework` among them — so a sweep
+  that excludes `Referenced/` will return a false *"MP Compat does not cover this mod"*. This
+  doc used to call the file "never loaded"; that was wrong. **What stays true is the pollution**:
+  because it carries the patched mods' own metadata, a raw `.dll` wide pass reports MP Compat as
+  carrying any type or member name of a mod it patches — a sweep for `PurchaseQuest` returns the
+  six copies that carry it and nothing else. `-g '!**/obj/**'` does not exclude it and the binary
+  has no `ReferenceAssemblyAttribute`. **So: pass `-g '!**/Referenced/**'` when hunting *which mod
+  implements a mechanism*, and search it deliberately when asking *whether MP Compat syncs a mod*
+  — then confirm the hit is a compat class (it carries `[MpCompatFor]`), not borrowed metadata.
+  A `Referenced/` hit is real code that runs only while its target mod is running.**
 - **Generic instantiations are invisible to text search.** A
   `Dictionary<Faction, float>` field lives in the `#Blob` heap as a type signature,
   not as a readable string. No grep will find it. Bound this class of question by

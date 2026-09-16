@@ -2,18 +2,29 @@
 
 ## Purpose and scope
 
+> **Authority correction — 2026-09-13.** In this project, **the Church** means the
+> Roman-Catholic-like external faction produced by transforming the vanilla Empire
+> wholesale. **The player faith** is the colony's player-chosen ideology with campaign
+> roles and precepts baked in. They are not the same ideology or institution. The prior
+> selections that create a second Church faction, make the player faith become the
+> Church's doctrine, give one founder a Church leader seat, or store separate Church
+> tolerance/threat state are superseded. Global Reverence drives the Church's political
+> reaction. The capability evidence below remains useful, but those builds must be
+> reselected against the corrected requirements.
+
 How the religious systems in [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md)
 will be built. This document owns four behaviours end to end:
 
 - **Reverence** — the number, the events that move it, the decay that pulls it back, the bands,
   and the surfaces the player reads it on.
-- **Exaltation and the sacred titles** — the Church's rising scale, the thresholds that confer
-  permanent titles by rite, and the privileges those titles unlock
+- **Exaltation and the sacred titles** — the Church (Royalty's Empire, transformed in place), its
+  rising scale, the thresholds that confer permanent titles by rite, the privileges those titles
+  unlock, and the Church's suspicion derived from Global Reverence
   ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53)).
-- **The founders' commitment to the Church** — whether the founders can genuinely adopt the
-  Church's ideology mid-run, what seats them in that ideology's defining roles, and what the
-  campaign stores so the act can be told apart from an accident
-  ([#75](https://github.com/cjd721/Rimworld-Archinity/issues/75)).
+- **The player faith's role hierarchy** — founder-special seats, several core-disciple
+  preacher/converter seats, crafting and other specialist seats, and how those roles unlock
+  during play. Capability is [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114);
+  the authored hierarchy and milestones are [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116).
 - **Religious institutions inside foreign factions** — the church or monastery the player plants
   inside another faction, its Reverence gate, its Goodwill price, the decay it offsets and its
   suppression by a hostile government
@@ -336,286 +347,255 @@ generic "Def field = weight curve keyed on a custom stat" mechanism to borrow. B
 subclass per storyteller behaviour Reverence is meant to move; that is
 [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)'s to price.
 
-## The build — Exaltation and the sacred titles
+## The build — Exaltation: the Empire becomes the Church in place
 
-**Vanilla Royalty already ships the whole Exaltation engine, and it is faction-generic.** Every
-piece the requirement asks for — a rising earned scale, thresholds that confer permanent titles,
-privileges those titles unlock, and a readout that names the next title and its price before you
-reach it — exists in `Pawn_RoyaltyTracker`, `RoyalTitleDef`, `RoyalTitlePermitDef` and
-`CharacterCardUtility`, and **every *per-faction* accessor takes a `Faction` as a parameter** [V].
-The tracker also exposes an aggregate half that takes no faction and spans every ladder the pawn
-holds — `MainTitle()`, `MostSeniorTitle`, `HasTitle(RoyalTitleDef)`, `HasAidPermit`,
-`CanRequireThroneroom()`, `HighestTitleWithThroneRoomRequirements()`,
-`AnyUnmetBedroomRequirements()`, `UpdateAvailableAbilities()`, `IssueDecree()` [V]. That half is
-why §2's interleaving constraint exists; it is not a coupling to the Empire. Nothing is hardwired
-to the Empire except a handful of quest generators and one UI seed.
+**Transform Royalty's `Empire` in place. Keep every identifier it has; change only what the player
+reads, what the faction believes, and how it feels about the founders.** The Church keeps defName
+`Empire`, `categoryTag Empire` and `royalTitleTags EmpireTitle`, and every `RoyalTitleDef`,
+`RoyalTitlePermitDef`, `PawnKindDef` and `TraderKindDef` keeps its defName. What changes is labels,
+names, doctrine and appearance, plus one ~30-line `GoodwillSituationWorker` that makes the Church's
+temper a function of Global Reverence.
 
-So the verdict is neither *repoint* nor *replace*: it is **keep, and instance a second copy.** The
-Church gets its own `royalTitleTags` ladder next to the Empire's, entirely in XML. Royalty's Empire
-FactionDef is not edited, not repointed and not removed — which is also what makes the techprint
-hazard a non-event (below).
+**Cost: XML, ~30 lines of C#, zero Harmony patches, no new saved state, no new Def type**
+([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), reopened and re-resolved
+2026-09-15). The earlier build instanced a second Church faction beside an untouched Empire. The
+campaign has withdrawn it (§ *Authority correction*), and its §-numbered pieces are gone from this
+document. The two patches it needed, the permits-card seed and the bestowing-quest suppressor, are
+**deleted**, not ported (§4, §7).
 
-**VFE Empire is not the donor.** Its honour/hierarchy/vassal layer resolves `Faction.OfEmpire` in
-**136 places across 57 of its 227 decompiled source files** [V] and cannot be pointed at another faction without
-rewriting the assembly; its `HonorsTracker` is a `List<Honor>` of discrete achievement objects with
-no running total, no thresholds and no decay [V]; and its `WorldComponent_Hierarchy` reads a
-`ModSettings` float inside `WorldComponentTick` to decide how many world pawns to generate, which is
-**T-18** with `Rand` attached. It stays what it is — the Empire's ceremony layer — and Exaltation
-does not touch it.
+### 1. Why every identifier stays — the transformation is a presentation layer
 
-### 1. The ladder — pure XML
+Everything that makes the Empire *work* finds it by an identifier. Nothing finds it by its label
+[V]:
 
-| Piece | Field | What it becomes |
+| Key | Resolved by | If renamed or dropped |
 |---|---|---|
-| Church `FactionDef` | `royalTitleTags: [<ChurchTitle>]` | which ladder this faction confers [V] |
-| " | `royalFavorLabel` (`[MustTranslate]`) | the word "exaltation" everywhere the engine prints the scale [V] |
-| " | `royalFavorIconPath` (`[NoTranslate]`) | its icon in the quest reward stack [V] |
-| Each title | `RoyalTitleDef` with `seniority`, `favorCost`, `tags`, `permits`, `rewards`, `permitPointsAwarded`, `grantedAbilities`, `awardThought` / `lostThought` | one rung [V] |
-| Each privilege | `RoyalTitlePermitDef` with `<faction>`, `minTitle`, `permitPointCost`, `royalAid`, `workerClass` | one title privilege [V] |
+| defName `Empire` | `FactionManager.RecacheFactions` sets `empire = FirstFactionOfDef(FactionDefOf.Empire)`, which backs `Faction.OfEmpire` [V]. Vanilla reads that singleton in **22 files**, among them the bestowing ceremony, tribute collector, shuttle-crash rescue, mission roots, throne-room and landing-pad settlement gen, `RewardsGenerator` and the **T-35** permits seed [V]. VFE Empire reads it at **138 sites in 58 of 227** decompiled files (counting `OfEmpire` + `FactionDefOf.Empire`; #53's 136/57 counted `OfEmpire` alone — same data, different basis), and VFE Deserters at **49 in 24 of 168** [V]. **12 more mods** carry `OfEmpire` in their metadata [I]. **Fifteen mods** patch `FactionDef[defName="Empire"]` in their 1.6 folders [V]; WTL's override names it [V]; Royalty's own XML carries 25 `<faction>Empire</faction>` refs, and VFE Empire adds 29 more [V] | `OfEmpire` is null or points at nothing, everywhere at once. Most consumers null-check and stand down, silently |
+| `categoryTag Empire` | `TechprintUtility.GetResearchProjectsNeedingTechprintsNow`, the single techprint chokepoint [V]. Five assemblies hold the exact `#US` literal `"Empire"` — RimPacts, Better Traders Guild, Sensible Factions, Worksites Expanded (`MiningOutpost.dll`), Lemmy Progression [I] | 14 Empire-only techprint projects lose trader and quest-reward supply (§ *Verification*) |
+| `royalTitleTags EmpireTitle` | `FactionDef.RoyalTitlesAwardableInSeniorityOrderForReading` [V]; `TraderKindDef.TitleRequiredToTrade` [V]; VFE Empire's `WorldComponent_Hierarchy` static constructor [V] | **T-36** ladder freeze; the title-gated trade check silently opens (§5); the NPC hierarchy empties |
+| title / permit / pawn-kind defNames | `PawnKindDefOf.Empire_Royal_Bestower` / `Empire_Fighter_Janissary` in `QuestNode_Root_BestowingCeremony`; `PawnKindDefOf.Empire_*` in `QuestNode_Root_ShuttleCrash_Rescue` and `QuestNode_Root_Mission_BanditCamp` [V]; VFE Empire's `RoyalTitleDefExtension.kindForHierarchy` [V] | loud where a `DefOf` binds, silent where a string or an XML cross-reference does (**T-04**) |
 
-`FactionDef.RoyalTitlesAwardableInSeniorityOrderForReading` builds the ladder by
-`item.Awardable && item.tags.SharesElementWith(royalTitleTags)`, sorted by `seniority`, gated only
-on `ModLister.RoyaltyInstalled` [V]. There is no Empire check anywhere in it.
+**So "rename nothing" is the rule, and it is the whole reason the build is cheap.** Every
+Empire-bound route — techprints, titles, permits, quests, VFE Empire's hierarchy and ceremonies,
+VFE Deserters' pursuit, WTL's roster exemption, RimPacts' guards, the Permits tab — resolves to the
+Church **unchanged**, because the Church *is* the faction they already look for. The content
+inventory in § *Outstanding decisions* 18 is therefore a list of **fiction** choices, not of
+breakage.
 
-**`RoyalTitlePermitDef.faction` is a `FactionDef`** [V], and every vanilla permit worker takes the
-faction as a parameter and never reads `Faction.OfEmpire` [V]. Vanilla ships **five** delivery
-workers — `RoyalTitlePermitWorker_DropResources`, `_CallLaborers`, `_CallAid`, `_OrbitalStrike` and
-`_CallShuttle`, with `_Targeted` as their abstract base — plus VFE Empire's own
-`RoyalTitlePermitWorker_Call` [V].
+### 2. What changes — the faction def, in XML
 
-So *elite equipment, rare resources, military aid, specialists and requisitions* are authorable as
-data: the content lives in `royalAid`, and the existing workers deliver it. **`RoyalAid` carries
-`pawnKindDef`, `pawnCount`, `itemsToDrop`, targeting, explosion and temperature fields and nothing
-else** [V]; `cooldownDays` is a field on `RoyalTitlePermitDef`, not on `RoyalAid` — the table two
-rows above has the ownership right and an earlier draft of this paragraph did not.
+`PatchOperation`s on `FactionDef[defName="Empire"]`:
 
-⚠ **Two of the requirement's privilege classes have no data route at all, and an earlier draft of
-this section claimed they did.** *Safe passage* and *political privileges* have **no vanilla
-delivery worker and no `RoyalAid` field** [V]. They cannot be borrowed from vanilla's three trade
-permits either: `TradeSettlement`, `TradeOrbital` and `TradeCaravan` carry no `<faction>` and no
-`workerClass`, and their defNames appear nowhere in `Assembly-CSharp.dll`'s string heap [V] —
-nothing instances them per faction, so a Church copy would be inert. **Both classes need new C# (a
-`RoyalTitlePermitWorker` subclass) or authored quest content, and neither is inside the "~45 lines
-of C#" aggregate in §5.** They are priced separately in §5 and recorded as *Outstanding decisions*
-10 — a gap with no owner, and a clause `docs/requirements/RELIGION.md` should carry.
+- **Presentation — `PatchOperationReplace`.** `label`, `description`, `pawnSingular`, `pawnsPlural`,
+  `leaderTitle`, **`royalFavorLabel` → "exaltation"**, `royalFavorIconPath`, `factionIconPath`,
+  `colorSpectrum`, `allowedCultures`, `backstoryFilters`, and `factionNameMaker` /
+  `settlementNameMaker`, which point at two new `RulePackDef`s. The current values are the Sophian
+  "shattered empire" set [V].
+- **Doctrine — the Church's Roman-Catholic-like creed.** `requiredMemes`, `allowedMemes`,
+  `disallowedPrecepts` and `structureMemeWeights` are replaced; `fixedIdeo` / `ideoName` /
+  `deityPresets` are added if the creed is to be authored rather than generated. These are NPC-only
+  fields funnelled through `FactionGenerator.CreateFactionAndAddToManager` (§ *Superseded build —
+  replacing the player faith* §1 [V]). ⚠ Vanilla Ideology Expanded — Memes and Structures
+  **appends** to `allowedMemes` and `structureMemeWeights` [V]. A Replace discards those additions,
+  which is intended here, but only if our patch runs after theirs (**T-02**, **T-05**). The other
+  non-list patchers: Vanilla Psycasts Expanded **replaces `pawnGroupMakers`** to add `Empire_Caster_*`
+  kinds, Vehicle Framework adds `Vehicles.VehicleRaiderDefModExtension`, Vanilla Base Generation
+  Expanded edits the def, and VRE Android adds a xenotype chance [V]. Any `pawnGroupMakers` rewrite of
+  ours must be ordered against VPE's.
+- ⚠ **Keep the backstory *category names*; rewrite backstory *text* in place.** VFE Deserters'
+  `VFED.HarmonyPatches.MiscPatches.CheckBiosecurity` (postfix on `WorkGiver_Open.HasJobOnThing`) and
+  its `FloatMenuOptionProvider_OpenThing.GetSingleOptionFor` postfix refuse to open a
+  `Building_CrateBiosecured` unless the pawn has a backstory whose `spawnCategories` contains the
+  literal `"ImperialRoyal"` [V] — a category Royalty's royal pawn kinds use (`PawnKinds_Empire.xml`
+  [V]). Renaming `ImperialRoyal` / `ImperialCommon` / `ImperialFighter`, or swapping
+  `backstoryFilters` to new categories, silently locks those crates. Change the backstories' `title`
+  and `description`, not their categories.
+- ⚠ **`permanentEnemyToEveryoneExcept` — `PatchOperationAdd` only, never Replace.** **Eleven** mods
+  append their factions to it (1.6): TechBlock, VFE Settlers, VFE Classical, VRE Android, VFE Tribals,
+  Medieval Overhaul, Better Traders Guild, VFE Empire (`VFEE_NewFamily`), VFE Insectoids 2
+  (`VFEI2_PlayerOutpost`), VFE Medieval 2 (`VFEM2_MerchantGuild`, `_KingdomCivil`, `_CivilClan`,
+  `_PlayerKingdom`) and VQE Ancients (`VQE_NewVaultPlayerFaction`) [V]. A Replace silently
+  makes the Church a permanent enemy of every one of them, and `Faction.CanChangeGoodwillFor` then
+  refuses goodwill writes in both directions, forever [V]. Which factions the Church *should* be
+  allowed to befriend is § *Outstanding decisions* 19.
+- **`techLevel` stays `Ultra` until someone decides otherwise.** Lowering it does **not** cost
+  techprints — `GetResearchProjectsNeedingTechprintsNow` has no tech-level test [V]. What it moves
+  is roster filtering (§3), the contact band, and
+  `FactionManager.TryGetRandomNonColonyHumanlikeFaction`'s tech filters [V]. It is an open
+  parameter, § *Outstanding decisions* 17.
+- **Appearance** is pawn-kind apparel and weapon tags on the `Empire_*` kinds. That is authoring,
+  not mechanism.
 
-**Which of VFE Empire's 29 `VFEI_` permits become Church privileges is
-a copy of the shape, not of the def** — they all carry `<faction>Empire</faction>` and `minTitle`
-pointing at Empire titles, so they are a catalogue to imitate rather than a list to repoint.
-`Permit_CallTechfriar.xml`'s 191 lines of 100% vanilla quest nodes
-([`PARTS-BIN.md`](../data/PARTS-BIN.md) §7.5) is the worked template for a "a specialist arrives,
-works under restriction, and leaves" privilege.
+**The text surface, sized** [V counts]: `RoyalTitles_Empire.xml` holds **7 awardable titles**
+(`favorCost` 1–20, Freeholder → Count) and **4 non-awardable** (Duke, Consul, Stellarch, Emperor).
+16 vanilla `RoyalTitlePermitDef`s in `RoyalPermits_Empire.xml`, plus VFE Empire's 29 `VFEI_` permits if it ships. `PawnKinds_Empire.xml` has
+20 text hits, and Royalty's `Imperial*` backstory files have 87. Six Royalty `Keyed` strings
+hardcode the word **"honor"** instead of reading `royalFavorLabel` — `CommandCallRoyalAidDesc`,
+`CommandCallRoyalAidNotEnoughFavor`, `LetterRewardsForNewTitle`, `LetterPartBestowingExtraHonor`,
+`LetterPartNoExtraHonor` and `CooldownUseFavorCost` [V]. VFE Empire and VFE Deserters add 27 and
+29 English lines naming empire, imperial or honor [V count]. Keyed text is overridden by shipping the same
+keys under our `Languages/English/Keyed` [I — STUB-check, § *Verification*].
 
-**Two permit economies, not one.** `RoyalTitleDef.permits` is granted outright with the title;
-`permitPointsAwarded` accumulates a budget the player spends across `RoyalTitlePermitDef`s at
-`permitPointCost` each, through `Pawn_RoyaltyTracker.GetPermitPoints(faction)` [V]. Both are
-per-faction. The Church ladder sets its own numbers and does not share the Empire's.
+### 3. What must be added so the Church exists at all
 
-### 2. State and persistence — already built, already scribed
+- **The WTL roster exemption — unconditional.** WTL's own `TechLevelConfigDef` exempts `Empire` only
+  under `<ifModPresent>oskarpotocki.vfe.empire</ifModPresent>` [V]. Without VFE Empire, an Ultra
+  Church on a Neolithic world is **stripped from the generated roster** (**T-54**), and every row of
+  §1's table goes dark at once. **T-07** makes that permanent. The fix is ~8 lines: one
+  `TechLevelConfigDef` entry, `Empire → Undefined`, with no mod guard. It can share the def
+  [`ORBIT.md`](ORBIT.md) already plans for the orbital factions.
+- **Roster protection.** `requiredCountAtGameStart` is dead (**T-09**). Royalty only *warns* at world
+  creation when the Empire is removed (`WorldFactionsUIUtility`), and `BackCompatibility` re-adds it
+  only to legacy saves that have no `world.info.factions` [V]. VFE Empire ships the real guard —
+  `VEF.Factions.FactionDefExtension.forcedFactionData`, with `preventRemovalAtWorldGeneration` and
+  `forcePlayerToAddFactionIfMissing` [V as XML; VEF's enforcement [I]]. Without VFE Empire, the
+  guard is the world-creation checklist at the freeze
+  ([#18](https://github.com/cjd721/Rimworld-Archinity/issues/18)).
 
-`RimWorld.Pawn_RoyaltyTracker` holds [V]:
+### 4. Exaltation, and the rite — vanilla, unchanged, and no longer a hazard
 
-| Field | Shape |
-|---|---|
-| `List<RoyalTitle> titles` | one `RoyalTitle` per faction, each with `faction`, `def`, `receivedTick`, `conceited` |
-| `Dictionary<Faction, int> favor` | **the Exaltation number** |
-| `Dictionary<Faction, RoyalTitleDef> highestTitles` | the high-water mark, so rewards are not re-granted |
-| `List<FactionPermit> factionPermits` | `(Permit, Faction, Title, LastUsedTick)` |
-| `Dictionary<Faction, Pawn> heirs` | inheritance |
+**The scale.** `Pawn_RoyaltyTracker.favor[Faction.OfEmpire]` is the Exaltation number: per pawn,
+scribed, faction-keyed [V]. Church quests offer it automatically through `Reward_RoyalFavor` →
+`QuestPart_GiveRoyalFavor` whenever `giverFaction.allowRoyalFavorRewards && def.HasRoyalTitles`
+[V]. `RewardsGenerator`'s `flag5` — `giverFaction == Faction.OfEmpire` — now applies to the Church
+and suppresses its items-only reward stacks [V]. Authored awards use `QuestNode_GiveRoyalFavor`, and
+gates use `QuestNode_RequireRoyalFavorFromFaction` / `QuestNode_HasRoyalTitleInCurrentFaction`
+[V]. The *Exaltation or Reverence* fork is two `Reward`s on one quest, vanilla's
+`Reward_RoyalFavor` and *The build — Reverence* §3B's `Reward_Reverence`.
 
-It is `IExposable`, scribed inside `Pawn.ExposeData`, and **every *per-faction* accessor is
-`Something(Faction faction)`** [V] — `GainFavor`, `SetFavor`, `GetFavor`, `SetTitle`,
-`TryUpdateTitle`, `CanUpdateTitle`, `MainTitleOf`, `GetPermitPoints` and the rest. **The aggregate
-accessors take no faction and span every ladder the pawn holds at once**: `MainTitle()`,
-`MostSeniorTitle`, `HasTitle(RoyalTitleDef)`, `HasAidPermit`, `CanRequireThroneroom()`,
-`HighestTitleWithThroneRoomRequirements()`, `AnyUnmetBedroomRequirements()`,
-`UpdateAvailableAbilities()` and `IssueDecree()` [V]. That is not a coupling to the Empire — it is
-why the constraint below exists, and why two ladders on one pawn have to be designed together.
-**Adding the Church ladder to a save that predates it costs
-nothing**: an absent dictionary key reads as 0 favour and a null title, which is the correct
-starting state, and `FindFactionTitleIndex(faction, createIfNotExisting: true)` creates the row on
-first write [V].
+**The rite is vanilla's bestowing ceremony.** When favour crosses a rung,
+`Pawn_RoyaltyTracker.OnFavorChanged` calls `RoyalTitleUtility.GenerateBestowingCeremonyQuest`
+directly, and the 37,500-tick scan re-arms it [V]. `QuestNode_Root_BestowingCeremony` generates:
 
-⚠ **One `RoyalTitle` per (pawn, faction), and this constrains the ascent track.**
-`FindFactionTitleIndex` matches on `titles[i].faction == faction` and `SetTitle` does
-`titles[index].def = title` [V] — so conferring a second title *on the same faction* **overwrites
-the first, silently**. If the tiers of godhood are also `RoyalTitleDef`s conferred by `SetTitle`
-(**T-28**), they must be conferred *on a different faction* from the Church's, or the Church title
-and the godhood title erase each other. `MostSeniorTitle` then picks the higher `seniority` across
-both ladders, and the aggregate accessors listed above resolve against **both** — so the two
-ladders' `seniority` bands must be chosen together. **No open ticket owns the godhood half** — #21
-and #10 are both closed — so this is *Outstanding decisions* 7, below, and a gap on the map.
+- a shuttle for the bestowing faction;
+- one `Empire_Royal_Bestower` and six `Empire_Fighter_Janissary`;
+- `AddShipJob_Arrive(…, Faction.OfEmpire)`;
+- a throne-room acceptance requirement when the title carries `throneRoomRequirements` [V].
 
-**`MostSeniorTitle` does *not* drive the pawn's displayed name, and an earlier draft of this
-paragraph said it did.** `Verse.Pawn`'s only read of `MostSeniorTitle` is in `GetInspectString` —
-an inspect-pane **body** line, not the label [V]. The displayed name comes from
-`Pawn.LabelNoCount` / `LabelShortCap`, which do not read `pawn.royalty` at all.
-[`TRANSCENDENCE.md`](TRANSCENDENCE.md)'s "the claimed epithet and any Church title coexist without
-contention" is correct and stands; this document was the overstatement. What the seniority
-comparison *does* govern is the aggregate half — throne and bedroom requirements, granted
-abilities, decrees and the bio tab's Titles section via `MainTitle()` — which is the part that
-makes the interleaving constraint real.
+`QuestPart_BestowingCeremony` runs `LordJob_BestowingCeremony`, which is a **`LordJob_Ritual`**.
+Its `RitualOutcomeEffectWorker_Bestowing.Apply` calls `TryUpdateTitle` and adds `honorFromQuality`
+favour for spectators [V].
 
-### 3. What changes it
+Under the second-faction build this was imperial content firing on a Church ladder, and it needed a
+suppressor. **Under this build it is literally the requirement** — *"at Exaltation thresholds, the
+founders perform a rite and receive the next sacred title"* — with a Church bestower and a Church
+honour guard. **Zero code.**
 
-**A. Quest rewards — free, and automatic.** `RewardsGenerator` offers royal favour whenever
-`parms.allowRoyalFavor && giverFaction.allowRoyalFavorRewards && giverFaction.def.HasRoyalTitles`
-[V]. `Faction.OfEmpire` appears in that method only in `flag5`, which suppresses items-only rewards
-— it is **not** a gate on the reward itself [V]. So the moment the Church FactionDef has awardable
-titles, Church quests start offering Exaltation in their reward stack, through
-`Reward_RoyalFavor` → `QuestPart_GiveRoyalFavor`, with `faction = parms.giverFaction` [V]. No code.
+⚠ **But the same `Apply` grants psylinks, and the requirement forbids it.** It loops
+`target.ChangePsylinkLevel(1)` from the current level up to `GetMaxPsylinkLevelByTitle()` [V].
+`maxPsylinkLevel` is 1–6 on Yeoman → Count, and 6 on the abstract `BaseEmpireTitleNPC`, which the
+four non-awardable titles inherit [V]. `docs/requirements/ALTAR.md`
+says the psychic ladder is measured *"independently of Church titles"*, and RELIGION's requirement
+says titles are *"institutional standing, not psychic power"*. **Set `maxPsylinkLevel` to 0 on every
+Church title** — seven XML replaces: six concrete titles and the NPC base. Left alone, the ceremony silently hands out psylinks as title
+perks. The same field makes `PawnGenerator` give NPC title-holders psylinks [V], so zeroing it also
+makes generated Church nobles non-casters; see § *Outstanding decisions* 20. Vanilla Psycasts
+Expanded transpiles `RitualOutcomeEffectWorker_Bestowing.Apply` to call its own
+`ApplyTitlePsylink`, which also reads `newTitle.maxPsylinkLevel` [V] — so zeroing the field covers the
+VPE path too; only its `pawn.Psycasts() == null` branch still grants one base level via
+`ChangePsylinkLevel(pawn, 1)` before adding `max − old` (0) [V], which the STUB below must check.
 
-**B. Authored quests — `QuestNode_GiveRoyalFavor`**, pure XML, for the scripted Church missions
-[V]. `QuestNode_RequireRoyalFavorFromFaction` and `QuestNode_HasRoyalTitleInCurrentFaction` gate on
-it.
+**The alternative, if the fiction rejects an arriving bestower.** The founders run their own rite:
+a `RitualOutcomeEffectWorker` calling `TryUpdateTitle` (~20 lines), plus a prefix on
+`RoyalTitleUtility.GenerateBestowingCeremonyQuest` that refuses (~15 lines — the one chokepoint both
+callers reach [V]). What separates the two is fiction alone: a Medieval-presented Church arriving
+by shuttle, and vanilla's throne-room demands. **Recommended: the vanilla ceremony**, reskinned. It
+is free, it is already a ritual, and it is already Multiplayer-shaped (§ *Persistence and
+multiplayer*).
 
-**C. The Exaltation-or-Reverence fork.** Requirement 4 — *"Church missions must be able to award
-Exaltation **or** Reverence depending on who gets credit"* — is two `Reward` subclasses on the same
-quest, chosen by outcome: vanilla's `Reward_RoyalFavor` and the `Reward_Reverence` in *The build —
-Reverence* §3B. Both appear in the quest's reward stack; both are `QuestPart`s hosted on their own
-types. Nothing new is needed for the fork itself.
+### 5. Privileges — native now, and trade is already one of them
 
-**D. The rite — a `RitualOutcomeEffectWorker` calling `TryUpdateTitle`.** `TryUpdateTitle(faction)`
-→ `UpdateRoyalTitle` consumes exactly `nextTitle.favorCost`, sets the title, fires the award thought,
-grants abilities, applies `rewards`, sends the vanilla gained-title letter, and loops if enough
-favour remains for two rungs [V]. Roughly twenty lines of worker on top of an Ideology ritual gets
-*"at Exaltation thresholds the founders perform a rite and receive the next title"* with the entire
-consequence chain already written. VFE Empire's `RitualOutcomeEffectWorker_BestowTitle` /
-`LordToil_BestowTitle` is the shipped precedent for the shape — but it calls
-`SetTitle(Faction.OfEmpire, …)` directly and reads `GetNextTitle(defToBestow, ofEmpire).favorCost`
-with no null guard, which NREs on the ladder's top rung [V]. Copy the pattern, not the code.
+- **Permits.** Every delivery worker takes the faction as a parameter [V], so vanilla's permits
+  become Church privileges by relabelling. New privileges are `RoyalTitlePermitDef`s with
+  `<faction>Empire</faction>` and a `minTitle` in the existing ladder — a native fit, where the old
+  build needed a copy. **VFE Empire's 29 `VFEI_` permits are usable as-is** if VFE Empire ships.
+  The earlier draft said they could only be imitated, which was true of a second faction only.
+  `RoyalAid` carries pawn, item, targeting, explosion and temperature fields and nothing else; that
+  claim is inherited [I].
+- **Title-gated trade already exists, and an earlier draft called it inert.** All three Empire trader
+  kinds carry `permitRequiredForTrading` — `Base_Empire_Standard → TradeSettlement`,
+  `Empire_Caravan_TraderGeneral → TradeCaravan`, `Orbital_Empire → TradeOrbital` [V].
+  `TraderKindDef.TitleRequiredToTrade` resolves that to the lowest title granting the permit —
+  **Knight** for `TradeSettlement` / `TradeCaravan`, **Baron** for `TradeOrbital` in vanilla's ladder
+  (`RoyalTitles_Empire.xml` [V]). Refusals [V]: `IncidentWorker_TraderCaravanArrival` commonality 0
+  without a permitted colonist; `CaravanVisitUtility` and `IncidentWorker_CaravanMeeting` disable the
+  trade command; `FactionDialogMaker` denies caravan and orbital requests; `FactionUtility.CanTradeWith`
+  refuses the call-with-ship and gates `IncidentWorker_OrbitalTraderArrival.CanSpawn`. `Settlement`
+  only *shows* the requirement (inspect string, tutor dialog). **`FactionUtility.CanTradeWith` also
+  rejects any faction `HostileTo` the pawn's** [V]. **So Church trade — including the trader half of
+  every Empire techprint route — is title-gated for free, and closed outright when the Church is
+  hostile.** That is the
+  requirement's *"titles unlock acquisition routes"*. The earlier claim that those three permits are
+  inert (no `<faction>`, no worker) was true only of a Church *copy*.
+- **Safe passage and political privileges** still have no vanilla worker and no `RoyalAid` field
+  (inherited [I]). They remain unpriced; see § *Outstanding decisions* 10.
 
-**`RoyalTitleDef.awardWorkerClass` — the hook the survey missed, and why the rite stays a ritual
-outcome anyway.** Vanilla ships an
-XML-selectable award hook that this spec did not previously survey: every `RoyalTitleDef` carries
-`awardWorkerClass`, defaulting to `RoyalTitleAwardWorker` — a **no-op** — with
-`RoyalTitleAwardWorker_Instant` shipped as the alternative, which calls `TryUpdateTitle` [V].
-`Pawn_RoyaltyTracker.OnFavorChanged` invokes `item.AwardWorker.OnPreAward` / `DoAward` once per rung
-crossed [V]. It is a real extension point, it needs no Harmony patch, and it is a cheaper home for a
-hook than a ritual worker. The design uses it, but **by leaving it at its default**:
+### 6. Suspicion and hostility — derived from Global Reverence, never stored
 
-- **The default no-op is load-bearing, not an omission.** It is precisely what stops crossing a
-  favour threshold from conferring the title by itself, which is what leaves room for the rite to
-  *be* the conferral event. Setting `RoyalTitleAwardWorker_Instant` on a Church rung would make
-  Exaltation auto-promote and delete the requirement's rite. **Never set it on a Church title** —
-  the omission has to be deliberate and documented, because the field is one word in XML.
-- **A custom `RoyalTitleAwardWorker` subclass is the right place for the *announcement*** — "the
-  founders are eligible for the next rung" — since it fires exactly on the crossing, per rung, with
-  the pawn and the title in hand, inside simulation. That is cheaper than watching favour ourselves
-  [I].
-- **It cannot host the rite itself.** `DoAward` runs synchronously inside `OnFavorChanged`, which
-  is reached from a quest part's `GainFavor`; an Ideology ritual is a lord job that has to be
-  gathered, scheduled and performed. The conferral therefore stays on the
-  `RitualOutcomeEffectWorker` calling `TryUpdateTitle` [I].
+**Mechanism.** One `GoodwillSituationDef` in XML, whose `workerClass` is a new
+`GoodwillSituationWorker_ChurchSuspicion : GoodwillSituationWorker`. It overrides
+`GetMaxGoodwill(Faction other)` and `GetNaturalGoodwillOffset(Faction other)` [V — both `virtual`,
+defaults 100 and 0], and returns non-defaults only when `other == Faction.OfEmpire`. Both values
+come from **derived** Global Reverence (*The build — Reverence* §1) through two `SimpleCurve`s on
+the def's mod extension (**T-18**: never a setting).
 
-⚠ **E. Vanilla will try to fly an imperial shuttle to the Church's ceremony, and the obvious
-suppressor does not suppress.** Two callers generate that quest, not one [V]:
+**Why that produces hostility** [V]:
 
-- `Pawn_RoyaltyTracker.RoyaltyTrackerTickInterval` calls
-  `RoyalTitleUtility.ShouldGetBestowingCeremonyQuest(pawn, out faction)` every 37,500 ticks, which
-  is `CanUpdateTitleOfAnyFaction` — **it iterates every faction in the game** — and on a hit calls
-  `RoyalTitleUtility.GenerateBestowingCeremonyQuest`.
-- **`Pawn_RoyaltyTracker.OnFavorChanged` calls
-  `RoyalTitleUtility.EndExistingBestowingCeremonyQuest` and then
-  `GenerateBestowingCeremonyQuest(pawn, faction)` *directly*, never consulting
-  `ShouldGetBestowingCeremonyQuest`**, whenever the awarded-title seniority rises. `OnFavorChanged`
-  is reached from `GainFavor` — which is exactly what `QuestPart_GiveRoyalFavor` calls, i.e. the
-  "free, and automatic" reward route §3A recommends.
+- `GoodwillSituationManager.GoodwillManagerTick` runs `RecalculateAll` every 1,000 ticks.
+- Each recalculation calls `Faction.OfPlayer.Notify_GoodwillSituationsChanged(other, canSendHostilityLetter: true)`,
+  which runs `FactionRelation.CheckKindThresholds`.
+- `Faction.GoodwillWith` returns `Mathf.Min(baseGoodwill, GetMaxGoodwill(…))` for the player pair.
+- So a cap at or below −75 **makes the Church hostile** (`CheckKindThresholds`: `goodwill <= -75`), with vanilla's hostility letter. It returns to neutral only when effective goodwill reaches **≥ 0** [V].
+- `NaturalGoodwill` meanwhile moves the ±50 drift band `CheckReachNaturalGoodwill` pulls toward.
 
-**So the imperial ceremony fires on the first Church quest reward that crosses a rung**, long before
-any 37,500-tick scan, and an earlier draft of this section proposed a fix that is inert on that
-path: a postfix on the two `ShouldGetBestowingCeremonyQuest` overloads never runs when
-`OnFavorChanged` is the caller.
+Broad penetration therefore makes the Church progressively colder, then hostile — the requirement's
+*"progressively more hostile until betrayal or open attack"*. Betrayal and open attack as *authored
+scenes* are plot content, not this build.
 
-`QuestNode_Root_BestowingCeremony` hardcodes `PawnKindDefOf.Empire_Royal_Bestower`, six
-`PawnKindDefOf.Empire_Fighter_Janissary`, a shuttle, and `Faction.OfEmpire` on the ship job [V] —
-generated **for the bestowing faction**, i.e. wearing Church colours.
+**State: none.** `GoodwillSituationManager.cachedData` is an unscribed cache [V], and Global
+Reverence is derived.
 
-**The fix is a prefix on the single chokepoint `RoyalTitleUtility.GenerateBestowingCeremonyQuest`
-that refuses the Church faction** — the one site both callers funnel through, ~20 lines. Patching
-the two `ShouldGetBestowingCeremonyQuest` overloads as well is optional belt-and-braces (it keeps
-the tick scan from re-selecting the Church and lets it re-scan for another faction); patching
-*only* them is a silent no-op on the reward path. Without the chokepoint prefix the ceremony is not
-a one-off cosmetic error: it re-arms on every rung crossing and again every 37,500 ticks for the
-life of the campaign.
+⚠ **Every Reverence write must call `Find.GoodwillSituationManager.RecalculateAll(canSendHostilityChangedLetter: true)`.**
+The cache is refreshed by `RecalculateAll` only from the 1,000-tick `GoodwillManagerTick`,
+`GravshipUtility` and `SettlementUtility` [V]; otherwise `GetSituations` fills a missing entry lazily —
+including from `FactionUIUtility`'s draw — and then runs `CheckHostilityChanged` [V]. So the host's
+cached cap can lag live Reverence by up to 1,000 ticks, while a client that joins inside that window
+builds its cache from live Reverence and computes a different `GoodwillWith` (mechanism [V]; desync
+[I]). Recalculating on write keeps the cache a pure function of synced state. ~2 lines in the
+Reverence component's setter; still no saved state. **Display: free.** `FactionUIUtility` lists every situation from `GetSituations`
+in the faction row [V], and overriding `GetPostProcessedLabel` names the reason.
 
-### 4. Where the player sees it — free, and already correct
+⚠ **Do not use `GoodwillSituationDef.baseMaxGoodwill`** — nothing reads it (**T-83**). The worker
+override is the only route.
 
-**D1 — the character card, per faction, and it already satisfies the "see the carrot" clause.**
-`CharacterCardUtility` draws one stack element per held title reading
-`"<Title> (<favour>)"`, and its tooltip is `GetTitleTipString(pawn, faction, title, favor)` [V],
-which prints:
+⚠ **The cap is not memory.** `baseGoodwill` keeps accumulating under the clamp [V]. If Global
+Reverence falls, the cap lifts and the Church is instantly as warm as its base allows. Whether
+suspicion ratchets is a requirement, and a ratchet needs one stored high-water mark;
+§ *Outstanding decisions* 11.
 
-- `faction.def.royalFavorLabel` and the current number — *"Exaltation: 14"*;
-- `def.GetNextTitle(faction)` and `nextTitle.favorCost` — the next rung and its price, or
-  *"final title"* at the top;
-- and `RoyalTitleUtility.GetTitleProgressionInfo(faction, pawn)` — **the entire ladder**, each rung
-  with its cost and a running total, plus the non-earnable titles listed separately [V].
-
-That is the requirement's *"see the next title and what it unlocks before reaching it"*, drawn by
-vanilla, faction-generic, with no patch. **This is why the display seam does not fall through here
-the way [#52](https://github.com/cjd721/Rimworld-Archinity/issues/52) left Reverence's**: the
-readout is not VFE Empire's tab, which we are not keeping — it is vanilla's character card, which is
-already ours.
-
-**D2 — the Permits card, and the one place it is *not* free.**
-`Dialog_InfoCard` shows the Permits tab only when `PermitsCardUtility.selectedFaction != null`, and
-`selectedFaction` is seeded in exactly one place — `StatsReportUtility.Reset`, to
-`Faction.OfEmpire` [V]. The in-card faction switcher can reach the Church, but it is drawn *inside*
-`PermitsCardUtility.DrawRecordsCard`, which the tab gates. **So if no `Empire`-def faction exists in
-the world, the permits UI is unreachable for every faction, including ours, with no error** — a
-circular gate. Under this build the Empire is present, so this is latent rather than live; the
-insurance is a ~5-line postfix on `StatsReportUtility.Reset` that falls back to the Church faction
-when `Faction.OfEmpire` is null. This is **T-35**.
-
-> **Trap IDs, reallocated.** #53 proposed these two as T-33 and T-34, reading a register that then
-> ended at T-32. T-33 was already taken by the KCSG unseeded-`System.Random` entry in
-> `docs/traps/multiplayer.md`, and eight other tickets resolved the same night each claimed a T-34
-> of their own. The orchestrator's allocation is authoritative: the permits-tab gate is **T-35** and
-> the faction-def swap is **T-36**. Both are cited as live references throughout this document.
-
-**D3 — the gizmo.** `Pawn_RoyaltyTracker.RoyalAidGizmo()` and `GetGizmos()` build the call-aid
-command from `factionPermits` and are faction-generic [V]. Church permits appear on the founder's
-gizmo bar with no work.
-
-**Not used: VFE Empire's royalty main tab.** It *is* extensible —
-`MainTabWindow_Royalty.DoWindowContents` iterates `DefDatabase<RoyaltyTabDef>.AllDefs` and each
-`RoyaltyTabDef` carries a `workerClass` [V], so a Church tab would be one XML def plus one
-`RoyaltyTabWorker` subclass. But the window is gated by
-`MainButtonWorker_Royalty.Visible → Faction.OfEmpire != null && EmpireUtility.AllColonistsWithTitle().Any()`,
-which is Empire-only [V], so a Church-titled colonist with no Empire title never sees the button.
-Recorded because it looks like the obvious home and is not.
-
-### 5. Cost
+### 7. Cost
 
 | Piece | Cost |
 |---|---|
-| Church FactionDef fields (`royalTitleTags`, `royalFavorLabel`, `royalFavorIconPath`) | **XML** — 3 fields |
-| The title ladder | **XML** — one `RoyalTitleDef` per rung; vanilla's Empire ladder is 7 awardable + 4 non-awardable for reference |
-| Title privileges — equipment, resources, military aid, specialists, requisitions | **XML** — one `RoyalTitlePermitDef` per privilege, reusing the five vanilla delivery `workerClass`es |
-| Title privileges — **safe passage** and **political privileges** | **New C# or quest content — unpriced.** No vanilla worker, no `RoyalAid` field, and vanilla's three trade permits cannot be instanced per faction (§1). **Not in the aggregate below.** |
-| Exaltation as a quest reward | **Nothing** — `Reward_RoyalFavor` is automatic once the ladder exists |
-| Authored Exaltation awards | **XML** — `QuestNode_GiveRoyalFavor` |
-| The consecration rite | **New C#** — one `RitualOutcomeEffectWorker` calling `TryUpdateTitle`, ~20 lines, plus the `RitualPatternDef`/`RitualBehaviorDef`/`RitualOutcomeEffectDef` trio in XML |
-| Rung-crossing announcement (optional) | **New C#** — one `RoyalTitleAwardWorker` subclass named in `awardWorkerClass`, ~10 lines, no Harmony patch (§3D) |
-| Suppressing vanilla's imperial bestowing quest | **Patch** — 1 Harmony **prefix on `RoyalTitleUtility.GenerateBestowingCeremonyQuest`**, ~20 lines. A postfix on the two `ShouldGetBestowingCeremonyQuest` overloads does **not** cover the `OnFavorChanged` path (§3E) |
-| Permits-card faction seed (insurance, **T-35**) | **Patch** — 1 Harmony postfix, ~5 lines |
-| The Exaltation / Reverence fork on a mission | **XML** — two `Reward`s on one quest; both halves already exist |
-| Title rows, next-title tooltip, full ladder readout | **Nothing** — `CharacterCardUtility` |
-| Church↔godhood ladder interleaving (`seniority` bands) | **Gap, no owner** — a design number, not a mechanism. #21 and #10 are closed; *Outstanding decisions* 7 |
+| Church presentation and doctrine on `FactionDef[defName="Empire"]` | **XML** — ~15 field operations + 2 `RulePackDef`s |
+| `permanentEnemyToEveryoneExcept` | **XML** — `PatchOperationAdd` only; entries are a fiction call (decision 19) |
+| Title, permit and pawn-kind relabels | **XML** — 11 titles, 16 vanilla permits (+29 `VFEI_` if shipped), the `Empire_*` kinds |
+| Keyed strings hardcoding "honor" | **XML** — 6 keys; backstories optional |
+| `maxPsylinkLevel` → 0 on Church titles | **XML** — 7 replaces (§4) |
+| WTL roster exemption | **XML** — ~8 lines, unconditional (§3) |
+| Exaltation, quest rewards, the rite, gizmo, character card | **Nothing** — vanilla |
+| Title-gated trade | **Nothing** — vanilla (§5) |
+| Church suspicion and hostility | **New C#** — one `GoodwillSituationWorker`, ~30 lines, + 1 `GoodwillSituationDef`, + a `RecalculateAll` call on every Reverence write (~2 lines) |
+| Permits-card seed (**T-35**) | **Deleted** — `Faction.OfEmpire` always exists |
+| Bestowing-quest suppressor | **Deleted** — the ceremony is the Church's rite (alternative in §4: ~35 lines) |
+| Royal Ascent ending | **XML** — keep or strip the storyteller comp (decision 18) |
+| Safe passage, political privileges | **Unpriced** — no carrier (decision 10) |
 
-**Aggregate: no new saved state, no new Def *types*, ~45 lines of C# in the existing
-`ArchinityAltar.dll`, and the rest XML.** This is the cheapest capability on the board, and the
-reason is that we are not building an Exaltation system — we are declaring a second instance of one
-the DLC already ships.
+**Aggregate: zero Harmony patches, ~30 lines of C# in the existing assembly, no new saved state, no
+new Def type.** The XML is mostly *authoring* — names, creed, catalogue — and none of it waits on
+mechanism.
 
-⚠ **What that aggregate excludes, stated so it is not read as a total.** Safe passage and political
-privileges are not in it and cannot be priced from the survey — they have no vanilla carrier at all.
-The optional announcement worker is not in it. And it is 45 lines only because the rite's
-`RitualPatternDef` / `RitualBehaviorDef` / `RitualOutcomeEffectDef` trio, the ladder and the permit
-catalogue are all XML whose *content* still has to be authored and tuned (*Outstanding decisions* 8).
-
-## The build — the founders' commitment to the Church
+## Superseded build — replacing the player faith with Church doctrine
 
 **Mid-game ideology conversion of the player faction is not merely possible — it is what
 vanilla does on its own.** `RimWorld.FactionIdeosTracker.RecalculateIdeosBasedOnPlayerPawns`
@@ -738,6 +718,13 @@ arithmetic. **Do not engineer around it.**
 
 ### 4. The roles — and the requirement is wrong twice
 
+> **Superseded selection.** These roles belong to the **player faith**, not the Church.
+> The required shape is one or two founder-specific seats, several multi-holder
+> preacher/converter seats for core disciples, at least one production specialist, and
+> campaign-time role unlocks. The role mechanics collected below are inputs to the new
+> capability ticket [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114); the
+> single-leader/single-preacher build is not selected.
+
 [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md) asserts *"the two founding
 pawns are mechanically forced into the ideology's defining leader/preacher roles."*
 Neither half holds as written.
@@ -834,9 +821,10 @@ on that path restricts the precept to `Precept_RoleSingle`, so a ritual role gat
 `Precept_RoleMulti` we author is ordinary, not exotic. Vanilla's choice of two single-holder
 roles is content, not a rule we inherit.
 
-**So the Exaltation consecration rite (§ *The build — Exaltation* §3D) and the final altar rite
-inherit neither the single-holder constraint nor §4A's three-believer threshold.** They inherit
-whatever our own role precepts say — which, for the preacher rung, is `Precept_RoleMulti` with
+**So the final altar rite inherits neither the single-holder constraint nor §4A's three-believer
+threshold.** (The Exaltation rite is now vanilla's bestowing ceremony — § *The build — Exaltation*
+§4. Its participants are the quest's bestower and title-holder, not role precepts, so neither
+constraint reaches it either [I].) The altar rite inherits whatever our own role precepts say — which, for the preacher rung, is `Precept_RoleMulti` with
 `activationBelieverCount: 1` (§4A). Wherever this document previously propagated the
 single-holder constraint to those rites, it was importing a claim that had already been
 withdrawn; see § *Status* → *The commitment*.
@@ -1201,35 +1189,48 @@ is [I]**, as every proposed build is until something is built.
 
 ### Exaltation
 
-- **Multiplayer already syncs the royalty system.** `Multiplayer.Client.SyncMethods` registers
-  `Pawn_RoyaltyTracker.AddPermit`, `RefundPermits`, `SetTitle` and `ResetPermitsAndPoints`, plus
-  `RoyalTitlePermitWorker_DropResources.CallResourcesToCaravan` and a `SyncDelegate.LocalFunc` on
-  `RoyalTitlePermitWorker_CallShuttle.CallShuttleToCaravan` [V]. Those are exactly the
-  player-initiated writes, and they are handled for us.
-- **`GainFavor`, `SetFavor` and `TryUpdateTitle` are deliberately *not* synced** [V], because every
-  vanilla caller is already inside simulation — a `QuestPart`, a ritual outcome, a tick. Our rite is
-  a ritual outcome and inherits that. **A UI button that awards Exaltation would need its own synced
-  command**; nothing in this build has one.
-- **Every tunable is a Def field by construction** — `favorCost`, `permitPointCost`,
-  `permitPointsAwarded`, `cooldownDays`, `royalAid` are all XML (**T-18**).
-- **Titles are per pawn, not per player faction**, so the one-shared-player-faction constraint
-  (**T-21**) does not bite: both players see the same founders with the same titles.
-- ⚠ **VFE Empire's `WorldComponent_Hierarchy` is a live T-18 defect and MP-Compat does not cover
-  it.** `PER_RANK => VFEEmpireMod.Settings.noblesPerTitle` is read inside `WorldComponentTick` →
-  `RefreshPawns` → `FillTitles`, which calls `MakePawnFor` → `PawnGenerator.GeneratePawn` [V]. Two
-  clients with different slider values generate different numbers of world pawns inside the synced
-  tick, consuming the shared `Rand` stream a different number of times.
-  `Multiplayer.Compat.VanillaFactionsEmpire` covers the tab, honors, vassals, permits and the three
-  ceremonies. **It is not true that it does not touch the component at all** — an earlier draft said
-  so. `ReadRoyalPawn` **reads** `WorldComponent_Hierarchy.Instance.TitleHolders` [V]. What it does
-  not do is the load-bearing part: it **patches neither `WorldComponentTick` nor `RefreshPawns` nor
-  `MakePawnFor`** [V], so the settings-driven pawn generation inside the synced tick is unguarded.
-  This is the Empire's problem, not Exaltation's, but it is the reason Exaltation does not build on
-  that component.
-- **The bestowing-quest suppressor sits inside simulation and must be deterministic.**
-  `GainFavor` → `OnFavorChanged` → `GenerateBestowingCeremonyQuest` runs on both clients on the same
-  tick (§3E). A prefix that consults client-local state — a setting, a UI selection — would generate
-  the quest on one client and not the other. It may read `Faction`s and defs, and nothing else [I].
+- **The transformation reaches a save in two halves, and only one of them is free.** Def fields —
+  labels, titles, permits, `royalFavorLabel`, `maxPsylinkLevel`, trader kinds — are read at use time
+  and change on the next load of any save. **Scribed state keeps the Empire.** That covers
+  `Faction.name` (generated by `factionNameMaker`), the faction leader and world pawns with their
+  `Imperial*` backstories, settlement names, and the faction's `Ideo`, which is created only from
+  the worldgen def (`docs/engine/factions-and-worldgen.md` § *What breaks, and the fix* →
+  `Faction.ideos` [V]). **The Church's name, clergy and creed therefore exist only in a world
+  generated after the patch.** Before the freeze ([#18](https://github.com/cjd721/Rimworld-Archinity/issues/18))
+  that costs nothing; after it, it is a new world.
+- **No new saved state anywhere in this build.** Exaltation, titles and permits live on
+  `Pawn_RoyaltyTracker` inside `Pawn.ExposeData`. The suspicion worker's output lives in
+  `GoodwillSituationManager.cachedData`, an unscribed cache rebuilt every 1,000 ticks [V].
+- **Player-initiated royalty writes are already synced.** `Multiplayer.Client.SyncMethods` registers
+  `Pawn_RoyaltyTracker.AddPermit`, `RefundPermits`, `SetTitle` and `ResetPermitsAndPoints`, plus the
+  two caravan permit calls. `GainFavor` / `SetFavor` / `TryUpdateTitle` are deliberately not synced,
+  because every caller is already in simulation. **[I] this pass** — verified by #53's first
+  resolution and not re-read after the reopen.
+- **The rite is simulation.** The bestowing ceremony is a `LordJob_Ritual`, and its
+  `RitualOutcomeEffectWorker_Bestowing.Apply` runs in the synced tick [V].
+  `AssembliesCustom/Multiplayer.dll` names `LordJob_BestowingCeremony` and
+  `LordToil_BestowingCeremony_Wait` [I — metadata hit]. The two-client check is under
+  § *Verification*.
+- **The suspicion worker is simulation — but its cache is not only filled from simulation.**
+  `GoodwillManagerTick` runs inside the world tick on both clients [V], and the worker may read only
+  factions, defs and the Reverence records. But `GoodwillSituationManager.cachedData` is unscribed,
+  `RecalculateAll` runs only from that 1,000-tick tick, `GravshipUtility` and `SettlementUtility`, and
+  `GetSituations` fills a missing entry lazily, including from `FactionUIUtility`, then runs
+  `CheckHostilityChanged` [V]. A client joining after a Reverence change but before the next
+  boundary computes the cap from live Reverence while the host's cache is stale, so `GoodwillWith`
+  can differ (mechanism [V]; desync [I]). **Fix: every Reverence write calls
+  `Find.GoodwillSituationManager.RecalculateAll`** (§6). No saved state.
+- **Titles are per pawn**, so **T-21** does not bite: both players see the same founders holding the
+  same titles.
+- **T-18 surfaces now belong to the Church.**
+  - VFE Empire's `WorldComponent_Hierarchy` reads `PER_RANK => VFEEmpireMod.Settings.noblesPerTitle`
+    inside the daily `WorldComponentTick` → `RefreshPawns` → `MakePawnFor` → `PawnGenerator.GeneratePawn`
+    chain [V, re-read on the 1.6 decompile]. MP Compat reads `WorldComponent_Hierarchy.Instance.TitleHolders`
+    but patches none of those three [I this pass].
+  - WTL's `Filter_Factions` setting gates the roster strip (**T-54**).
+  - Ignorance Is Bliss's `empireIsAlwaysEligible` is a setting ([`CONTEXT.md`](../../CONTEXT.md)
+    § *The band* [I]).
+  - All three must be copied settings files or, better, defs.
 
 ### Reverence
 
@@ -1358,53 +1359,56 @@ is [I]**, as every proposed build is until something is built.
 
 ### Exaltation
 
-- ⚠ **A faction def swap silently kills the title ladder, and this is the campaign's most likely
-  way to lose Exaltation.** [`factions-and-worldgen.md`](../engine/factions-and-worldgen.md)
-  § *Climbing a faction by swapping `Faction.def`* is the era-gating mechanism
-  ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7)), and the seven `[Unsaved]` caches in
-  this area live on `FactionDef`, so they follow the **new** def correctly [V]. But
-  `Pawn_RoyaltyTracker.titles` is keyed by `Faction` **instance**, and the held `RoyalTitle.def` is
-  a title from the **old** def's ladder. If the new tier's def does not carry the same
-  `royalTitleTags`, `RoyalTitlesAwardableInSeniorityOrderForReading.IndexOf(currentTitle)` is -1,
-  `RoyalTitleDefExt.GetNextTitle` returns null, and `CanUpdateTitle` returns false **forever** [V].
-  Exaltation keeps accruing and buys nothing; the character-card tooltip prints *"final title"*; no
-  error is logged. **Every tier def of the Church faction must carry identical `royalTitleTags`,
-  `royalFavorLabel`, `royalFavorIconPath` and `categoryTag`.** This is **T-36**.
-- **A missing `royalFavorLabel` on a tier def degrades silently but harmlessly.**
-  `GenText.CapitalizeFirst` is null-tolerant [V], so the tooltip prints a blank word rather than
-  throwing. Cosmetic, and invisible unless someone reads the tooltip.
-- ⚠ **Never give a Church title `favorCost: 0`** — **T-28**, now verified at source. It is excluded
-  from the ladder, freezes any pawn standing on it, refuses its own `rewards`, and cannot be taken
-  away by `ReduceTitle`. Four separate silent no-ops, none logged.
-- ⚠ **Never give a Church title the `EmpireTitle` tag.** `VFEEmpire.WorldComponent_Hierarchy`'s
-  static constructor collects every `RoyalTitleDef` with `seniority > 0` sharing a tag with
-  `FactionDefOf.Empire.royalTitleTags`, and `MakePawnFor` dereferences
-  `GetModExtension<RoyalTitleDefExtension>().kindForHierarchy` with **no null check** [V] — an NRE at
-  world init. Loud, so not a trap, but a one-character mistake.
-- ⚠ **The imperial bestowing quest is the loud-looking failure that is actually quiet, and it fires
-  earlier than the tick interval suggests.** Without the §3E guard it generates a perfectly valid
-  quest with the wrong content. Nothing errors; the campaign just acquires a shuttle it never
-  wanted. The recovery-relevant detail is *when*: `Pawn_RoyaltyTracker.OnFavorChanged` calls
-  `GenerateBestowingCeremonyQuest` **directly**, so it fires on the **first Church quest reward that
-  crosses a rung** — through `QuestPart_GiveRoyalFavor` → `GainFavor` — and then again on the
-  37,500-tick scan for the life of the campaign [V]. **A postfix on the two
-  `ShouldGetBestowingCeremonyQuest` overloads is inert on the reward path**, which is the path §3A
-  recommends; the guard has to be the prefix on `RoyalTitleUtility.GenerateBestowingCeremonyQuest`.
-  An acceptance check that only advances the clock will not see the miss.
-- **Never set `awardWorkerClass` on a Church `RoyalTitleDef`.** Its default,
-  `RoyalTitleAwardWorker`, is a no-op, and that no-op is what leaves the rite as the conferral
-  event. `RoyalTitleAwardWorker_Instant` calls `TryUpdateTitle` from inside `OnFavorChanged` [V], so
-  one word of XML converts the ladder from rite-gated to auto-promoting, with no error and a
-  perfectly ordinary-looking gained-title letter (§3D).
-- **The Permits card can become unreachable.** Under D2, if `Faction.OfEmpire` is ever null the
-  whole tab is gated off for every faction. This is **T-35**.
-- **Conflict cargo, not a verdict:** RimPacts (`wowgag.rimpacts`, `3762723122`) ships
-  `RptFactionUtility.IsEmpire` — `def.categoryTag == "Empire"` **and** non-empty `royalTitleTags` —
-  plus five Harmony prefixes (`Patch_RoyalSetTitleNull`, `…SetFavorNull`, `…CurrentTitleNull`,
-  `…GetNextTitleNull`, `…PurchasePermitsNull`) that skip the royalty path when no such faction
-  exists [V]. Because this build keeps Royalty's Empire, those guards find it and stand down. They
-  would fire if the Empire were ever removed, and they recognise a faction only by the *Empire*
-  `categoryTag` — so a Church faction is invisible to them by construction.
+- ⚠ **Renaming any identifier in § *The build — Exaltation* §1 is the campaign's largest silent
+  failure.** Change the defName and `Faction.OfEmpire` is null for the 22 vanilla files, VFE Empire's
+  138 sites and VFE Deserters' 49. Change the `categoryTag` and 14 techprint projects lose supply.
+  Change `royalTitleTags` and you get **T-36**. Every one of those consumers null-checks or
+  filters, and none logs. **Relabel; never rename.**
+- ⚠ **The Church must never climb eras by swapping its `Faction.def`.** **T-36** already covers the
+  ladder: the tags, `royalFavorLabel` and `categoryTag` come off the new def. There is a second,
+  delayed failure [V]. `FactionManager.RecacheFactions` resolves
+  `empire = FirstFactionOfDef(FactionDefOf.Empire)`, and it is called only from `ExposeData` (on
+  load), `Add` and `Remove`. After a swap, `Faction.OfEmpire` keeps the old instance until the next
+  save load or faction add/remove. **Then it goes null**, taking every consumer in §1 with it — a
+  session or a week after the change that caused it. Per-era presentation of the Church must go
+  through pawn kinds and the era ceiling, not a def swap. See § *Outstanding decisions* 17, and
+  **T-98**.
+- ⚠ **WTL strips the Church at worldgen unless the exemption is unconditional** (**T-54**; §3). WTL's
+  own entry is guarded on VFE Empire being present [V]. Because of **T-07**, the loss cannot be
+  repaired after worldgen.
+- ⚠ **A `PatchOperationReplace` on `permanentEnemyToEveryoneExcept` silently erases eleven mods'
+  entries** (§2), and `CanChangeGoodwillFor` then freezes goodwill with each of those factions in
+  both directions [V].
+- ⚠ **If `maxPsylinkLevel` is not zeroed, every bestowing ceremony grants psylinks**, one level per
+  loop up to the highest title held (§4) [V]. That breaches `docs/requirements/ALTAR.md`'s
+  independence rule with no error, and the letter reads as a normal promotion.
+- ⚠ **Never give a Church title `favorCost: 0`** — **T-28**. It leaves the ladder, freezes any pawn
+  standing on it, refuses its own `rewards`, and cannot be reduced. The four non-awardable titles
+  are NPC-only for exactly this reason.
+- **Never set `awardWorkerClass` to `RoyalTitleAwardWorker_Instant` on a Church title.** The default
+  no-op is what leaves the ceremony as the conferral event. `_Instant` calls `TryUpdateTitle` from
+  inside `OnFavorChanged` [V, #53 close-out], so the title is conferred without the rite.
+- **A new rung needs `kindForHierarchy` wherever VFE Empire ships.** The earlier warning *"never
+  give a Church title the `EmpireTitle` tag"* is **inverted**: Church titles *are* `EmpireTitle`
+  titles. `WorldComponent_Hierarchy`'s static constructor collects every `RoyalTitleDef` with
+  `seniority > 0` sharing that tag, and `MakePawnFor` dereferences
+  `GetModExtension<RoyalTitleDefExtension>().kindForHierarchy` with **no null check** [V]. That is an
+  NRE on the daily refresh — loud, so not a trap, but a one-element omission.
+- **The suspicion cap is not memory** (§6). A drop in Global Reverence lifts the cap at the next
+  recalculation, and `CheckKindThresholds` turns the Church from hostile back to neutral with a
+  vanilla letter once effective goodwill is **≥ 0** [V] — which the accumulated `baseGoodwill` may
+  already be.
+- ⚠ **Church hostility closes the Empire-only techprint trader route** (§ *Verification*):
+  `FactionUtility.CanTradeWith` rejects a hostile faction and `IncidentWorker_TraderCaravanArrival`
+  refuses to execute for one [V]. So §6 working as designed silently removes supply the
+  reopen comment says must not be lost silently. That is correct if suspicion is meant to track the present, and
+  a silent design miss if it was meant to ratchet (§ *Outstanding decisions* 11).
+- **The Permits tab is no longer at risk.** **T-35** fires only when `Faction.OfEmpire` is null; under
+  this build the Empire *is* the Church, so the tab seeds itself. Its failure mode collapses into the
+  two above: a renamed defName, or a WTL strip.
+- **RimPacts' guards stand down.** `RptFactionUtility.IsEmpire` requires `categoryTag == "Empire"`
+  and non-empty `royalTitleTags`, and the Church keeps both [I this pass — #53 first resolution].
+  Recorded as conflict cargo only.
 
 ### Reverence
 
@@ -1528,38 +1532,42 @@ is [I]**, as every proposed build is until something is built.
 ### Exaltation
 
 Established by
-[Church Exaltation and the sacred titles](https://github.com/cjd721/Rimworld-Archinity/issues/53),
-evidence class **READ** — vanilla `Assembly-CSharp.dll` and `VFEEmpire.dll` (the **1.6** file,
-SHA-1-distinguished from the 1.5 and 1.4 copies), `Multiplayer.dll` and
-`Multiplayer_Compat_Referenced.dll`, all decompiled with `ilspycmd` at the versions pinned in
-`docs/data/MOD-SNAPSHOT.md`. `corpus.py --check` clean at the start and end of that session.
+[Church Exaltation and the sacred titles](https://github.com/cjd721/Rimworld-Archinity/issues/53).
+First resolved 2026-09-12 as a second Church faction beside an untouched Empire; **reopened
+2026-09-14** when the campaign ruled that the Empire becomes the Church wholesale; **re-resolved
+2026-09-15** as the in-place transformation above.
 
-**The mechanisms are [V]; the claim that they compose into a Church ladder is [I]**, as every build
-is until something is built. The specific untried part is the one the corpus says nobody has tried:
-declaring `royalTitleTags` on a FactionDef that is not Royalty's Empire.
+**Evidence class: READ.** `corpus.py --check` was clean at the start of the pass (155 mods). Read
+this pass:
+
+- `Assembly-CSharp.dll` 1.6, decompiled whole;
+- `VFEEmpire.dll` from `2938820380/1.6/Assemblies/`, decompiled whole (227 files);
+- VFE Deserters' 1.6 assembly from `3025493377/1.6/Assemblies/`, decompiled whole (168 files);
+- Royalty's `Faction_Empire.xml`, `RoyalTitles_Empire.xml`, `RoyalPermits_Empire.xml` and the three
+  Empire trader kinds;
+- WTL's `TechLevels_FactionDefs.xml`;
+- the fifteen mods' `FactionDef[defName="Empire"]` patches (1.6).
+
+Inherited claims not re-read are marked **[I]** where they are used.
+
+**The mechanisms are [V]; the claim that they compose into the Church is [I]** until something is
+built. The specific untried composition is the ceremony with `maxPsylinkLevel` 0, and the suspicion
+worker's cap driving `CheckKindThresholds` from Reverence.
+
+**Selected, pending Conrad's fiction calls:** the in-place transformation (§1–§3), the vanilla
+bestowing ceremony as the rite (§4, alternative priced), and the Reverence-derived suspicion worker
+(§6). **Deleted from the build:** the second Church faction, the permits-card seed and the
+bestowing-quest suppressor.
 
 **Verdict for the sourcing ledger ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)):**
 
 | Piece | Verdict |
 |---|---|
-| Royalty's title / favour / permit system | **reuse as-is** — carrier is the base DLC, not a mod |
-| Royalty's `Empire` FactionDef and its content | **reuse as-is, untouched** — it is what keeps 18 techprint routes resolving |
-| VFE Empire honour / hierarchy / royalty tab | **not the donor for Exaltation.** Its own verdict belongs to the Empire's slot, not to this capability — but [#21](https://github.com/cjd721/Rimworld-Archinity/issues/21) is **closed**, so that slot has no owner either |
-| The Church ladder, its titles and its permits | **author from nothing** — but as data, not code |
-
-**T-28 was verified at source and is correct**; **three of #53's own framing premises were wrong,
-and its resolution mis-sited one patch**. See *Exaltation — five corrections*, below.
-
-**This document was itself audited against the 1.6 assemblies after #53 closed, and the audit found
-one design bug and six errors of fact.** The design bug — a bestowing-quest suppressor that does not
-suppress on the path the build actually uses — is corrected in §3E, in the §5 cost table and under
-*Failure and recovery*. The rest are corrected in place and each is marked where it stands: the
-"every accessor takes a `Faction`" overstatement (§2), `MostSeniorTitle` and the displayed name
-(§2), the safe-passage and political-privilege clauses that have no vanilla carrier (§1, §5),
-`cooldownDays`'s owner (§1), the MP-Compat hierarchy claim (*Persistence and multiplayer*,
-*Available mechanisms*), the ladder-shaped-def-type sweep marked [V] when it is [I], and the
-`VFEI_` pawn-call count. The verdict on the whole was **solid with fixes**; the donor was confirmed
-as the correct 1.6 `VFEEmpire.dll` by SHA-1 and every structural claim reproduced.
+| Royalty's title / favour / permit / ceremony system | **reuse as-is** — carrier is the base DLC |
+| Royalty's `Empire` FactionDef and its content | **transform in place, in XML; rename nothing** — every identifier is load-bearing (§1) |
+| VFE Empire honour / hierarchy / ceremonies / `VFEI_` permits | **follows the Church automatically if shipped** — all of it resolves `Faction.OfEmpire`. It brings the `WorldComponent_Hierarchy` **T-18** defect with it |
+| VFE Deserters | **follows the Church automatically if shipped** — its 49 `OfEmpire` sites now point at the Church, which is what the Schism donor reading in [`CURRENCIES.md`](CURRENCIES.md) needs |
+| Church suspicion | **author** — one `GoodwillSituationWorker`, ~30 lines |
 
 ### Reverence
 
@@ -1681,149 +1689,174 @@ because the ticket asked for it. It is a counter-example, not a donor.
 
 ## Available mechanisms
 
-### Exaltation — the donor is vanilla Royalty, and it is the whole system
+### Exaltation — the donor is vanilla Royalty's own Empire
 
 Read from `Assembly-CSharp.dll` at `common/RimWorld/RimWorldWin64_Data/Managed/`, decompiled with
 `ilspycmd` at 1.6.4871.
 
-| Mechanism | What it gives Exaltation | Evidence |
+| Mechanism | What it gives the Church | Evidence |
 |---|---|---|
-| `Pawn_RoyaltyTracker` — `Dictionary<Faction,int> favor`, `List<RoyalTitle> titles`, `List<FactionPermit> factionPermits`, `Dictionary<Faction,RoyalTitleDef> highestTitles` | the number, the title, the privileges and the high-water mark, all per faction, all scribed | [V] |
-| `FactionDef.royalTitleTags` × `RoyalTitleDef.tags` | which faction confers which ladder — the only coupling to the Empire, and it is **data** | [V] |
-| `FactionDef.royalFavorLabel` / `royalFavorIconPath` | the scale's name and icon, `[MustTranslate]` / `[NoTranslate]` | [V] |
-| `FactionDef.RoyalTitlesAwardableInSeniorityOrderForReading` | the ordered ladder, filtered by `Awardable` and tag, gated only on `ModLister.RoyaltyInstalled` | [V] |
-| `RoyalTitleDefExt.GetNextTitle` / `GetPreviousTitle` | rung arithmetic, `Faction`-parameterised | [V] |
-| `Pawn_RoyaltyTracker.GainFavor` / `CanUpdateTitle` / `TryUpdateTitle` / `UpdateRoyalTitle` | the threshold engine: consumes `favorCost`, sets the title, fires thoughts, grants abilities, drops `rewards`, sends the letter, loops for multiple rungs | [V] |
-| `Pawn_RoyaltyTracker.OnFavorChanged` | the crossing event, reached from `GainFavor`: runs each crossed rung's award worker, then calls `RoyalTitleUtility.EndExistingBestowingCeremonyQuest` and `GenerateBestowingCeremonyQuest` **directly**, without consulting `ShouldGetBestowingCeremonyQuest`. This is why the suppressor is a prefix on the generator (§3E) | [V] |
-| `RoyalTitleDef.awardWorkerClass` — default `RoyalTitleAwardWorker` (a **no-op**), with `RoyalTitleAwardWorker_Instant` shipped as the alternative (calls `TryUpdateTitle`); invoked as `AwardWorker.OnPreAward` / `DoAward` once per rung crossed | an XML-selectable hook on the crossing, needing no Harmony patch. The default no-op is what keeps conferral on the rite rather than on the threshold; a custom subclass is the cheapest home for a rung-crossing announcement (§3D) | [V] |
-| `RoyalTitlePermitDef` with `faction`, `minTitle`, `permitPointCost`, `prerequisite`, `royalAid` | title privileges as data; `permitPointsAwarded` / `GetPermitPoints` is a second, budgeted economy | [V] |
-| `RoyalTitlePermitWorker_CallAid` / `_CallLaborers` / `_CallShuttle` / `_DropResources` / `_OrbitalStrike` / `_Targeted` | the delivery workers — **none reads `Faction.OfEmpire`** | [V] |
-| `Reward_RoyalFavor` → `QuestPart_GiveRoyalFavor` | Exaltation as a first-class quest reward with a stack element; `faction = parms.giverFaction` | [V] |
-| `RewardsGenerator` `flag2` | auto-offers it for any faction with `allowRoyalFavorRewards && def.HasRoyalTitles`; `Faction.OfEmpire` appears only in `flag5`, which suppresses items-only rewards | [V] |
-| `QuestNode_GiveRoyalFavor`, `QuestNode_RequireRoyalFavorFromFaction`, `QuestNode_HasRoyalTitleInCurrentFaction` | XML award and gate nodes | [V] |
-| `CharacterCardUtility.GetTitleTipString` + `RoyalTitleUtility.GetTitleProgressionInfo` | the "see the carrot" readout: current favour, next title and its cost, and the whole ladder with running totals | [V] |
-| `Pawn_RoyaltyTracker.RoyalAidGizmo` / `GetGizmos` / `OpenPermitWindow` | the in-game call-aid surface, faction-generic | [V] |
-| `Multiplayer.Client.SyncMethods` | `AddPermit`, `RefundPermits`, `SetTitle`, `ResetPermitsAndPoints` already registered | [V] |
+| `FactionManager.RecacheFactions` → `Faction.OfEmpire` | the singleton every Empire consumer reads; resolved by def identity, recached only on load / `Add` / `Remove` | [V] |
+| `Pawn_RoyaltyTracker` — `favor`, `titles`, `factionPermits`, `highestTitles` | Exaltation, the title, the privileges, the high-water mark; per pawn, per faction, scribed | [V, #53] |
+| `FactionDef.royalTitleTags` × `RoyalTitleDef.tags`; `RoyalTitlesAwardableInSeniorityOrderForReading` | the ladder, filtered on `Awardable` (`favorCost > 0`, **T-28**) | [V, #53] |
+| `FactionDef.royalFavorLabel` / `royalFavorIconPath` | the word "exaltation" wherever the engine prints the scale — except six hardcoded Keyed strings (§2) | [V] |
+| `Pawn_RoyaltyTracker.OnFavorChanged` → `RoyalTitleUtility.GenerateBestowingCeremonyQuest` → `QuestNode_Root_BestowingCeremony` → `QuestPart_BestowingCeremony` → `LordJob_BestowingCeremony : LordJob_Ritual` → `RitualOutcomeEffectWorker_Bestowing.Apply` | **the rite**: bestower and honour guard arrive, `TryUpdateTitle`, spectator favour, and a psylink loop to `GetMaxPsylinkLevelByTitle` | [V] |
+| `RoyalTitleDef.maxPsylinkLevel` | read by the ceremony's psylink loop, `PawnUtility.GetMaxPsylinkLevelByTitle` and `PawnGenerator`'s NPC title psylinks | [V] |
+| `Reward_RoyalFavor` / `QuestPart_GiveRoyalFavor`; `RewardsGenerator` | Exaltation as an automatic quest reward; `flag5` suppresses items-only stacks for the Church | [V] |
+| `RoyalTitlePermitDef` + the five delivery workers | privileges as data; workers take the faction as a parameter | [V, #53] |
+| `TraderKindDef.permitRequiredForTrading` → `TitleRequiredToTrade`; refused in `IncidentWorker_TraderCaravanArrival`, `CaravanVisitUtility`, `IncidentWorker_CaravanMeeting`, `FactionDialogMaker`, `FactionUtility.CanTradeWith` (which also rejects hostility); shown by `Settlement` | **title-gated trade**, on all three Empire trader kinds | [V] |
+| `GoodwillSituationWorker.GetMaxGoodwill` / `GetNaturalGoodwillOffset`; `GoodwillSituationManager` (1,000-tick recalc → `Notify_GoodwillSituationsChanged`); `Faction.GoodwillWith` clamp | Reverence-derived suspicion that turns into hostility, with no stored value | [V] |
+| `CharacterCardUtility.GetTitleTipString` + `RoyalTitleUtility.GetTitleProgressionInfo` | the "see the carrot" readout — current Exaltation, next title and price, whole ladder | [V, #53] |
+| `TechprintUtility.GetResearchProjectsNeedingTechprintsNow` | the one techprint tag test: `heldByFactionCategoryTags.Contains(faction.def.categoryTag)`, **no tech-level test** | [V] |
 
-**What is Empire-bound in vanilla, precisely** [V]: `Faction.OfEmpire` is
-`FactionManager.FirstFactionOfDef(FactionDefOf.Empire)` — a lookup by **defName**, not by tag. It is
-read by worldgen (`GenStep_Outpost`, `GenStep_Settlement`, two `SymbolResolver`s), the tribute-collector
-incident, six quest roots, `RewardsGenerator`'s items-only suppression,
-`QuestNode_Root_BestowingCeremony`, and `StatsReportUtility.Reset`'s permits seed. **None of those
-is part of the title mechanism**; they are Royalty's *content*.
+**Where vanilla reads `Faction.OfEmpire` / `FactionDefOf.Empire`** — 22 files [V], every one of
+which follows the Church:
+
+- **Worldgen:** `GenStep_Settlement` and `GenStep_Outpost` (throne rooms, landing pads), with the two
+  `SymbolResolver_BasePart_*` leaves they drive.
+- **Quest roots:** `QuestNode_Root_BestowingCeremony`, `_DistressCall`, `_Mission`,
+  `_Mission_AncientComplex`, `_ShuttleCrash_Rescue`; `QuestGen_Lord`; `QuestPart_LendColonistsToFaction`.
+- **Incident:** `IncidentWorker_CaravanArrivalTributeCollector`.
+- **Rewards:** `RewardsGenerator`, `Reward_Items`.
+- **Royalty:** `Pawn_RoyaltyTracker` (heir exclusion).
+- **UI:** `StatsReportUtility` (**T-35**), `WorldFactionsUIUtility` (the world-creation warning).
+- **Load:** `BackCompatibility` (re-adds the Empire to legacy saves).
+- **Plumbing:** `Faction`, `FactionManager`, two debug-action classes.
 
 ### Exaltation — the wide pass, and what it justifies
 
-Both corpus roots, all 155 mods, active and inactive, plus vanilla and the DLC. `.dll` swept with
-`rg -a -g '*.dll' -g '!**/obj/**'` and again with `--encoding utf-16le`; `.xml` swept separately.
-Validated against known hits (`HonorsTracker` in `VFEEmpire.dll` for ASCII;
-`VFEEmpire.BestowTitle` / `RoyalAddress` for UTF-16LE) before any negative was trusted.
-**`--encoding utf-16le` is an unsound sweep form — [#103](https://github.com/cjd721/Rimworld-Archinity/issues/103)** — and
-the negatives below were re-checked after the fact; see § *Verification* → *Exaltation* for what
-that re-check found.
+Both corpus roots, all 155 mods, active and inactive, plus vanilla and the DLC. Every `.dll` sweep
+excludes `obj/` and `Referenced/`.
 
-- **`royalTitleTags` appears in exactly one XML file in the entire corpus, vanilla and DLC
-  included** — `Data/Royalty/Defs/FactionDefs/Faction_Empire.xml`, value `EmpireTitle` [V]. No mod
-  declares it, and no `PatchOperation` inserts it. **Nothing on disk has ever instanced the title
-  system to a non-Empire faction.** All three code hits are reads:
-  `VFEEmpire.WorldComponent_Hierarchy`'s static constructor, `RimPacts.RptFactionUtility.IsEmpire`,
-  and EdB Prepare Carefully's setup UI.
-- **Only three ladder-shaped def types were found corpus-wide:** `RoyalTitleDef`,
-  `RoyalTitlePermitDef` and `VFEEmpire.HonorDef` **[I]**. The evidence is a vocabulary sweep, and a
-  vocabulary sweep proves the absence of those *strings*, not the absence of the category — the
-  residual gap at the end of *Verification* concedes exactly this, and the two claims must agree.
-  Zero hits, both encodings, for `RankDef`, `ReputationDef`,
-  `PrestigeDef`, `RenownDef`, `StandingDef`, `MeritDef`, `EsteemDef`, `AccoladeDef`,
-  `CommendationDef`, `ExaltationDef`, `PromotionDef`, `OrdinationDef`, `ClearanceDef`,
-  `PrivilegeDef`, `CharterDef`.
-- **The nearest non-Empire standing ladder is VFE Classical's Senate** (`2787850474`) [V] —
-  `WorldComponent_Senators` holding `SenatorInfo{Pawn, Favored}` per faction, declared in XML on
-  **non-Empire** FactionDefs (`numSenators`, `senatorPerks`, `senatorResearch`, `finalPerk`), with
-  `GameComponent_PerkManager.ActivePerks` delivering `PerkDef` stat effects. It proves the *shape*
-  on a non-Empire faction and lacks both halves we need: `Favored` is a bool per senator, so there
-  is no scale, and the reward is a perk, not a conferred name.
-- **The nearest scale is RimPacts' `TrustRecord.trust`** (`3762723122`) [V] — a per-faction 0–100
-  with decay floors, a scribed 10-entry audit log, threshold-gated privileges and named grade bands.
-  It runs the wrong direction (the faction's trust *in* the player) and its grades are computed
-  display bands, never conferred.
-- **The strongest form of the negative is adversarial**: RimPacts is a 200-type diplomacy overhaul
-  with vassalage, tribute, courts and puppet states, and it **refuses** to run the royalty path on a
-  faction lacking the Empire's tags rather than extending it [V].
+- **`#Strings`, ASCII, `-i`, `OfEmpire`** — 14 mods [I]. VFE Empire and VFE Deserters are the
+  validating hits, confirmed on full decompile; the other 12 are metadata hits only.
+- **`#US`, exact literal `"Empire"`** — a length-prefixed, null-interleaved pattern
+  (`\x0DE\x00m\x00p\x00i\x00r\x00e\x00[\x00\x01]`) with the escapes typed literally. It found 5
+  assemblies: RimPacts, Better Traders Guild (both copies), Sensible Factions, Worksites Expanded's
+  `MiningOutpost.dll`, Lemmy Progression. A Python reader confirmed the `0x0D` prefix byte on each
+  [I — a hit, not a reading].
+- **A caution on validators.** The first validator, `VFEEmpire.BestowTitle`, was **not** an exact
+  `#US` entry — Python showed it continuing into `.Fi…` — so it could not validate an exact-literal
+  form. The form was validated by its own byte-confirmed hits instead. **A substring you remember is
+  not an exact literal until you have looked at the bytes.**
+- **`#US` substring `E\x00m\x00p\x00i\x00r\x00e\x00` with `-i`** — 12 mods including VFE Empire,
+  the same-heap known hit.
+- **XML: `>Empire<`, `defName="Empire"`, `EmpireTitle`, `Empire_*`** — 24 mods. **Fifteen** patch the
+  FactionDef in 1.6 (a first pass counted ten, missing the `defName = "Empire"` spacing and three
+  `PatchOperationFindMod`-wrapped appenders), and **eleven** of those append to
+  `permanentEnemyToEveryoneExcept` (§2).
+- **No mod `replacesFaction` the Empire, and none removes it** [V].
 
-### VFE Empire — surveyed, and rejected as the donor
+**The negative that matters is the absence of a breaking consumer, and it is narrow.** What was
+searched: `Faction.OfEmpire` / `FactionDefOf.Empire` uses, and `"Empire"` string literals, in the full
+decompiles of vanilla, VFE Empire and VFE Deserters [V]; the other assemblies by metadata only [I].
+Within that, nothing resolves the Empire by `label`, `description`, `techLevel` or `pawnSingular`.
+**It is not a negative for keys this build might also touch** — the one found by audit is VFED's
+`"ImperialRoyal"` backstory-category literal (§2), which no `"Empire"` search could see. Treat any
+other field the reskin changes (backstory categories, pawn-kind defNames, apparel tags) as unsearched.
 
-Read from `2938820380/1.6/Assemblies/VFEEmpire.dll`, confirmed as the 1.6 file by SHA-1 against the
-1.4 and 1.5 copies and by the absence of `LoadFolders.xml`. **The mod's 176 `.cs` files live under
-`1.4/Source/` and are not what 1.6 runs** (`MOD-SNAPSHOT.md` marks it ⚠).
+### VFE Empire and VFE Deserters — no longer rejected; they follow the Church
 
-- **`Faction.OfEmpire` / `FactionManager.OfEmpire` is resolved in 136 places across 57 of the mod's
-227 decompiled source files** [V].
-  Honors, hierarchy, vassals, the royalty tab, every ceremony gizmo and every `LordToil` gate on it.
-  It cannot be instanced to another faction without rewriting the assembly.
-- **`HonorsTracker` is not an Exaltation scale.** It is `List<Honor>` + `List<Honor> pendingHonors`,
-  scribed `LookMode.Deep`, and `UpdateTitles()` writes the honours into the pawn's
-  `NameTripleTitle` [V]. No running total, no thresholds, no decay — #98's claim re-derived and
-  confirmed. Its only contact with the scale is `GameComponent_Honors.GameComponentTick` granting
-  `GainFavor(Faction.OfEmpire, 1)` every 300,000 ticks for a `VFEE_LordOf` honour on a held
-  settlement [V]. `HonorDef` remains valuable as the *named permanent mark* pattern
-  ([`PARTS-BIN.md`](../data/PARTS-BIN.md) §7.5), which is a different capability.
-- **`WorldComponent_Hierarchy` generates and mothballs the NPC nobility** for every Empire title,
-  refreshed daily [V]. Its `Titles` list is built in a static constructor from
-  `FactionDefOf.Empire.royalTitleTags`; `PER_RANK` reads `VFEEmpireMod.Settings.noblesPerTitle`
-  **inside the tick that calls `PawnGenerator.GeneratePawn`** — **T-18**, with `Rand` attached, and
-  **MP-Compat patches none of `WorldComponentTick`, `RefreshPawns` or `MakePawnFor`** [V].
-- **`RoyaltyTabDef` is a genuine extension point** — `MainTabWindow_Royalty.DoWindowContents`
-  iterates `DefDatabase<RoyaltyTabDef>.AllDefs`, each with a `workerClass : RoyaltyTabWorker` [V].
-  Unusable here only because `MainButtonWorker_Royalty.Visible` requires an Empire-titled colonist.
-- **`rwmt.multiplayercompatibility` ships a current `[MpCompatFor("OskarPotocki.VFE.Empire")]`
-  handler** covering the tab, honors, vassals, permits and the three ceremonies [V]. It does
-  **read** the hierarchy component — `ReadRoyalPawn` resolves a pawn through
-  `WorldComponent_Hierarchy.Instance.TitleHolders` [V] — so "MP-Compat does not touch it", as an
-  earlier draft put it, is wrong. The precise and load-bearing statement is that it patches neither
-  `WorldComponentTick` nor `RefreshPawns` nor `MakePawnFor` [V]. VFE Empire is MP-safe as shipped,
-  the hierarchy component's generation path excepted.
-- **The 29 `VFEI_` permits are a catalogue to imitate, not a list to repoint** — every one carries
-  `<faction>Empire</faction>` and a `minTitle` in the Empire ladder [V]. Sixteen are resource drops
-  (that count is correct); **seven** are pawn calls — `CallCataphractPlatoon`,
-  `CallJanissaryPlatoon`, `CallTrooperPlatoon`, `CallTechfriar`, `CallLaborerUnion`,
-  `CallImperialRegiment` and `CallStellicGuards` [V], not the five an earlier draft listed — and the
-  rest are shuttle, turret, shield, absolver and orbital-beam calls.
+Read from the **1.6** assemblies. The source trees ship only under `1.4/` and are not what 1.6
+runs.
 
-### Exaltation — five corrections
+- **VFE Empire resolves the Empire at 138 sites in 58 of 227 decompiled files [V]**, counting
+  `OfEmpire` + `FactionDefOf.Empire`. #53's *"136 places across 57"* counted `OfEmpire` alone and
+  reproduces exactly on the same decompile — same data, different basis. Honors, hierarchy, vassals, the royalty
+  tab, ceremonies and `LordToil` gates all follow the Church unchanged. Its main button requires an
+  Empire-titled colonist, which a Church-titled founder now is [I — #53's reading].
+- **VFE Deserters resolves it at 49 sites in 24 of 168 files [V]** — imperial patrols, forces-size
+  patches, intel extraction, `WorldComponent_Deserters`. **It is the Schism donor keyed to the
+  Church by construction.** It holds no `"Empire"` string literal [V].
+- **`HonorsTracker` is still not the Exaltation scale** — a `List<Honor>` with no running total
+  (#53, [I] this pass).
+- **`WorldComponent_Hierarchy`** builds its title list from `FactionDefOf.Empire.royalTitleTags` and
+  NREs on a rung without `kindForHierarchy` [V]. Its settings-in-tick defect is **T-18** (§ *Persistence
+  and multiplayer*).
+- **VFE Empire's `Patches/Empire.xml`** adds `VFEE_NewFamily` to the enemy allow-list,
+  `FactionExtension_Deserters { canSendDeserters: false }`, and VEF `forcedFactionData`, which makes
+  the faction required at worldgen and during play [V as XML].
+- **The 29 `VFEI_` permits are Church privileges as shipped** — `<faction>Empire</faction>`,
+  `minTitle` in the Church ladder [V as XML].
 
-1. **T-28 is correct, and is now verified rather than corroborated.**
-   `RimWorld.RoyalTitleDef.Awardable` is literally `public bool Awardable => favorCost > 0;` [V].
-   The consequence is **stronger** than T-28 recorded: a `favorCost: 0` title is not merely
-   invisible to award paths, it is a **trap you cannot get out of**. Four silent no-ops, none
-   logged — `FactionDef.RoyalTitlesAwardableInSeniorityOrderForReading` omits it;
-   `RoyalTitleDefExt.GetNextTitle` returns null because `IndexOf` is -1, so progression stalls
-   permanently; `Pawn_RoyaltyTracker.UpdateRoyalTitle` early-returns on
-   `!currentTitle.Awardable`; and `ApplyRewardsForTitle` refuses to deliver its `rewards`.
-   `ReduceTitle` also early-returns, so it cannot be taken back. `SetTitle` itself never consults
-   `Awardable` [V], so the direct-call approach the ascent track uses does work.
-2. **"Empire's honor machinery is the obvious donor" is wrong about which machinery.** The honour
-   *scale* is vanilla Royalty's `favor`, not VFE Empire's `Honor`. VFE Empire's contribution is
-   ceremony and NPC nobility on top of a system it does not own.
-3. **"Whether the honor scale can be instanced to a non-Empire faction" has a data answer, not a
-   code answer.** Every method is `Faction`-parameterised; the coupling is one XML field pair
-   (`FactionDef.royalTitleTags` × `RoyalTitleDef.tags`). Nothing on disk has done it, which makes it
-   untried — not blocked.
-4. **The display seam does not fall through, and the reason is not the one the ticket expected.**
-   #53 anticipated that rejecting Empire's machinery would leave the ladder with no display owner,
-   as [#52](https://github.com/cjd721/Rimworld-Archinity/issues/52) did to Reverence. It does not,
-   because the readout was never VFE Empire's — `CharacterCardUtility.GetTitleTipString` and
-   `RoyalTitleUtility.GetTitleProgressionInfo` are vanilla and faction-generic [V]. The only display
-   work is the ~5-line permits-card seed (**T-35**).
-5. **#53's resolution mis-sited the bestowing-quest suppressor, and this document inherited it.**
-   The resolution's Cost row prices "the bestowing-quest suppressor (~20)" as a postfix on the two
-   `ShouldGetBestowingCeremonyQuest` overloads. `Pawn_RoyaltyTracker.OnFavorChanged` never consults
-   that method — it calls `RoyalTitleUtility.EndExistingBestowingCeremonyQuest` and then
-   `GenerateBestowingCeremonyQuest` **directly** [V] — and `OnFavorChanged` sits on the
-   `QuestPart_GiveRoyalFavor` → `GainFavor` path the same resolution calls "free, and automatic".
-   The suppressor belongs on the generator, which is the chokepoint both callers funnel through
-   (§3E). Related and from the same reading: #53 never surveyed `RoyalTitleDef.awardWorkerClass`,
-   the shipped XML-selectable hook on that same crossing, whose default no-op is what keeps
-   conferral on the rite rather than on the threshold (§3D).
+### Exaltation — corrections, cumulative
+
+1. **The second-faction verdict is withdrawn by requirement, not by evidence.** Its mechanism claims
+   — faction-parameterised titles, techprint tags, VFE Empire hardwiring — were sound and are
+   reused above.
+2. **Vanilla's three trade permits are not inert.** They were inert only as a *copy*.
+   `TraderKindDef.permitRequiredForTrading` names them on all three Empire trader kinds, and the
+   permit gates trade in five places (§5) [V]. The earlier survey searched
+   `Assembly-CSharp`'s string heap for the defNames, and XML-bound references never appear there.
+3. **The bestowing ceremony grants psylinks** — `RitualOutcomeEffectWorker_Bestowing.Apply` loops
+   `ChangePsylinkLevel` to `GetMaxPsylinkLevelByTitle` [V]. No earlier draft recorded this, and it
+   was harmless only while the ceremony was suppressed.
+4. **"Never give a Church title the `EmpireTitle` tag" is inverted** — they are the same titles now.
+5. **VFE Empire's count, restated on a named basis:** 138 sites in 58 files for `OfEmpire` + `FactionDefOf.Empire`; #53's 136 in 57 is `OfEmpire` alone. Both reproduce [V]; neither is an error.
+6. **The imperial-ceremony hazard is gone, not fixed.** The chokepoint analysis stands:
+   `OnFavorChanged` calls the generator directly [V]. It now describes the Church's own rite.
+7. **Carried from #53 and still true:** **T-28** is `favorCost > 0` with four silent no-ops. The
+   honour scale is vanilla `favor`, not VFE Empire `Honor`. The readout is vanilla's character card.
+   `MostSeniorTitle` does not drive the displayed name.
+
+### Exaltation — hostility and the techprint supply, measured against vanilla
+
+**A [V] finding that narrows decision 21; it does not answer it.** What it establishes is that the
+in-place Church reproduces **vanilla's own behaviour exactly**, so decision 21 is only a *loss*
+under one specific condition, stated at the end.
+
+**13 Empire-locked projects in vanilla + Royalty — 12 Empire-only.** `BrainWiring`,
+`SpecializedLimbs`, `CompactWeaponry`, `VenomSynthesis`, `ArtificialMetabolism`,
+`NeuralComputation`, `SkinHardening`, `HealingFactors`, `FleshShaping`, `MolecularAnalysis`,
+`CircadianInfluence`, `CataphractArmor`, `JumpPack`; `JumpPack` also carries the Outlander tag.
+The tag is declared **once**, on abstract `BaseBodyPartEmpire_TierA`, and inherited. **Counted two
+independent ways** [V]: an inheritance-resolved lxml parse filtering on `isinstance(e.tag, str)`,
+and a `grep` block count over `ResearchProjects_Implants.xml` — 13 defs, 2 abstract, 11 concrete,
+plus `CataphractArmor` and `JumpPack`. (A parse without the `isinstance` filter counts XML comments
+as defaults-bearing records; see `docs/agents/capability-research.md` § *Known tooling hazards*.)
+
+**What hostility closes** [V]:
+
+- **All Empire trade** — settlement, caravan and orbital. `FactionUtility.CanTradeWith` rejects on
+  `faction.HostileTo` **before** it reaches the permit check;
+  `IncidentWorker_TraderCaravanArrival.TryExecuteWorker` returns false while hostile;
+  `TraderKindCommonality` is 0 with no permit holder. The permits themselves are **Knight** for
+  `TradeSettlement` and `TradeCaravan`, **Baron** for `TradeOrbital`.
+- **Empire quest rewards.** `Reward_Items.InitFromValue` sets `makingFaction = parms.giverFaction`,
+  and `QuestNode_GetFaction` rejects a hostile faction unless `allowEnemy` is set — which Royalty's
+  Empire scripts do not set (per-script coverage **[I]**).
+
+**What hostility does *not* close** [V]:
+
+- **Orbital trade ships** — a null `makingFaction` skips the tag test entirely (**T-99**). Gated on
+  `TradersGuild` with Odyssey, so era-gated and unsteerable, but open.
+- **Map-generation loot** — `MapGen_AncientTempleContents`,
+  `MapGen_AncientComplexRoomLoot_Default`.
+- **Asker-less quest rewards** — same null-faction bypass.
+- **Books are never a route**, hostile or not: `ReadingOutcomeDoerGainResearch.IsValid` returns
+  false when `project.TechprintCount == 0`, and `CanStartNow` requires `TechprintRequirementMet`.
+
+**And the loss is recoverable in vanilla, which is the part decision 21 turns on** [V]:
+
+- The Empire is **not** `permanentEnemy`, and its `permanentEnemyToEveryoneExcept` lists
+  `PlayerColony` and `PlayerTribe`, so `CanChangeGoodwillFor` passes. Hostile at **≤ −75**, neutral
+  again at **≥ 0**.
+- **Natural drift alone stalls** at natural − 50 (`CheckReachNaturalGoodwill`), so drift never
+  reopens trade by itself.
+- **Gifts do.** `CanOfferGiftsTo` *requires* hostility; `Settlement_TraderTracker.CanTradeNow` has
+  **no** hostility gate and **no** permit gate; the rate is ~40 silver per goodwill point, +25 %
+  amplified.
+- **Peace talks admit the Empire** — `allowEnemy true`; success **+60~70**, triumph **+100~110**.
+- **Titles and permits are not stripped.** There is no royalty reference in
+  `Notify_RelationKindChanged` or in `Pawn_RoyaltyTracker`'s relation handling, so the moment
+  goodwill reaches neutral the Knight/Baron trade route reopens with the same pawns.
+- **Already-applied techprints persist.** `ResearchManager`'s applied count is not faction state.
+  **This is supply closure, not confiscation.**
+
+**Therefore:** the in-place Church reproduces vanilla's behaviour exactly, and **decision 21 is
+live — i.e. strictly worse than vanilla — only if Reverence-driven hostility is made one-way**:
+goodwill pinned so gifts and peace talks cannot move it, or the Church marked `permanentEnemy`.
+Restated in those terms under *Outstanding decisions* 21.
 
 ### Reverence — there is no donor for the measure itself
 
@@ -2061,77 +2094,94 @@ this capability and none of the *institution* half. The mod itself is already re
 READ-class throughout. Anchors are `Type.Member` for decompiled code and file paths for defs; no
 line numbers.
 
-⚠ **The sweep method behind every negative in this section is now known to be unsound, and the
-negatives survived it anyway.** The wide pass used `rg -a --encoding utf-16le`, the form
-`docs/agents/capability-research.md` prescribed at the time. That form **silently and
-non-uniformly misses strings that are provably present in the `#US` heap** —
-[#103](https://github.com/cjd721/Rimworld-Archinity/issues/103); the sound form is `-a` with a
-null-interleaved pattern (`G\x00a\x00m\x00e\x00`). The audit re-ran this session's controls: the
-UTF-16LE control (`VFEEmpire.BestowTitle` / `RoyalAddress`) was **genuinely encoding-sensitive**, so
-the pass was actually exercising the wide path rather than passing on an ASCII-visible token, and
-**the negatives here hold on re-check** — `royalTitleTags` in one XML file corpus-wide, no
-non-Empire instancing, no fourth ladder-shaped def type. That is a better outcome than most of the
-batch and it is not a reason to trust the method: the ladder-shaped-def-type bullet in *Available
-mechanisms* is marked **[I]**, and any future re-sweep of this corpus should use the
-null-interleaved form.
+**The techprint inventory — preserved while the Church is non-hostile and a colonist holds Knight;
+not unconditionally.**
+`Verse.ResearchProjectDef.heldByFactionCategoryTags` is matched against `faction.def.categoryTag` in
+`TechprintUtility.GetResearchProjectsNeedingTechprintsNow` alone, and that method tests **no tech
+level** [V]. Re-counted this pass over vanilla and the 1.6 mod folders [V]:
 
-**The techprint hazard, verified and enumerated — and this build does not trigger it.**
-`Verse.ResearchProjectDef.heldByFactionCategoryTags` (the field is on `Verse`, not `RimWorld`) is
-matched against `FactionDef.categoryTag` at a single chokepoint,
-`RimWorld.TechprintUtility.GetResearchProjectsNeedingTechprintsNow` [V]. **`categoryTag Empire` is
-declared by exactly one FactionDef in the entire corpus** — `Data/Royalty/Defs/FactionDefs/Faction_Empire.xml`
-— and no mod inherits from it or patches it [V]. **18 projects carry an Empire tag, not twelve**;
-the ticket's twelve is the Royalty Empire-*only* subset:
-
-| Source | Projects | Tags |
+| Source | Projects | Also held by |
 |---|---|---|
-| Royalty implants (`BaseBodyPartEmpire_TierA/B`, tag declared once on the abstract parents) | `BrainWiring`, `SpecializedLimbs`, `CompactWeaponry`, `VenomSynthesis`, `ArtificialMetabolism`, `NeuralComputation`, `SkinHardening`, `HealingFactors`, `FleshShaping`, `MolecularAnalysis`, `CircadianInfluence` | Empire |
-| Royalty apparel | `CataphractArmor` (×2 prints) | Empire |
-| " | `JumpPack` | Empire, **Outlander** |
-| VFE Deserters `3025493377` | `VFED_ImperialDefenses`, `VFED_ImperialWarSolutions` | Empire |
-| GravTech `3545374124` | `GravEngineBuild`, `GravForge`, `BlackHole_GT` (×3 prints) | Empire, **TradersGuild** |
+| Royalty implants — tag declared once on `BaseBodyPartEmpire_TierA`, inherited by `_TierB`; 11 concrete children | `BrainWiring`, `SpecializedLimbs`, `CompactWeaponry`, `VenomSynthesis`, `ArtificialMetabolism`, `NeuralComputation`, `SkinHardening`, `HealingFactors`, `FleshShaping`, `MolecularAnalysis`, `CircadianInfluence` (names [I], from #53) | — |
+| Royalty apparel | `CataphractArmor`, `JumpPack` | `JumpPack` also Outlander [I] |
+| VFE Deserters `3025493377` | `VFED_ImperialDefenses`, `VFED_ImperialWarSolutions` | — |
+| GravTech `3545374124` | `GravEngineBuild`, `GravForge`, `BlackHole_GT` | TradersGuild [I] |
 
-**14 are Empire-only.** `JumpPack` survives on `Outlander`; the three GravTech projects survive on
-Odyssey's `TradersGuild`. The four map-gen setmakers
-(`MapGen_AncientTempleContents`, `MapGen_AncientComplexRoomLoot_Default` / `_Better`,
-`MapGen_AncientComplex_SecurityCrate`) pass `makingFaction == null`, and the tag test is **skipped
-entirely when the faction is null** [V] — a real but unsteerable lottery (weights 0.05, chance 0.5,
-`weightAccordingToPlayerNeeds=false`), not a supply line. `QuestNode_GiveTechprints` ignores tags
-but has **zero users** corpus-wide [V].
+**18 projects, 14 Empire-only.** The tag-gated routes keep working, **conditionally**:
 
-**It fails completely silently.** `ResearchProjectDef.ConfigErrors` checks only three techprint
-conditions and **never checks that any FactionDef supplies the tag**, let alone that such a faction
-generated [V]; it runs at def-load, before a world exists, so it structurally cannot.
-`TryGetTechprintDefToGenerate_NewTemp` returns false with no log;
-`StockGenerator_Techprints.GenerateThings` breaks with no log;
-`ThingSetMaker_Techprints.CanGenerateSub` returns false, so the setmaker is simply not chosen [V].
-The `Techprint_*` ThingDef still exists — `ThingDefGenerator_Techprints.ImpliedTechprintDefs` reads
-only `techprintCount` — so the research tab still says *"Required techprint"* and dev mode can still
-spawn it. The only observation surface is the dev-mode debug output
-`TechprintUtility.TechprintsFromFactions` / `TechprintsFromFactionsChances`, which prints
-`"    none possible"` per faction [V].
+- **Church trader stock** (`StockGenerator_Techprints.GenerateThings` [V]) — needs a colonist holding
+  the permit: **Knight** for settlement and caravan trade, **Baron** for the orbital trader (§5). No
+  Knight, no caravan (`IncidentWorker_TraderCaravanArrival` commonality 0) and no trade command
+  (`CaravanVisitUtility`) [V].
+- **Church quest rewards** (`ThingSetMaker_Techprints` via `parms.makingFaction` [V]) — Church quests
+  presumably stop while it is hostile [I].
+- **Once §6 makes the Church hostile**, `FactionUtility.CanTradeWith` rejects it and
+  `IncidentWorker_TraderCaravanArrival` refuses to execute [V], so **the trader route closes for all
+  14** — by this build's own worker.
 
-**Under this build the Empire FactionDef is not edited, so all 18 routes resolve unchanged.** The
-enumeration above is the cost of the *alternative* — repointing or removing the Empire — and it is
-the single strongest argument against it.
+**What survives hostility** [V unless marked]:
 
-**What still needs the game.** Nothing to settle the mechanism. Two **STUB**-class checks and one
-**RUN** observation, all narrow:
+- the **null-faction map-gen lottery** (four `MapGen_*` setmakers) — unsteerable;
+- **orbital traders, whose stock is generated without a faction** (**T-99**): `Orbital_Exotic` and
+  `Orbital_CombatSupplier` carry `StockGenerator_Techprints`; `TradeShip.GenerateThings` builds
+  `ThingSetMakerParams` with no `makingFaction`, `ThingSetMaker_TraderStock` forwards that null, and the
+  tag test is skipped for a null faction — so any Empire-only techprint can appear in their stock.
+  **Their arrival is the Traders Guild's, not the Church's.** Both declare
+  `<faction MayRequire="Ludeon.RimWorld.Odyssey">TradersGuild</faction>`
+  (`Core/Defs/TraderKindDefs/TraderKinds_Orbital_Misc.xml`), and
+  `IncidentWorker_OrbitalTraderArrival.CanSpawn` passes a trader with no faction unconditionally but,
+  for one naming a faction, requires that faction to exist and a free colonist to pass `CanTradeWith`
+  against it [V]. Needs a comms console and orbital beacon, i.e. it is era-gated; its draw is weighted,
+  not steerable; and it is gone for the campaign if [`ORBIT.md`](ORBIT.md) zeroes the guild's worldgen
+  count;
+- **if VFE Deserters ships**: `VFED.QuestNode_BetrayalRewards` draws
+  `TechprintUtility.TryGetTechprintDefToGenerate_NewTemp` with the slate's `"empire"` faction —
+  tag-based, not hostility-gated [V; quest reachability [I]] — and `VFED.GenStep_FlagshipRuins`
+  places every project whose tags contain `FactionDefOf.Empire.categoryTag` [V]. **VFED is the
+  hostile-branch carrier.**
 
-- **STUB:** author a two-rung Church ladder plus one permit and run `tools/patch_check.py`, then in
-  dev mode confirm `TechprintUtility.TechprintsFromFactions` still names the Empire for all 14
-  Empire-only projects, and that the Church's titles appear in the character-card tooltip's
-  progression list.
-- **STUB:** confirm a Church-titled colonist with no Empire title does **not** raise VFE Empire's
-  royalty main button, and that the Permits tab is reachable and switchable to the Church.
-- **RUN:** one observation on [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16)'s
-  two-client regime — a consecration rite completing produces the same title on both clients on the
-  same tick, and a permit invocation from one client's gizmo appears on the other.
+**No techprint requirement is removed, but without VFED the steerable supply ends when the Church
+turns hostile** — § *Outstanding decisions* 21, owed to Conrad by the reopen's "no silent loss" clause. Whether
+Spacer and Ultra implant techprints should come *from the Church at all* is a progression question
+([`docs/progression/`](../progression/)), not a loss.
 
-**Residual gap, stated:** a mod could express a de-facto rank ladder as a chain of existing def
-types (`PreceptDef` stages, a `QuestScriptDef` chain) with no distinctive type name, and no
-vocabulary sweep would find it. Likewise a type resolved by runtime string concatenation. Neither is
-excluded; both are unlikely to be a better donor than the DLC's own.
+**What still needs a stub or the game.** Nothing to settle the mechanism.
+
+- **STUB** — `tools/patch_check.py` over the Church patch set, active-set merge, so the result is
+  "matches in one configuration":
+  - `permanentEnemyToEveryoneExcept` still carries every mod's appended entries after our patches;
+  - the Replace on `allowedMemes` lands after Vanilla Ideology Expanded — Memes and Structures;
+  - every Church `RoyalTitleDef` has `favorCost > 0` or is NPC-only;
+  - `maxPsylinkLevel` reads 0 on all seven;
+  - `pawnGroupMakers` ordering against Vanilla Psycasts Expanded's replace;
+  - no Church patch renames a `spawnCategories` value.
+- **STUB** — on a dev quickstart with WTL enabled at Neolithic and **VFE Empire absent**:
+  - the Church is in the roster;
+  - `TechprintUtility.TechprintsFromFactions` names it for all 18 projects;
+  - a Keyed override of `CommandCallRoyalAidNotEnoughFavor` is what the gizmo prints.
+- **RUN** — one colonist crosses a rung through a quest reward. Observe:
+  - the Church bestowing quest appears;
+  - the ceremony confers the title;
+  - **no psylink level is gained** — with Vanilla Psycasts Expanded loaded as well, since its
+    `ApplyTitlePsylink` grants one base level when the pawn has no psycast hediff;
+  - the Permits tab opens on the Church.
+- **RUN** — force Global Reverence past the cap threshold and advance to the next 1,000-tick
+  boundary. The Church turns hostile with vanilla's letter, and the faction row lists the suspicion
+  situation.
+- **RUN** on [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16)'s two-client regime: the
+  ceremony's title and the hostility flip land on the same tick on both clients.
+- **RUN** — a client **joins mid-window**, after a Reverence change and before the next 1,000-tick
+  boundary; `Faction.OfEmpire.GoodwillWith(Faction.OfPlayer)` matches on host and joiner. Run it
+  once without and once with the `RecalculateAll`-on-write fix.
+- **RUN** — Church hostile, no VFED: confirm no Church caravan arrives and that `Orbital_Exotic` can
+  still stock an Empire-only techprint.
+
+**Residual gaps, stated.**
+
+- The `OfEmpire` metadata hits in the 12 mods beyond VFE Empire and VFE Deserters were not
+  decompiled. Among them are Medieval Overhaul, Vanilla Psycasts Expanded and RimPacts. The claim that they resolve the Church unchanged rests on
+  them using the singleton rather than a label, and is [I].
+- Generic-instantiation and runtime-concatenated lookups are invisible to both sweep forms.
 
 ### Reverence
 
@@ -2263,62 +2313,84 @@ unlikely.
 
 ### Exaltation
 
-**All six are gaps, not hand-offs. None of them has an owner.** The two tickets that would naturally
-own the first several — [#21](https://github.com/cjd721/Rimworld-Archinity/issues/21) (the ascent
-track) and [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10) (who the altar serves) —
-are **closed**. Deferring to a closed ticket is the same failure as deferring to one that was never
-created, so these are recorded here and belong on the map. Where an item below names a ticket, that
-ticket is named as *context*, never as the owner.
+**Most of these are fiction and requirements calls, not mechanisms.** Where an item names a ticket
+that is *closed* ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7),
+[#10](https://github.com/cjd721/Rimworld-Archinity/issues/10),
+[#21](https://github.com/cjd721/Rimworld-Archinity/issues/21)), it is context, never the owner.
 
-6. **Is the Church a faction of its own, or the Empire relabelled?** This build assumes the former,
-   because it is the only reading that leaves the 14 Empire-only techprint routes alone, and the only
-   one consistent with the Church being a Medieval institution while the Empire is a proposed
-   *Spacer* slot (#21's resolution, where the Empire slot is explicitly *"a live proposal,
-   unapproved"*). If the campaign later decides the Church **is** the Empire, the mechanism is
-   unchanged — one FactionDef instead of two — but the techprint enumeration above stops being moot
-   and becomes the cost.
-7. **The `seniority` bands, and how the two ladders interleave. Gap, no owner.** Church titles and
-   the tiers of godhood both resolve through `Pawn_RoyaltyTracker`'s aggregate accessors —
-   `MostSeniorTitle`, `MainTitle()`, `HasTitle`, `CanRequireThroneroom()`,
-   `HighestTitleWithThroneRoomRequirements()`, `AnyUnmetBedroomRequirements()`,
-   `UpdateAvailableAbilities()`, `IssueDecree()` — none of which takes a faction, so all of them
-   resolve across **both** ladders at once [V]. (It is *not* the pawn's displayed name: that comes
-   from `LabelNoCount` / `LabelShortCap`, which do not read `pawn.royalty` — see §2.) Choosing one
-   ladder's numbers without the other's is how a Church rank silently outranks an apotheosis in
-   throne requirements, granted abilities and the bio tab's Titles line. It also depends on §2's
-   constraint — the two ladders must sit on different factions or they overwrite each other.
-   **#21 and #10 are closed; nothing open owns this.**
-8. **The numbers and the catalogue. Gap, no owner.** How many rungs, the `favorCost` per rung, the
-   `permitPointsAwarded` curve, which privileges each rung unlocks, and the Exaltation-vs-Reverence
-   split per mission outcome. All are XML Def fields by construction, so the build does not wait on
-   them. **`docs/requirements/RELIGION.md` says only that "title and favor catalogs … still need
-   design or tuning", and no open ticket owns them.** This is the same gap decision 4 records for
-   Reverence's numbers; they should probably be one ticket, and that ticket does not exist.
-9. **Whether ordinary colonists can hold Church titles, or only the founders.** The requirement calls
-   titles *"permanent institutional standing"* and speaks only of the founders; `Pawn_RoyaltyTracker`
-   is per-pawn and imposes no such limit, and `Reward_RoyalFavor.MakesUseOfChosenPawnSignal` lets a
-   quest ask the player which colonist is exalted [V]. A gameplay rule, not a mechanism — it belongs
-   in `docs/requirements/RELIGION.md` and is not currently there.
-10. **Safe passage and political privileges — what they actually are, and who builds them. Gap, no
-    owner.** The requirement lists them alongside equipment, resources, aid and specialists as
-    though they were the same kind of thing. They are not: the other four are `royalAid` data
-    delivered by a shipped worker, while these two have **no vanilla delivery worker, no `RoyalAid`
-    field, and no borrowable trade-permit def** (§1) [V]. Until someone says what "safe passage"
-    does to the simulation — caravan immunity, a goodwill floor, a raid-exclusion flag, or simply
-    fiction — it cannot be priced, and the §5 aggregate deliberately excludes it. This belongs in
-    `docs/requirements/RELIGION.md` as a behaviour statement before it can come back here as a
-    build; no open ticket carries it.
-11. **Tolerance / threat — named in the requirement's saved state, built by nothing. Gap, no owner.**
-    `docs/requirements/RELIGION.md` § *Saved state and remaining work* says Church state includes
-    "Exaltation, title, privileges **and tolerance/threat**", and the same section lists "tolerance"
-    among the things that still need tuning. **Exaltation covers the first three and nothing in this
-    document covers the fourth.** It is not `Pawn_RoyaltyTracker` state — that tracker holds favour,
-    titles, permits, points and heirs and nothing resembling a tolerance or threat scalar [V] — and
-    it is not Reverence, which is the *player's* religious penetration of a faction rather than a
-    faction's patience with it. So it is either new saved state on the Church record, a projection
-    of Goodwill owned by [`POLITICS.md`](POLITICS.md), or a requirement that should be withdrawn.
-    **This document does not decide it and no ticket owns it**; recorded here because the
-    requirement asserts state that has no builder.
+6. **Resolved: the Empire becomes the Church wholesale, in place, renaming nothing** (§1). Every
+   Empire-tagged techprint route is kept by identifier; the trader route is conditional on
+   non-hostility and a Knight (§ *Verification*, decision 21).
+7. **The `seniority` bands, and how the godhood ladder interleaves. Gap, no owner.**
+   `Pawn_RoyaltyTracker`'s aggregate accessors — `MostSeniorTitle`, `MainTitle()`, `HasTitle`, the
+   throne and bedroom checks, `UpdateAvailableAbilities()`, `IssueDecree()` — span every ladder a pawn
+   holds [V, #53]. `titles` holds one `RoyalTitle` per (pawn, faction), so if the tiers of godhood
+   are `RoyalTitleDef`s they must sit on a faction **other than the Church**, or they overwrite the
+   Church title silently [V, #53]. #21 is closed.
+8. **The numbers and the catalogue. Gap, no owner.** Relabel vanilla's 7-rung ladder or re-cut it;
+   `favorCost` per rung; the permit-point curve; which privileges each rung unlocks; which title
+   unlocks trade — **default is vanilla's: Knight for settlement and caravan trade, Baron for orbital**
+   [V]; the Exaltation-vs-Reverence split per mission. All XML.
+9. **Whether ordinary colonists can hold Church titles, or only the founders.** Vanilla imposes no
+   limit, and `Reward_RoyalFavor` lets a quest ask which colonist is exalted [V, #53]. It is a
+   requirement that `docs/requirements/RELIGION.md` does not state.
+10. **Safe passage and political privileges — what they do to the simulation.** There is no vanilla
+    carrier (§5). Unpriced until the requirement says what they are. Gap, no owner.
+11. **Suspicion — the curve, and whether it ratchets.** The build is §6; the thresholds are open
+    parameters. If suspicion must not forgive a falling Global Reverence, the worker needs one
+    scribed high-water mark. That is not a tolerance currency, but it *is* saved state, and the
+    requirement's "no separate … threat currencies" should say whether it is allowed.
+    [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97) (open) owns how Reverence touches
+    Goodwill *per faction*, which is adjacent context. It does not own this *global* coupling. Gap.
+17. **The Church's per-era presentation and first contact.** An Ultra-tech Church is contactable
+    from the Neolithic, because Ignorance Is Bliss's `empireIsAlwaysEligible` defaults true [I]. The
+    plot introduces it in Medieval. The band configuration is
+    [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)'s (open). **Presenting it
+    era-appropriately cannot use a `Faction.def` swap** (§ *Failure and recovery*); `techLevel`, pawn
+    kinds and gear are the levers. #7 is closed, so the presentation half is a gap.
+18. **Which Empire-fiction content the Church keeps.** None of it breaks, and all of it will appear
+    unless cut:
+    - the **Royal Ascent ending** — a `StorytellerCompProperties_RefiringUniqueQuest` on every vanilla
+      storyteller, day 35, refiring every 22 days [V], which competes with the campaign's own ending;
+    - shuttle arrivals — the bestower, the tribute collector, shuttle-crash rescues, lend-colonists;
+    - landing pads and throne rooms in Church settlements (`GenStep_Settlement`);
+    - Royalty's Empire intro quests;
+    - VFE Empire's vassals and ceremonies, and VFE Deserters as the Schism
+      ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) context).
+
+    A fiction call per item; gap, no owner.
+19. **The Church's enemy roster.** It is currently a permanent enemy of everyone except 9 vanilla
+    factions plus eleven mods' additions [V]. Glitterites and Free Companies are unwritable forever
+    ([`POLITICS.md`](POLITICS.md) gate C). Whether a Medieval Church is born at war with every
+    Medieval kingdom is fiction. The mechanism is `PatchOperationAdd`. Gap.
+20. **Psylinks and Church clergy.** Zeroing `maxPsylinkLevel` is required by
+    `docs/requirements/ALTAR.md` for the *founders*. It also strips `PawnGenerator`'s psylinks from
+    generated Church nobles [V]. Whether the Church's own clergy cast is fiction, and whether *"early
+    Church titles and early psychic states may share language"* wants any title-linked psychic
+    effect is a requirement. Gap.
+
+21. **Techprint supply after the Church turns hostile — owed to Conrad under "no silent loss", and
+    now narrowed to one question.** §6 makes the Church hostile from Global Reverence, which closes
+    the Church trader route for the 14 Empire-only projects (§ *Verification*); the route also needs
+    a Knight while it is open. What survives is the map-gen lottery, the Traders Guild's orbital
+    traders (era-gated, unsteerable, and dependent on the guild existing —
+    [`ORBIT.md`](ORBIT.md)'s hide-versus-zero row) and — only if VFE Deserters ships — VFED's
+    betrayal rewards and flagship ruins.
+
+    **What narrows it:** all of that is *exactly what vanilla does* when the Empire turns hostile,
+    and vanilla's closure is **recoverable** — gifts and peace talks both reopen it, titles and
+    permits are never stripped, and applied techprints persist
+    (§ *Available mechanisms* § *Exaltation — hostility and the techprint supply*, [V]).
+    **So the decision is not "does hostility cost us techprints" but:**
+
+    > **Is Reverence-driven hostility one-way?** If the suspicion worker merely pins goodwill low
+    > while leaving gifts and peace talks live, the campaign is at vanilla parity and there is no
+    > loss to accept. If it pins goodwill so nothing can move it, or the Church is marked
+    > `permanentEnemy`, the supply closes **permanently** and that is strictly worse than vanilla.
+
+    Only in the second case is the rest of this item live: accept the loss, require VFED, add a
+    Schism or other supplier (for example `heldByFactionCategoryTags` matching a Schism faction's
+    `categoryTag` — XML), or remove those techprint requirements deliberately. Gap, no owner.
 
 ### The commitment
 
@@ -2347,12 +2419,12 @@ ticket is named as *context*, never as the owner.
     [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97) — it is the same question as
     that ticket's existing "per (faction × ideo), or per faction against the player's current
     primary", now with a concrete campaign event that forces it.
-15. **The roles clause in `docs/requirements/RELIGION.md` is wrong and no live ticket owns it.
-    Gap.** *"The two founding pawns are mechanically forced into the ideology's defining
-    leader/preacher roles"* is false twice over (§4). It should read something like *"the
-    founders are the only pawns eligible for the ideology's leader and preacher roles, and the
-    consecration rite seats them."* Recorded here because a requirement that asserts a mechanism
-    the engine does not have is how a build gets designed against fiction.
+15. **Rerouted: player-faith role architecture.** The player faith needs one or two
+    founder-specific seats, several preacher/converter seats for core disciples, at least one
+    crafting specialist and campaign-time role unlocks. [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114)
+    owns multiple holders, custom specialist effects and progressive unlocking;
+    [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116) owns the later catalogue
+    decision. §4's old two-seat build is superseded.
 16. **Is the commitment reversible, and at what price?** Mechanically it is trivially
     reversible — a second rite calling `SetIdeo` back, or enough colonists converting away —
     and `Pawn_IdeoTracker.previousIdeos` already records the founder's prior ideologies [V].

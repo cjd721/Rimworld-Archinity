@@ -141,7 +141,10 @@ an archotech"*. Any classification of quests by their fiction cannot be read off
 > [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) and
 > [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) and recorded only in the
 > map's fog. Not re-verified at the time of the move — provenance is those sessions.
-> The caveat applies to this section only.
+> The caveat applies to this section only. **The VFE Deserters half is now verified**, on
+> [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) against
+> `3025493377/1.6/Assemblies/VFED.dll` (`docs/specs/CURRENCIES.md` § *Delivery surfaces for the
+> Intel exchange*); the Medieval Overhaul half is still session provenance.
 
 Fog-only material behind *the acquisition ledger*. The archive's parked "intel workbench"
 idea — a player-initiated way to turn *"I am blocked"* into an action
@@ -151,7 +154,9 @@ idea — a player-initiated way to turn *"I am blocked"* into an action
   a player-built quest generator fuelled by consumable **Torn Notes**, gated on linkable
   facilities, exposing an open `MedievalOverhaul.QuestInformation` extension that any
   `QuestScriptDef` can join.
-- **VFE Deserters ships a second**: an intel-priced rolling queue on a comms tab.
+- **VFE Deserters ships a second**: an intel-priced rolling queue on a comms tab. Its contraband
+  shelf also sells **techprints** — `ContrabandManager` registers every `CompProperties_Techprint`
+  def as Intel-priced stock (**T-99** covers the other routes they leak through).
 
 ## The accept-time gate is one abstract base, and only three things touch it
 

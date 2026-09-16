@@ -6,9 +6,9 @@ Previous: [Industrial](INDUSTRIAL.md) · [Overview](../PLOT.md) · Next: [Ultra]
 
 Early Spacer begins with the planet still active. The gravship has enough range and capacity to make the founders the decisive mobile power in wars that Industrial civilization set in motion. Tertiary factions enter full-scale conflict; Church obligations become increasingly naked feats of strength; the Schism closes on the Church hierarchy; independent players finish the board through Reverence, diplomacy, revolt, vassalage and conquest.
 
-The political/religious outcome must resolve before the player reveals orbit, because the reveal is what puts the surviving institution into the sky. The planet answers who is coming with the founders before the curtain opens on the larger world.
+The political/religious outcome must resolve before the player reveals orbit, because the reveal is what puts the selected surviving institutions into the sky. The planet answers who is coming with the founders before the curtain opens on the larger world.
 
-The implementation constraint is real but runs the other way from what this chapter used to claim, and the difference matters to the world roster: **the orbital powers themselves are created when the world is created, and cannot be added afterwards.** What is deferred is not their existence but their *visibility and their territory* — orbit generates empty, the view-orbit button sits greyed with "No discovered orbital locations.", and the reveal is what places the stations. The institution that came up with the founders needs no creating at all; it is already a faction on the planet, and the reveal simply gives it orbital ground. See `docs/specs/ORBIT.md`.
+The implementation constraint is real but runs the other way from what this chapter used to claim, and the difference matters to the world roster: **the orbital powers themselves are created when the world is created, and cannot be added afterwards.** What is deferred is not their existence but their *visibility and their territory* — orbit generates empty, the view-orbit button sits greyed with "No discovered orbital locations.", and the reveal is what places the stations. Any institutions selected from the live planetary outcome need no creating at all; they are already factions on the planet, and the reveal simply gives them orbital ground. See `docs/specs/ORBIT.md`.
 
 The causal concept is locked even though the exact flavor is not: the final planetary power structure controls, inherits or can seize the last infrastructure/knowledge needed for sustained orbital access. Church route receives it through institutional authority; Schism route inherits or captures it when the old hierarchy falls; independent route obtains it through planetary supremacy. The exact device/owner can be authored around the signal-jammer/orbital-access mechanic.
 
@@ -38,7 +38,7 @@ The point is not that Spacer immediately leaves the planet. The point is that th
 
 The gravship crosses a qualitative line from vehicle to civilization. It gains reliable oxygen, gravity, food production, cooking, habitation, storage, defenses, shields and enough capacity that the colony can permanently leave the electrified castle behind. The old base becomes history rather than the center of play.
 
-Once the planetary outcome is resolved and the orbital-access gate is obtained, orbit is revealed for the first time. Only then does the offworld political board become visible and occupied — the spacer powers take their stations, and the terrestrial institution that actually survived the player’s choices takes ground among them.
+Once the planetary outcome is resolved and the orbital-access gate is obtained, orbit is revealed for the first time. Only then does the offworld political board become visible and occupied — the spacer powers take their stations, and every terrestrial faction captured by the immutable outcome takes ground among them.
 
 ## Orbit — Small Again
 

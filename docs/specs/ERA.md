@@ -2,6 +2,13 @@
 
 ## Purpose and scope
 
+> **Authority correction — 2026-09-13.** Completing the era capstone research project
+> is the trigger for `AdvanceEra()`, exactly as in the progression mod. The node's
+> prerequisites may encode whatever story conditions the boundary needs. There is no
+> altar rite and no separate player confirmation between project completion and the
+> advance. [#113](https://github.com/cjd721/Rimworld-Archinity/issues/113) is resolved by
+> this requirement; only the implementation hook remains for the spec.
+
 **What the campaign's era is, where it is stored, and how long the colony has been in it.**
 
 Everything in the campaign hangs off the era, and until this document existed nothing owned
@@ -30,8 +37,9 @@ Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2), and
 table in [`docs/engine/world-time-and-layers.md`](../engine/world-time-and-layers.md) § *Time*
 is campaign design input rather than an engine fact. It does not own **what the capstone is**
 or what research it requires ([`RESEARCH.md`](RESEARCH.md) and
-[#41](https://github.com/cjd721/Rimworld-Archinity/issues/41)). It does not own **the rite** —
-**and no document currently does**; see *What calls it* below, where that gap is stated.
+[#41](https://github.com/cjd721/Rimworld-Archinity/issues/41)). The capstone's completion
+itself is the trigger; this document owns the hook that turns that completion into the
+single `AdvanceEra()` call.
 It does not own **what becomes available at each era**
 ([`docs/progression/`](../progression/README.md)), nor the **filter set** WTL runs (#7 froze
 those twenty-four toggles and this document does not reopen them).
@@ -185,31 +193,12 @@ non-null → `AccessTools.Field(type, "<Current>k__BackingField")` → and, fail
 fact in *Cost* below is real and our shim must handle it; **the claim that this mod trips over it
 is false and is withdrawn.** Its defect is the missing second write, not the reflection.
 
-**What calls it — and the honest answer is that nothing does yet.** #7 § 7 designs the era
-capstone as a rite at the altar whose `RitualOutcomeEffectWorker` calls `AdvanceEra()`, and an
-earlier draft of this section cited [`ALTAR.md`](ALTAR.md) as the home of that rite. **It is
-not.** `ALTAR.md` contains no era content of any kind — a search for `AdvanceEra`, or for the
-word *era* used as anything but a date, returns nothing — and it now specifies
-`Building_Altar.PerformRite` exhaustively: a named-gene grant, an `ext.gene == null` arm that
-opens the lottery, and a no-vector arm that is `TRANSCENDENCE.md`'s departure. There is no
-fourth branch, and adding one is a design question nobody has settled —
-[#109](https://github.com/cjd721/Rimworld-Archinity/issues/109) closed without it.
-
-**The sync argument in the paragraph above does not survive that.** `Building_Altar` is a
-`Building_Enterable` and its rites run from `Building_Altar.Tick`; there is no `LordJob_Ritual`
-and no `RitualOutcomeEffectWorker` anywhere on that path, so *"ritual outcome application runs
-from `LordJob_Ritual` on the synced tick"* describes a mechanism the altar does not use. It
-remains true of rituals in general — see *Persistence and multiplayer* — and it is simply not a
-statement about this method. **A caller reached through the altar's tick would need its own sync
-argument**, which is cheap (the tick is already synced) but is not the one written here.
-
-**So the era rite's owner is a gap**, recorded rather than filled. If a *ritual* is what is
-wanted, [`RELIGION.md`](RELIGION.md) § 3D is the document that actually builds one — a
-`RitualOutcomeEffectWorker` subclass calling `TryUpdateTitle`, with the
-`RitualPatternDef`/`RitualBehaviorDef`/`RitualOutcomeEffectDef` trio in XML — and is the shape to
-copy. If the altar is what is wanted, the branch belongs in `ALTAR.md` and does not exist there
-today. **`AdvanceEra()` must still have no other caller** whichever way that lands; a debug route
-needs its own treatment, also below.
+**What calls it.** Completion of an authored era-capstone `ResearchProjectDef` calls
+`AdvanceEra(next)` once. The project may be gated by any combination of prerequisites,
+resources, exemplars or instruction, so story purpose belongs in the node rather than in a
+second rite. The implementation must identify capstones explicitly, run on the synced
+research-completion path, guard duplicate completion and preserve the rule that
+`AdvanceEra()` has no other gameplay caller. A debug route still needs its own treatment.
 
 **Reversible? No.** The guard rejects a downgrade and rejects a skip. There is no `RetreatEra()`
 and the boundary log is append-only. Per `CODING_STANDARDS.md` § *The bar for a change*,
@@ -261,7 +250,7 @@ Is Bliss*].
 | world `WITab_Planet` description | **WTL already prints `Tech level: <era>` there**, through `Patch_WITab_Planet.GetDesc_Postfix` [V] | free |
 | the same description | *"Era began: day N — n days here"*, from `CurrentEraStartTick` | one postfix on `WITab_Planet.get_Desc`, ~10 lines |
 | the boundary log | *"Neolithic day 0 · Medieval day 96 · Industrial day 310"* | **not a tooltip on the line above** — see below. A `FillTab` postfix with its own layout, ~40 lines |
-| the crossing itself | the rite **is** the event — its letter, per #7 § 7 | [`ALTAR.md`](ALTAR.md)'s |
+| the crossing itself | the capstone project's completion **is** the event | the era-capstone project and `AdvanceEra()` hook |
 | pressure readout | era time as a named contributor | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s surface, supplied by [`PRESSURE.md`](PRESSURE.md) |
 
 **The boundary log cannot be a tooltip on the description line, and an earlier draft of this
@@ -370,7 +359,7 @@ The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is co
 
 **What must be a synced command, and what already is.**
 
-- **`AdvanceEra()` called from a ritual outcome worker needs no sync plumbing** — a conditional,
+- **Superseded caller analysis: `AdvanceEra()` called from a ritual outcome worker needs no sync plumbing** — a conditional,
   and the condition is not yet met: **no document builds that ritual** (§ 3, *What calls it*). The
   bullet establishes that the ritual route *would* be safe, not that it is the route. The
   citation is the lord tick, not the component tick. `LordJob_Ritual.ApplyOutcome` fires
@@ -393,7 +382,8 @@ The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is co
   must be routed through `Multiplayer.API`'s `[SyncMethod]` / `MP.RegisterSyncMethod`, which
   ships in `0MultiplayerAPI.dll` alongside the Multiplayer mod and no-ops when MP is absent
   [V, `…/294100/2606448745/1.6/Assemblies/0MultiplayerAPI.dll`, `Multiplayer.API.MP`]. **The
-  cheaper discipline is to have no such caller**: one entry point, reached only from the rite.
+  cheaper discipline is to have no such caller**: one entry point, reached only from the
+  synchronized research-completion path.
 - **`AdvanceEra()` draws no random number**, which is a rule rather than an observation. Every
   write is a plain assignment. If a future beat wants a roll at a boundary, it belongs in the
   rite's outcome worker — already on the tick — and not here.

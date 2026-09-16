@@ -795,6 +795,83 @@ identically, because the cause is the pattern rather than the encoding. See
 `docs/agents/capability-research.md` § *Searching what the mods actually ship*.
 ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56))
 
+## What the 2026-09-15 reopened batch found
+
+Three reopened capability tickets — [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53),
+[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) and
+[#68](https://github.com/cjd721/Rimworld-Archinity/issues/68) — re-resolved against changed
+requirements, each adversarially audited. Same rule as above: recorded only where a finding bears on
+a verdict or a mod's price, and **conflicts are cargo, not verdicts**. No bar or decline moves.
+
+**VFE Empire** — `OskarPotocki.VanillaFactionsExpanded.Empire` (`2938820380`). **T-18 reconfirmed on
+the 1.6 decompile**: `WorldComponent_Hierarchy` reads `VFEEmpireMod.Settings.noblesPerTitle` inside
+the daily `WorldComponentTick` → `RefreshPawns` → `MakePawnFor` → `PawnGenerator.GeneratePawn` chain
+**[V]**. Under the in-place Church build it follows the Church unchanged and brings that defect with
+it. `docs/specs/RELIGION.md` § *Persistence and multiplayer* § *Exaltation*. ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
+
+**VFE Deserters** — `oskarpotocki.vfe.deserters` (`3025493377`, `1.6/Assemblies/VFED.dll`). Five
+findings **[V]**, none changing its standing:
+
+- `VFED.HarmonyPatches.MiscPatches` — `CheckBiosecurity`, a postfix on `WorkGiver_Open.HasJobOnThing`,
+  and a `FloatMenuOptionProvider_OpenThing.GetSingleOptionFor` postfix — refuses to open a
+  `Building_CrateBiosecured` unless the pawn has a backstory whose `spawnCategories` contains
+  `"ImperialRoyal"`. Renaming Royalty's backstory categories silently locks the crates.
+  ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
+- `ContrabandManager.TryGiveExtension`, run from its static constructor over every `ThingDef`,
+  auto-registers each def carrying `CompProperties_Techprint` as Intel-priced stock — so if VFED
+  ships, every techprint we author is on its shelf, outside `docs/specs/CURRENCIES.md`'s exchange
+  and its exclusion postfix (**T-99**). ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54))
+- **It is the hostile-branch techprint carrier, if it ships.** `VFED.GenStep_FlagshipRuins` places
+  every Empire-tagged techprint **×3** from map generation, and `VFED.QuestNode_BetrayalRewards`
+  calls `TechprintUtility.TryGetTechprintDefToGenerate_NewTemp` with the slate's `empire` faction —
+  **tag-based, not hostility-gated** **[V]**. So a Church that has turned hostile still has a
+  steerable Empire-tagged supply *only* while VFED is in the set.
+  ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
+- **Its Intel economy is keyed to the Empire, which is now the Church** **[V]**, and the ledger
+  should price that: Intel is extracted from Empire-titled pawns (`VFED.CompIntelExtractor`'s
+  validator is `pawn.royalty.GetCurrentTitle(Faction.OfEmpire) != null`) and dropped by
+  `VFED.EmpireRaidLootMaker`, and the shop opens only after
+  `VFED.WorldComponent_Deserters.JoinDeserters`, which force-hostiles `Faction.OfEmpire` via
+  `GoodwillToMakeHostile` and strips titles. Adopting its economy therefore buys an anti-Church war
+  as the precondition of buying anything. `docs/specs/CURRENCIES.md` § *Available mechanisms* §
+  *Three Intel delivery options*. ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54))
+- **Its contraband shop is multiplayer-synced, by Multiplayer Compatibility rather than by itself.**
+  The note above — *neither VFE Empire nor VFE Deserters references `Multiplayer`, `SyncMethod` or
+  `SyncWorker` anywhere* — is about their own assemblies and must not be read as "unsynced":
+  `Multiplayer.Compat.VanillaFactionsDeserters` carries `SyncedPurchaseContraband`,
+  `SyncedPurchaseContrabandRushedDelivery`, `SyncedPurchaseQuest`, `SyncedPurchaseService` and
+  `SyncedAcceptPlot`. It lives **only** in `1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll`,
+  which is conditionally loaded (see `docs/agents/capability-research.md`), so a sweep that excludes
+  `Referenced/` reports it absent. The sync is real but fragile: `PreDoPurchaseButton` dispatches on
+  **translated button-text equality**, so a locale change breaks it silently. A balance debit we own
+  and sync ourselves is strictly safer. ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54))
+
+**RimPacts** — `wowgag.RimPacts` (`3762723122`). **Not an NPC road builder**, correcting #68's first
+resolution. `WITab_RptTrade` sells a **player-financed** road from a player colony to any non-hostile
+settlement — its only faction gate is `HostileTo(Faction.OfPlayer)` — bought in a confirmation
+delegate after `RptSilverUtility.TryConsumeSilver`, with no sync; `ProcessRoadWorks` lays the **whole
+path at `finishTick`** and then calls `SetAllLayersDirty()` **[V]**. Verdict unchanged; donor value
+only. `docs/specs/WORLD-INFRASTRUCTURE.md` § *Available mechanisms*. ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68))
+
+**Faction Territories and Vassalage** — `jaeger972.factionterritories` (`3626725895`).
+`FactionTerritories.Vassalise.VassalRoadProgressComponent` mirrors Roads of the Rim construction
+sites by reflection, is funded by `TryInvestRoadPoints`, and **writes no road** — no `OverlayRoad` or
+`potentialRoads` in the assembly **[V]**; Roads of the Rim is on neither corpus root. **The mod stays
+declined.** ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68))
+
+**GravTech** — `als.gravtech` (`3545374124`). Adds **three** Empire + TradersGuild techprint
+projects — `GravEngineBuild`, `GravForge`, `BlackHole_GT` **[V]**. They follow the Church under the
+in-place transformation like every other Empire-tagged project, and because they are *also* held by
+TradersGuild they survive Church hostility by a route the Royalty implants do not have.
+`docs/specs/RELIGION.md` § *Verification* § *Exaltation*.
+([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
+
+**Dwarves of the Rim** — `bean.customxenotypes.dwarvesoftherim` (declined). **A checked negative,
+recorded so it is not re-derived:** it is one of only three mods on disk declaring `techprintCount`,
+but its `heldByFactionCategoryTags` are **Mountainfolk** and **Hillfolk**, not Empire **[V]**, so it
+neither adds to nor rescues the Empire-tagged supply. Verdict unchanged.
+([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53))
+
 ## Open
 
 - **`rwmt.MultiplayerCompatibility` is a required member of the shipping set, not a

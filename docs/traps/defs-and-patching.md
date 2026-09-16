@@ -364,4 +364,38 @@ gate*. `RimWorld.ReadingOutcomeDoerGainResearch.OnBookGenerated` / `.OnReadingTi
 whole database and the `VanillaExpanded` tab; defs `Schematic`, `VEF_Description_Schematic_Defaults`,
 `VREA_AndroidTech`. 1.6.4871.*
 
+### T-99 — Declaring `techprintCount` puts the project's techprint into every faction-less generator
+
+`TechprintUtility.GetResearchProjectsNeedingTechprintsNow(Faction faction, …)` is the one place
+`ResearchProjectDef.heldByFactionCategoryTags` is tested, against `faction.def.categoryTag` — and
+**when `faction` is null it skips the test entirely**. Every unfinished project that declares
+`techprintCount` is then eligible, whatever its tags say. Several generators call it with a null
+faction, and nothing logs:
+
+- **Orbital trade ships.** `TradeShip.GenerateThings` builds `ThingSetMakerParams` with only
+  `traderDef` and `tile`, and `ThingSetMaker_TraderStock.Generate` passes that null `makingFaction`
+  to every stock generator. So `StockGenerator_Techprints` on `Orbital_CombatSupplier` and
+  `Orbital_Exotic` sells the techprint of every unfinished `techprintCount` project — even though,
+  with Odyssey loaded, both trader kinds name `TradersGuild` as their faction.
+- **Map-generation loot.** `ThingSetMaker_Techprints` passes `parms.makingFaction`, which is null at
+  Core's `ThingSetMakers_MapGen.xml` sites and in Ideology's map-gen loot sets.
+- **Quest rewards with no asker.** `Reward_Items` takes `makingFaction` from `giverFaction`, which is
+  null on an asker-less quest [I].
+
+Settlement, caravan and visitor traders do set a faction (`Settlement_TraderTracker`,
+`PawnGroupKindWorker_Trader`, `IncidentWorker_VisitorGroup`) and respect the tags — which is exactly
+what makes the tag look as if it works.
+
+**Omitting `heldByFactionCategoryTags` does not help**: it closes the faction traders and leaves ships,
+loot and rewards open. The fix is a postfix on `GetResearchProjectsNeedingTechprintsNow` removing the
+projects you want kept off the market; World Tech Level's `Patch_TechprintUtility` postfixes exactly
+this method and is the precedent. Writers that bypass the method — VFE Deserters' `ContrabandManager`,
+VPE's `Ability_ReverseEngineer` — need their own answer.
+
+*[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), `docs/specs/CURRENCIES.md`
+§ *Failure and recovery*. `RimWorld.TechprintUtility.GetResearchProjectsNeedingTechprintsNow`,
+`RimWorld.TradeShip.GenerateThings`, `RimWorld.ThingSetMaker_TraderStock.Generate`,
+`RimWorld.StockGenerator_Techprints`, `RimWorld.ThingSetMaker_Techprints`, `RimWorld.Reward_Items`;
+`Core/Defs/TraderKindDefs/TraderKinds_Orbital_Misc.xml`. 1.6.4871.*
+
 ---

@@ -2,6 +2,11 @@
 
 ## Purpose and scope
 
+> **Authority correction — 2026-09-13.** Destructive Glitterite artifact analysis and
+> repeated raids are first-class Trace inputs alongside serious network intrusion.
+> Glitterites themselves are never hack targets, so android-target hacking contributes
+> nothing. Other androids are not Glitterites by definition.
+
 Implements [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md)
 § *Trace — The Glitterites Learn You Back* and
 [`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md) § *Glitterite pursuit*
@@ -451,6 +456,14 @@ politics. **`TraceBandDef.intelCostModifier` is applied only where
 `CurrencyPurchaseDef.currency == Archinity_Intel`**, and that is checkable by grep
 rather than by review: no code path may read `TraceBandDef` without a `CurrencyDef`
 in scope.
+
+**That scope includes every Intel exchange entry, by construction.**
+[`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange* sells Instruction items as
+`Archinity_Intel` purchases, so a high Trace band raises the price of Instruction as well
+as the pursuit — aggression taxed twice. Whether that is intended is an **open
+requirement**, not ruled here; owner
+[#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) (`CURRENCIES.md`
+§ *Outstanding decisions*). A per-entry opt-out is ~2 lines.
 
 ---
 

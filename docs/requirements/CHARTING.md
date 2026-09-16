@@ -258,20 +258,11 @@ announcements and nobody is in a position to tell the colony about them.
   whether re-entering a known tile re-rolls, and whether travel discovery is band-limited at
   all. [How a beat arrives](https://github.com/cjd721/Rimworld-Archinity/issues/39) is
   closed; this needs a successor requirements ticket.
-- **The road clause was lost from § *Reach* and should come back.** At commit `71e66b1` this
-  document read *"primitive travel keeps discoveries local, **maintained roads and vehicles
-  widen the region**, aircraft make continental intervention practical, and the gravship
-  collapses distance"*. The word *road* now appears nowhere in this file, and the loss was not
-  a decision anyone recorded — it dropped out in an edit. It matters because the reach band is
-  built as a rung registry that roads are expected to feed: see § *The reach band* in
-  [`docs/specs/CHARTING.md`](../specs/CHARTING.md), and
-  [roads and travel time](https://github.com/cjd721/Rimworld-Archinity/issues/68), which owns
-  what a road can actually contribute. **A caution for whoever restores it:** road *presence*
-  is a real signal — a road edge halves travel cost — but road *tier* currently changes
-  nothing at all, so *"maintained roads"* must not be written as a ladder of road qualities
-  until that is fixed. The distances themselves belong to
-  the balance deferral on [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2).
-  Noted as a regression, not repaired here.
+- **Road construction is not a Charting decision.** Era-driven roads, allied route
+  selection, construction time, player funding and direct road building belong to
+  [world infrastructure](WORLD-INFRASTRUCTURE.md). Charting never creates, upgrades or pays
+  for a road. Whether completed mobility infrastructure later contributes a reach rung is
+  a cross-spec integration choice, not part of the road-building requirement.
 - **Nothing in `docs/requirements/` states that map generation must be cross-client
   identical.** Named by
   [seeded map generation under Multiplayer](https://github.com/cjd721/Rimworld-Archinity/issues/88)

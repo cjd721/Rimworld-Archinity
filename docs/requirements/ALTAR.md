@@ -10,7 +10,7 @@ Medieval: willing devotion reveals that freely given anima behaves differently a
 
 Industrial: the altar becomes legible enough for genetic democratization and lottery-style augmentation of ordinary colonists.
 
-Ultra/Coda: the altar’s full role is understood as a boundary apparatus capable of writing the final transformation when Life, Devotion and Self are simultaneously satisfied.
+Ultra/Coda: the altar’s full role is understood as a boundary apparatus capable of granting the final transformation when Life, Devotion and Self are simultaneously satisfied.
 
 Founder/core vectors and ordinary augments remain separate reward classes. Founder progression is named and deterministic. Ordinary colonist lottery outcomes are opt-in but randomized once activated. Repeatable capsules do not flood early eras before the player understands or can use them; mystery is a singular teaser, not years of expensive inventory clutter.
 
@@ -55,8 +55,9 @@ rewards. Costs, lottery categories and weights and the intermediate rites remain
 specific design/balance work.
 
 Founder survival before transcendence is settled: the founders are deathless and
-fast-healing but brain destruction kills them permanently, up until the altar
-authors the Transcendent Archogene. See
+fast-healing but brain destruction kills them permanently. The final rite grants the
+existing `VRE_Transcendent` gene; it does not author a new gene or add a custom
+return-after-death system. See
 [Neolithic](../plot/NEOLITHIC.md#neolithic-iii--settled-tribe). The altar grants
 no death-proofing of its own before that final rite, and the core vectors it
 delivers must not quietly become one; the gene selection belongs to

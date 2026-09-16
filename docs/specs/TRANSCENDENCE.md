@@ -2,8 +2,18 @@
 
 ## Purpose and scope
 
-How a founder claims a self-authored title, transcends, and crosses out of the
-universe — and how all of that is recorded per founder and survives a save.
+> **Authority correction — 2026-09-13.** Transcendence grants the existing
+> `VRE_Transcendent` gene and a scene; it never despawns or later returns the pawn. The
+> Administrator choice is **Enter the new reality** (terminal credits/end game) or
+> **Stay in this reality** (close the scene and continue with the pawn unchanged). There
+> is no repeatable departure/return cycle and no `departureCount`. Sections below retain
+> useful multiplayer and credits evidence, but every build or cost based on crossings,
+> re-entry or non-terminal credits is superseded. [#48](https://github.com/cjd721/Rimworld-Archinity/issues/48)
+> owns the final authored scene.
+
+How a founder claims a self-authored title, receives `VRE_Transcendent`, meets the
+Administrator and chooses whether to enter the new reality or stay — and how that
+one-time state is recorded per founder and survives a save.
 
 Requirements, both halves:
 
@@ -11,9 +21,8 @@ Requirements, both halves:
   work* — "Track actual founder psylink/channel progression and the final claimed title."
   That sentence covers the **claimed title** and nothing else this document builds.
 - [`docs/plot/ENDING.md`](../plot/ENDING.md) § *Ascension, the Administrator and the
-  Postgame*, whose closing paragraphs are the only place the **Administrator encounter**,
-  the **leave/return choice** and the **standing re-offer at the altar** are stated at all.
-  Three of the five comp fields below answer ENDING.md, not ALTAR.md.
+  Postgame*, which owns the **Administrator encounter** and terminal **enter-or-stay**
+  choice. There is no standing departure re-offer.
 
 Established by [#50](https://github.com/cjd721/Rimworld-Archinity/issues/50), which
 absorbed [#79](https://github.com/cjd721/Rimworld-Archinity/issues/79).
@@ -27,27 +36,28 @@ is its natural home when someone builds it; that is not the same as it being bui
 **This document owns the per-founder state store.**
 [#59](https://github.com/cjd721/Rimworld-Archinity/issues/59) (the altar as a gene
 author) and [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) (volunteer
-eligibility) both write into it; neither builds a second one *for founder state*. What the
-authored Transcendent gene *is*, and what return-after-death costs, stay with #59 — this
-document reserves the storage and states the rules for adding to it.
+eligibility) both write into it; neither builds a second one *for founder state*. The
+existing `VRE_Transcendent` gene needs no authored payload or return-after-death fields.
 
-Adjacent systems take over at: the tiers of godhood conferred by `RoyalTitleDef`
-([`RELIGION.md`](RELIGION.md) § *Exaltation*), the altar's charge and vector
+Adjacent systems take over at: the tiers of godhood conferred by `RoyalTitleDef` — which
+must sit on a faction **other than the Church**, because `Pawn_RoyaltyTracker.titles` holds one
+title per (pawn, faction) and a godhood rung on the Church's ladder would silently overwrite the
+Church title ([`RELIGION.md`](RELIGION.md) § *Outstanding decisions* § *Exaltation* 7) — the altar's charge and vector
 machinery (`Archinity.Altar`), and the Devotion/volunteer rule (#49).
 
 ---
 
-## The build
+## The build — title and encounter state; departure cycle superseded
 
 Three verified vanilla mechanisms carry almost all of this, and one small comp is
 the only new state.
 
 | | |
 |---|---|
-| **Mechanism** | A `HediffComp` on a founder-only `HediffDef`, implementing `Verse.IRenameable`; a `Dialog_Rename<T>` subclass for the epithet; a vanilla `Dialog_NodeTree` for the Administrator and the leave/return choice, with its one delegate hosted on a `ThingComp`; `ShipCountdown.InitiateCountdown(string)` for the crossing. |
+| **Mechanism** | A `HediffComp` on a founder-only `HediffDef`, implementing `Verse.IRenameable`; a `Dialog_Rename<T>` subclass for the epithet; a vanilla `Dialog_NodeTree` for the Administrator and enter-or-stay choice. The enter action uses terminal credits; stay closes the tree with no pawn mutation. |
 | **State** | `CompFounderRecord` — one instance per founder, living on the `Archinity_FounderRecord` hediff. Plus `Pawn_StoryTracker.title`, a vanilla per-pawn string, as the display projection of the epithet. |
 | **Persistence** | `HediffWithComps.ExposeData` → `CompExposeData()` for the comp; `Scribe_Values.Look(ref title, "title")` in `Pawn_StoryTracker.ExposeData` for the display copy. A save that predates the feature has no hediff and no `title`; both read as "nothing claimed". **No migration code.** |
-| **Change** | The `RenamableLabel` setter (claim); the altar's rite completion (transcendence); the Administrator dialog's *Leave this universe* option, and thereafter the altar's post-transcendence entry (departure). |
+| **Change** | The `RenamableLabel` setter (claim); the altar's rite completion (grant `VRE_Transcendent`); the Administrator dialog's terminal *Enter the new reality* option. *Stay* changes nothing beyond recording that the scene was seen. |
 | **Display** | `Pawn.LabelNoCount` renders `"Name, TitleShortCap"`, so the epithet is free on the **inspect-pane header** (`InspectPaneUtility.AdjustedLabelFor` → `Thing.LabelCap` → `LabelNoCount`) and in anything built from `LabelCap` / `LabelNoCountColored` [V]. It is **not** on the colonist bar and **not** on the in-world map label — both draw `LabelShortCap`, which carries no title [V]. Letters and tooltips are per-surface **[I]**. Plus the hediff row in the Health tab, the altar's refusal text, and the credits screen. |
 | **Cost** | ~205 lines of new C# in the assembly we already ship (`ArchinityAltar.dll`), and ~65 lines of XML. No new assembly, and no third-party reference — see *Persistence and multiplayer* for the one we would need only if the recommended design fails. |
 
@@ -195,7 +205,7 @@ vector and charge clauses, returning a translated refusal
 "SelectPawn")`) — *not* in `SyncMethods` — and which `Building_Altar` does not override,
 so the gate needs no synchronisation work at all.
 
-### 4. The Administrator, the choice, and coming back
+### 4. Superseded design — departure, return and repeated crossing
 
 **There are two surfaces, in this order, and `ENDING.md` states both.** § *Ascension, the
 Administrator and the Postgame*:
@@ -584,8 +594,8 @@ solely on "no free colonists anywhere", never on a victory.
   cheaper constraint than per-option sync registration.
 - **`Pawn_RoyaltyTracker.SetTitle` for the epithet.** Confirmed unusable, as #21
   said: `SetTitle(Faction, RoyalTitleDef, bool, bool, bool)` takes a **def**. It
-  remains the right mechanism for the *tiers of godhood* (see `RELIGION.md`), which
-  is a different thing on a different surface.
+  remains the right mechanism for the *tiers of godhood* (see `RELIGION.md` — on a
+  faction other than the Church), which is a different thing on a different surface.
 
 ---
 

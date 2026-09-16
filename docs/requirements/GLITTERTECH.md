@@ -1,18 +1,48 @@
 # Glittertech Intel hacking and pursuit
 
-## The Glitterite Loop — Acquire → Analyze → Research → Manufacture
+## The Glitterite Loop — Raid → Recover → Learn → Manufacture
 
-Every major Glittertech branch requires an exemplar from the civilization that already knows how to build it. Want their armor? Bring home armor. Want their reactor? Recover the relevant core/component. Researchers still matter, but the colony cannot reason its way into post-vanilla technology from nothing.
+Glitterite research uses the campaign's three ordinary acquisition routes:
+
+- **Practice:** research consumes authored resources for trial and error.
+- **Exemplar:** a colonist studies a physical likeness to unlock the project; the item
+  survives. A recovered shocktrooper suit can teach armor modifications this way.
+- **Instruction:** a techprint or a specific authored event unlocks the knowledge route.
+
+Branches may use one route or combine them. The largest nodes require Instruction derived
+from Intel. Researchers still matter, but the colony cannot reason its way into
+post-vanilla technology from nothing.
 
 Ultra also opens advanced android manufacture. The campaign does not treat artificial bodies as inherently inferior; that distinction is essential to the final cosmology.
 
 ## Intel Is Capability, Not Exposition
 
-Intel is spendable technical intelligence recovered from Glitterite raids and analysis. It is the Ultra counterpart to Deserters Intel, but its fiction is engineering rather than rebellion. The player steals subroutine arrays, encrypted archives, command cores, schematics, black boxes and other technical artifacts, then decodes/reverse engineers them at home. The resulting Intel is consumed by advanced research and hacking projects; permanent knowledge remains after the resource is spent.
+Intel is accumulated technical understanding recovered from Glitterite raids. A raid may
+award it directly through observed laboratories or records. It may also yield a one-use
+device that a colonist brings home and analyzes over a long period. That destructive
+analysis consumes the device, produces Intel as its secrets are uncovered, and raises
+Trace. It does **not** add research progress and is distinct from the surviving Exemplar
+route above.
+
+Research does not spend Intel directly. At an authored table or through an appropriate
+faction—potentially the Traders Guild—the player exchanges an Intel balance for a
+techprint or other unlocking item. Research then consumes that ordinary Instruction gate.
+The conversion surface, exchange cadence and which faction can provide it remain capability
+questions on reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54); the
+separation between Intel and research is settled.
 
 World lore is separate. Glitterite sites contain murals, terminals, persona records, strange writings, conversations and environmental evidence that the player can inspect if interested. Optional investigation can provide Intel progress/bonuses, giving mechanical value to curiosity. The mandatory research/completion messages provide only the minimum story needed to follow the campaign, while the richer history remains in the places being raided.
 
-This lets the emotional story ride on top of the logistical ladder. Intel gates what the colony can do; the locations that produce Intel reveal what the Glitterites are.
+This lets the emotional story ride on top of the logistical ladder. Intel gates what the
+colony can learn through an explicit conversion into instruction; the locations that
+produce Intel reveal what the Glitterites are.
+
+The player controls Ultra aggression. More raids and more destructive analyses produce
+more Intel sooner, but also more Trace. A cautious player can advance slowly with fewer
+exposures; an aggressive player can reach the largest nodes sooner while forcing more
+relocations and pursuit. [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)
+owns the destructive-analysis carrier; [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)
+owns the later catalogue and balance session.
 
 ## Hacking Becomes a Second Technology Front
 
@@ -20,17 +50,28 @@ The expanded hacking system becomes a core Ultra pillar. Intel does not only exp
 
 Field pawns can carry remote-hacking equipment that allows skilled hackers at home to operate through them.
 
-Early Glitterite understanding may only bypass local security. Later research can target defenses, reactors, lower-tier mechanoids, stronger mechanoids and eventually android systems.
+Early Glitterite understanding may only bypass local security. Later research can target defenses, reactors, lower-tier mechanoids and stronger mechanoids. Glitterites themselves are never hackable.
 
-Campaign-critical Charting sites can contain unique protocol artifacts that must be brought home and combined with sufficient Intel/research before the next hacking capability exists.
+Campaign-critical sites can contain unique protocol artifacts that must be brought home,
+destructively analyzed into sufficient Intel, and converted into the Instruction required
+before the next hacking capability exists. Charting discovers sites; it does not own this
+research or analysis rule.
 
 The reward curve should repeatedly add new verbs. A mission that once required killing every defender may later allow the player to seize a mechanoid, disable a defense grid or turn part of the facility against itself.
 
 ## Trace — The Glitterites Learn You Back
 
-The Glitterites do not care about Reverence. It does not parse for a civilization that no longer participates in ordinary human belief, persuasion or diplomacy. Their pressure variable is Trace. Trace means how complete a picture the Glitterites have assembled of the founders, their gravship, intrusion signatures and current location.
+The Glitterites do not care about Reverence. They deliberately removed emotion, fervor and
+the faculties required to connect to the channel. They run on anima-rich neutroamine,
+cannot receive psylinks and are not hackable. Other androids may retain sincere belief and
+ordinary personhood. The Glitterites' pressure variable is Trace: how complete a picture
+they have assembled of the founders, their gravship, intrusion signatures and current
+location.
 
-The Deserters tradeoff remains: faster/deeper extraction of useful Intel and more aggressive intrusion create more Trace. Simple local hacks—such as a basic isolated door—need not matter. Network-level hacks of mechanoids, reactors, command systems, defenses or androids do. Repeated raids, deep analysis and detectable access patterns teach the Glitterites who is attacking them.
+Faster/deeper Intel extraction and more aggressive intrusion create more Trace. Simple
+local hacks—such as a basic isolated door—need not matter. Network-level hacks of
+mechanoids, reactors, command systems and defenses do. Repeated raids, destructive
+analysis and detectable access patterns teach the Glitterites who is attacking them.
 
 Low Trace: isolated anomaly; retaliation is limited and uncertain.
 
@@ -44,13 +85,13 @@ This gives the gravship a late-game narrative beyond transport: for part of Ultr
 
 ## Saved state and remaining work
 
-Record the first analytical-key unlock, recovered exemplars by branch, Intel
-balance, completed analyses and research/hacking gates. Trace needs a level,
+Record the first analytical-key unlock, surviving exemplars by branch, consumed analysis
+artifacts, Intel balance, issued instruction items and research/hacking gates. Trace needs a level,
 response band and tracking/pursuit state. The research carrier and remote hacking
 implementation remain to be verified against the available mods.
 
-The exact exemplar and technical-artifact catalogs, protocol rewards, hacking
-targets, project costs and pressure-stat name remain implementation/authoring work.
+The exact exemplar and technical-artifact catalogs, Intel exchange catalogue, protocol
+rewards, hacking targets, project costs and pressure-stat name remain implementation/authoring work.
 The pursuit rules are settled in [difficulty and pursuit](PRESSURE.md#glitterite-pursuit):
 Trace continuously controls search speed; sufficient relocation resets search
 progress without reducing Trace. The pursuit quest reveals the countdown, and
@@ -58,7 +99,10 @@ detection starts repeated raids until the colony escapes.
 
 Defensive loot and research access also need an acquisition pass so the intended
 raid-and-recover loop remains useful. The pressure rule belongs to [#9](https://github.com/cjd721/Rimworld-Archinity/issues/9); the
-research carrier to [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) and the hacking unlocks to [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58). Act V
+surviving exemplar carrier to [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67),
+destructive analysis to [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115),
+Intel exchange to reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54),
+and the hacking unlocks to [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58). Act V
 ([#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)) authors the encounters inside those answers and does not own the
 questions.
 The civilization and its final revelation are in [Ultra](../plot/ULTRA.md).

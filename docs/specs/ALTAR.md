@@ -2,8 +2,15 @@
 
 ## Purpose and scope
 
-How the altar authors the Transcendent Archogene from the founder standing in it, and
-what "death is temporary absence" is made of.
+> **Authority correction — 2026-09-13.** The final rite grants the literal
+> `VRE_Transcendent` gene from Vanilla Races Expanded – Archon. It does not mint
+> `Archinity_Transcendent`, author per-pawn gene contents, add missing-part regrowth or
+> create a return-after-death system. Sections 1–5 below preserve capability evidence but
+> their selected build, state additions, failure cases and cost are superseded. The
+> repeatable lottery beginning at section 6 is unaffected.
+
+How the altar grants the shipped `VRE_Transcendent` gene to the founder standing in it,
+plus the separate repeatable augmentation lottery.
 
 Requirements this implements:
 
@@ -11,15 +18,14 @@ Requirements this implements:
   rewards* — "Stored charge does not spoil. The sacrificial donor dies; the ordinary gene
   recipient is not killed by the operation." Both are already built and are verified below.
 - [`docs/requirements/ALTAR.md`](../requirements/ALTAR.md) § *Saved state and remaining
-  work* — founder survival before transcendence, "up until the altar authors the
-  Transcendent Archogene".
-- [`docs/plot/ENDING.md`](../plot/ENDING.md) § *The Transcendent Archogene* — the only
-  Archogene that cannot preexist its owner, and immortality as removal-from-this-reality
-  rather than invulnerability.
+  work* — the final rite grants the existing `VRE_Transcendent` gene and adds no custom
+  return-after-death system.
+- [`docs/plot/ENDING.md`](../plot/ENDING.md) § *Transcendence* — the transformation and
+  the enter-or-stay ending choice.
 
 Established by [#59](https://github.com/cjd721/Rimworld-Archinity/issues/59).
 
-**This document owns the gene, the death rule and the lottery draw.** It does not own the
+**This document owns granting the existing gene and the lottery draw.** It does not own the
 per-founder state store — that is [`TRANSCENDENCE.md`](TRANSCENDENCE.md)'s
 `CompFounderRecord`, which this design **reads and extends by one field** rather than
 duplicating, under that document's rule 1. It does not own the victory, the Administrator or
@@ -42,7 +48,7 @@ Additional requirement this implements:
 
 ---
 
-## The build
+## Superseded build — custom Transcendent gene
 
 **The Transcendent Archogene is authored per pawn by a `Gene` instance: one static
 `GeneDef` in XML whose `geneClass` writes its own contents from the founder at the moment
@@ -189,7 +195,7 @@ duration, text and pausable comp, and buys only flavour; the duration is a Balan
 either way. If the flavour is wanted later it is a copied def and a changed argument to
 `TryStartRegenComa`, not a redesign.
 
-### 4. The defect this exposes in code we already ship
+### 4. Superseded: the custom gene's fuel and departure interaction
 
 `Building_Altar.DrainAndKill` calls `victim.Kill(null)` directly [V]. **No vanilla path
 guards `Pawn.Kill`** — not Deathless, not `preventsDeath`, not the coma (§*Available

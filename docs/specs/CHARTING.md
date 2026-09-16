@@ -2,6 +2,11 @@
 
 ## Purpose and scope
 
+> **Boundary correction — 2026-09-13.** Charting never builds, upgrades, finances or
+> times roads. Those behaviors belong to world infrastructure. The reach-rung registry
+> may consume completed mobility state if cross-spec integration later selects that
+> relationship, but it is not a road-system contract and does not determine road tiers.
+
 How the discovery system in [`docs/requirements/CHARTING.md`](../requirements/CHARTING.md)
 will be built: the apparatus, the two work accumulators, search-band placement, spine
 ordering, travel- and tenure-based discovery, the inspectable lore inside the sites it places,
@@ -272,16 +277,18 @@ element-wise max over satisfied rungs, clamped above by
 band's code does not change.** That is this document's contract with
 [roads (#68)](https://github.com/cjd721/Rimworld-Archinity/issues/68) and
 [vehicles (#69)](https://github.com/cjd721/Rimworld-Archinity/issues/69): **they report two
-integers and a condition**, and neither needs to know the band exists. This contract is the
-settled one — `docs/specs/WORLD-INFRASTRUCTURE.md` publishes per-tier `ReachRungExtension`
-rows against it rather than a `float` factor of its own.
+integers and a condition**, and neither needs to know the band exists.
+`docs/specs/WORLD-INFRASTRUCTURE.md` § *Charting reach rungs — offered, not selected* offers
+per-tier `ReachRungExtension` rung shapes against it rather than a `float` factor of its own;
+whether any of them ships is [#118](https://github.com/cjd721/Rimworld-Archinity/issues/118)'s.
 
 > **What roads can actually carry today.** Road **presence** is a real signal and worth a
 > rung: a road edge costs `0.5` against `1f` off-road, a flat 2× on travel time. Road
 > **tier** carries no information at all — **T-42**: all five vanilla `RoadDef`s ship
 > `movementCostMultiplier 0.5`, so upgrading a road is a silent no-op and a per-tier rung
-> ladder would be describing a difference the engine does not make. #68 supplies the rungs;
-> until T-42 is addressed there, expect one presence rung rather than a ladder.
+> ladder would be describing a difference the engine does not make. WORLD-INFRASTRUCTURE offers
+> the rung shapes and #118 decides whether any ships; until T-42 is addressed, expect one
+> presence rung rather than a ladder.
 
 Precedents: **[V]** `RimWorld.SitePartDef.ExtraGenSteps` is vanilla's "scan `DefDatabase<X>`
 for the defs pointing at me, cache in `[Unsaved(false)]`" idiom; **[V]** World Tech Level's

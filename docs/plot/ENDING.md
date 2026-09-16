@@ -25,21 +25,21 @@ Devotion: supply a separate required number of highly convicted pawns who willin
 
 Self: the founder must have claimed the self-authored final title. The claimed Self is not an item; it is the integrated subject capable of surviving what the fully opened channel reveals.
 
-The founder enters the altar with no gene loaded. Life supplies the substance. Devotion opens/directs the channel. Self gives the operation a singular subject. The altar then authors the Transcendent Archogene from the founder rather than installing a gene that already existed.
+The founder enters the altar with no gene loaded. Life supplies the substance. Devotion opens/directs the channel. Self gives the operation a singular subject. The altar grants the literal `VRE_Transcendent` gene from Vanilla Races Expanded – Archon. It does not mint a new per-founder gene or hidden payload.
 
 ## The Alignment Rule — Faith Cannot Be Borrowed Dishonestly
 
-Final Devotion requires sincere alignment between the sacrifices’ faith and the founder’s claimed Self. Reverence measures adoption of the player’s ideology, and believers in that ideology can count because the founders are its living prophetic roles. A founder cannot cynically farm another religion’s faithful while privately rejecting what those people believe they are dying for and still call the offering Devotion.
+Final Devotion requires sincere alignment between the sacrifices’ faith and the founder’s claimed Self. Reverence measures adoption of the player faith, and believers in that ideology can count because the founders occupy its defining roles. A founder cannot cynically farm another religion’s faithful while privately rejecting what those people believe they are dying for and still call the offering Devotion.
 
-This gives the Church route its real price. If the founders want to use Church believers as final Devotion, the founders themselves must sincerely convert to the Church’s ideology and become what the Church says they are. If mid-game ideology conversion is mechanically possible, use it directly; if not, implementation must create an explicit commitment mechanism that preserves the same narrative rule. Otherwise a Church-aligned player must eventually break/reform, spread the player’s own ideology elsewhere, or personally cultivate enough aligned volunteers.
+The Church is an external faction, not the founders’ ideology. Church service, titles and Exaltation do not make its congregation automatically aligned Devotion. Church members count only where they sincerely follow the player faith represented by Reverence; otherwise the founders must cultivate aligned volunteers elsewhere. No route requires replacing the player faith with a separate “Church ideology.”
 
 This is not a moral judgment on which ideology is true. It is a congruence rule: the willing giver must be giving themselves to the identity the recipient actually claims.
 
-## The Transcendent Archogene
+## Transcendence
 
-The Transcendent Archogene is the only Archogene in the campaign that cannot preexist its owner. It is authored by the altar from the person who arrived there. The Administrator gave the founders an enormous head start—mark, unusual biology, Waystone and a trail—but the final operation is not a chosen-one password. Another sufficiently prepared, continuous person could in principle solve the same truths and perform the same rite.
+The transformation is represented by the existing `VRE_Transcendent` gene. The Administrator gave the founders an enormous head start—mark, unusual biology, Waystone and a trail—but the final operation is not a chosen-one password. Another sufficiently prepared, continuous person could in principle solve the same truths and perform the same rite.
 
-In RimWorld terms, the gene makes the pawn truly immortal because they now exist beyond this dimension. Death in the lower reality cannot permanently kill them; it only removes them from this reality until they regain the strength to return.
+No custom return-after-death, disappearance or reconstruction system is part of the ending. The gene's shipped behavior is the transformation.
 
 ## Ascension, the Administrator and the Postgame
 
@@ -51,19 +51,18 @@ The rite is individual. One founder can transcend before the other; the player m
 
 After the Administrator encounter, the player receives the final choice:
 
-Leave this universe: cross the opened threshold and trigger the true victory/end-game condition.
+Enter the new reality: trigger RimWorld's victory/end-game condition and roll credits.
 
-Return: continue the colony indefinitely. Finish the Ultra tree, manufacture the strongest Glittertech, develop androids and hacking to their limits, keep using the Waystone/Sensory Array to find Archotech, fight the strongest Glitterite holdings, finish political goals and max the civilization.
+Stay in this reality: close the scene and continue the colony indefinitely. The founder remains present and transcendent; no pawn state, map state or inventory changes. Finish the Ultra tree, manufacture the strongest Glittertech, develop androids and hacking to their limits, keep using the Waystone/Sensory Array to find Archotech, fight the strongest Glitterite holdings, finish political goals and max the civilization.
 
-If the player returns, the ending remains available. Whenever they are finished with the sandbox, the transcendent founder can return to the altar/threshold and leave the universe. Post-victory continuation is therefore not a noncanonical convenience; it is an explicit choice by someone who can already step beyond reality but has decided to remain for a while longer.
+If the victory call cannot be made safely, the fallback is the same scene framed as the founder choosing to stay until ready; the player can then use any vanilla victory route. Staying is an explicit choice by someone who can already step beyond reality but has decided to remain for a while longer.
 
-Exact sacrifice counts, volunteer delivery, the return-after-death mechanism and
-the Administrator scene's wording and visuals remain to be built or authored.
-The founder's declared ideology/commitment is the mechanical expression of alignment;
-the campaign does not inspect the player's private beliefs. Direct mid-game ideology
-conversion needs verification before choosing its implementation fallback.
+Exact sacrifice counts, volunteer delivery and the Administrator scene's wording and
+visuals remain to be built or authored.
+The founder's player faith and claimed identity are the mechanical expressions of
+alignment; the campaign does not inspect the player's private beliefs.
 
-Saved state includes the claimed title, volunteer eligibility, ritual completion
-and Transcendent Archogene per founder; the Administrator encounter seen state;
-and the persistent option to leave or continue. [#50](https://github.com/cjd721/Rimworld-Archinity/issues/50)
+Saved state includes the claimed title, volunteer eligibility, ritual completion,
+the existing Transcendent gene per founder and the Administrator encounter seen state.
+[#50](https://github.com/cjd721/Rimworld-Archinity/issues/50)
 researches the victory implementation.

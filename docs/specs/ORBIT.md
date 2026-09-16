@@ -2,6 +2,12 @@
 
 ## Purpose and scope
 
+> **Authority correction — 2026-09-13.** The planetary outcome is selected from live
+> campaign state when the political resolution occurs; it is not a binary route chosen at
+> world creation. It may name multiple factions. That result is frozen as an immutable
+> snapshot before orbit is revealed, so later goodwill, settlement losses or faction
+> changes cannot rewrite the orbital roster already created.
+
 How the Odyssey orbit layer is populated, gated and revealed — and what that costs at
 world creation.
 
@@ -148,11 +154,11 @@ condition's clothes, and a scenario edit can revoke it silently. **Null-guard th
 Placing the first settlement is the entire unlock: `CanSelectLayer` re-evaluates from
 `AnyWorldObjectOnLayer` every frame, with no cache and no invalidation call [V].
 
-### 4. "Who came with you" is not a faction question
+### 4. "Who came with you" is not a new-faction question
 
-The terrestrial institution that survives the planetary resolution **is already a
-`Faction`**, on the surface, with its relations, its name and its history intact. It does
-not need creating in orbit.
+Each terrestrial institution selected by the planetary resolution **is already a
+`Faction`**, on the surface, with its relations, its name and its history intact. None
+needs creating in orbit, and the outcome may select more than one.
 
 `FactionDef.layerWhitelist` / `layerBlacklist` are read at **exactly one site in the whole
 1.6 assembly** — `FactionGenerator.CanExistOnLayer`, reached only from
@@ -175,21 +181,29 @@ saved state… A `WorldComponent` is tick-safe but the ripple is event-driven; n
 polling."* That statement is correct about the goodwill ripple, and it means the reveal gate
 has no host. It gets one here.
 
-A `WorldComponent` holding two fields and the synced command:
+A `WorldComponent` holding the immutable outcome, reveal state and the synced command:
 
 ```csharp
+PlanetaryOutcome outcome;            // written once at political resolution
 bool revealed;                       // Scribe_Values.Look(ref revealed, "orbitRevealed")
 List<Faction> revealedFactions;      // Scribe_Collections.Look(..., LookMode.Reference)
+
+PlanetaryOutcome
+    PoliticalRoute route;            // Church | Schism | Independent
+    List<Faction> ascendingFactions;  // zero, one or many; snapshot at resolution
+    List<Faction> defeatedFactions;   // historical result, not a live query
+    List<Faction> absorbedFactions;   // historical result, not a live query
+    int resolvedTick;
 ```
 
-The ~15-line estimate stands, but it is **new code in a new component**, not a free field on
-someone else's. It is still cheap: no ticking, no caching, no `PostLoadInit` work.
+This is **new code in a new component**, not a free field on someone else's. It needs no
+ticking. `ResolveOutcome` refuses a second write; `RevealOrbit` reads only the snapshot.
 
-**What sets it is not settled here.** The reveal fires from the planetary resolution's
-outcome. That outcome does not yet exist as a value the game can read —
-[#100](https://github.com/cjd721/Rimworld-Archinity/issues/100) is the requirements ticket that
-must produce one, and until it does, the component has a trigger with no argument. The beat
-itself is [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46).
+**What sets it is partially settled.** The political resolution evaluates authored rules
+against live state and writes the snapshot once. [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100)
+still owns the exact conditions and priority/tie rules; it no longer needs to choose one
+hard-coded faction or decide whether the result stays live. The reveal beat itself is
+[#46](https://github.com/cjd721/Rimworld-Archinity/issues/46).
 
 ### 6. The stronghold interior — Odyssey generates it, and every knob is XML
 
@@ -384,7 +398,7 @@ documented as available; do not build on it.
 
 | Piece | Kind | Estimate | Target |
 |---|---|---|---|
-| Hide `TradersGuild` at worldgen (or zero its `startingCountAtWorldCreation`) | XML patch | ~10 lines | `Archinity.Pacing/Patches/Orbit_HiddenAtWorldgen.xml` (new) |
+| Hide `TradersGuild` at worldgen | XML patch | ~10 lines | `Archinity.Pacing/Patches/Orbit_HiddenAtWorldgen.xml` (new) |
 | `<hidden>true</hidden>` on our two orbit factions | XML edit | 2 lines | `Factions_FreeCompanies.xml`, `Factions_Glitterites.xml` |
 | **Delete `Orbit_AlwaysViewable.xml`** | deletion | — | `Archinity.Pacing/Patches/` |
 | Correct `Orbit_LayerSize.xml`'s arithmetic, re-decide 6 vs 5 | XML comment | ~8 lines | `Archinity.Pacing/Patches/Orbit_LayerSize.xml` |
@@ -406,8 +420,16 @@ Traders Guild's level of polish, is its actual shipped size: a 128-line
 `LayoutWorker` subclass for post-spawn decoration. That is content, and it is the maximum
 rather than the entry price.
 
-Zeroing `TradersGuild`'s worldgen count requires checking its `replacesFaction`
-first — the prune runs over defs you excluded (**T-10**).
+**Zeroing `TradersGuild`'s worldgen count is not taken.** Conrad, 2026-09-15: *"We want the
+Traders Guild 100% in the game."* The faction is generated and hidden; its count is never
+zeroed. Zeroing would have removed, permanently and at worldgen (**T-07**),
+[`CURRENCIES.md`](CURRENCIES.md)'s Traders Guild exchange venue and the Odyssey orbital
+traders `Orbital_Exotic` / `Orbital_CombatSupplier`, which name `TradersGuild` and spawn only
+while it exists (`IncidentWorker_OrbitalTraderArrival.CanSpawn` [V]) — the Empire-tagged
+techprint route [`RELIGION.md`](RELIGION.md) decision 21 relies on once the Church turns
+hostile. Recorded on [the faction grid](https://github.com/cjd721/Rimworld-Archinity/issues/34),
+which owns the worldgen column. Had it been taken, it would first have required checking
+`replacesFaction` — the prune runs over defs you excluded (**T-10**).
 
 ## Persistence and multiplayer
 
@@ -537,6 +559,13 @@ Two routes follow, and the XML one is better:
   `<techLevel>Undefined</techLevel>`, `<ifModPresent>`. Ours is the same shape with the four
   orbital defNames and a `MayRequire` on WTL's packageId so it is skipped when WTL is absent.
   **~20 lines of XML, no C#, no Harmony, no setting.**
+
+  **The same def must also carry `Empire → Undefined`, with no VFE Empire guard.** WTL's own
+  `Empire` entry applies only under `<ifModPresent>oskarpotocki.vfe.empire</ifModPresent>` [V].
+  The Church *is* Royalty's `Empire`, transformed in place
+  ([`RELIGION.md`](RELIGION.md) § *The build — Exaltation* §3), so without VFE Empire an Ultra
+  Church is stripped from a Neolithic world's roster (**T-54**), permanently (**T-07**). The
+  `MayRequire` on WTL itself still applies.
 
 One precision on the failure path, which does not change the outcome: at the create-world page
 the operative filter is `Patch_Page_CreateWorldParams.ApplyChanges`, not the postfix —
@@ -935,12 +964,11 @@ sweep having run, not of its completeness.
 | Which orbital powers exist, and their weights | **Frozen at worldgen.** SPACER.md's "at least two additional Spacer powers" are unauthored and cannot be added later | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | How many settlements each revealed faction gets | The reveal's only real parameter; a balance number, not a mechanism | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | **Is World Tech Level active at world creation, at what level, and is every orbital faction exempt?** | **The orbital roster exists or does not.** Silent, permanent, and taken before the first tick | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) — the line does not exist yet |
-| What the planetary resolution resolves *to*, as a value the game can read | The reveal command's argument. Without it the gate has a trigger and no payload | [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100) |
+| Which live-state predicates select each route and ascending faction, and how ties compose | The immutable snapshot can hold multiple factions; this decides its contents | [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100) |
 | What fires the reveal, as a beat | The narrative moment the command hangs off | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) |
 | When `OrbitalTech` / `ComponentSpacer` become reachable, and whether the six orbital opportunity quests stay in the pool | Whether a player can select the Orbit layer before the politics resolve | [#20](https://github.com/cjd721/Rimworld-Archinity/issues/20); **no ticket names the scanner as a reveal-gate item today** |
 | Whether the surviving institution also swaps `Faction.def` | If yes, pay #8's leak list | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | Orbit `subdivisions` — 6, or back to 5 | ~27 frozen orbital settlements versus ~9 | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) |
-| Hiding `TradersGuild` versus zeroing its worldgen count | Whether orbital trade ships have a faction behind them pre-reveal | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14), [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | **How many stronghold *flavours* the campaign distinguishes** | ~40–60 lines of XML each; the mechanism does not wait on the number, and each flavour re-rolls per encounter | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | **Which room kinds a Glitterite stronghold must present** — the exemplar vault, the archive, the command core | The bespoke `LayoutRoomDef`s cannot be authored without it. `docs/requirements/GLITTERTECH.md` states the contents in prose and **never as a map requirement**; no ticket owns that gap today | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) — **gap** |
 | Whether the outer blast doors must be hacked to enter, per flavour | `ensureOneDoorUnlocked` on the layout def; free either way | [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) |

@@ -483,7 +483,14 @@ that no player will ever see. Reaching it needs code — a Harmony patch seeding
 `selectedFaction`, or our own window — and T-07 rules out the obvious alternative:
 the roster is not repairable after worldgen, so "add the Empire later" is not a fix.
 
-*[#53](https://github.com/cjd721/Rimworld-Archinity/issues/53). 1.6.4871.*
+**Under the campaign's Church build it cannot fire.** `docs/specs/RELIGION.md` § *The build —
+Exaltation* transforms Royalty's `Empire` in place and renames nothing, so `Faction.OfEmpire`
+always resolves and the seed is never null. It returns only through the doors that null the
+singleton: a renamed defName, World Tech Level stripping the Empire at worldgen (**T-54**), or —
+delayed — a `Faction.def` swap (**T-98**). It still binds any *other* faction's permit ladder.
+
+*[#53](https://github.com/cjd721/Rimworld-Archinity/issues/53); Church note from its
+re-resolution, 2026-09-15. 1.6.4871.*
 
 ### T-63 — Overriding `Gene.Label` reaches the tooltip header and nowhere else
 

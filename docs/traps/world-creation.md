@@ -177,11 +177,64 @@ Nothing anywhere reports the mismatch. **Every tier def of a faction that confer
 titles must carry identical `royalTitleTags`, `royalFavorLabel`, `royalFavorIconPath`
 and `categoryTag`** — the ladder is a property of the def, not of the faction.
 
+**The Church must never climb eras this way.** It is Royalty's `Empire` transformed in place
+(`docs/specs/RELIGION.md` § *Failure and recovery* § *Exaltation*), so on top of this freeze a def
+swap nulls `Faction.OfEmpire` — not at the swap, but at the next load or faction add/remove
+(**T-98**). Present the Church per era through pawn kinds and gear.
+
 *`FactionDef.RoyalTitlesAwardableInSeniorityOrderForReading`,
 `RoyalTitleDefExt.GetNextTitle`, `Pawn_RoyaltyTracker.CanUpdateTitle`,
 `Pawn_RoyaltyTracker.GetPermitPoints`. Leak table in
 `docs/engine/factions-and-worldgen.md`.
-[#53](https://github.com/cjd721/Rimworld-Archinity/issues/53). 1.6.4871.*
+[#53](https://github.com/cjd721/Rimworld-Archinity/issues/53); Church note and T-98 cross-reference
+from its re-resolution, 2026-09-15. 1.6.4871.*
+
+### T-98 — Swapping a faction's `Faction.def` nulls `Faction.OfEmpire` later, not at the swap
+
+**Companion to T-36.** `RimWorld.FactionManager` caches its singletons — `OfEmpire`, and beside it
+`OfPirates`, `OfTradersGuild`, `OfSalvagers`, `OfMechanoids` and the rest — in the private
+`RecacheFactions`, which resolves each by def identity
+(`empire = FirstFactionOfDef(FactionDefOf.Empire)`). `RecacheFactions` has exactly three callers:
+`ExposeData` (on load), `Add` and `Remove`.
+
+So swap the Empire's `Faction.def` and nothing changes yet: the cached field still holds the
+instance and every consumer keeps working. **At the next save load, or the next time any faction is
+added or removed, the recache finds no faction with that def and the singleton goes null.** Most
+consumers null-check and stand down in silence — vanilla's bestowing ceremony, tribute collector and
+settlement generation, **T-35**'s permits seed, VFE Empire's 138 sites and VFE Deserters' 49. The
+failure lands a session or a week after the change that caused it, which is what makes it so hard to
+attribute.
+
+The same holds for every `FactionManager` singleton whose faction climbs by def swap. **A faction any
+code reaches through a `FactionManager` singleton must keep its def for the life of the save**;
+present its tiers through pawn kinds and gear instead.
+
+*[#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), `docs/specs/RELIGION.md` § *Failure
+and recovery* § *Exaltation*; companion to **T-36**. `RimWorld.FactionManager.RecacheFactions` /
+`.ExposeData` / `.Add` / `.Remove`, re-read for this entry. 1.6.4871.*
+
+### T-100 — An "allied factions" filter over NPC pairs is empty in vanilla
+
+Any mechanism that selects `B` where `A.RelationKindWith(B) == FactionRelationKind.Ally` for two
+non-player factions returns nothing in a vanilla world — as an empty set, never an error.
+
+`Faction.TryMakeInitialRelationsWith` is the only def-driven relation setup, and its local
+`GetInitialGoodwill` returns exactly `-100`, `-80` or `0`; `FactionRelation` becomes `Ally` only at
+goodwill ≥ 75. **Nothing in vanilla writes NPC↔NPC goodwill afterwards** — every one of the 48
+`TryAffectGoodwillWith` call sites has `Faction.OfPlayer` on a side — and NPC↔NPC goodwill never
+drifts, because `CalculateAdjustedGoodwillChange` and `CheckReachNaturalGoodwill` short-circuit on
+non-player pairs. No NPC alliance exists at game start, and none ever forms.
+
+An alliance ripple, a road network between allies, an "allies send help" rule: each reads green in
+review, ships, and never fires. **Seed the edges** — a one-time `TryAffectGoodwillWith` pass between
+the factions you author, which then persists unchanged in `Faction.relations` — mind **gate C**
+(`permanentEnemyToEveryoneExcept`) when choosing pairs, and make the consumer say when it found none.
+
+*[#68](https://github.com/cjd721/Rimworld-Archinity/issues/68), [#90](https://github.com/cjd721/Rimworld-Archinity/issues/90);
+`docs/specs/POLITICS.md` § *The graph is empty* and § *The build* §1,
+`docs/specs/WORLD-INFRASTRUCTURE.md` § 3b. `RimWorld.Faction.TryMakeInitialRelationsWith` /
+`.RelationKindWith` / `.TryAffectGoodwillWith`, `RimWorld.FactionRelation.CheckKindThresholds`.
+1.6.4871.*
 
 ### T-45 — Planet-layer geometry is scribed, so a layer-size patch is worldgen-only
 

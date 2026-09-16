@@ -78,8 +78,8 @@ hunger without substituting for the human sacrifices required for transformation
 
 The giver must mean the gift. A religion need not have the correct cosmological
 account to produce real believers. The founder's claimed identity must genuinely
-align with what the donor is giving themselves to; the final Church commitment
-follows from this, not from a declaration that its doctrine is true.
+align with what the donor is giving themselves to; this is a rule of sincere
+Devotion, not a declaration that the Church's doctrine is true.
 
 The receiving person must remain capable of integration. A clear channel is not
 virtue, gentleness or abstention from killing. Cruelty, zeal, despair, appetite or
@@ -107,26 +107,30 @@ without completing the climb.
 
 The believers are not fools. Their sincerity is precisely what makes the Schism
 possible when leadership turns against the founders it taught them to revere.
-The institution's failure does not make its faith inherently invalid: founders
-who sincerely adopt that identity can receive aligned Devotion from its believers.
+The institution's failure does not make its faith inherently invalid. Its believers
+can still give sincere Devotion even when its leadership has become hollow.
 
 ## The Glitterites' failure
 
 They began as humans and made defensible optimizations over immense time. They
-treated emotion and sentiment as noise, then treated personhood as interchangeable
-data. Root personas were copied, forked, edited, merged, pruned and restored until
-there was no singular integrated subject for the transformation to resolve onto.
-Intelligence, memories and enormous capabilities survived. The necessary self did not.
+treated emotion, fervor and sentiment as noise, then deliberately removed the parts
+of themselves that could feel them and treated personhood as interchangeable data.
+Root personas were copied, forked, edited, merged, pruned and restored until there
+was no singular integrated subject for the transformation to resolve onto and no
+faculty left that could connect to the channel. Intelligence, memories and enormous
+capabilities survived. The necessary self and connection did not.
 
-Artificial bodies are not the disqualification. The damage is what they did to
-personhood and their connection while building them. The founders can manufacture
-androids without the campaign declaring those bodies invalid.
+Artificial bodies are not the disqualification. The damage is what the Glitterites
+did to personhood and their connection while building themselves. Other androids can
+be sincere believers and can be essentially ordinary people; the founders can
+manufacture androids without the campaign declaring those bodies invalid.
 
-Discarding biology did not free the Glitterites from anima. They process biological
-material into an anima-rich neutroamine economy and send mechanoids to harvest and
-protect it. They have refined supplies at extraordinary scale, even cultivating
-ideologies whose believers genuinely give willingly. A manufactured tradition can
-still produce sincere faith; their supply problem is not a shortage of devotion.
+Discarding biology did not free the Glitterites from anima. In this lore,
+neutroamine is analogous to blood plasma: processed biological material with a far
+higher concentration of anima. It powers their bodies and machinery, and they send
+mechanoids to harvest and protect that supply. Quantity cannot replace the emotional
+and personal faculties they removed, so no Glitterite can form a psylink or open a
+channel of their own.
 
 Their machinery can store and consume anima for its limited purposes, but storage
 does not give the machine a channel or a self capable of ascent. Mechanites are
@@ -147,10 +151,9 @@ transcendence. Life supplies substance; aligned willing Devotion opens and direc
 the connection; Self is the singular integrated person who can survive it.
 Reverence provides access to volunteers, not a fourth metaphysical ingredient.
 
-With no gene inserted, the altar authors the Transcendent Archogene from the
-founder. It is the only Archogene that cannot preexist its owner. The resulting
-person exists beyond this dimension: death here means temporary absence while
-they recover the strength to return, not permanent destruction.
+With no gene inserted, the altar grants the existing `VRE_Transcendent` gene from
+Vanilla Races Expanded – Archon. No custom per-founder gene is authored, and no
+return-after-death mechanism is added.
 
 The physical rite, individual founder completion, Waystone's final direction and
-the persistent leave/return choice are described in [the ending](plot/ENDING.md).
+the enter-or-stay choice are described in [the ending](plot/ENDING.md).

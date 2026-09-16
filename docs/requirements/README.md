@@ -20,8 +20,8 @@ and the era chapters in `docs/plot/`. Where they are incomplete, the owning desi
 fills them in. Requirements work may precede capability research; it is never gated on
 individually authored beats.
 
-**Gameplay rules live here, not in the plot.** *Reverence decays. Intel is spent. Charting
-prioritizes ordered discoveries.* Those are requirements, not fiction.
+**Gameplay rules live here, not in the plot.** *Reverence decays. Intel is converted into
+instruction. Charting prioritizes ordered discoveries.* Those are requirements, not fiction.
 
 **Boundaries.**
 
@@ -63,7 +63,7 @@ Include explicit exclusions only where they prevent a plausible misreading.
 What has not been decided, linked to the owning issues.
 ```
 
-## Migrating the four existing documents
+## Migrating the existing documents
 
 They predate the template and sit at uneven levels of detail. Migrate one when the owning
 requirements ticket next touches it; do not reformat a document for its own sake.

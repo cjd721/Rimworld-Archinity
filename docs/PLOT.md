@@ -20,11 +20,11 @@ simulation create the events around that spine.
 | [Industrial](plot/INDUSTRIAL.md) | Genetics, infrastructure, institutions and transport turn the colony into a planetary power. |
 | [Spacer](plot/SPACER.md) | The gravship finishes the planetary struggle, becomes home, and carries planetary gods into a world that does not know them. |
 | [Ultra](plot/ULTRA.md) | Raids, captured exemplars, Intel and hacking expose the Glitterites' capabilities and their failure to transcend. |
-| [Ending](plot/ENDING.md) | The founders claim themselves, complete the altar rite, meet the Administrator and choose whether to leave or return. |
+| [Ending](plot/ENDING.md) | The founders claim themselves, complete the altar rite, meet the Administrator and choose whether to enter the new reality or stay. |
 
 Shared system requirements: [Charting](requirements/CHARTING.md),
 [religion and politics](requirements/RELIGION.md), [the altar](requirements/ALTAR.md),
-[Glittertech](requirements/GLITTERTECH.md), [quests](requirements/QUESTS.md) and
+[Glittertech](requirements/GLITTERTECH.md), [world infrastructure](requirements/WORLD-INFRASTRUCTURE.md), [quests](requirements/QUESTS.md) and
 [difficulty and pursuit](requirements/PRESSURE.md).
 [Cosmology](COSMOLOGY.md) explains the fictional mechanisms behind the discoveries.
 
@@ -96,7 +96,7 @@ professional motive and Archon society mostly hidden.
 | N2 Primitive | Permanent settlement; Genius Archogene. | Era-banded discovery and rapid learning. | Become capable of building a real settlement. |
 | N3 Settled Tribe | Local map solved; optional anima-tree contact explains anima. | Mature primitive civilization; no psylink yet. | Finish the primitive game before religion/psychics explode the scope. |
 | M1 Seduction | Church courts founders; heroic public deed introduces Reverence; willing-blood rite gives first psylink. | Exaltation/Titles, Reverence UI, Psychic Rank, Observatory. | Who owns the story of what you did? |
-| M2 Tension | Player ideology spreads; Church tolerance tightens; pilgrims/apostles begin mattering. | Goodwill vs Reverence; Church titles; living faction politics. | Do you let the institution define you or cultivate believers directly? |
+| M2 Tension | Player faith spreads; Global Reverence makes Church leadership increasingly wary; pilgrims/apostles begin mattering. | Goodwill vs Reverence; Church titles; living faction politics. | Do you let the institution define you or cultivate believers directly? |
 | M3 Schism / War | Founder-believing insiders break; Church may betray; open conflict begins. | Church Exaltation OR Schism Influence, plus Reverence. | Stay sanctioned, overthrow the hierarchy, or build independently? |
 | Industrial | Roads, vehicles, trade, genetics, outposts and religious institutions make the planet interconnected. | Genetic democratization; vassals/revolts; Observatory → Sensory Array. | Can your colony become a planetary network? |
 | Late Industrial | Gravship acquired as superior transport; wars escalate. | Planetary mobility; ship development. | Can mobility become decisive political power? |
@@ -105,11 +105,11 @@ professional motive and Archon society mostly hidden.
 | Spacer — Small Again | Meet Trader’s Guild, Starjacks and new house-derived Spacer powers. | New diplomacy; new Reverence begins near zero. | What are planetary gods worth to civilizations that never heard of them? |
 | Spacer — Forbidden Territory | Everyone warns against Glitterites; Waystone resolves return inside their space. | First terrifying Glitterite contact. | Is the next rung worth going where nobody sane goes? |
 | Spacer Capstone | Deliberate Glitterite heist recovers Glitterheart/analytical key. | Best conventional gear vs post-vanilla enemy. | Can you steal enough fire to understand it? |
-| Ultra I — Exemplars | Raid for hardware and technical artifacts before advanced research. | Exemplars + spendable Intel. | What do you need badly enough to attack them for? |
-| Ultra II — Intrusion | Intel unlocks Glitterite protocol/hacking capabilities. | Remote hacking, serious hacks create Trace. | Can you make their own systems obey you before they find you? |
+| Ultra I — Exemplars | Raid for hardware and technical artifacts before advanced research. | Surviving research exemplars + destructive Intel artifacts. | What do you need badly enough to attack them for? |
+| Ultra II — Intrusion | Intel is converted into the instruction needed to unlock Glitterite protocol/hacking capabilities. | Remote hacking, destructive analysis and serious hacks create Trace. | Can you make their own systems obey you before they find you? |
 | Ultra III — Anatomy | Lore and research reveal android/persona civilization, mechanoid control and anima economy. | Intel/Trace loop; android production. | What are these beings, and why do they still need life? |
 | Ultra IV — Failed Climbers | Archotech experiments reveal transcendence; final stronghold exposes loss of integrated self. | Archon spine converges with Glitterite endgame. | What are they trying to become, and what did they remove from themselves? |
 | Claim Yourself | Final psychic “?” becomes player-authored title. | Self as a ritual prerequisite, not an object. | After everyone else named you, who do you say you are? |
-| Final Rite | Life + willing Devotion + Self converge; altar authors Transcendent Archogene. | Reverence supplies access to volunteer believers but is not itself a metaphysical ingredient. | Can you open the channel completely and remain yourself? |
+| Final Rite | Life + willing Devotion + Self converge; the altar grants the existing `VRE_Transcendent` gene. | Reverence supplies access to volunteer believers but is not itself a metaphysical ingredient. | Can you open the channel completely and remain yourself? |
 | Threshold / Administrator | Waystone points out; transcendent founder meets Administrator. | Tiny glimpse behind the curtain. | Did you just pass someone else’s entrance exam? |
-| Victory / Postgame | Leave the universe or return and keep playing until ready. | True victory remains available from the altar/threshold. | Do you leave now, or finish becoming everything this universe allows? |
+| Victory / Postgame | Enter the new reality and roll credits, or stay in this reality with the transcendent pawn unchanged and keep playing. | A vanilla ending remains available if the player stays. | Do you leave now, or finish becoming everything this universe allows? |

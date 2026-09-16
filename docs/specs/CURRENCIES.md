@@ -2,14 +2,28 @@
 
 ## Purpose and scope
 
+> **Authority correction — 2026-09-13.** Intel remains a stored numeric balance, but it
+> is not consumed by research or hacking projects directly. The player exchanges it at
+> an authored table or through a suitable faction for techprints or other unlocking
+> items. This document's generic balance and purchase machinery remains candidate
+> infrastructure; direct project debits and claims that research itself spends Intel
+> are superseded. Reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)
+> owns the exchange surface.
+
+> **Exchange surface specified — 2026-09-15**, on reopened #54: *The build* § *The Intel
+> exchange*. The banner above stays as the authority statement; that section is the mechanism
+> it pointed at.
+
 Implements the two **spendable operational currencies** the campaign requires:
 
 - **Influence** — [`docs/requirements/RELIGION.md` § *The Schism Path — Influence + Reverence*](../requirements/RELIGION.md).
   Earned by Schism operations, spent through the anti-Church network on favors
   Goodwill cannot buy.
 - **Intel** — [`docs/requirements/GLITTERTECH.md` § *Intel Is Capability, Not Exposition*](../requirements/GLITTERTECH.md).
-  Recovered from Glitterite raids as artifacts, decoded at home, consumed by
-  advanced research and hacking.
+  Recovered from Glitterite raids, destructive analysis and site lore; held as a balance;
+  **exchanged** at an authored table or through a capable faction for a techprint or another
+  Instruction item. Research and hacking **never** debit it — see *The build* § *The Intel
+  exchange*.
 
 Established on [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), which
 absorbed [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55)'s currency half,
@@ -26,6 +40,9 @@ of currencies, because nothing in it names either fiction.
 | | |
 |---|---|
 | The **exemplar gate** — a research project requiring a physically-analysed item | [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67). The interface between the two is stated below, and what it does *not* commit either side to is the load-bearing part. |
+| **Destructive artifact analysis** — the long job that consumes a recovered artifact, credits Intel and raises Trace | [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115). Its only contact with this document is `Credit`. |
+| **Which Instruction items are for sale, their Intel prices and cadence, and whether a table, a faction or both carries each one** | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117), the Ultra acquisition session. This document supplies **both venues as mechanism** at *The Intel exchange*; selecting and pricing them is #117's. |
+| **What a delivered item unlocks, when it is not a techprint** | **No owner — a gap.** [`HACKING.md`](HACKING.md) gates hacking research through ordinary research projects, whose Instruction item is a techprint; [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) owns no item consumer. Any unlock item that is *not* a techprint (or a `CompProperties_Techprint`-carrying authored def) needs a consumer nobody has specified — fog for [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) to either rule out or ticket. The exchange delivers a `Thing` and stops. |
 | **Exaltation** and **Reverence** | [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) / [`RELIGION.md`](RELIGION.md). Threshold ladders, not spends. |
 | **Trace** | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md). A band ladder, not a balance. #56 has now **ruled** on whether sharing one store with Intel couples it to Church standing — see *What is shared*. |
 | **Which quests are for sale, and what they contain** | Authoring. The **machinery** that offers and sells a quest is [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s and is **in this document**, at *The purchasable quest catalogue* — because it is a purchase, and purchases live here. |
@@ -77,8 +94,8 @@ CurrencyPurchaseDef : Def
 CurrencyPurchaseWorker (abstract)
     CurrencyPurchaseDef def
     virtual int      Cost => def.cost         // overridable — see The purchasable quest catalogue
-    AcceptanceReport CanPurchase()
-    void             Purchase()
+    AcceptanceReport CanPurchase(Map map, Thing at)   // map/at null for context-free entries
+    void             Purchase(Map map, Thing at)
 ```
 
 > **`Cost` is `virtual` rather than a bare read of `def.cost`, and that is
@@ -101,12 +118,17 @@ one XML file.
 
 ### Where state lives
 
-`WorldComponent_Currencies`, holding exactly two dictionaries:
+`WorldComponent_Currencies`, holding exactly three dictionaries:
 
 ```csharp
 private Dictionary<CurrencyDef, int>         balances;
 private Dictionary<CurrencyPurchaseDef, int> lastPurchasedTick;   // cooldowns
+private Dictionary<CurrencyPurchaseDef, int> purchaseCount;       // issued items — added by the Intel exchange
 ```
+
+`purchaseCount` is the *"issued instruction items"* record
+[`GLITTERTECH.md` § *Saved state and remaining work*](../requirements/GLITTERTECH.md) asks for.
+It is per purchase, exactly like `lastPurchasedTick`, and names no project, chapter or quest.
 
 **Nothing else lives here, and that is the design.** No campaign index, no chapter, no
 quest reference. See *Structural separation*.
@@ -118,7 +140,7 @@ int  Balance(CurrencyDef c);
 bool CanAfford(CurrencyDef c, int amount);                  // pure; safe from a draw method
 bool TrySpend(CurrencyDef c, int amount, string reason);    // mutating; Job or synced callers only
 void Credit(CurrencyDef c, int amount, string reason);
-[SyncMethod] void TryPurchase(CurrencyPurchaseDef purchase);
+[SyncMethod] void TryPurchase(CurrencyPurchaseDef purchase, Map map, Thing at);   // map/at null for context-free entries
 ```
 
 ### What changes it
@@ -134,7 +156,11 @@ This is the requirement that *"the same mission family can support radically dif
 approaches"* — a covert operation offers a `Reward_Currency` for Influence, a public
 miracle offers Reverence, and both rows appear in the same quest-choice list.
 
-**Credit B — an artifact is decoded.** `CompUseEffect_GainCurrency`
+**Credit B — an artifact is decoded.** *The carrier is now
+[#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)'s, which asks for a long
+destructive job rather than an instant use; whatever it selects reaches this document only
+through `Credit`. The comp below stays a verified available mechanism, not a selection.*
+`CompUseEffect_GainCurrency`
 (`{CurrencyDef currency, int amount}`) on the recovered-artifact `ThingDef`, paired with
 vanilla `CompUseEffect_DestroySelf` so the artifact is consumed.
 
@@ -152,7 +178,11 @@ carrying that comp would simply never pay. The alternative on this route is
 number and not an item, since curiosity cannot spawn loot.
 
 **Debit.** `TrySpend`, reached only from `TryPurchase` or from a Job. Never from a draw
-method.
+method. **For Intel there are exactly two debit sites:** the exchange (*The Intel exchange*,
+below) and the #106 quest catalogue's `CurrencyQuestCurrencyInfo.Buy`. No `ResearchProjectDef`,
+hacking project, bill or analysis job reaches `TrySpend(Archinity_Intel, …)` — checkable by
+grep, and required by [`GLITTERTECH.md`](../requirements/GLITTERTECH.md): *"Research does not
+spend Intel directly."*
 
 ### Where the player sees it
 
@@ -229,12 +259,189 @@ overwritten **[V]**. A pure number cannot live there.
 > granted by inspecting site lore, and a saved *"Intel balance"* distinct from stockpile
 > contents. See *Available mechanisms*.
 
+### The Intel exchange — a balance into an Instruction item
+
+Reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54). The rule, from
+[`GLITTERTECH.md` § *Intel Is Capability, Not Exposition*](../requirements/GLITTERTECH.md):
+research never spends Intel; *"at an authored table or through an appropriate faction —
+potentially the Traders Guild — the player exchanges an Intel balance for a techprint or other
+unlocking item. Research then consumes that ordinary Instruction gate."*
+
+**Verdict: two carriers already turn a stored number into delivered items, and neither is
+adoptable — so we build, from their parts.** Faction Territories' `Dialog_Vassalage` spends
+vassalage points on drop-podded goods, but the mod is **declined** (map #2 *out of scope*,
+settled on [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)); vanilla's
+`RoyalTitlePermitWorker_DropResources` spends royal favor, which is **per pawn** and bound to the
+title ladder. Both are donors for delivery (see *Delivery surfaces*), and this document's own
+catalogue is the purchase half. The exchange is one `CurrencyPurchaseWorker` subclass plus a pluggable
+**venue**; a table and a faction are two venue classes of 20–30 lines each. **Build both
+venue classes** — the difference is ~30 lines and a set of external failure surfaces, not an
+architecture — **and author every Spine Instruction item at a table venue.** Which items sit at
+which venue is [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)'s.
+
+#### The Instruction half is already vanilla
+
+- **The item.** `ThingDefGenerator_Techprints.ImpliedTechprintDefs` generates
+  `Techprint_<defName>` for every `ResearchProjectDef` with `TechprintCount > 0`, only when
+  `ModLister.RoyaltyInstalled` **[V]**. `DefGenerator.GenerateImpliedDefs_PreResolve` runs it
+  before `DirectXmlCrossRefLoader.ResolveAllWantedCrossReferences(FailMode.LogErrors)` in
+  `PlayDataLoader.DoPlayLoad` **[V]**, so XML may name `Techprint_X` by defName. Royalty is in
+  the closed DLC floor ([#6](https://github.com/cjd721/Rimworld-Archinity/issues/6)) **[V]**;
+  without it `ResearchProjectDef` zeroes `techprintCount` (see the **T-40** body).
+  `ResearchProjectDef.Techprint` returns the def **[V]**, so an entry can name the project and
+  never spell the item.
+- **The consumption.** `CompTechprint.CompFloatMenuOptions` → `JobDriver_ApplyTechprint` →
+  `ResearchManager.ApplyTechprint(TechprintComp.Props.project, pawn)` **[V]**. A Job, so
+  Multiplayer syncs it natively. `CanStartNow` ANDs `TechprintRequirementMet` **[V]**.
+- **"Another authored unlock item."** `JobDriver_ApplyTechprint` reads the project off
+  `CompTechprint.Props.project`, not off the def's name **[V]**, so a hand-authored `ThingDef`
+  carrying `CompProperties_Techprint { project }` is an Instruction item with its own label, art
+  and lore at **zero C#** **[I — composition]**. `ApplyTechprint` only credits while
+  `proj.TechprintCount > GetTechprints(proj)` **[V]**, so the project must still declare
+  `techprintCount`. An item that unlocks something *other than a research project* needs its
+  own consumer, owned by that unlock's ticket (see *Purpose and scope*).
+
+#### Mechanism
+
+```
+CurrencyExchangeExtension : DefModExtension     // on a CurrencyPurchaseDef; one extension, never two (T-06)
+    ThingDef           thing                    // null => project.Techprint
+    ResearchProjectDef project                  // optional; hides the entry once IsFinished || TechprintRequirementMet
+    int                count     = 1
+    int                maxIssued = -1           // -1 = unlimited; see Failure and recovery before setting it
+    bool               campaignCritical         // a Spine item: validator refuses maxIssued and a faction-only route
+    ExchangeVenue      venue                    // polymorphic, Class= in XML
+
+ExchangeVenue (abstract)
+    AcceptanceReport Available(Map map, Thing at)
+    void             Deliver(List<Thing> things, Map map, Thing at)
+
+ExchangeVenue_Table   { ThingDef building; bool requiresPower = true }
+    Available: at spawned on map, at.def == building, CompPowerTrader.PowerOn if required
+    Deliver:   GenPlace.TryPlaceThing(t, at.InteractionCell, map, ThingPlaceMode.Near)
+
+ExchangeVenue_Faction { FactionDef faction; int minGoodwill; bool requiresComms = true }
+    Available: map != null && map.IsPlayerHome,
+               FactionManager.FirstFactionOfDef(faction) != null, !Hidden, !HostileTo(OfPlayer),
+               PlayerGoodwill >= minGoodwill, a comms console on map with CanUseCommsNow
+    Deliver:   TradeUtility.SpawnDropPod(DropCellFinder.TradeDropSpot(map), map, t)
+
+CurrencyPurchaseWorker_Exchange : CurrencyPurchaseWorker
+    override CanPurchase(map, at): venue.Available && CanAfford && cooldown && project gate && issued < maxIssued
+    override Purchase(map, at):    ThingMaker.MakeThing(...) × count; venue.Deliver(...) as the LAST statement
+```
+
+Each piece is vanilla API **[V]**: `Faction.Hidden => hidden ?? def.hidden`;
+`Building_CommsConsole.CanUseCommsNow`; `TradeUtility.SpawnDropPod(IntVec3, Map, Thing)` wraps
+`DropPodUtility.MakeDropPodAt`; `DropCellFinder.TradeDropSpot(Map)` prefers an unroofed orbital
+trade beacon, then powered beacons and comms consoles. **The faction venue has two donors.** `RoyalTitlePermitWorker_DropResources.CallResources` —
+make the things, `MakeDropPodAt`, send a message with `LookTargets`, `TryRemoveFavor` when
+`!free` **[V]**. And Faction Territories' `Dialog_Vassalage`, which prices goods in a stored
+number, picks `Find.AnyPlayerHomeMap`, delivers through `TryDeliverToMapSinglePod` (a reflected
+`DropCellFinder.TradeDropSpot` → `DropPodUtility.MakeDropPodAt`) or `TryDeliverToCaravan` when
+there is no home map, then calls `TrySpendPoints` **[V]**. We take the home-map choice and the
+single pod; we drop the caravan fallback, because a colony with no home map simply finds the
+venue unavailable.
+
+#### Where state lives, and what changes it
+
+- **New state: one dictionary**, `purchaseCount`, under *Where state lives*. Nothing on the
+  venue, nothing on the item.
+- **The settled purchase API changed; the balance did not.** `TryPurchase` and the base
+  `CurrencyPurchaseWorker.CanPurchase` / `Purchase` all gain `(Map map, Thing at)`, nullable for
+  context-free entries (#106's quest worker ignores both). `Balance`, `CanAfford`, `TrySpend`
+  and `Credit` are unchanged.
+- **The debit.** Inside the sync: re-evaluate `CanPurchase` → `Purchase` (delivery last) →
+  `TrySpend` → `purchaseCount[purchase]++` → `lastPurchasedTick[purchase] = now`.
+  **Delivery before debit, deliberately.** Faction Territories does the same and needs a
+  *"Delivery succeeded but points could not be deducted (state changed)"* message **[V]**,
+  because its check and its spend are not one atomic step. Ours are: the whole body is one
+  synced command, executed identically and single-threaded on every client right after
+  `CanAfford` is re-checked, so `TrySpend` cannot fail there. The order then matters only if
+  `Deliver` throws — and delivering first means an exception costs the player nothing, which is
+  the side *Failure and recovery* already chooses.
+- **Entry points.** *Table:* `CompExchangeTerminal : ThingComp` on the table's `ThingDef`;
+  `CompGetGizmosExtra` yields one `Command_Action` opening the exchange window, pre-filtered to
+  entries whose venue is `ExchangeVenue_Table` for `parent.def`, and passes `parent` as `at`.
+  *Faction:* **no dialog patch** — the entries sit in D1 under the faction's category, enabled
+  when `Available(Find.CurrentMap, null)`, and the map is **read in the window and passed as an
+  argument**. See *Multiplayer* for why both of those choices matter.
+
+#### Where the player sees it
+
+- **D1 exchange rows**: item icon, label, Intel price, a venue line (*"at a decoder"* /
+  *"Traders Guild · goodwill ≥ N · comms console"*), and for a techprint the
+  `(applied/required)` suffix the donor already draws —
+  `$"({project.TechprintsApplied}/{project.TechprintCount})"` in
+  `VFED.DeserterTabWorker_Contraband` **[V]**. A greyed row shows its `AcceptanceReport` reason.
+- **The table's gizmo** opens the same rows, filtered. Nothing else to draw.
+- **Delivery**: a message with `LookTargets` on the placed item or landing pod, as
+  `CallResources` sends **[V]**; then vanilla's *Apply techprint* float option and its letter
+  **[V]**.
+
+**The player's loop:** the D3 Intel number rises from raids and analysis → the network tab (or
+the decoder's gizmo) lists each Instruction item with its price, where it can be had and why it
+is greyed → *Exchange* drops the number and the item appears at the table or by drop pod → a
+colonist applies it at a research bench → the project becomes startable.
+
+#### The three options, priced
+
+| | Table only | Faction only | Both |
+|---|---|---|---|
+| Shared core — extension, venue base, worker, base-worker signature change, `purchaseCount` + scribe + `TryPurchase` args, D1 exchange rows, startup validator | ~140 | ~140 | ~140 |
+| `ExchangeVenue_Table` + `CompExchangeTerminal` | ~45 | — | ~45 |
+| `ExchangeVenue_Faction` | — | ~30 | ~30 |
+| Techprint exclusion postfix (see *Failure and recovery*) | ~15 | ~15 | ~15 |
+| **New C#** | **~200** | **~185** | **~230** |
+| Harmony patches | 1 | 1 | 1 |
+| New saved state | `purchaseCount` | `purchaseCount` | `purchaseCount` |
+| XML | table `ThingDef` ~40 + ~12 per entry | ~12 per entry | both |
+| Depends on the world roster | no | **yes** (**T-07**) | faction entries only |
+| Can lose availability mid-campaign | only if the table is destroyed — rebuildable | **yes** — hostility, goodwill, `Hidden`, no powered comms | faction entries only |
+| Delivery lands on a gravship or orbit map | yes, at the table | **unverified** — RUN | faction entries only |
+| Multiplayer | `TryPurchase` only | `TryPurchase` only | `TryPurchase` only |
+
+**What separates them.** The table is always reachable once built, and its own
+`researchPrerequisites` are an XML cadence lever. The faction route adds a relations lever and a
+fiction — a broker, not a decoder — and pays for it with three things the table does not have:
+
+1. **It depends on the faction existing.** The roster is fixed at world creation (**T-07**), and
+   [`ORBIT.md`](ORBIT.md) already records that on a Neolithic World Tech Level start every
+   Spacer orbital faction, `TradersGuild` included, drops out of `info.factions` before
+   `WorldGenStep_Factions` runs. `ORBIT.md` also plans to hide `TradersGuild` until its orbit
+   reveal, which `Faction.Hidden` makes this venue respect.
+2. **It can close.** A hostile or low-goodwill Traders Guild greys every faction entry. For a
+   Spine item that is a **campaign softlock**, which *Failure and recovery* otherwise says this
+   document cannot produce.
+3. **Its landing is unproven in orbit.** `DropCellFinder.TradeDropSpot` falls back to
+   `Log.Error("Could find no good TradeDropSpot…")` and a random standable cell **[V]**; whether
+   a drop pod lands sensibly on a gravship map is not settled by reading.
+
+**Recommendation: build both venue classes and author Spine Instruction items at the table.**
+Faction entries are safe for Muscle and Comfort items, or as a *second* route to a Spine item at
+a different price — which is also the cheapest way to make *"deliberately both"* mean something.
+
+**Rejected surfaces** — vanilla trade with Intel as its currency, VEF's `QuestGiverDef`, bills,
+a comms-console `DiaOption`, and VFED's contraband shop — are surveyed under *Available
+mechanisms* § *Delivery surfaces for the Intel exchange*.
+
+> **This is option (b) of three, and the other two are recorded priced rather than rejected.**
+> *Available mechanisms* § *Three Intel delivery options* carries (a) adopting VFE Deserters'
+> contraband economy wholesale (~15 lines of ours) and (c) our own Intel `ThingDef` with our own
+> vendor (~120–150 C#), each with what it buys and what it costs. **Which one ships is a
+> story-beat decision Conrad will take later**; (b) stays the build until that is taken.
+
+**Influence is untouched.** The exchange worker is currency-agnostic by construction, but no
+requirement gives Influence an item catalogue, so no Influence entry ships. Influence's
+balance, its #106 quest giver, and the Trace modifier's Influence exemption are unchanged.
+
 ### The purchasable quest catalogue
 
 [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). **VEF already ships a
 Def-driven, XML-authorable, save-backed purchasable quest catalogue with a *pluggable
 currency*. We write the currency and nothing else** — a `QuestCurrency` /
-`QuestCurrencyInfo` pair that reads `WorldComponent_Currencies`, about 40–60 lines.
+`QuestCurrencyInfo` pair that reads `WorldComponent_Currencies`, about 50 lines for the pair —
+**~95** with the `Window_Contracts` subclass and the sync registration (see *Cost*).
 
 > **An earlier draft of this section, and #106's first resolution comment, opened with
 > *"nothing in the corpus or in vanilla sells a quest except VFE Deserters."* That is
@@ -496,7 +703,7 @@ so nothing has to be re-authored when a reward table changes.
 > every other currency. Checkable by grep: no code path may read a band def without a
 > `CurrencyDef` in scope.
 
-**Purchase.** `CurrencyPurchaseWorker_Quest.Purchase()`:
+**Purchase.** `CurrencyPurchaseWorker_Quest.Purchase(Map map, Thing at)` — both arguments ignored:
 
 ```csharp
 int cost = offer.price;             // snapshotted at generation, never recomputed here
@@ -570,6 +777,17 @@ the donor's hardcoded `10` is not copied.
 | `MainButtonWorker` subclass (D4, optional) | new C# | ~20 | same |
 | `GlobalControlsUtility.DoDate` postfix (D3) | patch | ~25 | `Archinity.Altar/Source/Patches.cs` |
 | MP registration behind an `MP.enabled` guard | new C# | ~15 | `Archinity.Altar/Source/Patches.cs` |
+| **— the Intel exchange, reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), both venues —** | | | |
+| `CurrencyExchangeExtension` + `ExchangeVenue` base | new C# | ~25 | `Archinity.Altar/Source/Exchange.cs` |
+| `CurrencyPurchaseWorker_Exchange` | new C# | ~45 | same |
+| `ExchangeVenue_Table` + `CompExchangeTerminal` (+ props) | new C# | ~45 | same |
+| `ExchangeVenue_Faction` | new C# | ~30 | same |
+| `purchaseCount` + scribe + `TryPurchase(purchase, map, at)` + base `CanPurchase`/`Purchase(Map, Thing)` | new C# | ~20 | `Archinity.Altar/Source/Currencies.cs` |
+| Exchange rows in `MainTabWindow_Network` | new C# | ~40 | `Archinity.Altar/Source/CurrencyUI.cs` |
+| Startup validator — venue null; a `campaignCritical` entry with `maxIssued` set or no table-venue route; a techprint project without `techprintCount` | new C# | ~10 | `Archinity.Altar/Source/Exchange.cs` |
+| Postfix on `TechprintUtility.GetResearchProjectsNeedingTechprintsNow` excluding exchange projects | **patch** | ~15 | `Archinity.Altar/Source/Patches.cs` |
+| Decoder table `ThingDef`; one `CurrencyPurchaseDef` + extension per Instruction item; `techprintCount` on each project | **XML** | ~40 + ~12 per entry | `Archinity.Glitterites/Defs/Exchange/` |
+| **Intel exchange total new C#** | | **~230** (table only ~200, faction only ~185) | one assembly, 1 Harmony patch |
 | **— the purchasable quest catalogue, [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106), Build A (recommended) —** | | | |
 | `CurrencyQuestCurrency : VEF.Storyteller.QuestCurrency` | new C# | ~30 | `Archinity.Altar/Source/QuestCatalogue.cs` |
 | `CurrencyQuestCurrencyInfo : VEF.Storyteller.QuestCurrencyInfo` | new C# | ~20 | same |
@@ -586,6 +804,7 @@ the donor's hardcoded `10` is not copied.
 | `Arch_PurchasableQuestExtension` on each eligible `QuestScriptDef` | **XML** | ~4 per script | same |
 | **Build B total new C#** | | **~290** | one assembly |
 | **Total new C# — currencies plus Build A** | | **~525–615** | one assembly |
+| **Total new C# — currencies plus Build A plus the Intel exchange (both venues)** | | **~755–845** | one assembly |
 | Two `CurrencyDef`s, one `MainButtonDef`, every catalogue entry, every price, every reward amount, every artifact's comp, every purchasable quest script | **XML** | — | `Archinity.Altar/Defs/`, `Archinity.Glitterites/Defs/` |
 
 Marked **[I]**: the mechanisms composed above are each **[V]**, but the claim that they
@@ -605,6 +824,12 @@ Scribe_Collections.Look(ref balances, "balances", LookMode.Def, LookMode.Value,
 
 This is vanilla's own idiom for a durable per-Def number: `RimWorld.ResearchManager.ExposeData`
 scribes `progress`, `techprints` and `anomalyKnowledge` exactly this way **[V]**.
+
+`lastPurchasedTick` and the exchange's `purchaseCount` are scribed the same way. A save that
+predates the exchange loads `purchaseCount` null and `FinalizeInit` initialises it empty
+**[I]**, so every entry's issued count starts at zero. That is harmless: the default
+`maxIssued` is unlimited, and a techprint entry's visibility reads `ResearchManager`'s own
+scribed `techprints` through `TechprintRequirementMet` **[V]**, not this counter.
 
 **Do not use `Verse.DefMap`.** See **T-37** (`docs/traps/defs-and-patching.md`).
 `DefMap<D,V>` persists a bare `List<V>` positionally indexed by `def.index`, and `def.index`
@@ -639,7 +864,7 @@ altar. Quest-part credits fire on quest signals inside the synced quest machiner
 **The debit is the only new sync surface**, because it originates at a button — and it is a
 single method by design.
 
-`TryPurchase(CurrencyPurchaseDef)` carries `[SyncMethod]` from **`Multiplayer.API`**, in
+`TryPurchase(CurrencyPurchaseDef, Map, Thing)` carries `[SyncMethod]` from **`Multiplayer.API`**, in
 `0MultiplayerAPI.dll` under the Multiplayer mod's `1.6/Assemblies/` **[V]**. It is a
 compile-time-only reference with **no hard dependency**: `Multiplayer.API.MP`'s static
 constructor looks for the `Multiplayer` assembly among `LoadedModManager.RunningMods` and
@@ -661,6 +886,32 @@ game tick **[V]**.
 > unaided — or whether the registration must take `(QuestGiverDef, int index)` instead —
 > **is not settled by reading** and is listed under *Verification*. The index form works
 > regardless and is the fallback.
+
+**The Intel exchange adds no second sync surface.** It rides `TryPurchase`, which gains
+`Map map, Thing at`; Multiplayer's `SyncDictRimWorld` serialises both `Thing` and `Map`
+(`WriteSync<Map>` / `ReadSync<Map>`) **[V]**; a *null* `Map` argument is **[I]**. Four rules make it deterministic:
+
+- **The map is chosen in the window and passed in**, never read inside `Purchase`: a table
+  entry passes the table's own map; a faction entry passes `Find.CurrentMap` when it
+  `IsPlayerHome`, else `Find.AnyPlayerHomeMap` (Faction Territories' choice **[V]**), and
+  `ExchangeVenue_Faction.Available` refuses any non-home map — so a pod never lands on a raid
+  site the camera happens to be on. It
+  is per-client camera state; the donor's `DeserterServiceWorkers.CallShuttle`,
+  `TauntImperials` and `ChangeCritical` read it while mutating state, and VFED's rush delivery
+  reads `Parent.Map` inside the tab's draw method **[V]**.
+- **`CanPurchase` is re-evaluated inside the synced body.** Between the click and execution
+  the table can lose power, the faction can lose goodwill, and the other founder can spend the
+  balance. The window's check is advisory.
+- **No targeter.** Delivery picks its own cell. Multiplayer auto-registers `OrderForceTarget`
+  only for `ITargetingSource` types **declared in `Assembly-CSharp`** —
+  `Multiplayer.Client.SyncMethods` filters `t.Assembly == typeof(Game).Assembly` **[V]** — so
+  vanilla's `RoyalTitlePermitWorker_DropResources` is synced and a modded copy of its
+  targeting path would not be.
+- **Applying the item is a Job** (`JobDriver_ApplyTechprint`) **[V]**. Nothing to add.
+
+`DropCellFinder.TradeDropSpot`'s fallback calls `list.Shuffle()` and
+`CellFinderLoose.RandomCellWith` **[V]** — `Rand` inside a synced command, which Multiplayer
+seeds **[I]**.
 
 **Defs, not settings** (**T-18**). Every price, amount, cooldown and catalogue entry is a
 `CurrencyPurchaseDef` or `QuestGiverDef` field. No `ModSettings` is read anywhere in this
@@ -712,8 +963,8 @@ reference the progression component. That is a grep, not a review habit.
 
 ### The interface to [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)
 
-**Spending Intel and consuming an exemplar are two acts, on two objects, and must not be
-folded together.** Intel is a scalar with no identity beyond its `CurrencyDef` and no
+**Exchanging Intel, studying an exemplar and destructively analyzing an artifact are
+three distinct acts and must not be folded together.** Intel is a scalar with no identity beyond its `CurrencyDef` and no
 location. An exemplar is a particular `Thing` the colony holds, with a `ThingDef`, a stack,
 a quality and a position.
 
@@ -735,24 +986,10 @@ Folding either into the other makes a required case inexpressible, in each direc
 **What this document offers #67:** `Balance`, `CanAfford`, `TrySpend`, `Credit` above. The
 sync boundary and the balance stay on this side.
 
-**Whether #67 calls any of them is not decided here — and was never this document's to
-decide.** An earlier draft of this section stated that "#67 calls `CanAfford` when drawing a
-gate and `TrySpend` from inside an already-synced work path". **That expectation is
-withdrawn.** It presumes an answer to *does Analysis ever cost Intel*, which is a
-**requirements** question owned by
-[`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) and now tracked as
-the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2). `docs/specs/RESEARCH.md`
-reached the opposite presumption from the other side — it *ruled* "do not price analysis in
-Intel" — and has withdrawn that ruling. **Neither spec decides it.** #67 and #54 are both
-capability tickets; neither had the authority.
-
-Conditional on that question, and stated conditionally:
-
-- **If Analysis is priced in Intel**, the calling discipline is the one this document imposes
-  on *every* caller and is not special to #67: `CanAfford` is pure and safe from a draw
-  method; `TrySpend` mutates and may be reached only from a Job, a quest part or a synced
-  method — never from a draw method, which is the specific defect in the donor **[V]**.
-- **If it is unpriced**, #67 touches nothing in this document.
+**#67 never calls this balance.** The exemplar gate is independent and surviving.
+Reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) owns the surface
+that exchanges Intel for an Instruction item. [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)
+owns the destructive work that credits Intel and raises Trace.
 
 **What this document needs from #67:** nothing at debit time, under either ruling.
 
@@ -764,7 +1001,8 @@ must be written. `ResearchManager.FinishProject(ResearchProjectDef, bool, Pawn, 
 public and is the single funnel **[V]** — but it **recurses into unfinished prerequisites**
 **[V]**, so a naive postfix debits once per project in the chain, and a *gate* belongs in a
 prefix because by postfix time `progress[proj]` is written and the unlock signal has fired.
-That negative stands whichever way that is settled; it only becomes *relevant* if Analysis is priced.
+Analysis is not priced — research never debits Intel — so this negative is recorded for
+completeness only.
 
 ### What is shared — [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) has ruled
 
@@ -802,7 +1040,7 @@ to it.
 |---|---|---|
 | A `CurrencyDef` leaves the load order | Key resolves null on load **[I]** | `FinalizeInit` drops null keys and logs once. The balance is lost, which is correct — the currency no longer exists. |
 | Stored balances silently rebind to the wrong currency | **None — this is the silent one** | Prevented, not recovered: `LookMode.Def`, never `DefMap`. **T-37**. |
-| A purchase worker throws mid-`Purchase()` | Log error, and the balance in D1 is visibly unchanged | `TryPurchase` checks `CanPurchase()` first and debits **after** `Worker.Purchase()` returns, so a worker that throws *before* granting anything costs the player nothing. **The ordering admits the opposite failure, and this document should say so:** a worker that grants its goods and *then* throws hands them out **free and un-cooldowned**, because the debit is never reached. `CanPurchase()` makes it narrow; it does not make it absent. The mitigation is a worker discipline, not a mechanism — **perform the grant as the last statement**, so anything that can throw throws before it. Debiting first would trade this for a charge with no goods, which is the worse failure. **[I]** |
+| A purchase worker throws mid-`Purchase()` | Log error, and the balance in D1 is visibly unchanged | `TryPurchase` checks `CanPurchase(map, at)` first and debits **after** `Worker.Purchase(map, at)` returns, so a worker that throws *before* granting anything costs the player nothing. **The ordering admits the opposite failure, and this document should say so:** a worker that grants its goods and *then* throws hands them out **free and un-cooldowned**, because the debit is never reached. `CanPurchase()` makes it narrow; it does not make it absent. The mitigation is a worker discipline, not a mechanism — **perform the grant as the last statement**, so anything that can throw throws before it. Debiting first would trade this for a charge with no goods, which is the worse failure. **[I]** |
 | Two clients disagree on a balance | MP desync | `TryPurchase` is the only mutation reachable from UI and carries `[SyncMethod]`. Every other mutation is inside a Job or a quest part. |
 | The catalogue is empty or every entry unaffordable | Visible in D1 | Not a failure. The window states the balance and the shortfall, as `TrySpendIntel`'s `"VFED.NotEnough"` message does **[V]**. |
 | The D3 postfix breaks on a game update | **Visible** — the row vanishes or misdraws | Layout arithmetic only; the balance and every spend path are unaffected. This is the piece most exposed to a RimWorld update, and it fails loudly rather than silently. |
@@ -812,6 +1050,12 @@ to it.
 | **A `QuestGiverDef` is authored `onlyOneReward: false` and its catalogue is permanently empty** | **Silent — nothing logs and the window simply shows no rows.** `QuestGiverManager.AvailableQuests` prunes every entry whose `quest_Part_choice` or `choice` is null, and `QuestInfo`'s constructor populates those two fields **only** when `onlyOneChoice` is true **[V]** | Prevented, not recovered: a startup validator asserting `onlyOneReward: true` on every `QuestGiverDef` we ship, ~10 lines. The same prune also fires on a null `askerFaction`, which happens when `fixedQuestGiverFaction` is unset and the player has no allies — so **set `fixedQuestGiverFaction`**. |
 | **A quest script throws during generation and silently never appears in the catalogue** | **Silent** — `QuestWorker.GenerateQuests` wraps the body in `catch (Exception) { }` **[V]** | Not repairable from outside; use `onlySpecifiedQuests` so the pool is a list we authored and can test, rather than every `IsRootAny` script in the load order. |
 | **`QuestCurrencyInfo.Buy` throws** | The quest is already added and accepted — `ActivateQuest` debits fourth **[V]** | `Buy` must not be able to throw: `TrySpend` returns a bool and logs, and affordability is checked before the button is live. The ordering is VEF's and we cannot reorder it. |
+| **A Glitterite techprint arrives from somewhere other than the exchange** | **Silent — T-99** — it simply appears in a trader's stock, a quest reward or loot. `TechprintUtility.GetResearchProjectsNeedingTechprintsNow` skips the `heldByFactionCategoryTags` filter when its `faction` is null **[V]**; `ThingSetMaker_Techprints` passes `parms.makingFaction` **[V]**, which `Reward_Items` sets from `giverFaction` **[V]** and which is null on a quest with no asker **[I]**; it is used by Core `Reward_ItemsStandard`, Core `ThingSetMakers_MapGen.xml` (two sites) and Ideology's map-gen loot sets **[V]**. **Orbital trade ships run without a faction too:** `TradeShip.GenerateThings` sets only `traderDef` and `tile`, and `ThingSetMaker_TraderStock.Generate` passes that null `makingFaction` to every stock generator **[V]** — so any orbital trader carrying `StockGenerator_Techprints` (`Orbital_CombatSupplier`, `Orbital_Exotic`) sells the techprint of **every** unfinished `techprintCount` project, whatever its tags and whoever the ship belongs to. Settlement, caravan and visitor traders do set `makingFaction` (`Settlement_TraderTracker`, `PawnGroupKindWorker_Trader`, `IncidentWorker_VisitorGroup`) **[V]** and respect the tags. | Prevented **only by the postfix** — omitting `heldByFactionCategoryTags` covers settlements and caravans but not ships, rewards or loot. Postfix `GetResearchProjectsNeedingTechprintsNow` to drop every project named by a `CurrencyExchangeExtension` — World Tech Level's `Patch_TechprintUtility` postfixes exactly this method **[V]**. **Not covered by that postfix:** VFE Deserters' `ContrabandManager` static constructor registers **every** `ThingDef` carrying `CompProperties_Techprint` as Intel-priced contraband **[V]**, and VPE's `Ability_ReverseEngineer` writes `AddTechprints` directly **[V]** — both owned outside this document ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14); `RESEARCH.md`'s bypass list). |
+| An exchange venue becomes unavailable between click and execution | Visible — the row greys, a rejection message, **no debit** | `CanPurchase` is re-evaluated inside `TryPurchase`. |
+| **The faction venue's faction is absent, hidden, hostile or below `minGoodwill`** | Visible — the row is greyed with its reason | A missing faction is **not repairable** (**T-07**). Hostility or goodwill are, slowly. **Author no Spine item at a faction venue alone** — mark it `campaignCritical` and the validator refuses an entry set with no table-venue route. |
+| A delivered Instruction item is destroyed before it is applied | Visible | Re-buy — the default `maxIssued` is unlimited, and the entry stays listed until `TechprintRequirementMet`. **Setting `maxIssued` on a Spine item converts a burnt techprint into a softlock**; the validator refuses it on a `campaignCritical` entry. |
+| The player buys the same techprint twice before applying the first | Visible — the row stays listed until `TechprintRequirementMet`, so the second purchase wastes Intel | **Deliberate, not capped.** A cap on `purchaseCount − TechprintsApplied` would stop a re-buy after a techprint burns — the softlock above — and `TechprintsApplied` counts techprints from every source, so the arithmetic is not even exact. The row instead shows *"N issued, not yet applied"* and asks for confirmation when N > 0. ~5 lines inside the D1 rows. |
+| A drop pod has nowhere good to land | `Log.Error("Could find no good TradeDropSpot near dropCenter …")`, then a random standable unfogged cell **[V]** | Loud and self-recovering on a planet. On a gravship or orbit map: **RUN**. The table venue does not drop. |
 | Shelved offers bloat the save | **Silent** — the save grows and nobody looks | `QuestGen.Generate` runs pawn and site generation up front **[V]**. `TargetCount` is a `CurrencyDef` field, not the donor's hardcoded 10, so the pool size is a tuning decision rather than an accident. Worth measuring once with a real save. **[I]** |
 
 **No campaign softlock is reachable from this document.** Spending cannot move campaign
@@ -829,7 +1073,8 @@ state — see *Structural separation* — so no sequence of purchases can strand
 | **Retracted** | *"Nothing in the corpus or in vanilla sells a quest except VFE Deserters."* **False** — VEF does, with a pluggable currency. The claim rested on a tier-3 sweep reported as [I] and then used as a negative. Corrected above and on [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). |
 | **Confirmed negative** | Nothing in vanilla, the DLC or the corpus holds a **Def-keyed, world-level, spendable balance**. The named donor holds no balance at all. Independently re-verified by the close-out audit, which re-ran the highest-signal sweep family and found the negative holds **harder** than either #54 comment claimed. **The sweep form used to reach it was itself defective** — see *Verification* and [#103](https://github.com/cjd721/Rimworld-Archinity/issues/103). |
 | **Proposed, not selected** | The whole build above. It is **[I]** as a composition, and the line estimates with it. |
-| **Open parameters** | Every number, plus whether Analysis is priced at all (the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)). See *Outstanding decisions*. |
+| **Added by reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), 2026-09-15** | **The Intel exchange.** Verified available mechanisms: `ThingDefGenerator_Techprints.ImpliedTechprintDefs` run from `DefGenerator.GenerateImpliedDefs_PreResolve` before cross-reference resolution; `ResearchProjectDef.Techprint` / `TechprintRequirementMet`; `CompTechprint` → `JobDriver_ApplyTechprint` → `ResearchManager.ApplyTechprint`; `TradeUtility.SpawnDropPod`; `DropCellFinder.TradeDropSpot`; `Building_CommsConsole.CanUseCommsNow`; `Faction.Hidden`; `RoyalTitlePermitWorker_DropResources.CallResources` as the spend-and-drop precedent; `TechprintUtility.GetResearchProjectsNeedingTechprintsNow`'s null-faction branch. All **[V]**. **Two carriers exist, neither adoptable:** Faction Territories' `Dialog_Vassalage` (declined mod) and vanilla `RoyalTitlePermitWorker_DropResources` (per-pawn favor) both spend a stored number on delivered items. Vanilla's only non-silver *trade* currency is sell-only. **Proposed, not selected:** the exchange build, **[I]** as a composition. |
+| **Open parameters** | Every number — Intel prices, the exchange catalogue, its cadence, and which venue carries each item ([#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)). **Analysis pricing is resolved: research never debits Intel** ([`GLITTERTECH.md`](../requirements/GLITTERTECH.md)). See *Outstanding decisions*. |
 
 Established on [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)
 (absorbing [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55)'s currency half).
@@ -843,6 +1088,11 @@ Established on [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)
 `…/294100/3025493377/1.6/Assemblies/VFED.dll`. `MOD-SNAPSHOT.md` marks
 `oskarpotocki.vfe.deserters` **Src 1.4 ⚠**, so everything below is read from the 1.6
 assembly the game loads, not the stale source tree.
+
+**It now follows the Church.** Under [`RELIGION.md`](RELIGION.md) § *The build — Exaltation* the
+Empire *is* the Church, transformed in place, so VFED's 49 `OfEmpire` sites — imperial patrols,
+force-size patches, intel extraction, `WorldComponent_Deserters` — point at the Church with no
+patch of ours **[V, #53]**.
 
 **Deserters Intel is a warehouse, not a currency.**
 
@@ -1048,16 +1298,152 @@ different chain. A deferral needs a ticket that can actually answer the question
 What the currency side needs from that carrier, whichever ticket eventually owns it, is
 *nothing* — and that is the point.
 
+### Delivery surfaces for the Intel exchange
+
+The survey behind *The Intel exchange*. Each candidate was asked one question: **can it turn
+a numeric Intel balance into a delivered Instruction item, and at what cost?**
+
+| Surface | What it does **[V]** | Verdict |
+|---|---|---|
+| **Vanilla trade with a non-silver currency** | `enum TradeCurrency { Silver, Favor }`; `TraderKindDef.tradeCurrency`; only Royalty's `Empire_Caravan_TributeCollector` sets `Favor`. `Tradeable_RoyalFavor.CountHeldBy` returns `99999` for the trader and **`0` for the colony**, `Interactive => false`, and `ResolveTrade` acts only on `PlayerBuys` — the player *receives* favor. **The engine has never shipped a trade in which the player spends a non-`Thing` number.** The currency is chosen by equality in `TradeDeal.CurrencyTradeable`, `TradeDeal.AddAllTradeables`, `Dialog_Trade`'s cached currency row and `TradeUtility.GetPricePlayerSell`; `GetPricePlayerBuy` has no currency parameter at all. Multiplayer replaces the session with `MpTradeSession`, and its transferable serializer addresses a `Tradeable` by `(FirstThingTrader ?? FirstThingColony).thingIDNumber` — a non-`Thing` row has nothing to address (favor escapes only by being non-interactive **[I]**). | **Rejected.** A dedicated Intel-currency trader for the Traders Guild is ≥4–6 Harmony patches (~150 lines) in Multiplayer's most-patched window, for what one venue class does in 30. |
+| **Orbital traders' techprint stock** | `Orbital_CombatSupplier` and `Orbital_Exotic` (`<faction MayRequire="Ludeon.RimWorld.Odyssey">TradersGuild</faction>`) carry `StockGenerator_Techprints`. A passing ship generates stock with **no** `makingFaction` (`TradeShip.GenerateThings` sets only `traderDef` and `tile`; `ThingSetMaker_TraderStock.Generate` passes it through), so `GetResearchProjectsNeedingTechprintsNow` skips the tag filter entirely. | **Rejected, and a leak to prevent.** It sells for **silver**, and it would sell *every* unfinished `techprintCount` project's techprint regardless of `heldByFactionCategoryTags` — which is why the exclusion postfix is mandatory (**T-99**). The same bypass is what keeps Empire-tagged techprints on sale after the Church turns hostile: the tag-gated Church trader route needs the Church non-hostile and a colonist holding Knight (Baron for its orbital trader) — [`RELIGION.md`](RELIGION.md) § *Verification* § *Exaltation*. |
+| **Faction Territories — `FactionTerritories.Vassalise.Dialog_Vassalage`** (`jaeger972.factionterritories`, `3626725895/Assemblies/FactionTerritories.dll`) | **A real carrier.** `DoWindowContents` reads `VassalagePointsComponent.GetPoints`; the *Buy* button builds goods with `ThingMaker.MakeThing`, delivers to `Find.AnyPlayerHomeMap` through `TryDeliverToMapSinglePod` (reflected `DropCellFinder.TradeDropSpot` → `DropPodUtility.MakeDropPodAt`) or to a caravan via `TryDeliverToCaravan`, and only then `TrySpendPoints` — logging *"Delivery succeeded but points could not be deducted (state changed)"* when that fails. All from a draw method. | **Not adoptable — the mod is declined** (map #2 *out of scope*, settled on [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)), its balance is keyed per faction and accrued passively (see *The wide pass*), and its purchase is unsynced. **Donor for `ExchangeVenue_Faction.Deliver`**: home-map choice and a single pod at `TradeDropSpot`. The original #54 survey recorded these points as spent *"on pawns, items and roads"* and this table initially omitted it. |
+| **Royal aid** — `RoyalTitlePermitWorker_DropResources` — **a real carrier** | `CallResources(IntVec3)` makes `royalAid.itemsToDrop`, `DropPodUtility.MakeDropPodAt`, messages with `LookTargets`, `TryRemoveFavor`. Multiplayer syncs it through the `OrderForceTarget` sweep and `CallResourcesToCaravan` explicitly. | **Adopt the shape, not the worker.** It is `ExchangeVenue_Faction.Deliver` plus a debit; the favor is per pawn and bound to the title ladder (see *Vanilla and the DLC*). |
+| **VEF `QuestGiverDef`** — this document's #106 Build A | Sells a *quest*: `QuestGiverManager.ActivateQuest` adds, accepts and then debits. | **Rejected for items; kept for Intel missions.** An item through it is a contract whose accept fires a drop pod — a letter, a quest-tab entry and a generator run per item, with **T-76** and **T-77** in the way. |
+| **Bills** — a `RecipeDef` producing `Techprint_X` at a bench | The product resolves in XML (implied defs precede cross-references). But no ingredient takes a non-`Thing` (`RecipeWorker.ConsumeIngredient(Thing, …)`); `RecipeWorker.AvailableOnNow` is reached through `RecipeDef.AvailableOnNow` from `ITab_Bills` (listing and pasting) and `PlayerItemAccessibilityUtility` **[V]**, and from the health-tab surgery lists **[I]** — never from `WorkGiver_DoBill`, which tests `bill.ShouldDoNow()` / `PawnAllowedToStartAnew`; and `RecipeWorker.Notify_IterationCompleted` — the only per-iteration hook — runs **after** `GenRecipe.MakeRecipeProducts` in `Toils_Recipe.FinishRecipeAndStartStoringProduct`. | **Rejected as the default.** ~70 lines plus a Harmony postfix on `Bill_Production.ShouldDoNow`, **grant-before-debit**, and two bills can both pass the gate against one balance. Worth revisiting only if #117 wants a colonist to *work* the exchange — and then as a Job on the table venue, not a bill. |
+| **Comms-console `DiaOption`** — `FactionDialogMaker` | The vanilla surface for talking to a faction. | **Rejected.** Multiplayer syncs a `DiaOption` click by index and re-resolves the dialog client-locally (**T-82**), a `Dialog_NodeTree` subclass drops out of its bindings (**T-95**), and a missing `resolveTree` strands the dialog (**T-97**). D1 rows gated on `CanUseCommsNow` do the same job with none of that. |
+| **VFE Deserters' contraband shop** — the only corpus shop that already exchanges Intel for techprints | `ContrabandManager`'s static constructor runs `TryGiveExtension` over every `ThingDef` and registers each one carrying `CompProperties_Techprint` into `VFED_Imperial`, priced by `SetCostIfMissing` at `BaseMarketValue / 100` Intel. `DeserterTabWorker_Contraband` draws the `(applied/required)` suffix, and its purchase either generates `VFED_DeadDrop` with `itemStashThings` (a site to collect from) or, at double price, `DropPodUtility.DropThingGroupsNear(DropCellFinder.TradeDropSpot(Parent.Map), …)` — **both from the tab's draw method**. | **Donor for the row layout and both delivery ideas; not a dependency** (see *The named donor*). **And a leak:** if VFED ships, every Glitterite techprint is on its shelf. The dead-drop quest is a real faction-venue variant, but its script uses VFED's own nodes (`QuestNode_GetEmpire`, `QuestNode_GetDeserters`, `QuestNode_HiddenDelay`), so it is not free. |
+
+**The wide pass.** Both roots plus vanilla and the DLC, `rg -a -i -g '*.dll' -g '!**/obj/**'
+-g '!**/Referenced/**'`, attributed with `corpus.py --which`, reading only assemblies the game
+loads for 1.6.
+
+- **ASCII `TradeCurrency|Tradeable_RoyalFavor|IsFavor`** — validated first against vanilla
+  `Assembly-CSharp.dll` (hit). Hits in 1.6: RimPacts `RptArmsTrader.TradeCurrency => 0`, TW
+  Capitalistic Militor `NCL.CompTrader.TradeCurrency => 0` and
+  `Tradeable_MechanoidEmploy.IsFavor => false`, VFE Medieval 2 `MerchantGuild.TradeCurrency =>
+  0`, Worksites Expanded (its only `<tradeCurrency>` is `Silver`) **[V]**. **Every modded
+  `ITrader` in the corpus trades in silver.** Vehicle Framework's hits are 1.4/1.5 copies only.
+- **ASCII `techprint`** in 1.6 assemblies, each call site read: VFED (contraband registration,
+  `QuestNode_BetrayalRewards`, `GenStep_FlagshipRuins`); VFE Classical (`Profectus` perk reads
+  `TechprintCount`); VFE Tribals (a ritual filter); VPE (`Ability_ReverseEngineer` →
+  `AddTechprints`); Hacking Expansion (`JobDriver_ApplyResearchGiver` plays the techprint
+  sound); World Tech Level (`Patch_TechprintUtility` postfix — the exclusion precedent); More
+  Realistic Research (a project filter); RimPacts (`RptGoodsUtility` tech level); Multiplayer
+  **[V]**. **None sells a techprint for a stored number.**
+- **`#US` literal, null-interleaved with hand-typed escapes**
+  (`T\x00e\x00c\x00h\x00p\x00r\x00i\x00n\x00t\x00`), validated with `Techprint_` → 1 hit in
+  vanilla. 1.6 hits: More Realistic Research, Worksites Expanded's `MiningOutpost.dll`,
+  NiceBillTab, Multiplayer — **[I]**, literals not depth-read.
+- **XML:** `Techprint_` appears only in Vanilla Base Generation Expanded's Empire layouts
+  (loot placement); `techprintCount` only in Dwarves of the Rim, VFED and GravTech **[V]**.
+
+**Residual gap.** A shop whose currency is neither a `Tradeable`, a `TradeCurrency`, a
+techprint literal nor a `DeserterServiceDef`-style cost field would survive every sweep here.
+The #54 affordability-string family (`NotEnough*`, `CannotAfford`, `Insufficient`) remains the
+best net for that, and it found only VFED spending Intel.
+
+### Three Intel delivery options — priced mechanisms, not a selection
+
+**All three are verified available mechanisms.** *The build* carries **(b)** because it is what the
+requirements as written need; **(a)** and **(c)** are recorded here, priced, so a later ticket can
+switch to either without re-running this research. **Which one ships is a story-beat decision
+Conrad will take later** — nothing in this section recommends changing the current build.
+
+Every line count is **[I]**: an estimate of unwritten code. Every mechanism claim is **[V]** unless
+marked otherwise.
+
+#### (a) Adopt VFE Deserters' contraband economy wholesale — ~15 lines of ours
+
+The only C# we would write is the **T-99** exclusion postfix on
+`TechprintUtility.GetResearchProjectsNeedingTechprintsNow`. Everything else already ships.
+
+**What ships free** [V], all from `…/294100/3025493377/1.6/Assemblies/VFED.dll` unless noted:
+
+| Piece | What it is |
+|---|---|
+| The currency items | `VFED_Intel` and `VFED_CriticalIntel` `ThingDef`s — `VFED.CompIntel` rots the stack at **30** and **10** days, `stackLimit 50`, `tradeability None`, `DeteriorationRate 2.0` |
+| A free top-left readout | both inherit `ResourceBase`, whose `resourceReadoutPriority Middle` puts them in `RimWorld.ResourceReadout` — the one surface *The build* § *Where the player sees it* records as closed to a pure number |
+| The catalogue, auto-populated | `VFED.ContrabandManager`'s static constructor runs `TryGiveExtension` over the whole database and registers **every** def carrying `CompProperties_Techprint` into category `VFED_Imperial` at `BaseMarketValue / 100`. Implied techprints exist by then: `DefGenerator.GenerateImpliedDefs_PreResolve` precedes `StaticConstructorOnStartupUtility.CallAll` in `PlayDataLoader.DoPlayLoad` |
+| The shop | `VFED.Dialog_DeserterNetwork` — categories, a cart, the `(applied/required)` suffix, an affordability message — entered from the comms console through a `GetCommTargets` postfix gated on `Active` |
+| Two deliveries | the `VFED_DeadDrop` site quest, or a **2×**-price rush through `DropCellFinder.TradeDropSpot` → `DropPodUtility.DropThingGroupsNear` |
+| Payment | `TradeUtility.LaunchThingsOfType` — a trade, not a debit |
+| Price scaling | `VFED.Utilities.TotalIntelCost` = `intelCost × VisibilityLevel.intelCostModifier` (2 / 5 / 10) |
+
+**What it costs us** [V]:
+
+- **The whole economy is keyed to the Empire — which [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53)
+  turned into the Church.** Intel is *extracted from Empire-titled pawns*
+  (`VFED.CompIntelExtractor`'s validator is
+  `pawn.royalty.GetCurrentTitle(Faction.OfEmpire) != null`) and dropped by
+  `VFED.EmpireRaidLootMaker`. The shop opens only after
+  `VFED.WorldComponent_Deserters.JoinDeserters`, which force-hostiles `Faction.OfEmpire` via
+  `GoodwillToMakeHostile` and strips titles. Adopting (a) therefore imports an anti-Church war
+  as the *precondition of buying anything*.
+- **It re-imports the Trace dependency [`TRACE.md`](TRACE.md) deliberately re-authored away**:
+  `intelCostModifier` is driven by VFED *visibility*, not by our band. Plus **T-18** —
+  `VisibilityChangePerDay` and `IntelFromExtraction` are `ModSettings` sliders, so two clients
+  with different settings files price and earn Intel differently.
+- **Intel becomes cargo.** It rots, it is raid-lootable, it has mass, and it is spendable only
+  while sitting on a powered orbital trade beacon *on that map*
+  (`Dialog_DeserterNetwork.PostOpen` sums `Building_OrbitalTradeBeacon.AllPowered(Map)`): no
+  Neolithic spending, no caravan spending, no gravship or orbit spending.
+- **Site-inspection-grants-Intel becomes impossible.** That is a
+  [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) requirement (*"optional investigation can
+  provide Intel progress"*), and curiosity cannot spawn loot — see *The build* § *What changes
+  it*, Credit C.
+- **It hard-depends on VFED *and* VFE Empire.** VFED's `About.xml` requires Royalty, VFE Empire,
+  VEF and Harmony, and `VFEE_Deserters` is a VFE Empire def.
+
+**Multiplayer.** Synced by `Multiplayer.Compat.VanillaFactionsDeserters` — `SyncedPurchaseContraband`,
+`SyncedPurchaseContrabandRushedDelivery`, `SyncedPurchaseQuest`, `SyncedPurchaseService`,
+`SyncedAcceptPlot` — which lives only in the conditionally loaded
+`1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll` [V]. **The sync is real but fragile:**
+`PreDoPurchaseButton` dispatches on **translated button-text equality**, so a locale change breaks
+it silently.
+
+#### (b) The stored balance plus our own exchange worker — ~230 new C#, 1 Harmony patch, `purchaseCount`
+
+**The current build**, specified above and unchanged by this section: *The build* § *The Intel
+exchange* and § *Cost*. What it trades away and what it buys, stated against (a):
+
+- **Forfeits** the free `ResourceReadout` row — D1 and D3 are ours to write.
+- **Keeps** site-inspection grants (Credit C), Trace-driven rather than visibility-driven pricing,
+  no rot, no raid loss, no mass, and a balance spendable anywhere a venue is available.
+
+#### (c) Hybrid — our own Intel `ThingDef` with our own vendor — ~120–150 new C# [I estimate]
+
+An item-backed Intel that is **ours**, sold at **our** venue: the item inherits `ResourceBase`, so
+it gets the free top-left readout and the stacking behaviour (a) gets, while the vendor is the
+`CurrencyPurchaseWorker_Exchange` / `ExchangeVenue` pair of (b) with `TrySpend` replaced by a
+`ThingOwner` count-and-consume.
+
+- **Buys:** the free readout and stacking, and a fiction free of VFED's anti-Empire war, its
+  Empire-keyed extraction and its two mod dependencies.
+- **Still cannot** grant Intel by site inspection — that is a property of items, not of VFED.
+- **Re-inherits** rot (if we author a `CompRottable`-style timer), raid-lootability, mass, and
+  whatever beacon-style location constraint we choose to impose on spending; every one of those is
+  now a decision we own rather than one we inherit.
+
+#### The one thing owed under all three
+
+**The T-99 exclusion postfix is owed under (a) and (c) exactly as much as under (b), if VFED
+ships** [V]. `ContrabandManager.TryGiveExtension` registers every `CompProperties_Techprint`-carrying
+def in the database, so any Instruction item we author appears on VFED's shelf at
+`BaseMarketValue / 100` regardless of which option we chose — a second exchange the spec cannot
+see. Under (a) the postfix is the *only* code we write; under (b) and (c) it is one row of the cost
+table. Whether VFED ships is [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.
+
 ### Vanilla and the DLC
 
 | Mechanism | What it gives | Why it is not the answer |
 |---|---|---|
-| **Royal favor** — `Pawn_RoyaltyTracker.favor : Dictionary<Faction,int>`, with `GetFavor`, `GainFavor`, `TryRemoveFavor`, `RefundPermits` **[V]**; earned from quests via `QuestPart_GiveRoyalFavor` / `Reward_RoyalFavor`, spent through `RoyalTitleDef.favorCost` and `RoyalAid.favorCost` **[V]** | A complete stored, spendable, quest-earned, catalogue-spent balance — **the closest thing to this build that already exists**. Its display name is even per-faction data (`FactionDef.royalFavorLabel`, `.royalFavorIconPath` — the Empire sets it to "honor") **[V]**, so a second instance could be renamed without code. | **Per pawn, keyed by faction.** There is no colony-level row, so "the colony's Influence" has nowhere to sit; and `RoyalTitleDef.favorCost` binds the catalogue to the title ladder, which is [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53)'s Exaltation. Reusing it couples Influence to the ladder the requirements explicitly say it is not. **This is the closest miss in the survey, and worth re-checking if the per-pawn constraint ever relaxes.** |
+| **Royal favor** — `Pawn_RoyaltyTracker.favor : Dictionary<Faction,int>`, with `GetFavor`, `GainFavor`, `TryRemoveFavor`, `RefundPermits` **[V]**; earned from quests via `QuestPart_GiveRoyalFavor` / `Reward_RoyalFavor`, spent through `RoyalTitleDef.favorCost` and `RoyalAid.favorCost` **[V]** | A complete stored, spendable, quest-earned, catalogue-spent balance — **the closest thing to this build that already exists**. Its display name is even per-faction data (`FactionDef.royalFavorLabel`, `.royalFavorIconPath` — the Empire sets it to "honor") **[V]**, which is how [`RELIGION.md`](RELIGION.md) renames it to the Church's **Exaltation** without code. | **Per pawn, keyed by faction.** There is no colony-level row, so "the colony's Influence" has nowhere to sit; and `RoyalTitleDef.favorCost` binds the catalogue to the title ladder, which is [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53)'s Exaltation. Reusing it couples Influence to the ladder the requirements explicitly say it is not. **This is the closest miss in the survey, and worth re-checking if the per-pawn constraint ever relaxes.** |
 | **Permit purchases** — `Pawn_RoyaltyTracker.factionPermits : List<FactionPermit>`, scribed `LookMode.Deep` **[V]** | The inverse architecture: **store the purchases, derive the balance** | Not adopted — our balance is earned, not derived from a ladder. But it is the reason a *cooldown* is stored per purchase here (`FactionPermit.lastUsedTick`) rather than per currency. |
 | **Permit points** — `Pawn_RoyaltyTracker.GetPermitPoints(Faction)` **[V]** | A budget spent on a Def catalogue | **Derived, not stored.** It sums `permitPointsAwarded` walking the title chain. A mission cannot pay you permit points. |
 | **`RoyalTitlePermitDef`** **[V]** | The catalogue shape: `workerClass`, cost, `prerequisite`, `cooldownDays`, `uiPosition` | **Adopted** — this is `CurrencyPurchaseDef`'s model. Its `minTitle`/`faction` coupling is what we drop. |
 | **Anomaly knowledge** — `ResearchManager.anomalyKnowledge : Dictionary<ResearchProjectDef,float>` **[V]** | Def-keyed persisted numbers, scribed `LookMode.Def, LookMode.Value` | **Per project, not a pool.** It is progress that accrues into a project, not a balance a mission pays. **Its persistence idiom is adopted.** (The code is in `Assembly-CSharp.dll`; the Anomaly *content* is not on disk — see *The wide pass*.) |
-| **Techprints** — `ResearchManager.techprints`, `ApplyTechprint`, `JobDriver_ApplyTechprint` **[V]** | A consumable item satisfying a research requirement | Per project, one `ThingDef`, not a currency. Relevant to [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67), not here. |
+| **Techprints** — `ResearchManager.techprints`, `ApplyTechprint`, `JobDriver_ApplyTechprint` **[V]** | A consumable item satisfying a research requirement | Per project, one `ThingDef`, not a currency. **Adopted as the Instruction item the Intel exchange delivers** — see *Delivery surfaces for the Intel exchange*. |
 | **`Verse.DefMap<D,V>`** **[V]** | Def-keyed storage | **Positional and load-order fragile.** See **T-37**. |
 | **`ResourceReadout`** **[V]** | The top-left stockpile display | `ThingDef`-driven and rebuilt each tick. Cannot host a number. |
 
@@ -1183,7 +1569,25 @@ this document.
    `ActivateQuest(QuestGiverDef giver, int offerIndex)` on a wrapper of ours instead — the
    index form needs no serialiser and is the fallback either way. **[I]**
 
+5. **A drop pod from the faction venue onto a gravship or orbit map** — does
+   `DropCellFinder.TradeDropSpot` find a sane cell, or fall through to its logged random-cell
+   branch? One client, one exchange, read the log. **RUN.**
+6. **Two founders exchange the last affordable item in the same tick** — exactly one item
+   delivered, one refusal, the balance never negative. Two clients. **RUN.**
+7. **A hand-authored `ThingDef` carrying `CompProperties_Techprint`** offers *Apply techprint*
+   and credits its project. **[I]** as a composition; a one-def test.
+
 ### Observable checks that demonstrate the requirements
+
+- **Exchanging at the decoder** drops the Intel readout by the price, places the item at the
+  table, and the row disappears once the techprint is applied.
+- **No research or hacking project moves the Intel readout** — by play, and by grep: no
+  `TrySpend(Archinity_Intel` outside the exchange worker and `CurrencyQuestCurrencyInfo`.
+- **With the exclusion postfix on, no Glitterite techprint appears** in an orbital trader's
+  stock, a quest reward or ancient-complex loot across repeated generations; with it off, one
+  does. This is the silent failure, and the only way to see it is to look for it.
+- **A faction entry greys with its reason** when the Traders Guild is hidden, hostile or below
+  `minGoodwill`, and un-greys when that clears.
 
 - A quest offering `Reward_Currency` shows an Influence row in the quest-choice list
   *before* acceptance, alongside a Reverence row on the alternative approach — the
@@ -1217,7 +1621,14 @@ this document.
 |---|---|---|
 | **Every number** — earn rates, prices, starting balances, caps | Balance. `RELIGION.md` says *"exact catalogs are implementation work"*; `GLITTERTECH.md` says *"project costs… remain implementation/authoring work"*. | Whoever authors the catalogues. |
 | **Does either currency decay or expire?** Neither requirements file says. The donor's Intel rots **[V]**; Reverence decays by requirement. | A balance that never decays is a different economy from one that does, and it changes whether hoarding is a strategy. | **Requirements gap, no ticket** → [`RELIGION.md`](../requirements/RELIGION.md) for Influence, [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) for Intel. |
-| **Does any Analysis project cost Intel on top of its exemplar?** | Decides whether [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) calls anything in this document at all. Two specs presumed opposite answers; **neither had the authority**, and both have withdrawn. | **Open requirements parameter**, owned by [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md), tracked as the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2). |
+| ~~**Does any Analysis project cost Intel on top of its exemplar?**~~ | **Answered: no.** Research and hacking never debit Intel; Intel is exchanged for Instruction items. | **Closed** by [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) (2026-09-13 correction). |
+| **Which venue carries each Instruction item — table, faction or both** | A Spine item at a faction venue alone can softlock the campaign on hostility or a missing faction (**T-07**). Both venues are built either way. | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). |
+| **The exchange catalogue, its Intel prices and its cadence** (`cooldownDays`, `maxIssued`, the table's own research gate, `minGoodwill`) | Balance and pacing. Every one is an XML field. | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). |
+| **Does Trace raise exchange prices?** | [`TRACE.md`](TRACE.md)'s `intelCostModifier` applies wherever `CurrencyPurchaseDef.currency == Archinity_Intel`, which **includes every exchange entry by construction** — so aggression is taxed twice, in pursuit and in the price of Instruction. That may be the intent; no requirement says. A per-entry opt-out is ~2 lines. | **Requirements gap** → [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) / [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). |
+| **Is the exchange instant, or does a colonist work it?** | Instant is the build. A Job on the table venue — `JobDriver_ApplyTechprint`'s shape — is ~40 more lines; a bill is rejected (see *Delivery surfaces*). | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) (*exchange cadence*). |
+| **When is the Traders Guild contactable?** | `ORBIT.md` hides it until its orbit reveal and records that WTL can drop it from the roster; the faction venue respects `Faction.Hidden`, so it is dark until then. | [`ORBIT.md`](ORBIT.md)'s hide-versus-zero decision ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14), [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)). |
+| **Does VFE Deserters ship?** | Its contraband manager registers every techprint `ThingDef` as Intel-priced stock, a second exchange this document cannot see. | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14). |
+| **Which of the three Intel delivery options ships** — (a) VFED's contraband economy wholesale, (b) the stored balance and our exchange worker, (c) our own Intel item with our own vendor | All three are verified available mechanisms and are priced at *Available mechanisms* § *Three Intel delivery options*. (a) costs ~15 lines of ours but imports VFED's Empire-keyed extraction, its `JoinDeserters` force-hostility, VFED visibility pricing (displacing Trace), **T-18**, rot/loot/mass, beacon-only spending and the loss of site-inspection grants; (b) is the current build; (c) buys back the free `ResourceReadout` row without VFED's war or dependencies but still cannot grant Intel by site inspection. **The T-99 exclusion postfix is owed under all three if VFED ships.** | **A story-beat decision Conrad will take later.** Not a research question — nothing below the fiction changes the answer. |
 | ~~**Does sharing one dictionary between Influence and Intel couple Intel to Church standing?**~~ | **Answered: no. The dictionary stays shared; the escape hatch is not taken.** The real coupling was elsewhere — a band price modifier that reaches the whole shop — and it is scoped to `Archinity_Intel`. | **Closed** by [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md) § *Decoupling from Church politics*. |
 | **How many offers sit in each currency's pool, and what each is worth** | Pool size is save weight; `costPerMarketValue` is the exchange rate between a mission's payout and its price. | Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2). |
 | **Whether a shelved offer should ever rotate out** | VFE Deserters never rotates, so its shop goes stale. **Build A already has the lever** — `QuestGiverDef.resetEveryTick`, which clears and regenerates the pool **[V]** — so this is a number, not a mechanism. What it is *set to* is still unanswered. | **Requirements gap, no ticket** → [`docs/requirements/QUESTS.md`](../requirements/QUESTS.md), whose *Purchase* channel does not say whether offers are standing or perishable. |

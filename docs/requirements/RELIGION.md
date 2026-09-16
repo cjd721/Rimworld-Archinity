@@ -12,9 +12,23 @@ Archinity deliberately reuses RimWorld’s existing political grammar rather tha
 | Influence                  | Schism operations and anti-Church missions.                                  | Spendable leverage inside and around the Church: favors, defections, covert access, political pressure and aid. It is not a global diplomacy currency.                      |
 | Psychic Rank               | Willing-devotion rites and later campaign breakthroughs.                     | Actual channel/psylink capability. Independent of Church title. Ends in the unresolved “?” that becomes the self-authored final title in Ultra.                             |
 
+**The Church and the player faith are different things.** The Church is the
+Roman-Catholic-like external faction created by transforming the vanilla Empire wholesale.
+The player faith is the colony's player-chosen ideology with Archinity's required roles
+and precepts baked in. “Church” never refers to the player faith.
+
 ## Reverence — Religious Penetration, Not Goodwill++
 
-Reverence is tied to the player’s actual ideology. The two founding pawns are mechanically forced into the ideology’s defining leader/preacher roles, so whatever theology the player creates, the founders are its living prophets or exemplars. Archinity never says what that ideology must believe. A serious Archon faith, a bizarre dirt cult or anything else the Ideology system allows can occupy the same campaign structure.
+Reverence is tied to the player faith. Its leadership must scale beyond two pawns: the
+ideology needs one or two founder-specific seats (one shared multi-holder role or two
+equivalent roles), several preacher/converter seats for the core disciples, and at least
+one crafting-specialist seat. Additional authored specialist roles—armorer, tailor,
+stealth or others—are desirable where the role system can express their effects cleanly.
+Roles should be unlockable during the campaign so the institution grows with the colony.
+[#114](https://github.com/cjd721/Rimworld-Archinity/issues/114) establishes the available
+mechanisms; [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116) chooses the
+catalogue and milestones. Archinity still does not prescribe the faith's theology or
+presentation.
 
 Per-faction Reverence is shown beside Goodwill in the custom political UI. A Global Reverence view summarizes how much of the planet follows the player’s ideology and surfaces the current attention band and major consequences. Diplomatic actions are visibly gated by Reverence so the player can see the carrot before reaching it rather than discovering the system accidentally.
 
@@ -34,6 +48,13 @@ At higher Reverence, the movement can institutionalize. Reverence unlocks the di
 
 Very high Reverence creates a second lever where Goodwill cannot function. A friendly faction whose population overwhelmingly follows the player’s ideology can become eligible for vassalage or submission. A hostile government sitting on top of a highly reverent population can become eligible for a revolt: the player commits resources to the believers, success can replace the hostile regime with a subordinate one, and failure can sharply damage Reverence. Exact thresholds and success math are balance work.
 
+Reverence gain is independent of Goodwill; Goodwill gain is not independent of
+Reverence. At low Goodwill and substantial Reverence, a government becomes wary that the
+founders' religion is eroding its control, so positive Goodwill changes are reduced. At
+extreme Reverence—provisionally above 90—the faith has penetrated the ruling ranks and
+positive Goodwill changes accelerate sharply. The exact curve is balance, but the inverse
+middle and high-end reversal are requirements, not tuning accidents.
+
 ## Reverence as World Attention
 
 Reverence has benefits and consequences. The Storyteller can use Global and faction Reverence as an attention weight when selecting incidents: higher religious penetration makes founder-related politics louder, increases the chance that threatened enemies act, can scale the frequency/intensity of politically motivated attacks, and also increases positive events such as pilgrims, aid, offerings and volunteers.
@@ -42,7 +63,12 @@ The relationship must be explicit to the player. The political UI should show th
 
 ## The Church Path — Exaltation and Titles
 
-The Church uses an Empire-like scale. Church quests award Exaltation. At Exaltation thresholds, the founders perform a rite and receive the next sacred title. Exact names and counts are still authoring work; the structural rule is locked. Church titles are institutional standing, not psychic power.
+The vanilla Empire becomes the Church wholesale; there is no separate Empire left beside
+it. The Church retains or supplies every Empire-bound acquisition route the campaign still
+needs, including techprints, unless those requirements are deliberately removed. Church
+quests award Exaltation. At Exaltation thresholds, the founders perform a rite and receive
+the next sacred title. Exact names and counts are still authoring work; the structural rule
+is locked. Church titles are institutional standing, not psychic power.
 
 Titles permanently unlock access to things that should matter: elite equipment, rare resources, military aid, specialists, political privileges, safe passage, requisitions and other powers that ordinary RimWorld acquisition routes are deliberately made less trivial. The Church route is attractive because the rewards are legitimately excellent.
 
@@ -81,14 +107,17 @@ Glitterites instead use [Trace](GLITTERTECH.md#trace--the-glitterites-learn-you-
 
 ## Saved state and remaining work
 
-Church state includes Exaltation, title, privileges and tolerance/threat. Schism
+Church state includes Exaltation, title and privileges. Its suspicion and eventual
+hostility are derived from Global Reverence rather than stored as separate tolerance or
+threat currencies: broad penetration makes the Church progressively more hostile until
+betrayal or open attack. Schism
 state includes contact, ordered mission progress, Influence and hierarchy targets.
 Reverence is per faction, with institutional sustain/decay and derived attention
 bands. Wars, alliances, Goodwill and vassal/revolt outcomes are tracked by
 [faction politics](POLITICS.md).
 
 Title and favor catalogs, conversion propagation amounts, decay, institutional
-effects, tolerance, revolt success and UI thresholds still need design or tuning.
+effects, Reverence reaction bands, revolt success and UI thresholds still need design or tuning.
 Friendly submission and hostile revolt are distinct routes. [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)
 specifies their obligations and tithes. [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98)
 (Reverence, end to end — superseding closed #52),

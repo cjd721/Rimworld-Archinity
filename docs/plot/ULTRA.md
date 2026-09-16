@@ -8,12 +8,12 @@ Ultra is a deliberately manufactured post-vanilla era. The founders do not simpl
 
 [Glittertech and pursuit](../requirements/GLITTERTECH.md) defines the exemplar, Intel,
 hacking and Trace loop. These are the activities through which the evidence below
-is encountered. Lore is primarily found at sites; spending Intel buys capability,
-not erasure or replacement of what the colony has learned.
+is encountered. Lore is primarily found at sites; accumulated Intel is exchanged for
+instruction that unlocks capability rather than being spent inside the research tree.
 
 ## What the Glitterites Are
 
-The Glitterites are an android civilization descended from human persona cores. Over immense spans of time they copied, forked, edited, optimized and replicated human-derived persona patterns across artificial bodies. They stripped away personality, emotion and individuality they considered inefficient while making selves increasingly interchangeable. They also control the advanced mechanoid forces associated with their civilization, including boss-scale variants anchoring major strongholds.
+The Glitterites are an android civilization descended from human persona cores. Over immense spans of time they copied, forked, edited, optimized and replicated human-derived persona patterns across artificial bodies. They deliberately stripped away personality, emotion, fervor and individuality they considered inefficient, including the faculties required to connect to the channel, while making selves increasingly interchangeable. They cannot receive psylinks and are not hackable. Other androids did not necessarily make those choices and may be essentially ordinary people. They also control the advanced mechanoid forces associated with their civilization, including boss-scale variants anchoring major strongholds.
 
 Their artificial existence never freed them from anima. They consume living biological material, refine the anima-bearing substrate into an anima-rich neutroamine economy and use it to power systems that remain dependent on life despite discarding ordinary biology. They mass-produce mechanoids across the universe to harvest organic matter and protect that extraction apparatus.
 
