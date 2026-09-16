@@ -888,7 +888,8 @@ the failure the legibility requirement is written against. Leave it at its defau
 
 #### 3. The diplomatic action — a gated `DiaOption`, ~15 lines
 
-For anything reached from the comms console — establishing an institution, calling a revolt,
+For anything reached from the comms console — establishing an institution, calling a revolt
+(one of two shapes [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131) weighs),
 asking for a specialist — the gate is `DiaOption.Disable(reason)`, which is **vanilla's own idiom,
 on this exact surface, for this exact purpose** (§0). One helper called from the
 `FactionDialogMaker.FactionDialogFor` postfix that [`RELIGION.md`](RELIGION.md) §

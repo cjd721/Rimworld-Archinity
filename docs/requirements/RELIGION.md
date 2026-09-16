@@ -9,7 +9,7 @@ Archinity deliberately reuses RimWorld’s existing political grammar rather tha
 | Goodwill                   | Normal faction diplomacy, gifts and quests.                                  | The government’s relationship with you. It remains the ordinary spend lever for normal faction favors.                                                                      |
 | Reverence                  | Conversion and religious propagation; public deeds; selected quest outcomes. | How deeply the player’s ideology has penetrated that faction’s population. Persistent but slowly decaying; gates religious/political possibilities rather than being spent. |
 | Exaltation → Church Titles | Church service and Church quests.                                            | The Church’s Honor-equivalent. Thresholds unlock rites and titles; titles grant permanent institutional privileges, requisitions and authority.                             |
-| Influence                  | Schism operations and anti-Church missions.                                  | Spendable leverage inside and around the Church: favors, defections, covert access, political pressure and aid. It is not a global diplomacy currency.                      |
+| Influence                  | A reward choice on Schism operations.                                        | Spendable leverage with the Schism: it buys the missions that advance the Schism's plot, and favors such as defections, covert access, aid and techprints. It is not a global diplomacy currency. |
 | Psychic Rank               | Willing-devotion rites and later campaign breakthroughs.                     | Actual channel/psylink capability. Independent of Church title. Ends in the unresolved “?” that becomes the self-authored final title in Ultra.                             |
 
 **The Church and the player faith are different things.** The Church is the
@@ -46,7 +46,7 @@ Converted prisoners or rescued outsiders can be released back to their faction a
 
 At higher Reverence, the movement can institutionalize. Reverence unlocks the diplomatic option; normal Goodwill remains the spend lever. With sufficient Reverence, the player can spend Goodwill to establish churches, monasteries or equivalent religious institutions inside friendly factions. These institutions deliberately counteract natural Reverence decay and can eventually make the faith self-sustaining. Hostile governments can suppress institutions, persecute apostles and keep Reverence falling unless the player changes the political situation.
 
-Very high Reverence creates a second lever where Goodwill cannot function. A friendly faction whose population overwhelmingly follows the player’s ideology can become eligible for vassalage or submission. A hostile government sitting on top of a highly reverent population can become eligible for a revolt: the player commits resources to the believers, success can replace the hostile regime with a subordinate one, and failure can sharply damage Reverence. Exact thresholds and success math are balance work.
+Very high Reverence creates a second lever where Goodwill cannot function. A friendly faction whose population overwhelmingly follows the player’s ideology can become eligible for vassalage or submission. A hostile government sitting on top of a highly reverent population can face a [revolt](#revolt).
 
 Reverence gain is independent of Goodwill; Goodwill gain is not independent of
 Reverence. At low Goodwill and substantial Reverence, a government becomes wary that the
@@ -76,17 +76,104 @@ The Church also reveals the missing half of the altar. Willingly given blood/ani
 
 Church missions repeatedly create a central temptation: let the Church own the story and receive the stronger institutional/material outcome, or let the deed be attributed to the founders and their ideology, gaining more Reverence while making the Church increasingly nervous.
 
+**Credit is chosen when the quest is accepted.** A public deed's reward choice is its
+attribution: the Church (Exaltation), the founders (Reverence) or, once the founders work with
+the Schism, the Schism (Influence). Some options mix rewards. Choosing the reward is what
+accepting the quest means; the player then carries the deed out on their own judgment.
+[#135](https://github.com/cjd721/Rimworld-Archinity/issues/135)
+
 **The bargain**
 
 The Church is not the obviously stupid route. It feeds, equips, protects and exalts the founders because they are useful sacred assets. In return, it wants the founders to remain inside the institution’s interpretation of what they are.
 
 ## The Schism Path — Influence + Reverence
 
-Influence is the Schism’s equivalent of Deserters Intel. It is not another global relationship score. The player earns it primarily by completing Schism operations that create usable leverage inside or around the Church, and then spends it through the anti-Church network. Plot progression is tracked separately, so spending Influence never reverses the ordered campaign.
+**The Schism** is the faction of Church insiders who believe the founders are truly divine.
+In the fiction it is part of the Church until it breaks away. In the world it exists from
+creation, hidden and holding no ground. It becomes a visible faction when the founders commit
+to it, and where the routes allow it takes its first Church settlement then.
 
-The same mission family can support radically different approaches. A covert operation might produce high Influence and little public Reverence; a public miracle or exposure might produce less reusable leverage but sharply increase Reverence; direct violence can remove a target quickly while failing to change the beliefs that made that target powerful. The selected approach determines the reward/consequence profile rather than forcing every mission into the same exact arithmetic.
+**Its faith moves.** It begins with the Church's faith — sincere believers who take the
+founders as proof of the doctrine — and turns to the player faith as the founders take the
+credit for its victories. The successor holds the player faith, so its people can become aligned
+volunteers ([the ending](../plot/ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly)).
+[#133](https://github.com/cjd721/Rimworld-Archinity/issues/133)
 
-Influence can buy anti-Church actions that Goodwill cannot: compromised access, defections, protected routes, covert resource acquisition, Schism military help, political pressure on Church nodes and other favors that consume leverage. Exact catalogs are implementation work.
+**Contact follows service or spread, never a schedule alone.** The Church reaches out when the
+Medieval era begins. Some time after its first quest offer — provisionally thirty to forty
+days, a balance number — the Schism becomes eligible to
+contact the founders once they have completed a Church quest or Global Reverence has passed a
+threshold, and its contact arrives through ordinary quest generation. If the Church betrays the
+founders first, the Schism's offer arrives at once. A run that neither serves the Church nor
+spreads its faith may never meet the Schism, and that is a valid choice. Declining the Schism
+is never final.
+
+**Operations pay Influence, and Influence moves the plot.** The Schism offers ordinary quests
+whose reward choices include Influence — a material reward with a little Influence, a lot of
+Influence, or Influence with Reverence among the Church's people. Influence is spent with the
+Schism: on the missions that advance its plot against the Church, and on favors Goodwill cannot
+buy — defections, protected routes, military help, covert resources and techprints, as the
+Deserters' shop sells them. Spending on the plot is the player's choice, so the number of
+operations between one advance and the next is theirs too.
+[#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)
+
+**Commitment is one act, and it is final.** The founders can work with the Schism while still
+serving the Church, and can stop and return to the Church path. They cannot bank Influence and
+keep the Church's favor: a defined act — the first Influence gained or the first plot spend,
+whichever the routes allow — commits them and turns the Church permanently hostile. There is no
+way back to the Church after it, and no option to sell the Schism out. On the Church path the
+Church still betrays founders whose Reverence grows too dangerous.
+
+**The Church falls in stages.** Each advance is a blow against the hierarchy, and the blows vary:
+blackmail that turns a leader, a preaching tour where the founders take the credit, a figure of
+the hierarchy captured, exposed or killed. Where the routes allow, Church ground passes to the
+Schism blow by blow. The finale turns the Church into the Schism; how completely may reflect the
+Church's Reverence and the Influence spent, and whatever does not convert remains a permanently
+hostile Church remnant the player may finish or leave.
+[#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)
+
+**The successor is a permanent ally, not a vassal.** Drift never breaks the alliance; attacking
+it can. It worships the founders and shows it — goodwill, tribute, quests — and follows them into
+orbit. [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120) owns what a friendly
+faction can pay the colony.
+
+**A beat can require the founders.** A Schism or Church deed that shows the founders to the world
+can require one or both of them to attend, and says so before the player accepts.
+[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)
+
+## Revolt
+
+A hostile government ruling a highly reverent population can face a revolt. A faction is eligible
+when its Goodwill with the colony is below one threshold and its Reverence is above another. **The Church
+is never a target** — the Schism is the Church's revolt.
+
+The player takes part and commits to it. Whether a revolt is offered by the faction or started by
+the player at a settlement, and whether a fight, a contribution or both decide it, is open to the
+routes. What holds whichever route is chosen:
+
+- **A founder can never be given away.** If founders cannot be reliably excluded, a revolt takes
+  no pawns at all.
+- **Success makes some or all of that faction the colony's vassal**, holding the player faith. How
+  much of it follows may reflect Reverence and what the player committed. A revolt never needs a
+  faction the world was not created with: settlements that do not follow go to a faction that
+  already exists, or are removed.
+- **A vassal is a whole faction, and it gives its overlord perks.**
+  [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120)
+- **Failure** drops that faction's Reverence sharply and collapses its Goodwill, and what was
+  committed is lost. The faction can revolt again once its Reverence is rebuilt.
+- **An offer declined or left to expire stays away for about thirty days**, so an eligible faction
+  never floods the quest board.
+
+[#131](https://github.com/cjd721/Rimworld-Archinity/issues/131)
+
+## The Church's Faith in the World
+
+At world creation the Church's faith is the Church's alone. **When the Medieval era begins, it
+spreads:** about 40% of eligible factions take the Church's faith. Eligible factions are those in
+the Medieval era that are not highly reverent toward the player faith; Neolithic peoples, later-era
+powers, hidden factions and the Schism are excluded. Peoples raised in the Church's faith who turn to
+living gods are what Reverence and revolt work on. The founders may serve the Church, but the player
+faith never becomes the Church's. [#133](https://github.com/cjd721/Rimworld-Archinity/issues/133)
 
 ## Political pressure
 
@@ -111,7 +198,8 @@ Church state includes Exaltation, title and privileges. Its suspicion and eventu
 hostility are derived from Global Reverence rather than stored as separate tolerance or
 threat currencies: broad penetration makes the Church progressively more hostile until
 betrayal or open attack. Schism
-state includes contact, ordered mission progress, Influence and hierarchy targets.
+state includes contact, whether the founders have committed, Influence and how far its plot has
+advanced.
 Reverence is per faction, with institutional sustain/decay and derived attention
 bands. Wars, alliances, Goodwill and vassal/revolt outcomes are tracked by
 [faction politics](POLITICS.md).
@@ -125,5 +213,15 @@ specifies their obligations and tithes. [#98](https://github.com/cjd721/Rimworld
 [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) (Influence and Intel together)
 and [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) (Trace) each deliver one of
 the political systems, starting from its candidate Empire/Deserters machinery.
+
+The Schism, revolt and the Church's faith were stated on
+[#122](https://github.com/cjd721/Rimworld-Archinity/issues/122). Their capabilities are open at
+route depth: [the Schism's reveal, ground and alliance](https://github.com/cjd721/Rimworld-Archinity/issues/130),
+[revolt](https://github.com/cjd721/Rimworld-Archinity/issues/131),
+[Influence moving the plot](https://github.com/cjd721/Rimworld-Archinity/issues/132),
+[NPC faith changes](https://github.com/cjd721/Rimworld-Archinity/issues/133),
+[founder-required beats](https://github.com/cjd721/Rimworld-Archinity/issues/134),
+[credit as a reward choice](https://github.com/cjd721/Rimworld-Archinity/issues/135) and
+[vassals](https://github.com/cjd721/Rimworld-Archinity/issues/120).
 
 Final volunteer alignment is defined in [the ending](../plot/ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly).

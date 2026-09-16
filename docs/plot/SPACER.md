@@ -15,7 +15,7 @@ The causal concept is locked even though the exact flavor is not: the final plan
 | Planetary resolution | What carries forward |
 | --- | --- |
 | Church route | A sanctioned religious civilization that follows the founders into space if they refuse the Church’s terrestrial ending. It has titles, resources, hierarchy and missionary reach, but remains fundamentally a planetary institution being dragged upward by the founders. |
-| Schism route | A founder-believing successor institution that inherits enough of the old Church’s people and infrastructure to function immediately, then follows into orbit as ally/subordinate depending on player choices. |
+| Schism route | A founder-believing successor institution that inherits enough of the old Church’s people and infrastructure to function immediately, then follows into orbit as the founders' permanent ally. |
 | Independent route | A founder-centered polity/religious network built through the player’s ideology, Reverence, diplomacy, vassalage, revolt and conquest rather than inherited Church institutions. |
 
 The Church also retains a genuine terrestrial terminal victory. At the top of its title ladder it can offer permanent sanctioned apotheosis, safety, wealth and legitimacy—Archinity’s Royal Ascent analogue. Accepting ends the run. Cosmologically, the founders chose to stop climbing and become gods of one world, but the game never labels the choice “bad.” Refusing allows the campaign to continue into space.

@@ -938,6 +938,12 @@ and open-category flags are static mutable fields **[V]**.
 > campaign. That separation is load-bearing and must be structural, not a convention."*
 > — [`RELIGION.md`](../requirements/RELIGION.md)
 
+> **Premise reopened on 2026-09-16.** The requirement quoted above no longer stands:
+> [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122) made spending Influence the way
+> the Schism's plot advances. This section, and *Failure and recovery*'s no-softlock claim that rests
+> on it, describe the earlier requirement. The routes under the new one are
+> [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)'s.
+
 Three layers, none of them a convention:
 
 1. **Different owners.** Balances live in `WorldComponent_Currencies`. The ordered Schism
@@ -1060,6 +1066,8 @@ to it.
 
 **No campaign softlock is reachable from this document.** Spending cannot move campaign
 state — see *Structural separation* — so no sequence of purchases can strand the player.
+**Reopened:** the Schism's plot now advances by spending Influence, so whether a purchase can
+strand it is [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)'s to answer.
 
 ---
 
@@ -1635,4 +1643,4 @@ this document.
 | **Does VEF ship?** | Build A is ~95 lines of new C#; Build B is ~290 and re-derives the pool, persistence, refill, price display, challenge-rating row, choice resolution and accept sequence. | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14). **VEF is already required** by [`PRESSURE.md`](PRESSURE.md) § 4 and by [`HACKING.md`](HACKING.md)'s carrier, so this adds no new mod — but the ledger owns the decision, not this document. |
 | **Is the always-visible readout (D3) the right surface, or does the campaign UI absorb it?** | D3's layout arithmetic is the maintenance cost; a tab of our own removes it. | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) rules on the shape; D1 and D2 ship regardless. |
 | **Which quests are purchasable, and what each contains** | Decides what the catalogue actually holds. The machinery is built here and the membership test is one `DefModExtension`; the contents are not this document's. | Authoring, alongside the era content. [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) settled the mechanism. |
-| **Which carrier holds the ordered Schism chain?** | This document requires only that it is *not* `WorldComponent_Currencies`. | **No owner.** [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40) is the Chronicle's implementation surface and *"nothing else"* **[V]** — a different chain, `hitl` + `wayfinder:grilling`, deliberately last in its own chain. Widening it is Conrad's call, not this document's. |
+| **Which carrier holds the ordered Schism chain?** | This document requires only that it is *not* `WorldComponent_Currencies` — a requirement reopened on 2026-09-16, when spending Influence became how the chain advances. | [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132) owns its routes. [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40) is the Chronicle's implementation surface and *"nothing else"* **[V]**. |

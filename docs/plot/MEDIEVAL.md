@@ -40,11 +40,11 @@ The faction name remains open. “Witnesses” is a discarded placeholder, not f
 
 The schism can include one or two high-ranking officials plus their subordinate network, giving it immediate institutional knowledge and operational reach.
 
-They do not know the hidden Archon cosmology. Their faith can be sincere and wrong in details while still correctly identifying the Church’s hypocrisy.
+They do not know the hidden Archon cosmology. Their faith can be sincere and wrong in details while still correctly identifying the Church’s hypocrisy. They break away holding the Church's faith, and they end holding the founders'.
 
 Their proposition is personal: “They are using you. We believed what they taught us about you, and now we know what they intend to do.”
 
-The contact point is threshold-driven. If the founders’ direct Reverence becomes dangerous to Church control, the schism offers warning and help before the Church moves. Accepting breaks on favorable terms. Rejecting does not permanently preserve the status quo: if the threat threshold is already crossed, the Church can still initiate betrayal later.
+Contact follows the founders' service to the Church or the spread of their faith, some time after the Church first reaches out; if the Church betrays them first, the schism is at their door at once. The founders can work with the schism quietly while still serving the Church, until the act that commits them — after which the Church is an enemy for good. Declining the schism is never final, and it does not preserve the status quo: if the founders' Reverence grows too dangerous, the Church can still betray them. The rules are in [religion and politics](../requirements/RELIGION.md#the-schism-path--influence--reverence).
 
 ## Medieval III — Schism / War
 
@@ -52,7 +52,7 @@ Political pressure becomes open conflict: specialized armies, sieges, demands to
 
 Church route: remain a sanctioned sacred asset, keep climbing the Exaltation/title ladder and accept increasingly explicit institutional ownership in exchange for exceptional power.
 
-Schism route: use Influence, Reverence and military force to break the old hierarchy. The locked invariant is that if this route succeeds, the old hierarchy falls and the founder-believing breakaway inherits enough people, infrastructure and organization to become the successor religious institution. Its exact autonomy/vassal status remains a player outcome.
+Schism route: use Influence, Reverence and military force to break the old hierarchy. The locked invariant is that if this route succeeds, the old hierarchy falls and the founder-believing breakaway inherits enough people, infrastructure and organization to become the successor religious institution. The successor is the founders' permanent ally, not their vassal.
 
 Independent route: reject both institutions and build authority through the player’s ideology, Reverence, Goodwill, vassalage, diplomacy and conquest.
 
@@ -61,7 +61,7 @@ Independent route: reject both institutions and build authority through the play
 1) Sanctioned Divinity — remain inside the Church. 2) Schism Successor — overthrow the old hierarchy and carry forward the founder-believing successor institution. 3) Independent Divinity — reject both and build a founder-centered religious/political network directly.
 
 The final Schism name, Church title names and exact public-deed scenes remain to
-be authored. Successful Schism succession is fixed; its autonomy or subordination
-is the player's outcome. Final volunteer alignment is described in
+be authored. Successful Schism succession is fixed, and the successor is a permanent
+ally. Final volunteer alignment is described in
 [the ending](ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly); serving the
 Church never replaces the colony's player-chosen faith.

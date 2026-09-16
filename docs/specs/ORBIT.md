@@ -154,6 +154,11 @@ condition's clothes, and a scenario edit can revoke it silently. **Null-guard th
 Placing the first settlement is the entire unlock: `CanSelectLayer` re-evaluates from
 `AnyWorldObjectOnLayer` every frame, with no cache and no invalidation call [V].
 
+**The Schism reuses this pattern on the planet** — hidden and landless from world creation,
+revealed mid-campaign. Whether it carries there, including a planetary faction that takes existing
+Church settlements rather than placing new ones, is
+[#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)'s.
+
 ### 4. "Who came with you" is not a new-faction question
 
 Each terrestrial institution selected by the planetary resolution **is already a

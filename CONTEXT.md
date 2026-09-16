@@ -117,6 +117,12 @@ The Roman-Catholic-like external faction the vanilla Empire becomes wholesale. I
 an institution the founders may serve, oppose or replace; it is never shorthand for
 the colony's player-chosen faith.
 
+**The Schism**:
+The faction of Church insiders who believe the founders are truly divine and break from
+the Church over it. Part of the Church in the fiction until it breaks away; present, hidden
+and landless from world creation until then. [Religion](docs/requirements/RELIGION.md)
+_Avoid_: the Deserters, the Witnesses, the other faction
+
 **The mark**:
 The founders' direct Archon inheritance and the key to core vectors. A head start,
 not a cosmological requirement for transcendence. [Altar](docs/requirements/ALTAR.md)
@@ -232,8 +238,12 @@ Church service currency whose thresholds unlock title rites and institutional
 privileges, independently of psychic rank.
 
 **Influence**:
-Spendable leverage earned through Schism operations and used in its anti-Church
-network. Ordered mission progress is separate.
+Spendable leverage with the Schism, taken as a reward from its operations. It buys the
+missions that advance the Schism's plot, and its favors. [Religion](docs/requirements/RELIGION.md)
+
+**Revolt**:
+A reverent population rising against its hostile government, leaving some or all of that
+faction the colony's vassal. Never against the Church, whose revolt is the Schism.
 
 **Intel**:
 Accumulated Glitterite technical intelligence. The player converts or trades it for

@@ -299,6 +299,11 @@ skill gate [V]. The postfix appends options to `root.options` with the reason re
 *"requires N Reverence — currently M."* Establishing an institution and calling a revolt are
 options on this list, gated this way.
 
+> **Revolt reopened on 2026-09-16.** `docs/requirements/RELIGION.md` § *Revolt* now leaves open
+> whether a revolt is started by the player here or offered by the faction as a quest, and requires
+> Goodwill *below* a threshold — which this gate, a minimum, does not express. Both shapes are
+> [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131)'s routes.
+
 ⚠ **Where the option's `action` lives is not free, and this constrains the implementation.**
 Multiplayer reconstructs each `DiaOption`'s delegate through
 `DelegateSerialization.CheckMethodAllowed`, which requires the method's outermost declaring type
@@ -2392,6 +2397,12 @@ that is *closed* ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7),
     Schism or other supplier (for example `heldByFactionCategoryTags` matching a Schism faction's
     `categoryTag` — XML), or remove those techprint requirements deliberately. Gap, no owner.
 
+    **On the Schism route this is now decided by requirement** ([#122](https://github.com/cjd721/Rimworld-Archinity/issues/122)):
+    committing to the Schism makes the Church permanently hostile, and the Schism's Influence
+    catalogue supplies techprints — [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)'s
+    routes. The Church and independent routes remain
+    [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)'s.
+
 ### The commitment
 
 12. **Is Devotion alignment reference equality on `Ideo`, or doctrinal equivalence?** This is
@@ -2404,7 +2415,9 @@ that is *closed* ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7),
     that was this document's own error.** The rule is unstated:
     `docs/requirements/RELIGION.md` says only *"the two founding pawns"*, and
     [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49)'s scope is eligibility for the
-    altar's rites, not identity. **No open ticket owns the predicate.** What *is* settled is
+    altar's rites, not identity. **The predicate's routes are now owned by
+    [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)**, which needs founders
+    recognisable from the first day for quests that require them. What *is* settled is
     where the answer is stored: [`TRANSCENDENCE.md`](TRANSCENDENCE.md) rule 1 makes
     `CompFounderRecord` on the `Archinity_FounderRecord` hediff the single store for founder
     state and forbids a second, and [`ALTAR.md`](ALTAR.md) already extends it. So
