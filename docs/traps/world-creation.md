@@ -134,11 +134,27 @@ Note `rootMinProgressScore` is **not** a tech gate either.
 
 ### T-17 — Raid faction selection is fail-open and fail-quiet
 
-`GetRandomEligibleFaction()` returns null with no fallback when the pool empties, so
-raids simply stop firing. Ignorance Is Bliss gates via a postfix on
-`FactionCanBeGroupSource`, and with `changeQuests=true` that postfix has **no
-`else`** — so an out-of-tech faction is not replaced, it is allowed. Never let the
-eligible pool empty; check it whenever the roster or a tech gate changes.
+When the eligible pool empties, raids simply stop firing and nothing says so. Ignorance
+Is Bliss gates via a postfix on `FactionCanBeGroupSource` that is a **pure veto** —
+`__result = __result && FactionInEligibleTechRange(f)`, with no substitution and no
+fallback — so `IncidentWorker_RaidEnemy.TryResolveRaidFaction` simply finds no candidate
+and returns false. Its `desperate: true` second pass is vetoed identically. **The
+warning never fires at raid time**: `WarnIfNoFactions()` is called only from
+`Settings.WriteAll`, i.e. on closing the settings window. Never let the eligible pool
+empty; check it whenever the roster or a tech gate changes.
+
+> **Mechanism corrected — 2026-09-17, [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128).**
+> This entry previously read *"with `changeQuests=true` that postfix has **no `else`** — so
+> an out-of-tech faction is not replaced, it is allowed."* **`changeQuests` does not reach
+> `FactionCanBeGroupSource` at all.** It governs a different postfix, on
+> `IncidentWorker_PawnsArrive.CanFireNowSub`, which catches the case
+> `TryResolveRaidFaction` returns early on — a faction already set in `parms.faction`, as a
+> quest threat does — and **substitutes** a random in-band hostile faction. Two separate
+> paths: an unresolved faction is **vetoed**, a pre-set one is **substituted**.
+> The fail-open, fail-quiet symptom above is unchanged and still the reason this trap
+> exists. Note also that **`changeQuests = false` force-*allows* the incident**
+> (`__result = true`) rather than blocking it — confirmed against IL, not the decompiler.
+> [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) owns the fix.
 
 *`IncidentWorker_Raid`; IIB `IgnoranceBase`. 1.6.4871.*
 

@@ -277,9 +277,18 @@ That planet-tab button is not dev-gated and is a route around any era clock — 
 
 **Ignorance Is Bliss is fully live** — `IgnoranceBase` reads `f.def.techLevel`
 on the live `Faction` inside call-time predicates at `:192, 204, 211, 225, 234,
-243, 252, 261, 270` and `:320`, with no snapshot. It holds five static caches
-(`:12,14,16,18,20`) and **none of them holds faction tech data**; `techLevel`
-appears in exactly one file in the whole assembly.
+243, 252, 261, 270` and `:320`, with no snapshot. `techLevel` appears in exactly
+one file in the whole assembly.
+
+> **Correction — 2026-09-17, [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128).**
+> This section previously read *"it holds five static caches and **none of them holds faction
+> tech data**."* That is wrong. `IgnoranceBase` holds a static `cachedTechLevel` carrying the
+> resolved **player** tech level, invalidated only by `ResearchManager.FinishProject` and by
+> `Settings.WriteAll` — **never on save load**. Loading a second colony in the same session
+> runs on the first colony's band until a project finishes, and a client that joined without
+> restarting can hold a different band from the host. The original claim is true only of the
+> *faction-by-faction* predicates, which are indeed unsnapshotted. [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)
+> owns the fix.
 
 Its substitutions ride on raid faction selection, which is fail-open and
 fail-quiet (`docs/TRAPS.md` T-17), and it is settings-driven, so its settings
@@ -295,7 +304,15 @@ Division of labour: **IIB controls who shows up, `requiredResearch` controls
 when the quest appears.** Both needed; neither replaces the other.
 
 `useActualTechLevel: true` is correct for us — its own tooltip says it is only
-appropriate with a mod that drives colony tech level, which TechBlock does.
+appropriate with a mod that drives colony tech level.
+
+> **The driver changed — 2026-09-17, [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128).**
+> This line originally justified the setting by *"which TechBlock does"*. TechBlock is decided
+> **off** (#7, and [#84](https://github.com/cjd721/Rimworld-Archinity/issues/84) owns the config
+> reconciliation), so it drives nothing. The replacement driver is
+> [`docs/specs/ERA.md`](../specs/ERA.md) § *Change* — `AdvanceEra()`'s **write 3**,
+> `Faction.OfPlayer.def.techLevel = next`, which exists for exactly this reader. The setting
+> stays correct; its justification now points at our own code rather than a mod we disabled.
 
 ## Research can grant capability, and vanilla carries one third of it
 

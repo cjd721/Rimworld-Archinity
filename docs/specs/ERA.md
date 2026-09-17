@@ -17,10 +17,16 @@ it. [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7) resolved the *me
 the advance — and then closed. [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)
 built [`PRESSURE.md`](PRESSURE.md)'s threat-point composition on **capped time within the
 current era**, could find no document holding that number, and recorded it as an ownerless gap.
-[`CHARTING.md`](CHARTING.md) and the progression grids
+The progression grids
 ([#30](https://github.com/cjd721/Rimworld-Archinity/issues/30),
 [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)) read it next. This document is
 that owner ([#109](https://github.com/cjd721/Rimworld-Archinity/issues/109)).
+
+> **Correction — 2026-09-17, [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128).**
+> This paragraph previously named `CHARTING.md` as a reader of the era clock. It is not one:
+> [`CHARTING.md`](CHARTING.md) gates on research, not on the clock — *"the era knob is a rung
+> on a `ResearchProjectDef`"* — and no `CurrentEra` or `TicksInCurrentEra` read appears in it.
+> [`PRESSURE.md`](PRESSURE.md) and the progression grids are the real consumers.
 
 This document owns:
 
