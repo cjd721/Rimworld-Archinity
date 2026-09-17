@@ -63,7 +63,9 @@ mechanic. Reuse is a design preference, not yet a verified implementation.
 
 1. A qualifying relocation starts a fresh search for the colony's location without
    reducing Trace. Escape requires sufficient distance. A short move does not
-   grant a fresh safe window and permits rapid reacquisition.
+   grant a fresh safe window and permits rapid reacquisition. **A jump between the
+   planet and orbit, in either direction, always qualifies**
+   ([space](SPACE.md), [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)).
 2. Search initially proceeds invisibly. Landing does not reveal a countdown.
    The pursuit quest later announces the approaching threat and reveals the
    estimated time remaining at current Trace.
