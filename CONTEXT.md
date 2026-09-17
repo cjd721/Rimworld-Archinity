@@ -246,6 +246,17 @@ era ceiling decides which bands the world offers; the apparatus decides which it
 accepts. Not **the band**, which is the era gate's faction-contact range.
 _Avoid_: the band, range, radius
 
+**Natural discovery**:
+A survey-pool find rolled by a caravan or a searching outpost as it goes, placed right next
+to it. Not Charting's apparatus work, and never the return pool.
+[Charting](docs/requirements/CHARTING.md)
+
+**Shop** · **Shop entry**:
+A shop is the Purchase channel — the Schism's for Influence, the Glitterite exchange for
+Intel. An entry is one thing on its shelf, **a quest or an item**, with its own eligibility
+and shelf life. [Quests](docs/requirements/QUESTS.md)
+_Avoid_: offer, catalogue (which reads as quests only)
+
 **Reverence**:
 Adoption of the player's ideology among a faction's people. Persistent, slowly
 decaying and sustained by institutions; not spendable. [Religion](docs/requirements/RELIGION.md)

@@ -141,7 +141,8 @@ A manageable number of live diplomatic situations prevents notification fatigue.
 - The ripple must not compound into a runaway; whatever bounds it is an
   implementation constraint, not a balance knob.
 - Multiplayer: one shared player faction means one goodwill number per NPC faction,
-  seen by both players and actionable by either. Every write is a synced command and
+  seen by both players and actionable by either — accepted as design, not arbitrated
+  ([Quests](QUESTS.md#player-information-and-agency)). Every write is a synced command and
   every tunable ships as a Def rather than a mod setting.
 
 ## Open questions
@@ -156,10 +157,6 @@ A manageable number of live diplomatic situations prevents notification fatigue.
   — whether standing can gate content at all, and on which surfaces.
 - [A caravan near a settlement meets it](https://github.com/cjd721/Rimworld-Archinity/issues/136)
   — proximity encounters, attack or trade by relation.
-- **Ownership of the quest board under Multiplayer.** Either founder can accept any
-  quest and choose its rewards, and one shared faction leaves no ownership to restore.
-  Whether that is accepted as design or arbitrated is unowned. From
-  [#12](https://github.com/cjd721/Rimworld-Archinity/issues/12).
 - Threat pressure — raid strength, composition and frequency — is
   [difficulty and pursuit](PRESSURE.md), not this document. Glitterites use
   [Trace](GLITTERTECH.md#trace--the-glitterites-learn-you-back).

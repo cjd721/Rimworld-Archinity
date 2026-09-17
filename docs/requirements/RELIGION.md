@@ -137,9 +137,9 @@ is never final.
 **Operations pay Influence, and Influence moves the plot.** The Schism offers ordinary quests
 whose reward choices include Influence — a material reward with a little Influence, a lot of
 Influence, or Influence with Reverence among the Church's people. Influence is spent with the
-Schism: on the missions that advance its plot against the Church, and on favors Goodwill cannot
-buy — defections, protected routes, military help, covert resources and techprints, as the
-Deserters' shop sells them. Spending on the plot is the player's choice, so the number of
+Schism: on the missions that advance its plot against the Church, and on items such as
+techprints. What its shop may hold is [Quests § Shops](QUESTS.md#shops). Spending on the plot
+is the player's choice, so the number of
 operations between one advance and the next is theirs too.
 [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)
 

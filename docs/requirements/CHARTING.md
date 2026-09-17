@@ -165,6 +165,26 @@ ones.
 The apparatus count may grow beyond three if that is what it takes to match search bands
 to eras cleanly.
 
+### Natural discovery
+
+A caravan out in the world is moving and foraging, and an outpost set up to scout is
+looking. Both can turn up survey-pool content on their own, alongside the apparatus.
+
+- **Only caravans and eligible outposts find things.** A caravan on foot or in vehicles
+  counts. The gravship, shuttles and transport pods fly over everything and never do.
+- **Finds are rolled as you go.** A find is a survey-pool find, placed right next to
+  whatever found it, and it is never guaranteed. Nothing about it can reach the return pool.
+- **A tile can roll again once a timer on it has run out.** If a per-tile timer is not
+  possible, the fallback is that a tile rolls only the first time the colony enters it.
+- **The outpost decides.** Each outpost type declares whether it searches at all, its
+  chance and its distance — a scout post always looks; a mining camp does not. An outpost
+  with an unresolved find finds nothing more.
+- **Finds are not seeded in advance.** A hidden layout of pre-placed finds is a shadow
+  world held beside the real one, and it is ruled out.
+
+[Natural discovery](https://github.com/cjd721/Rimworld-Archinity/issues/146), from
+[#126](https://github.com/cjd721/Rimworld-Archinity/issues/126).
+
 ### The Waystone cannot be lost by accident
 
 The Waystone is colony-level state, not a hauled item. No raider steals it, no caravan
@@ -248,16 +268,12 @@ announcements and nobody is in a position to tell the colony about them.
   founders detect* — a distinction the fiction already makes — and it is what a second
   colony or a settlement without the Waystone would need. Nothing requires it yet;
   capability and narrative decide together whether it ships.
-- **Natural discovery — the mechanism is settled, the rules are not, and they are missing
-  from this document.** [The Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57)
-  established that both hooks exist: a `WorldObjectComp` on the vanilla `Caravan` def for
-  travel, and `Outposts.Outpost.Produce()` for tenure, both feeding the survey pool. It also
-  established that **no per-tile "the colony has been here" state exists anywhere in the game
-  or the corpus**, so the presence record is ours to write. What this document does not state
-  — and must — is the *rules*: discovery probability per tile entered and per tenure cycle,
-  whether re-entering a known tile re-rolls, and whether travel discovery is band-limited at
-  all. [How a beat arrives](https://github.com/cjd721/Rimworld-Archinity/issues/39) is
-  closed; this needs a successor requirements ticket.
+- **Whether natural discovery's rules are expressible** — placement next to the finder, a
+  per-tile re-roll timer, per-outpost-type chance and distance.
+  [The Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57)
+  verified the travel and tenure hooks, and that the per-tile presence record is ours to
+  write; [natural discovery](https://github.com/cjd721/Rimworld-Archinity/issues/146) answers
+  the new clauses.
 - **Road construction is not a Charting decision.** Era-driven roads, allied route
   selection, construction time, player funding and direct road building belong to
   [world infrastructure](WORLD-INFRASTRUCTURE.md). Charting never creates, upgrades or pays

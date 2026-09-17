@@ -96,6 +96,27 @@ choice per quest, not a property left to whatever a def happened to ship with.
 | **Purchase**         | Content bought with a political currency — the Schism's Influence and Glitterite Intel both describe a catalogue the player shops. |
 | **Decree**           | Obligations imposed by an institution the founders belong to, once they hold standing in it.                                       |
 
+### Shops
+
+The Purchase channel is a shop: the Schism's, paid in Influence, and the Glitterite
+exchange, paid in Intel. Both are in.
+
+- **A shop's stock comes from an authored set.** Each entry declares when it may appear,
+  from any saved state — era, political state, a finished research project, whatever it
+  needs.
+- **An entry is a quest or an item.** A techprint is an item; a mission is a quest. This
+  stays open: a shop that can only sell one of the two does not meet the requirement.
+- **Each entry sets its own shelf life** — standing until bought, or expiring. Nothing
+  requires the whole shelf to turn over at once.
+- **An entry that stops being eligible may leave the shelf**, where that is possible.
+- **A bought quest can fail without stalling its plot line.** Whether it returns to the
+  shop, and whether it returns free or at its price again, is not decided; the capability
+  answers what is possible.
+
+[#144](https://github.com/cjd721/Rimworld-Archinity/issues/144) ·
+[#145](https://github.com/cjd721/Rimworld-Archinity/issues/145), from
+[#126](https://github.com/cjd721/Rimworld-Archinity/issues/126).
+
 ## Player information and agency
 
 - Necessity is legible at a glance, from the shape of the quest list alone.
@@ -105,6 +126,10 @@ choice per quest, not a property left to whatever a def happened to ship with.
 - Difficulty is visible before commitment.
 - A quest states plainly why it is happening. A quest with no sender and no discovery
   behind it does not ship.
+- **Under Multiplayer the quest board is shared as vanilla ships it.** Either player may
+  accept, choose rewards, decline or dismiss any quest, for both. The players agree between
+  themselves how to handle quests; nothing arbitrates, and no per-player presentation is
+  required beyond what the Multiplayer mod provides.
 
 ## Constraints
 
@@ -131,9 +156,9 @@ choice per quest, not a property left to whatever a def happened to ship with.
   ([Charting](CHARTING.md)) — so this is now only a question of whether the mechanism
   leaves us a choice. See the capability findings on
   [#12](https://github.com/cjd721/Rimworld-Archinity/issues/12).
-- **Ownership of the quest board under Multiplayer.** Either founder can accept any quest
-  and choose its rewards, and there is no faction-level ownership to restore. Whether that
-  is accepted as design or arbitrated is a capability question with no ticket yet.
-- **What a purchasable quest catalogue requires**, for the Schism's Influence and for
-  Glitterite Intel. [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) carries
-  both currencies; the catalogue itself has no owner.
+- **What carries a shop whose entries are quests or items**, each with its own eligibility
+  and shelf life — [shop entries](https://github.com/cjd721/Rimworld-Archinity/issues/144).
+  [The purchasable quest catalogue](https://github.com/cjd721/Rimworld-Archinity/issues/106)
+  answered quests only.
+- **Whether a failed bought quest returns to the shop, free or paid** —
+  [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145).
