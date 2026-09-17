@@ -56,10 +56,43 @@ There is no required fixed recovery period after an attack. Human political
 reactions retain the benefits and consequences described in [religion](RELIGION.md);
 Reverence is not a universal multiplier on unrelated enemies. Glitterites use Trace.
 
+### Raid objectives
+
+Numbers and quality are not the only axis on which opposition varies. **A raid may
+arrive wanting something other than the colony's destruction, and when it has what
+it came for, it leaves.**
+
+- **The objective is declared, not discovered.** The arrival letter names it, and it
+  arrives before the group does, so the player chooses a response rather than
+  reconstructing an intent afterwards.
+- **Three objectives are required**: taking **people**, taking **livestock**, and
+  taking from the colony's **stores**. Ordinary assault remains the common case;
+  objective raids are the variation, not the norm.
+- **Objectives are era-gated like everything else that arrives** ([era](ERA.md)'s
+  arrival band). A Neolithic neighbour comes for animals and for food; coming for
+  *people* is a later-era escalation. Which objective belongs to which era, and at
+  what weight, is balance.
+- **The opportunistic kidnapping and looting vanilla already performs on ordinary
+  raids stays on.** A declared objective is an addition to that behavior, not a
+  replacement for it.
+
+**Burning the fields is a want, not a requirement.** It is desirable, and it is not
+free. It is recorded here so that it is neither assumed available nor forgotten.
+
 ### Glitterite pursuit
 
-The preferred provider to investigate is Odyssey's existing gravship pursuit
-mechanic. Reuse is a design preference, not yet a verified implementation.
+**This document names no provider.** Which mechanism carries the pursuit belongs to
+[`docs/specs/TRACE.md`](../specs/TRACE.md), which has read the field and returned
+its verdict.
+
+An earlier draft of this paragraph preferred Odyssey's gravship pursuit mechanic.
+That preference was investigated and **declined**: what Odyssey ships cannot
+express rules 1, 3, 4, 5 or 7 below, and
+[`docs/specs/TRACE.md`](../specs/TRACE.md) § *Available mechanisms* carries the
+per-rule evidence ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)).
+The correction is recorded rather than silently dropped, because the preference had
+already been read as a commitment — but the carrier's name and its internals stay
+in the spec, which is where a carrier belongs.
 
 1. A qualifying relocation starts a fresh search for the colony's location without
    reducing Trace. Escape requires sufficient distance. A short move does not
@@ -123,11 +156,17 @@ management; movement and fighting remain meaningful alternatives.
   investigates available measurements and control over strength, composition and
   frequency, including world/caravan scope and Multiplayer timing. Capability
   results must distinguish available mechanisms from selected design.
-- [Trace and pursuit — what carries them](https://github.com/cjd721/Rimworld-Archinity/issues/56)
-  investigates Odyssey reuse, variable search speed, hidden/revealed pursuit,
-  sufficient-distance escape and repeated attacks.
-- [Raid objectives, as distinct from raid size](https://github.com/cjd721/Rimworld-Archinity/issues/77)
-  investigates qualitative opposition beyond numbers.
+- **Trace and the pursuit are answered**, not open:
+  [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) settled variable
+  search speed, hidden-then-revealed pursuit, sufficient-distance escape and
+  repeated attacks in [`docs/specs/TRACE.md`](../specs/TRACE.md). What remains is
+  balance — search rates, distances, reveal timing, raid sizes and repeat intervals,
+  already listed under *Constraints*.
+- **Raid objectives are answered.**
+  [#77](https://github.com/cjd721/Rimworld-Archinity/issues/77) verified all three
+  against `docs/specs/PRESSURE.md` § 8. Which objectives the campaign authors, at
+  which era and with what weights, is balance and belongs to
+  [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - [The faction pressure prototype](https://github.com/cjd721/Rimworld-Archinity/issues/13)
   develops political behavior within these requirements, including the effect of
   alliances. Exact input measurements and any necessary era-transition handling

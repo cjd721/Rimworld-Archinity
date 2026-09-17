@@ -416,6 +416,14 @@ showing *allow smeltable* / *allow non-smeltable*.
 
 ## Outstanding decisions
 
+> **Answered by [#129](https://github.com/cjd721/Rimworld-Archinity/issues/129).**
+> `docs/requirements/COLONY.md` § *Obsolete gear goes back to the material it was made of*
+> now owns recycling and supplies (1) and (2) below: **the return fraction is 50%**, and
+> **yield does not depend on condition or quality** — what the player filters is which items
+> are fed to the bench, not what each is worth once fed, so the Harmony postfix in the
+> escalation row is not needed. (3) and (4) remain open as written. The paragraph below is
+> kept for the reasoning that produced the question.
+
 **No requirements document owns item deprecation.** `docs/requirements/` holds ALTAR,
 CHARTING, GLITTERTECH, POLITICS, PRESSURE, QUESTS and RELIGION. Recycling is one of four
 named counterweights to deprecation in `docs/playtest-notes.md` § *The levers, per Conrad*

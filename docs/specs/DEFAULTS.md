@@ -635,6 +635,18 @@ all**, and does not wait on #95. The proposed replacement text is on
 
 ## Outstanding decisions
 
+> **Partly answered by [#129](https://github.com/cjd721/Rimworld-Archinity/issues/129).**
+> `docs/requirements/COLONY.md` § *Bills arrive configured, and a configuration can be
+> reused* now owns crafting defaults, and settles **which row carries what**: the global row
+> carries the **repeat mode only**, and both floors live on **per-recipe rows** — which
+> honours this document's own "do not set it globally" constraint by construction. The two
+> floor *values*, and whether they vary by era, remain open exactly as described below.
+>
+> #129 also adds a requirement this document does not cover: **a bill's configuration can be
+> copied onto another bill, carrying the settings and not the recipe.** That is
+> [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157), and it lands here when it
+> resolves.
+
 **The quality floor is a requirement, not a mechanism, and nothing owns it.** #95 names the
 problem exactly: *"Good status" is not a number*, and `QualityCategory.Good` is index 4 of 0–6.
 The mechanism takes any `QualityRange`; which one the campaign wants is a gameplay rule. It

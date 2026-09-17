@@ -56,6 +56,15 @@ have earned what they carry out. Above-era settlements are rare and lethal.
   of playing, and nothing may hide it.
 - **Nothing in an era's tab may be researched until the previous era's capstone is
   complete.** Completing a capstone is what opens the next tab and what advances the era.
+- **No route may advance a research project whose prerequisites are unmet.** The gate is
+  the rule, not the research bench. **The test is applied to the project, never to the kind
+  of source** — a book, a quest reward, a ritual, a building, a gene, a faction's favour:
+  whatever the carrier, if it can progress a locked project it breaks the era arc exactly as
+  researching it early would, and is closed on the same grounds. Naming a kind of carrier
+  here asserts nothing about whether one exists; the survey in
+  [`docs/specs/RESEARCH.md`](../specs/RESEARCH.md) says which actually do.
+- **Nothing survives as an authored exception.** A reward that hands the player a project
+  they have not earned is not shipped, however well it is dressed.
 ### The arrival band
 
 **Everything that arrives at the player is the player's era or one below. Never above.**
@@ -194,6 +203,10 @@ knew advancing alongside them, some falling away, others they have never met ris
 - **Looted above-era gear is not artificially blocked from use.** Scarcity comes from the
   lethality of the places that hold it and from biocoding, not from a rule forbidding the
   player to carry out their prize.
+- **The prerequisite rule is checked at the project, never at the source.** Vanilla's own
+  completion path finishes every unfinished prerequisite recursively, so one unguarded
+  grant does not skip an era — it shatters several. A survey that clears each *source*
+  individually is not a defence.
 - The advance is not reversible and the world era never outruns the player.
 
 ## Open questions
@@ -226,6 +239,14 @@ knew advancing alongside them, some falling away, others they have never met ris
   thing the player **chooses** or a thing that **happens to them**, which is #113's own
   unfinished half.
 - **Above-era structures and events seeded on the player's own map** — capability.
+- **The rate of non-bench research sources.** A building, gene or item that produces
+  research points into a project the player *could already research* does not break the arc
+  by the rule above, but it can collapse an era's pacing.
+  [`docs/specs/RESEARCH.md`](../specs/RESEARCH.md) § *Class C* carries the measured rates
+  against a 213/day single-researcher baseline, and notes that the two pacing tickets this
+  question was written against are both closed with nothing replacing them. Whether such a
+  source is capped, restated or removed is balance and belongs to
+  [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **Era lengths, the number of factions per era, and the lethality of above-era settlements**
   are balance, and belong to [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **Which faction replaces which at each boundary** is [the faction grid's](https://github.com/cjd721/Rimworld-Archinity/issues/34).

@@ -6,6 +6,8 @@ Anima is the life-substance carried by living biological substrate; blood contai
 
 Neolithic: the altar accepts blood/life and visibly stores charge. The player has the machine but not the understanding to complete meaningful transformations.
 
+**One optional encounter may teach what anima is.** The intended reaction to the first sacrifice is *"the machine accepted it and I am missing another condition,"* not *"the sacrifice did nothing"* — and an optional encounter may name the missing condition. It teaches that anima exists, that living things carry it, that blood concentrates it, and that anima trees interact with it naturally, explaining the founders' blood hunger and the altar's charge **without** the Archon cosmology. It is offered and never imposed: it arrives on its own schedule, from a faction the player is neutral or better with, it **grants no psylink**, it gates nothing, and ignoring it costs the player nothing. Whether the campaign keeps it is a narrative call for [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119); whether it can be built is [#158](https://github.com/cjd721/Rimworld-Archinity/issues/158)'s.
+
 Medieval: willing devotion reveals that freely given anima behaves differently and widens the psychic channel. The first psylink belongs here.
 
 Industrial: the altar becomes legible enough for genetic democratization and lottery-style augmentation of ordinary colonists.

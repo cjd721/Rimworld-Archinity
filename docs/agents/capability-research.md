@@ -251,6 +251,16 @@ tickets in a row independently rediscovered this; it is written down now.
   Grep the bare name (`Random`), then narrow. Ticket #88 filtered 1,057 dlls to 276
   on the null-terminated ASCII name, deduped by SHA-1, collapsed to one 1.6-loading
   copy per mod, and depth-read the surviving 71.
+- **In XML the same type is stored *joined*, and the bare name finds nothing.** The
+  sibling of the trap above, failing in the opposite direction. A custom def's XML tag
+  carries its full namespace — `<VFEC.Perks.PerkDef>`, `<VanillaPsycastsExpanded.PsycasterPathDef>`,
+  `<VSE.Expertise.ExpertiseDef>` — so sweeping `<PerkDef` or `<TalentDef` returns a clean
+  **zero across the whole corpus** while 152 and 132 such defs sit on disk. #129's route
+  recon hit exactly this and nearly reported a false negative on two perk systems.
+  **The productive form is to enumerate every `<Namespace.TypeDef>` tag and read the
+  frequency table**, then narrow — which is also what surfaces a def family whose mod name
+  gives no hint, and what an `About.xml` name sweep misses entirely. Validate any zero by
+  running the identical sweep form against a type you know is present.
 - **Four mods vendor a publicised copy of `Assembly-CSharp.dll`** — six files across
   `2836791007`, `2990596478`, `3241944893` and `3563882422`. A `.dll` wide pass reads
   **vanilla's entire metadata** back as a hit and attributes it to whichever mod ships the
