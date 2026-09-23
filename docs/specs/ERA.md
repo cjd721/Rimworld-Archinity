@@ -36,7 +36,11 @@ This document owns:
   and why it is the only writer;
 - the **persistence contract** every other spec reads through, and what a save that predates
   the clock sees;
-- the **second writers** that must be shut off, and the multiplayer consequences of each.
+- the **second writers** that must be shut off, and the multiplayer consequences of each;
+- whether **above-era structures and events seeded on the player's own map** can be removed,
+  timed to their era or replaced, and by which routes — § *Above-era content seeded on the
+  player's own map* at the end of this document
+  ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)).
 
 It does **not** own: how long an era *should* last, or what era time is *worth* — those are
 Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2), and the era-length
@@ -619,3 +623,318 @@ which is Balance's and not this document's.
   readout. § 5 proposes a tooltip; it is a design call, not a capability one.
 - **Whether a beat may read `StartTickOf` for an era the colony has left.**
   [`CHARTING.md`](CHARTING.md) is the consumer; the contract in *Status* supports it either way.
+
+---
+
+## Above-era content seeded on the player's own map
+
+([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153).) Written in the routes form of
+[`README.md`](README.md); the sections above predate it and are not re-run.
+
+### Purpose and scope
+
+Answers [`docs/requirements/ERA.md`](../requirements/ERA.md) § *Constraints*: **nothing above the
+era is seeded on the player's own map, as structure or as event.** It names three carriers —
+vanilla ancient dangers, Biotech's crashed mechanitor ship, and the ancient vehicle wrecks of
+`GenStep_ScatterRoadDebris` — and three outcomes in order of preference: **remove**, **author
+when it appears**, **replace**.
+
+"The player's own map" is read here as **a map generated for a player settlement**. In vanilla
+that is one `MapGeneratorDef`, `Base_Player`: `Settlement.MapGeneratorDef` returns it for any
+player-owned settlement without its own generator [V, `RimWorld.Planet.Settlement`], so it covers
+the starting map, a second colony and a gravship landing that settles. **One widening, not
+home-only:** Odyssey's `ClaimableSite` world object also names `Base_Player` as its
+`mapGenerator` (`MapParent.MapGeneratorDef` reads `def.mapGenerator`), and it is the site
+object for `QuestNode_Root_AncientStructure`, `QuestNode_Root_AncientMercenaries` and
+`QuestNode_Root_Site` quests such as `Opportunity_SurveySite` [V]. So every route below that is
+"home-scoped" through `Base_Player` also reaches those claimable quest sites — encounters the
+player travels to. The exostrider is `onlyOnStartingMap` and unaffected; `ScatterShrines` already
+skips 75 % of non-starting maps; the wrecks under AE-3 are the visible case.
+
+This section does **not** reopen the exposure rule. Maps the player travels to keep their
+content. Several routes below *would* also change those maps, and each says so. It does not
+answer [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) § 2, and it does not answer
+closing an ancient uplink as an orbital-quest giver, which is
+[#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)'s
+([`ORBIT.md`](ORBIT.md) § *The reveal gate*).
+
+**A reversal, stated once.** [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7) § 5 froze
+WTL's *Ancient debris* (`Filter_GenSteps`) and *Ancient facilities and roads*
+(`Filter_WorldGenSteps`) **off**. Only route **AE-4** moves either toggle. Every other route leaves
+the frozen set as it is.
+
+### Verdict
+
+- **Possible? Yes, for all three carriers.** Removal is vanilla XML for all three. The mechanitor
+  crash can be timed to Industrial. Replacement is XML for structure and C# for defenders. One
+  limit: a map exists once, so "author when it appears" for **map-seeded** content either means
+  *on maps generated later* or needs code that writes into the living home map.
+- **Multiplayer? Yes.** The recommended routes are defs and a scenario part that are scribed into
+  the save. Neither side can diverge. The one settings-driven route (AE-4) needs the frozen-set
+  record and Multiplayer's join-time config sync.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **AE-1** Scenario part | A `ScenPart_DisableMapGen` part per genstep in `Archinity_SeedOfArchinity`: the genstep never runs in this game. Biotech's *The Mechanitor* scenario ships exactly this for the exostrider | vanilla | XML | Easy | Yes |
+| **AE-2** Generator list edit | `PatchOperationRemove` of the `<li>` from `Base_Player` (dangers, exostrider) or from abstract `MapCommonBase` (debris; Medieval Overhaul ships this patch) | vanilla (MO as donor) | XML patch | Easy | Yes |
+| **AE-3** Home-only prevent | A `GenStepDef` of ours whose `preventsGenSteps` names the vanilla genstep, added to `Base_Player` only. It reaches inherited and biome-added gensteps on player maps and nowhere else | vanilla | XML (+ a no-op genstep class if nothing replaces it) | Easy | Yes |
+| **AE-4** WTL genstep filter | `Filter_GenSteps` on, plus our `TechLevelConfigDef` rows (e.g. `ScatterShrines`). Gensteps run only on maps generated at or above their level | World Tech Level | settings + XML | Easy | With work (T-18) |
+| **AE-5** Timed crash | Exostrider removed (AE-1/2/3); the `MechanitorShip` quest is given when the era reaches Industrial, either by (a) `AdvanceEra()` or (b) an authored `IncidentDef` with a WTL Industrial row | vanilla quest + ours | (a) C# · (b) XML | (a) Medium · (b) Easy | (a) Yes · (b) With work (T-18) |
+| **AE-6** Gated decrypt | The exostrider stays. Its transponder cannot be decrypted before Industrial. A `CompUseEffect` subclass of ours is added to `MechanoidTransponder` by XML | ours | C# + XML | Medium | Yes |
+| **AE-7** Replace in place | AE-3's genstep does real work: in-era debris or an authored structure (`GenStep_ScatterThings` / `_ScatterLayout` / `_ScatterGroupPrefabs`, VEF KCSG layouts). Defenders need a genstep class of ours | vanilla / VEF + ours | XML · C# for defenders | Easy · Medium | Yes |
+| **AE-8** Replace with a journey | Removed from the yard. An authored quest offers an Archon site on a nearby world tile instead, or the transponder's `quest` is repointed to one. The content becomes an encounter | vanilla quest machinery | XML (C# only for a custom site part) | Easy–Medium | Yes |
+| **AE-9** Late insertion | At the advance, a genstep (e.g. `GenStep_ScatterShrines`) runs on the living home map. The age "uncovers" a vault | ours | C# | Medium–Hard | Yes (synced path) |
+
+**AE-4 is not recommended.** It is not scoped to the home map, and the same toggle rebuilds
+above-era settlements as in-era ones (**T-165**). **AE-9 is not recommended for debris.** Wrecks
+appearing overnight read as a bug, not an age.
+
+**Carrier × outcome** — which routes reach which cell:
+
+| | Remove | Author when it appears | Replace |
+|---|---|---|---|
+| **Ancient dangers** (`ScatterShrines`, `Base_Player` only) | AE-1, AE-2 (`Base_Player`), AE-3 — all home-scoped | AE-4 (later maps only), AE-9 (living home map) | AE-7, AE-8 |
+| **Mechanitor crash** (exostrider → transponder → quest) | AE-1, AE-2, AE-3 on `AncientExostriderRemains` — home-scoped | AE-5 (a/b), AE-6; **not** AE-4 (see below) | AE-7 (other remains), AE-8 (repoint the transponder) |
+| **Road wrecks** (`ScatterRoadDebris`, in `MapCommonBase`) | AE-3 home-scoped; AE-1, AE-2 (`MapCommonBase`) remove it from **every** map | AE-4 (later maps only) | AE-7 (in-era debris in its place) |
+
+#### AE-1 — Scenario part
+
+- **Gets us:** one `ScenPartDef` per genstep (`scenPartClass ScenPart_DisableMapGen`, `genStep X`,
+  `selectionWeight 0`), listed in our `ScenarioDef`. `MapGenerator.GenerateMap` filters
+  `mapGenerator.genSteps` **and** `BiomeDef.extraGenSteps` through a local `IsValidBiome`, which
+  drops any genstep a scenario part names [V]. `Scenario.ExposeData` scribes `parts` deep, so the
+  choice travels with the save [V]. Vanilla precedent: `DisableExostriderRemains` in Biotech's
+  *The Mechanitor* [V, `Biotech/Defs/Scenarios/`]. It also reaches Odyssey's
+  `AncientRuins_Scarlands` and Glacial Plain's `FrozenRuins`, the two biome `extraGenSteps` whose
+  ruin layouts can carry the uplink room (#180).
+- **Cannot:** reach tile-mutator `extraGenSteps`, mutator workers (the ancient uplink), or site
+  parts' `extraGenStepDefs` [V]. It scopes by genstep, not by map. `ScatterShrines` and the
+  exostrider appear only in `Base_Player`, so for them it is home-scoped. `ScatterRoadDebris` is in
+  `MapCommonBase`, so for the wrecks it reaches every map, encounters included. **Permanent for
+  the game** unless code removes the part at an advance. That is AE-5's shape, and it affects only
+  maps generated afterwards.
+- **Consequences:** none on the frozen set. The parts show in the scenario summary unless marked
+  invisible.
+
+#### AE-2 — Generator list edit
+
+- **Gets us:** XML deletion at the source. The `Base_Player` list holds `ScatterShrines` and
+  `AncientExostriderRemains` directly [V, `Core`/`Biotech` `BasePlayerMapGenerator.xml`]. The
+  Ideology debris lives in abstract `MapCommonBase` [V, `Core/Defs/MapGeneration/CommonMapGenerator.xml`].
+  **Medieval Overhaul ships this exact patch shape**: `Defs/MapGeneratorDef[@Name='MapCommonBase']/genSteps/li[text()="ScatterRoadDebris"]`
+  and ten siblings, plus `AncientExostriderRemains` on `Base_Player`, each behind its own settings
+  toggle [V, `3219596926/1.6/Patches/ToggleOptions/MOSetting_RemoveJunk.xml`, `…_RemoveExostrider.xml`].
+- **Cannot:** remove an inherited entry from `Base_Player` alone. **T-05** appends child lists to
+  the parent's, so the `<li>` is not in `Base_Player`'s XML to remove. `Inherit="False"` would drop
+  every mod's additions to `MapCommonBase` along with it. The xpaths are **unrun [I]**:
+  `tools/defdb.py` cannot check a leading-`Defs/` xpath until
+  [#102](https://github.com/cjd721/Rimworld-Archinity/issues/102). MO's shipping copy is the
+  evidence that the shape works.
+- **Consequences:** the `MapCommonBase` form changes every map, as AE-1 does for the wrecks. Do not
+  copy MO's settings-toggle wrapper — that is **T-18** at patch time.
+
+#### AE-3 — Home-only prevent
+
+- **Gets us:** the one vanilla lever that is **both** XML and home-scoped for inherited content.
+  `GenStepDef.preventsGenSteps` is applied in `MapGenerator.GenerateContentsIntoMap` (and
+  `MapGeneratorPostInit`) to the **merged** list — generator, biome, mutator and site steps
+  together [V]. So a step added only to `Base_Player` removes `ScatterRoadDebris`, `ScatterShrines`,
+  Scarlands junk or `AncientRuins_Scarlands` from player maps and leaves every other map untouched.
+  Vanilla precedent: Odyssey's `ScarlandsJunkClusters` prevents `AncientJunkClusters` [V].
+- **Cannot:** stop mutator-worker content (the uplink prefab). A `GenStepDef` must carry a
+  `genStep` (`GenStepDef.PostLoad` dereferences it [V]). For pure removal that means a no-op step:
+  a zero-count vanilla scatterer [I] or a trivial class of ours.
+- **Consequences:** none on the frozen set. It combines naturally with AE-7: the preventing step
+  *is* the replacement.
+
+#### AE-4 — WTL genstep filter (not recommended)
+
+- **Gets us:** "author when" for free on maps generated later. The filter compares each genstep's
+  level with `WorldTechLevel.Current` at generation [V]. WTL already rows the Ideology debris at
+  Industrial/Spacer/Ultra and `AncientExostriderRemains` at Ultra. A row of ours for
+  `ScatterShrines` is pure XML (T-54's mechanism, used as a weapon; see
+  [`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md) § *Which toggle
+  gates which filter*).
+- **Cannot:** give the **home** map anything later. The home map is generated once, in the
+  Neolithic, so on it every row behaves as removal. The exostrider genstep is `onlyOnStartingMap`
+  [V], and `GenStep_ScatterShrines.ShouldSkipMap` skips 75 % of non-starting maps [V], so for both
+  carriers AE-4 is effectively removal. It cannot reach the mechanitor **quest** at all: the quest is
+  item-given and never passes the storyteller. It cannot scope to the home map.
+- **Consequences:** moves #7's frozen set, and is **T-18**. Multiplayer's config sync covers the
+  file at join, but not a mid-session flip, because WTL re-applies toggles live. `Settings.Overrides`
+  still beats our rows per install. **T-165**: the same toggle strips site turrets and ancient
+  remains from encounter maps, and clamps every NPC base's build to the world era. That is the
+  quiet widening the requirement forbids. Our own gensteps are **not** at risk from it: a
+  `GenStepDef` has no derived level and stays `Undefined` unless a row or `Settings.Overrides` names
+  it, and no mod in either corpus root ships a `GenStepDef` row besides WTL's own named list [V,
+  sweep of `<defType>GenStepDef</defType>`]. T-54's "derived level above the world level" does not
+  arise for gensteps (see the correction note on **T-54**).
+
+#### AE-5 — Timed crash
+
+- **Gets us:** the crash in the Industrial era and not before. The requirement names this
+  outcome. The quest is vanilla: `QuestScriptDef MechanitorShip`, `QuestNode_Root_MechanitorShip`,
+  which lands `ShuttleCrashed_Exitable_Mechanitor` near the colony with a mech group scaled from
+  threat points and a dead mechanitor's mechlink [V]. (a) `AdvanceEra()` calls
+  `QuestUtility.GenerateQuestAndMakeAvailable` on the synced research-completion path. (b) An
+  `IncidentDef` of ours (`IncidentWorker_GiveQuest`, `questScriptDef MechanitorShip`) with a WTL row
+  at Industrial. `Filter_Incidents` is already **on** in the frozen set, so no toggle moves — but
+  the row must **not** carry `<offworld>` (**T-166**).
+- **Cannot:** (b) is fired by a storyteller comp and has no once-ever guard of its own. It needs
+  `blockedByQueuedOrActiveQuests` or a refire window. A fixed-day comp is **T-157**. (a) and (b)
+  both need AE-1/2/3 on the exostrider first, or the vanilla chain still fires early.
+- **Consequences:** (b) inherits T-18 through `Filter_Incidents` and `Settings.Overrides`. (a) is
+  one more write in `AdvanceEra()`. How it is built belongs to
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+
+#### AE-6 — Gated decrypt
+
+- **Gets us:** the crash still comes only when the player acts, and only from Industrial on.
+  `CompUseableDatacore.CanBeUsedBy` already refuses with a reason when there is no research bench
+  [V]. An extra `CompUseEffect` can refuse by era the same way. There is no XML field for it:
+  `CompProperties_Usable` has no research or tech gate [V].
+- **Cannot:** remove the **structure**. An Ultra exostrider still stands in the Neolithic yard.
+  That is exposure, but it is also map-seeded, so this answers the crash and not the remains. The
+  simple research bench has no prerequisite [V], so without this gate a Neolithic colony can
+  decrypt on day one.
+- **Consequences:** C# in the assembly we ship. The refusal is read from game state on both
+  clients.
+
+#### AE-7 — Replace in place
+
+- **Gets us:** something era-fitting where the vanilla content was. Pure XML covers props and
+  structures: `GenStep_ScatterThings`, `GenStep_ScatterLayout` (the exostrider's own class),
+  `GenStep_ScatterGroupPrefabs` over `PrefabDef`s [V]. VEF's KCSG `GenStep_CustomStructureGen` places
+  authored `StructureLayoutDef`s [V].
+- **Cannot:** field defenders from XML. KCSG resolves layouts under `map.ParentFaction`, which on a
+  home map is the player [V]. Hostile Archon defenders with a defend-point lord need a genstep class
+  of ours. The donor is `GenStep_ScatterShrines.ScatterAt`, which pushes a BaseGen symbol into a
+  used-rect-checked rect [V].
+- **Consequences:** the "Archon site with a few defenders" sits in the yard. It is still
+  map-seeded, so whether it may be expected to be opened on day one is a story call.
+
+#### AE-8 — Replace with a journey
+
+- **Gets us:** the requirement's example, *"an Archon site with a few defenders that becomes part of
+  the campaign's own quest line"*, as an **encounter**. That keeps the design principle: going there
+  is a decision. Either an authored quest offers a site on a nearby tile, or
+  `CompProperties_UseEffectGiveQuest.quest` on `MechanoidTransponder` is repointed by XML [V field].
+- **Cannot:** fire itself at game start without a giver. A storyteller comp is subject to T-157. A
+  quest chain is subject to T-71/T-153.
+- **Consequences:** the site's own gensteps and BaseGen face AE-4's T-165 if that toggle is ever
+  on.
+
+#### AE-9 — Late insertion (not recommended for debris)
+
+- **Gets us:** a vault that "was always there" surfaces at an advance. That fits the requirement's
+  wave of the wand.
+- **Cannot:** this is [I] throughout. Gensteps assume `MapGenerator`'s working data (`UsedRects`,
+  fog roots). Vanilla runs a genstep on a finished map only from debug tools
+  (`MapGenerator.DebugDoNextGenStep`, `DebugActionsMapManagement`) [V].
+- **Consequences:** must avoid the player's buildings (*"the advance never modifies anything the
+  player built"*). Hard to test.
+
+**Recommendation (not a selection).**
+- **AE-1 for ancient dangers and the exostrider.** It is vanilla's own mechanism, XML, home-scoped
+  for those two, scribed in the save, and leaves #7's set alone.
+- **AE-3 for the wrecks**, ideally as AE-7: an in-era debris step that prevents
+  `ScatterRoadDebris` on player maps only. AE-1 and AE-2 would take the wrecks off encounter maps
+  too.
+- **AE-5(a)** if the story wants the mechanitor at Industrial.
+- **AE-8** where a replacement should be a place rather than a fixture.
+
+### Constraints
+
+- **A map is generated once.** Any gensteps-level gate on the Neolithic home map is removal.
+  "Later" means other maps (AE-4) or code on the living map (AE-9).
+- **Genstep-keyed levers cannot see the map's parent.** Of the removal levers, only a step added
+  to `Base_Player` (AE-3) is home-scoped for content the home map inherits.
+- **T-165** — WTL's "Ancient debris" misses `ScatterShrines`, strips encounter maps, and clamps
+  settlement builds. **T-166** — `AlwaysAllowOffworld` voids offworld rows. **T-54** — WTL filters
+  our own gensteps (correction note: the map leg is `Filter_GenSteps`). **T-05** — generator lists
+  append. **T-18** — any settings-driven route. **T-157**, **T-71** — one-shot and chain-granted
+  quests.
+
+### Available mechanisms
+
+- **The mechanitor crash is not an `IncidentDef`** — correcting this ticket's premise [V].
+  `AncientExostriderRemains` (a `Base_Player` genstep, `onlyOnStartingMap`) leaves a
+  `MechanoidTransponder` in `killedLeavings`. Decrypting it at any research bench
+  (`CompUseableDatacore`) runs `CompUseEffect_GiveQuest` → `MechanitorShip`
+  (`isRootSpecial`, `rootSelectionWeight 0`). No storyteller comp, `IncidentDef` or quest node in
+  vanilla gives it, and the transponder has no other vanilla source [V: sweep of `Data` XML and the
+  decompiled `Assembly-CSharp`]. No mod in either root supplies it either. `MechanoidTransponder|MechanitorShip`,
+  XML plus both `.dll` heaps: the only mod hits are WTL's `ThingDef` row and VPE's
+  `Ability_TransmuteItem`, which *excludes* the transponder from transmutation. The validators
+  were the vanilla assembly: 3 ASCII hits and 2 `#US` hits. The storyteller only lists `MechanitorShip` as a **blocker** of the
+  ancient-complex giver. WTL rows the transponder `ThingDef` and the exostrider genstep at Ultra, but
+  not the quest.
+- **Road debris**, re-verified [V]: `GenStep_ScatterRoadDebris.Generate` spawns
+  `VehicleRangeNonRoadMap = IntRange(1, 2)` wrecks on a roadless map, and `CanScatterAt` rejects
+  off-road cells only when `mapHasRoads`. The wreck set is a hardcoded `ThingDefOf` list, so XML
+  cannot swap the things — only the step. `TileMutatorDef.junkDensityFactor` scales it per tile.
+- **Ancient dangers**: `GenStep_ScatterShrines` pushes BaseGen `ancientTemple`, which honours the
+  `peacefulTemples` difficulty flag. It is listed only in `Base_Player` [V].
+- **Others found on the same behaviour** (listed, not answered):
+  - **Ushanka's Hacking Expansion** adds `USH_AncientCyberdeck` to `Base_Player` and `USH_DataCenter`
+    to `MapCommonBase` [V, `3573344880/1.6/Patches/MapGeneratorDef.xml`]. Both are reachable by AE-1/2/3.
+  - **Vanilla Exploration Expanded** — tile mutator `VEE_MechanoidShipChunks` (mutator
+    `extraGenSteps`; no WTL row) [V]. Reachable by AE-3 only.
+  - **Odyssey** — `Junkyard` mutator (Scarlands junk ×15 density, no WTL row); Scarlands'
+    `AncientRuins_Scarlands` and Glacial Plain's `FrozenRuins` biome steps; the `AncientUplink`
+    mutator and ruin room. The uplink's home-map half is ours and its giver half is
+    [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)'s, whose single `PrefabDef
+    AncientUplink` funnel reaches every arrival route.
+  - **Anomaly** — `VoidMonolith` on `Base_Player`. Whether it counts as above-era is a story call.
+  - **Mechanoids: Total Warfare** redefines `AncientExostriderRemains` and defines an unattached
+    `AncientWarBeaconRemains` (its `Base_Player` patch adds nothing) [V].
+  - **Vanilla ship-part crash incidents** — un-gated in the frozen configuration by **T-166**.
+    They are *arrivals*, so they are the arrival band's
+    ([#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)).
+- **Wide pass** (both roots, `-g '!**/obj/**' -g '!**/Referenced/**'`):
+  - `GenerateContentsIntoMap|Base_Player`, ASCII `-i`, returned only World Tech Level in 1.6.
+    That is the validator: its prefix is known.
+  - The null-interleaved literal (typed escapes) returned Vanilla Gravship Expanded and Vehicle
+    Framework, both map-generator selection, not content.
+  - No other assembly injects gensteps. XML additions to `Base_Player`/`MapCommonBase` came from
+    VEF (KCSG biome structures — `BiomeStructGenExtension` has **zero** users), Medieval Overhaul
+    (in-era), Ushanka and MTW.
+- **What #22 § 2 becomes under each route** — handed back to
+  [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22), not answered:
+  - Under AE-1/2/3 on `ScatterShrines`, ancient-danger soldiers never generate on a player map.
+    The check **loses its home-map subject**. Whether an encounter still generates them is #22's.
+  - Under AE-4/AE-9, dangers appear at world level L. The check **matters only if L is below the
+    soldiers' gear level**.
+  - Under AE-7/AE-8, the defenders are ours. The check becomes one about the Archon faction's
+    exemption: **T-54**'s `Undefined` row versus the `FactionsExcluded` setting.
+
+### Status
+
+**Evidence class: READ.**
+- Settled against the 1.6 `Assembly-CSharp.dll`, `WorldTechLevel.dll`
+  (`3414187030/1.6/Lunar/Components/`), `LunarFramework.dll`, VEF's `KCSG.dll`, `Multiplayer.dll`
+  (`2606448745/1.6/AssembliesCustom/`) and MP Compat (both assemblies).
+- Also read: vanilla and DLC defs, and the mods named above.
+- Every mechanism cited is [V]. **Every route is [I] by construction.** AE-2's xpaths are unrun
+  (#102), and AE-9 is [I] throughout.
+- **Selected: nothing.**
+
+### Open questions
+
+- **Story — Conrad:**
+  - Is a replacement a fixture in the yard (AE-7) or a place to go (AE-8)?
+  - Does the mechanitor arrive at Industrial at all?
+  - Does Anomaly's monolith count?
+- **Build — [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):**
+  - the no-op step for AE-3;
+  - AE-5's once-only guard;
+  - the defender genstep for AE-7;
+  - where AE-8's quest is given from.
+- **[#22](https://github.com/cjd721/Rimworld-Archinity/issues/22):**
+  - § 2 per the list above;
+  - the T-166 ship-part incidents as arrivals.
+- **[#180](https://github.com/cjd721/Rimworld-Archinity/issues/180):** the uplink as a giver.
+- **Unowned:** whether a `Base_Player` child or a modded player-settlement generator bypasses
+  AE-3. Vanilla's two children (`BasePlayer_SecondArchonexusCycle`, `…Third…`) inherit it [V].

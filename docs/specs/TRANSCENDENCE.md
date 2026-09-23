@@ -32,6 +32,12 @@ absorbed [#79](https://github.com/cjd721/Rimworld-Archinity/issues/79).
 title — has no field in `CompFounderRecord`, no design here, and no ticket that has
 accepted it. It is listed as a **gap with no owner** in *Outstanding decisions*. The comp
 is its natural home when someone builds it; that is not the same as it being built.
+*(2026-09-23: `docs/specs/PSYCHIC.md` now carries the psychic track's capability answer —
+a founder-only path ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162)) and
+what raises psylink rank besides the altar
+([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)). The design stays with
+[#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) /
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); no field here yet.)*
 
 **This document owns the per-founder state store.**
 [#59](https://github.com/cjd721/Rimworld-Archinity/issues/59) (the altar as a gene
@@ -657,7 +663,7 @@ solely on "no free colonists anywhere", never on a victory.
 | Do the credits replay in full on every crossing, or is the second one abbreviated? | Text-only; `InitiateCountdown` takes whatever string we pass and `departureCount` already distinguishes the cases. | unassigned † |
 | What the authored Transcendent gene is, and what return-after-death costs | Reserved in this store. **No vanilla donor is named here** — see the note below. | [#59](https://github.com/cjd721/Rimworld-Archinity/issues/59) point 3 |
 | Volunteer eligibility as a rite prerequisite | Reads `CompFounderRecord` for the *founder* side. Volunteer-side state needs its own home — see rule 1's scope caveat. | [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) |
-| **Founder psylink / channel progression** | `ALTAR.md` § *Saved state and remaining work* requires it tracked, in the same sentence that requires the claimed title. **This spec has no field for it and no design for it.** The comp is its natural home under rule 1. | **gap — no owner** |
+| **Founder psylink / channel progression** | `ALTAR.md` § *Saved state and remaining work* requires it tracked, in the same sentence that requires the claimed title. **This spec has no field for it and no design for it.** The comp is its natural home under rule 1. Capability answer: `PSYCHIC.md` ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162), [#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)), 2026-09-23. | **gap** — design stays with [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) / [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
 
 † **These five are unassigned on purpose.** An earlier draft routed all of them to
 [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49). #49 exists and is open, but

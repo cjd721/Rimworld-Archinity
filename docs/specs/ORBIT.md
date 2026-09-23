@@ -47,16 +47,15 @@ Established on [Deferred orbital instantiation](https://github.com/cjd721/Rimwor
 
 ## The reveal gate — what closes orbit, and what opens it
 
-> ⚠️ **Under re-examination, 2026-09-23 —
-> [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** The claims in this section
-> about closing orbit — Route A's closure list, *"four of the ten need no scanner"*, and the
-> scanner's row in *What the player obtains* — are being re-checked. The trigger is
-> [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)'s findings:
-> - A second vanilla giver, the hackable `AncientUplink`.
-> - Two more givers and two more tagged quests in the corpus.
-> - Emptying `givenBy` makes the givers throw.
->
-> This is a flag, not a rewrite. The verdict stands until #180 resolves.
+> **Amended 2026-09-23 —
+> [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** Route A's second switch —
+> the scanner quests — is answered in full in § *Holding every `OrbitalScanner` giver shut*,
+> below. It replaces the closure text that
+> [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)'s evidence overturned. The tag
+> has **four** givers and **eight** quests. Clearing `givenBy` is an error path, not a
+> closure. Three claims are corrected in place, each with a dated note: *"four of the ten need
+> no scanner"*, *"Route A's list is a list of `givenBy` tags"*, and the scanner's row in *What
+> the player obtains*. #148's verdict, its three routes and Route A's other four switches stand.
 
 > Established on [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148), answering
 > `docs/requirements/SPACE.md` § *The reveal*: **before the reveal there is no view of the
@@ -145,6 +144,286 @@ Odyssey's own reason string is the right surface, which is why A or B is the flo
 **Recommended, not selected: A + B**, with B decided *before world creation*. C is the answer
 if the decision arrives after a world exists.
 
+### Holding every `OrbitalScanner` giver shut
+
+Answers [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180). This is Route A's second
+switch, restated after [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149) found more
+givers than [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148) listed. Route A's other
+four switches are not affected and stand:
+- generated locations;
+- the gravcore `subquestDefs`;
+- `OrbitalFugitive`'s weight;
+- the zoom shortcut.
+
+Evidence class **READ**. Sources:
+- decompiled 1.6 `Assembly-CSharp.dll`, `VanillaGravshipExpanded.dll` and `WorldTechLevel.dll`;
+- the defs of Odyssey, VGE, GravTech, Worksites Expanded, Vanilla Landmarks Expanded, World Tech
+  Level and Better Architect Menu;
+- two-root sweeps of all 155 mods in both string heaps.
+
+#### Verdict
+
+- **Possible? Yes.** Every giver can be shut, by a gate or by removal, and no route is a worldgen
+  decision. **The tag itself cannot be shut.** If the `OrbitalScanner` list is empty, or every
+  weight on it is zero, both vanilla givers throw. So every route either closes the giver or keeps
+  a sink quest on the tag.
+- **Multiplayer? Yes** for XML removal and for flag-gated givers. Both run on the tick and read a
+  world flag that the synced reveal writes. **With work** in two cases: a route that changes the
+  tag's membership at runtime (**T-173**), and World Tech Level's filters (**T-18**).
+
+#### The givers
+
+The corpus holds exactly **four** givers of the tag, and **two** vanilla readers of it
+(`CompOrbitalScanner`, `CompAncientUplink`) [V]:
+
+| Giver | Carrier | What it needs before it gives |
+|---|---|---|
+| `OrbitalScanner` | Odyssey, `CompOrbitalScanner` | `OrbitalTech`, 2 spacer components, power [V] |
+| `AncientUplink` | Odyssey, `CompAncientUplink` + `CompProperties_Hackable` (defence 6000) | **Nothing but a pawn with Intellectual 6.** No research. It is not buildable; generation places it [V] |
+| `VGE_GravshipScannerCluster` | VGE, `CompScannerCluster_OrbitalScannerModule : CompOrbitalScanner`. It is the cluster's default active **and** default passive module | `AdvancedGravtech`. It scans whenever nobody is working the cluster [V] |
+| `AdvShip_ComputerCore` | GravTech (`als.gravtech`), plain `CompOrbitalScanner` | `AdvShipParts`, an Ultra project [V] |
+
+**The tag selects eight quests** [V]:
+- Odyssey's six `OpportunitySite_*`;
+- VGE's `VGE_OpportunitySite_SolidCoreAsteroid`, which places on `Orbit`;
+- Worksites Expanded's `OpportunitySite_OrbitalPlatform`, whose orbital tile finder places it in
+  orbit [I, from the node name].
+
+Nothing else gives these quests. No mod assembly references `CompAncientUplink`,
+`GetGiverQuests`, `QuestGiverTag` or `OrbitalScannerWorldComponent`, and none looks up
+`OrbitalScanner` or `AncientUplink` by string [V]. VFE Props & Decor's `VFEPD_AncientUplink` and
+`VFEPD_OrbitalScanner` are props and carry no comp [V].
+
+**Every uplink comes through one `PrefabDef AncientUplink`, and there are eight ways it
+arrives** [V] *(six as resolved; the Glacial Plain and ancient-mercenaries rows were added on
+review, 2026-09-23)*:
+- `TileMutatorWorker_AncientUplink` spawns `PrefabDefOf.AncientUplink`.
+- `LayoutRoomDef AncientOrbitalUplink` lists `<prefabs><AncientUplink>`. That entry is a
+  `LayoutPrefabParms.def`, so it points to the same `PrefabDef`.
+
+| Arrival route | Where it lands | Closed by World Tech Level? |
+|---|---|---|
+| `AncientUplink` tile mutator | any tile, at worldgen | **Yes**, under `Filter_WorldGenSteps` [V] |
+| Landmark `mutatorChances`: 32 Odyssey lists and 54 from VLE (#149) | landmark tiles | **Yes.** `WorldLandmarks.AddLandmark` goes through `IsValidTile`. Its `required && forced` bypass has one caller, a debug action [V] |
+| The `AncientOrbitalUplink` room, through worldgen ruin mutators: `AncientRuins`, `AncientRuins_Frozen` and the five structure mutators | ruin tiles | **Yes.** WTL marks all seven Industrial. `LandmarkDef.EverValid` then refuses each landmark that *requires* a refused mutator, whole [V] |
+| The room, through `QuestNode_Root_AncientStructure`: the five `Opportunity_AncientStructure*` quests, given by Traders, Beggars and Reading | quest sites | **No.** `RunInt` calls `Tile.AddMutator` directly [V] |
+| The room, through `QuestNode_Root_AncientMercenaries`: `OpportunitySite_AncientMercenaries`, given by Traders, Beggars and Reading, adds a random `AncientStructure`-category mutator (the five structure mutators) to its site tile | quest sites | **No.** `RunInt` calls `Tile.AddMutator` directly [V] |
+| The room, through `Scarlands`' `extraGenSteps` → `AncientRuins_Scarlands` | **any Scarlands map, the home map included** | **No.** The `GenStepDef` is not in WTL's shipped config [V] |
+| The room, through `GlacialPlain`'s `extraGenSteps` → `FrozenRuins` (`GenStep_FrozenRuins` lays out `AncientRuinsGlacier`, which lists `AncientOrbitalUplink` at 0.05) | **any Glacial Plain map, the home map included** | **No.** The `GenStepDef` is not in WTL's shipped config [V] |
+| The room, through gravcore sites: `GenStep_AncientReactor` → `AncientRuinsReactor_Reactor` (the reactor step `preventsGenSteps` the Scarlands and Glacial ruins it replaces) | gravcore sites | **No**, but these sites need a grav engine first [V] |
+
+Whether an uplink may appear **on the home map** at all is
+[#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)'s question (`ERA.md`). This
+section answers whether it *gives*, wherever it sits. #153 adds one lever against the two biome
+rows: a `ScenPart_DisableMapGen` that names `AncientRuins_Scarlands` (or `FrozenRuins`) removes it
+from every Scarlands (or Glacial Plain) map, because `MapGenerator.GenerateMap` filters
+`BiomeDef.extraGenSteps` through it [V]. It is XML with no toggle, and a scenario part cannot reach
+mutator-worker uplinks.
+
+#### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **R1 — Remove the givers** | Before the reveal no orbital signal comes from anything. The scanner, core and cluster each lose their orbital comp or are locked behind research. The uplink either loses `CompAncientUplink`, so its hack reveals nothing, or never spawns | our patches on Odyssey / VGE / GravTech defs | XML | **Easy** | Yes |
+| **R2 — Flag-gated giver comps** | The givers work as shipped after the reveal. Before it, each does what we author: it idles, shows a line of text, delivers surface content, or (the uplink) **keeps the coordinate and delivers it at the reveal** | our subclasses of `CompOrbitalScanner`, of VGE's module and of `CompAncientUplink`, swapped in by `compClass` | C# + XML, no Harmony | **Medium** | Yes |
+| **R3 — Harmony gate at the givers** | R2's closure in two prefixes: `OrbitalScannerWorldComponent.Notify_ScannerWorking` covers the scanner, the core, the cluster and any later subclass, and `CompAncientUplink.Notify_Hacked` covers the uplink. It works on an existing save | our code | C# (Harmony) | **Medium** | Yes |
+| **R4 — Re-tag with a sink quest** | The eight leave the tag, and Archinity quests take their place, such as surface finds or lore. The givers stay live and say something else until the reveal | our `QuestScriptDef`s + `givenBy` patches | XML to close; C# to reopen | **Easy** to close · **Medium** to reopen | Yes to close · **With work** to reopen (**T-173**) |
+| **R5 — World Tech Level** | **An era gate, not a reveal gate.** `Filter_WorldGenSteps` closes the worldgen uplink routes. With `Filter_Quests` on and our `TechLevelConfigDef` rows on the eight, `QuestManager.Add` refuses them **from every giver** | WTL (`3414187030`) + our XML | XML | **Easy** | **With work** (T-18) |
+
+Each route composes verified seams. **That a route holds orbit shut is [I]** until it is built.
+
+**Three shapes that are not routes:**
+- **Emptying `givenBy` or zeroing the weights.** `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`
+  returns 0 in five cases [V]:
+  - `rootSelectionWeight <= 0`;
+  - points below `rootMinPoints`;
+  - days below `rootEarliestDay`;
+  - progress below `rootMinProgressScore`;
+  - a live `minRefireDays`.
+
+  A list with no weight left takes the throwing path (`docs/engine/quests.md` § *Giver tags*). So
+  weight gating needs R4's sink. Even with a sink, it keys on days or wealth, not on the reveal.
+  **Not recommended.**
+- **Harmony on `QuestUtility.GetGiverQuests` that returns a sink before the reveal.** This is one
+  seam for every caller. But both vanilla givers cache the list on the comp, and the cache is not
+  saved (**T-173**). So the reveal would have to find and flush every live giver, and a host and a
+  rejoined client could draw from different lists. **R3 does the same job without the cache.
+  Dominated.**
+- **Removing `designationCategory` from `OrbitalScanner`.** Better Architect Menu
+  (`ferny.betterarchitect`) runs a `PatchOperationAdd` of `<designationCategory>Ferny_Outreach`
+  with `success Always` on that def [V]. Whether the scanner stays unbuildable then depends on
+  load order. Use a research lock or the comp instead.
+
+**How each route reaches each giver:**
+
+| Giver | R1 | R2 | R3 | R4 | R5 |
+|---|---|---|---|---|---|
+| Scanner | strip or repoint the comp; or set `researchPrerequisites` to an Archinity project that the reveal completes | our `CompOrbitalScanner` subclass | `Notify_ScannerWorking` prefix | draws the sink | `Add` refuses the quest, but the scanner still announces a signal |
+| Uplink | strip `CompAncientUplink`; or swap the thing in `PrefabDef AncientUplink`, which removes every arrival route at once. Do not delete the def (`PrefabDefOf`) | subclass that overrides `Notify_Hacked` | `Notify_Hacked` prefix | draws the sink | spawning closed on worldgen routes only; `Add` refusal on all |
+| VGE cluster | remove the module's `li` **and** repoint `defaultModuleKey` / `defaultPassiveModuleKey`, or `CompScannerCluster` logs an error [V] | subclass VGE's public, unsealed module class [V] | covered, because the module's `CompTick` calls `base.CompTick()` [V] | draws the sink | `Add` refusal |
+| GravTech core | strip the comp `li` | `compClass` repoint | covered | draws the sink | `Add` refusal |
+
+**R1 — what it gets us.**
+- No code, and nothing to keep in step between clients.
+- The uplink can stay as scenery whose hack yields nothing. Or the `PrefabDef` swap keeps it off
+  every map at once, the home map included — the one XML op that also serves #153.
+- **The research-lock variant is the one R1 form that reopens.** The reveal finishes an Archinity
+  project, the scanner-family buildings' prerequisite, with one call on the component
+  § *The build → 5* already owns. That is § *What the player obtains*' research carrier.
+
+**What it cannot do:** flip at the reveal, except through the research lock. The uplink's hack beat
+is gone before the reveal and after it.
+**Consequences:** under #149's recommended A + E1 the scanner leaves anyway, and Charting delivers
+the eight after the reveal, so R1 costs nothing more. **Those eight still need *some* post-reveal
+giver.** `Archinity.Glitterites/Patches/Ascension_OrbitalPlatforms.xml` already points two of them
+(`Opportunity_AbandonedPlatform`, `Opportunity_OrbitalWreck`) at Glitterite content.
+
+**R2 — what it gets us.**
+- Before the reveal, each giver behaves as we author it.
+- **An uplink hacked before the reveal can bank its coordinate** (scribed on our comp) and deliver
+  the quest at the reveal, so a Neolithic hack pays off in the Spacer era [I].
+- The scanner's inspect text is ours.
+- It reopens by itself when the flag flips. `CompOrbitalScanner.ScannerQuests` is built lazily, on
+  the first `LocateSignal` [V], so a gated comp never caches early.
+
+**What it cannot do:** reach the cluster without a type dependency on VGE. Our subclass derives
+from VGE's module class.
+**Consequences:** three or four small classes, no Harmony. `compClass` is read when comps
+initialise, so the repoint also applies to a loaded save [I].
+
+**R3 — what it gets us.** Two prefixes that read the flag, exact to the reveal. They cover every
+current giver and any later `CompOrbitalScanner` subclass that calls its base.
+**What it cannot do:**
+- It cannot reach a giver that calls `GetGiverQuests` itself. None exists today [V].
+- It gives no per-giver behaviour beyond skipping.
+- **It spends the uplink's hack.** `CompHackable.ProcessHacked` sets `hacked = true` before
+  `OnHacked` notifies comps [V], so a skipped hack is lost unless it is banked.
+
+**Consequences:** gating `Notify_ScannerWorking` leaves the scanner reading *"Passively scanning for
+orbital signals."* forever [V]. That is a false statement on screen, and a postfix on
+`CompInspectStringExtra` fixes it. It reopens by itself. The world cooldown was never started, so
+the first signal comes on the 1-day MTB after the reveal [V].
+
+**R4 — what it gets us.** The tag becomes Archinity's channel. Scanner, uplink, cluster and core
+deliver surface survey finds or lore until the reveal, for example an uplink hack that points at a
+surface cache.
+**What it cannot do:**
+- It cannot reopen in XML.
+- At every moment, at least one sink quest must hold a weight above 0.
+- #149's E2 (Charting reads the tag) would read the sink.
+
+**Reopening means one of two things:**
+- **(a) Nothing.** The eight reach the player through Charting's E1, which does not read `givenBy`
+  (#149).
+- **(b) C#.** Re-add the tag to the eight inside the synced reveal and again on every load, because
+  defs are not saved. Then flush every live giver's cached list (**T-173**).
+
+**R5 — what it gets us.** It ships, and it needs no code. Below Industrial the worldgen uplinks
+never exist. The `Add` refusal covers all four givers wherever the uplink came from.
+**What it cannot do:** key on the reveal. Rows at Spacer open when the Spacer era starts, during
+*Early Spacer — Crown*, before *Departure*. Rows at Ultra open after the reveal and hold the eight
+shut through the whole orbital Spacer act. It does not stop uplinks spawning on quest sites, on
+Scarlands or Glacial Plain maps or at gravcore sites.
+**Consequences:**
+- **It moves #7 § 5's frozen set, twice.** That set holds *Ancient facilities and roads*
+  (`Filter_WorldGenSteps`) **off** and *Quests* (`Filter_Quests`) **off**
+  ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7)). In the configuration as frozen
+  today, R5 closes nothing; taking it is a change against that set and must say so.
+- **The refusal is silent and spends the signal (T-174).** The scanner announces a signal, and 8–10
+  days later nothing happens. A hack is spent.
+- It also refuses the eight to Charting and to every other source until the era arrives.
+- `Filter_Quests`, `Filter_WorldGenSteps` and WTL's `Settings.Overrides` are per-install settings
+  (T-18). Multiplayer's join-time config sync hands the host's WTL settings to a joiner, but a
+  mid-session toggle is not synced, and WTL re-applies its patches live (#153's read, board).
+- None of WTL's `TileMutatorDef` rows sets `<offworld>`, so `AlwaysAllowOffworld` (**T-166**)
+  leaves the uplink rows standing [V].
+
+**Recommended, not selected:**
+- **With #149's A + E1:** R1 on the scanner, cluster and core. R2 on the uplink if the story keeps
+  its hack, with the coordinate banked for the reveal; otherwise R1 strips it. Nothing reopens but
+  the flag, which Charting already reads.
+- **If the scanner stays (#149's C or D):** R3. It is two prefixes, exact to the reveal, and it
+  covers all four givers. Take R2 instead if Harmony is to be avoided.
+- **R5 only as defence in depth** at worldgen, never as the gate.
+- **R4 only if** the story wants the givers speaking before the reveal.
+
+**What the reveal must reopen:**
+
+| Route | At the reveal |
+|---|---|
+| R1 | nothing, or one project completion under the research lock |
+| R2, R3 | nothing: the flag is read live |
+| R4 | nothing, if Charting carries the eight; otherwise a runtime re-tag on reveal and on every load, plus a cache flush (T-173) |
+| R5 | the era, not the reveal; `Add` reads `WorldTechLevel.Current` live [V] |
+
+#### Constraints
+
+- **Each giver caches the tag's list on its comp, and the cache is not saved** (**T-173**).
+  `CompOrbitalScanner` and `CompAncientUplink` each fill `scannerQuests` on first use.
+  `PostExposeData` saves only `locateSignalTick` [V].
+- **World Tech Level's `QuestManager.Add` prefix refuses quests from any source, and says
+  nothing** (**T-174**).
+- **Hacking has no research gate.** `CompHackable.CanHackNow` checks hacked and locked-out only.
+  The skill test sits on the float menu [V].
+- **This does not settle whether the uplink stays in the game.** That is still the requirement
+  question #149 raised (below).
+
+#### Status
+
+**READ.** Decompiled from the 1.6 assembly [V]:
+- `CompOrbitalScanner`, `OrbitalScannerWorldComponent`, `CompAncientUplink`,
+  `TileMutatorWorker_AncientUplink`;
+- `QuestUtility.GetGiverQuests` / `GenerateQuestAndMakeAvailable`,
+  `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`;
+- `WorldLandmarks.AddLandmark`, `LandmarkDef.EverValid`, `QuestNode_Root_AncientStructure`,
+  `LayoutPrefabParms`, `CompHackable`.
+
+Also decompiled [V]:
+- VGE's `CompScannerCluster_OrbitalScannerModule` and `CompScannerCluster`, from
+  `3609835606/1.6/Assemblies/`;
+- WTL's `Patch_TileMutatorDef`, `Patch_NaturalRandomQuestChooser`, `Patch_QuestManager`,
+  `Patch_QuestUtility` and `DefTechLevels`, from `3414187030/1.6/Lunar/Components/`.
+
+The sweeps covered both roots, excluded `obj/`, and excluded `Referenced/` for implementer hunts.
+They ran in ASCII and as null-interleaved UTF-16, with the `\x00` escapes typed literally and `-i`.
+
+Validators:
+- `CompOrbitalScanner` in ASCII hits VGE and Multiplayer.
+- `TryGetPathFuelCost` in ASCII hits VGE.
+- `VGE.NoComponentActive` in UTF-16 hits VGE.
+- `GetGiverQuests` hits the vendored `Assembly-CSharp` copy under `obj/` once `obj/` is let in.
+
+Zeros:
+- ASCII, no mod assembly: `CompAncientUplink`, `GetGiverQuests`, `QuestGiverTag`,
+  `OrbitalScannerWorldComponent`, `TileMutatorWorker_AncientUplink`.
+- UTF-16, no mod assembly: `OrbitalScanner`, `AncientUplink`, `OrbitalUplink`, `GiverQuests`.
+- ASCII `givenBy` hits only Medieval Overhaul, which has its own `givenByFinder` field.
+- XML `<givenBy` across both roots and `Data` returns the eight and no patch.
+
+Corrected on this ticket:
+- *"WTL marks `AncientUplink`, `AncientRuins` and `AncientRuins_Frozen` Industrial"* is incomplete.
+  WTL marks 16 mutators, including the five structure mutators, so the room is closed at worldgen.
+- *"The ruin-room path is not covered [I]"* is now [V], and split. Worldgen is covered; quest
+  sites (ancient structures and ancient mercenaries), Scarlands and Glacial Plain maps, and
+  gravcore sites are not.
+- The scanner is not the only giver (*What the player obtains*).
+- Clearing `givenBy` throws, and so does zeroing the weights.
+
+#### Open questions
+
+- **Requirement, to Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).**
+  Does the ancient uplink stay in the game? If it does, does a hack made before the reveal pay off
+  at the reveal (R2's banked coordinate), or is it simply dead?
+- **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).** Which route applies
+  to each giver. What R4's sink says, if R4 is taken. Whether R3's inspect-string postfix is
+  wanted.
+- **[#153](https://github.com/cjd721/Rimworld-Archinity/issues/153).** Whether uplinks spawn on
+  the home map, the Scarlands and Glacial Plain `extraGenSteps` cases in particular.
+- **[#20](https://github.com/cjd721/Rimworld-Archinity/issues/20).** Where `OrbitalTech`,
+  `AdvancedGravtech` and `AdvShipParts` sit matters only for a giver no route closes.
+- **Unverified [I], one-client RUN, optional.** Under R5, confirm that a refused scanner quest
+  leaves no world object or world pawn behind. The verdict does not depend on it.
+
 ### What the player obtains
 
 The requirement wants the unlock to be a thing the player earns. Every candidate, priced:
@@ -154,7 +433,7 @@ The requirement wants the unlock to be a thing the player earns. Every candidate
 | A world flag on the reveal `WorldComponent` | C# | Easy — one bool on the component § *The build* 5 already owns | **Yes, by construction** |
 | A research project (ours, or `OrbitalTech` repointed) | XML + hook | Easy–Medium | **Yes** — no un-complete path; a techprint reduces to this |
 | A quest reward or one-off event | XML | Easy | **Yes if it writes the flag**; the reward item itself is losable |
-| The orbital scanner | XML | Easy | **No** — a building. Lose it and no *new* scanner quests arrive |
+| The orbital scanner | XML | Easy | **No** — a building, and not even the only giver. ~~Lose it and no *new* scanner quests arrive~~ — **corrected 2026-09-23, [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180):** the `AncientUplink`, VGE's scanner cluster and GravTech's computer core give the same quests. See § *Holding every `OrbitalScanner` giver shut* |
 | The signal jammer | XML | Easy | **No** — `Building_GravEngine.HasSignalJammer` reads the *live* ship, so a destroyed jammer re-closes every jammer-gated destination |
 
 **The rule that falls out:** make the *carrier* whatever the fiction wants; make the *state* a
@@ -223,9 +502,16 @@ friction is `PlanetLayerDef.rangeDistanceFactor = 20` for Orbit [V], and it does
 (`5`), `Gravcore_Mechhive` — all `autoAccept true`, driven by `QuestPart_SubquestGenerator_Gravcores`,
 whose `CanGenerateSubquest` asks only that some map hold a colonist-owned `GravEngine` [V]; and
 **`OrbitalFugitive`**, `rootSelectionWeight 1`, `minRefireDays 30`, storyteller-selectable, placing a
-`ClaimableSpaceSite` via `QuestNode_Root_Site` with `layerWhitelist [Orbit]` [V]. **Four of the ten
-need no scanner and no `OrbitalTech`.** § *Failure and recovery*'s "the real gate is when `OrbitalTech`
+`ClaimableSpaceSite` via `QuestNode_Root_Site` with `layerWhitelist [Orbit]` [V]. ~~**Four of the ten
+need no scanner and no `OrbitalTech`.**~~ § *Failure and recovery*'s "the real gate is when `OrbitalTech`
 becomes reachable" does not hold.
+
+> **Corrected 2026-09-23, [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** It is
+> not four of the ten; **all ten can arrive with no scanner and no `OrbitalTech`**. The six scanner
+> quests also come from a hacked `AncientUplink` (Intellectual 6, no research), VGE's scanner cluster
+> and GravTech's computer core. The corpus adds at least two orbit-placing scripts on the same tag,
+> from VGE and from Worksites Expanded. No sweep was run for orbit-placing scripts outside the tag.
+> See § *Holding every `OrbitalScanner` giver shut*.
 
 **How a quest is *fired* decides whether it can reach orbit at all — and the two paths differ by
 almost an order of magnitude.** This is the hardest constraint in this section, and it binds on both
@@ -247,8 +533,11 @@ Two consequences, and they pull in opposite directions:
   Only `OrbitalFugitive` can arrive by natural roll. Everything else that opens orbit — the six
   scanner quests, the three gravcore subquests — arrives through a `CanRun` path that exempts
   `autoAccept` entirely. **Closing orbit means closing givers, not tuning storyteller weights**,
-  which is why Route A's list is a list of `givenBy` tags and `subquestDefs` entries and not a
-  single incident-weight patch.
+  which is why Route A's list is a list of ~~`givenBy` tags and~~ givers and `subquestDefs` entries
+  and not a single incident-weight patch. *(Corrected 2026-09-23,
+  [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180): clearing `givenBy` or zeroing
+  the tag's weights makes the givers throw. The scanner quests are closed at their four givers, or
+  by keeping a sink quest on the tag. See § *Holding every `OrbitalScanner` giver shut*.)*
 - **After the reveal, the ceiling is 18 and the storyteller delivers 2 of them.** An orbital colony
   fed by the ordinary quest flow gets `OrbitalFugitive` and `SurveySite` and nothing else; the other
   sixteen need a giver to exist. That is a constraint on *living in orbit*, which is
@@ -339,12 +628,13 @@ one world, both founders**.
   places orbital sites by design from the moment a grav engine exists. Closing orbit costs three of its
   nine leads plus `OrbitalFugitive`. Whether that price is acceptable is a design call.
 - **Requirement, #127 or `GLITTERTECH.md`:** whether orbital traders may hail the colony before the reveal.
-- **[#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)** decides how the six scanner quests get
-  held shut, since it decides what `OrbitalScanner` is for. #149 answered the apparatus question
-  (`CHARTING.md` § *The orbital scanner and Charting*); how these quests are held shut against every one of
-  their givers moved to [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).
-- **[#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)** no longer bounds the reveal; the
-  `OrbitalTech` gate covers six of ten orbit-placing quests and nothing else.
+- **Settled — [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149) and
+  [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** #149 answered what
+  `OrbitalScanner` is for (`CHARTING.md` § *The orbital scanner and Charting*). #180 answered how
+  the scanner quests are held shut against all four givers (§ *Holding every `OrbitalScanner` giver
+  shut*).
+- **[#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)** no longer bounds the reveal. The
+  `OrbitalTech` gate bounds only the building `OrbitalScanner`, not the quests it gives (#180).
 - **[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18)** gains a pre-worldgen line if route B is
   taken.
 - **Unverified number, RUN, one client.** Start a fresh Odyssey world on the Archinity scenario and open
@@ -749,7 +1039,7 @@ documented as available; do not build on it.
 | `GenStepDef` wrapping `GenStep_OrbitalPlatform` | XML | ~15 lines each | `Defs/GenStepDefs/` (new) |
 | `MapGeneratorDef` + `WorldObjectDef` (route A), or `SitePartDef` + quest patch (route B) | XML | ~30 lines each | `Defs/` (new) |
 | Bespoke `LayoutRoomDef` — the vault, the archive | XML **content** | ~60–120 lines each | `Defs/LayoutRoomDefs/` (new) |
-| `TechLevelConfigDef` rows for every Archinity orbital `GenStepDef` | XML patch | ~10 lines | the same file as the faction exemption (**T-54**) |
+| `TechLevelConfigDef` rows for every Archinity orbital `GenStepDef` | XML patch | ~10 lines | the same file as the faction exemption (**T-54**; insurance against a per-install `Settings.Overrides` row, not a default removal — see T-54's 2026-09-23 correction) |
 | Per-faction `WorldObjectDef` selection inside `RevealOrbit` | **new C#** | **~1 line** | inside the command already costed above |
 
 **~76–96 lines of new C#** (60–80 + 15 + 1), no new assembly. The component is new; nothing
@@ -1263,34 +1553,37 @@ six that a player can cause. `Odyssey/Defs/QuestScriptDefs/Script_SpaceSites.xml
 there [V]. **The first one to fire enables the view-orbit gizmo whatever the political state**
 — and the entire *Display* leg of this spec rests on that layer being empty.
 
-The gate is bounded, not open. All six are `randomlySelectable false` with
-`<givenBy><li>OrbitalScanner</li></givenBy>` [V], so the storyteller never picks them; they
-arrive only from a built, powered, un-roofed `OrbitalScanner` (`CompOrbitalScanner`,
-`PlaceWorker_NotUnderRoof`), which costs 180 steel, 6 industrial and **2 spacer components**
-and requires the `OrbitalTech` research project [V].
+~~The gate is bounded, not open.~~ All six are `randomlySelectable false` with
+`<givenBy><li>OrbitalScanner</li></givenBy>` [V], so the storyteller never picks them. ~~They
+arrive only from a built, powered, un-roofed `OrbitalScanner`.~~ The scanner
+(`CompOrbitalScanner`, `PlaceWorker_NotUnderRoof`) costs 180 steel, 6 industrial and **2 spacer
+components** and requires the `OrbitalTech` research project [V].
 
-> ⚠️ **Under re-examination, 2026-09-23 —
-> [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** #149's findings contest this
-> paragraph's claim that the gate is bounded:
-> - The hackable `AncientUplink` is a second vanilla giver of these quests.
-> - The corpus adds two more givers and two more tagged quests.
-> - Emptying `givenBy` makes the givers throw.
+> **Corrected 2026-09-23, [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).**
+> **The gate is open, not bounded.** Four things give these quests:
+> - the scanner;
+> - a hacked `AncientUplink`, which needs Intellectual 6 and no research, and which generation
+>   places, from the Neolithic on;
+> - VGE's scanner cluster;
+> - GravTech's computer core.
 >
-> This is a flag, not a rewrite. See `CHARTING.md` § *The orbital scanner and Charting →
-> Constraints*.
+> The tag also carries two corpus quests. Clearing `givenBy` throws. The routes are in § *The
+> reveal gate → Holding every `OrbitalScanner` giver shut*. Items 1 and 2 below are struck and
+> restated.
 
-Two things follow.
+~~Two things follow.~~
 
-1. **The real gate is when `OrbitalTech` and `ComponentSpacer` become reachable**, which is
-   progression, not this spec: [#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)
-   fills the Spacer ladder rows in `docs/progression/`. If that ladder puts `OrbitalTech`
-   before the planetary resolution, a player who builds a scanner unlocks orbit early. **No
-   ticket currently states that the orbital scanner is a reveal-gate item** — that is the
-   gap, and #20 is where it should land.
-2. **The mitigation is not frozen at worldgen**, unlike everything else in this spec. Clearing
-   `givenBy` on the six, or locking `OrbitalScanner` out of the build menu in the lockout
-   pattern the project already uses, is an ordinary def patch that can land after the world
-   exists. The severity is a design one, not a T-07 one.
+1. ~~**The real gate is when `OrbitalTech` and `ComponentSpacer` become reachable.**~~ Research
+   placement ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)) bounds only the
+   buildings. It cannot bound the uplink, which no research gates. The reveal-gate item is the
+   **tag's four givers**, and #180 owns closing them.
+2. **The mitigation is not frozen at worldgen**, unlike everything else in this spec. Every #180
+   route is a def patch or ordinary code that can land after the world exists, but ~~clearing
+   `givenBy` on the six~~ clearing `givenBy` is the error path, not a mitigation. **Locking
+   `OrbitalScanner` out of the build menu** in the lockout pattern
+   (`Archinity.Pacing/Patches/Lockout_AlphaMechs.xml`) must not rely on removing
+   `designationCategory`, because Better Architect Menu adds one back (#180). The severity is a
+   design one, not a T-07 one.
 
 Note what the early reveal produces: unowned quest sites on the layer, not stations. Orbit
 becomes *selectable* early; it does not become *populated* early. That is a weaker failure
@@ -1313,6 +1606,13 @@ Three silent failures, all on the map-generation half.
    `GenStepDef` in the cost table must appear in the same file as the faction exemption, and
    the [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) line covering it still
    does not exist.
+   > **Narrowed 2026-09-23 by [#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)'s
+   > review — see T-54's correction note.** The genstep leg exists only while
+   > `Filter_GenSteps` ("Ancient debris", frozen **off** by #7 § 5) is on, and a `GenStepDef` has
+   > no derived level: it is `Undefined`, and passes, unless a `TechLevelConfigDef` row or
+   > `Settings.Overrides` names it [V]. No mod ships a row naming an Archinity genstep. So our
+   > orbital gensteps are **not** deleted by default; the exposure is a per-install override
+   > (T-18). The `TechLevelConfigDef` rows in the cost table become insurance, not a requirement.
 2. **A missing `<temperature>` generates the interior at −75 °C.** `SpawnTemp` is
    `temperature ?? -75f` [V]. Nothing warns.
 3. **A KCSG layout placed on an orbit map produces a structure that can never
@@ -1629,7 +1929,7 @@ sweep having run, not of its completeness.
 | **Is World Tech Level active at world creation, at what level, and is every orbital faction exempt?** | **The orbital roster exists or does not.** Silent, permanent, and taken before the first tick | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) — the line does not exist yet |
 | Which live-state predicates select each route and ascending faction, and how ties compose | The immutable snapshot can hold multiple factions; this decides its contents | [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100) |
 | What fires the reveal, as a beat | The narrative moment the command hangs off | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) |
-| When `OrbitalTech` / `ComponentSpacer` become reachable, and whether the six orbital opportunity quests stay in the pool | Whether a player can select the Orbit layer before the politics resolve | [#20](https://github.com/cjd721/Rimworld-Archinity/issues/20); **no ticket names the scanner as a reveal-gate item today** |
+| Which route closes each of the four `OrbitalScanner` givers (§ *Holding every `OrbitalScanner` giver shut*), and whether the uplink stays | Whether a player can select the Orbit layer before the politics resolve. Research placement ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)) bounds only the buildings | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (route); Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (uplink); answered at route depth on [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180) |
 | Whether the surviving institution also swaps `Faction.def` | If yes, pay #8's leak list | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | Orbit `subdivisions` — 6, or back to 5 | ~27 frozen orbital settlements versus ~9 | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) |
 | **How many stronghold *flavours* the campaign distinguishes** | ~40–60 lines of XML each; the mechanism does not wait on the number, and each flavour re-rolls per encounter | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |

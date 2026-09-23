@@ -9,7 +9,9 @@ oxygen, gravity, food production, cooking, habitation, storage, defenses, shield
 capacity that the colony can permanently leave the electrified castle behind."*
 
 This document owns **whether that is possible and at what cost**, and the deck budget every other
-gravship decision is spent against.
+gravship decision is spent against. It also answers what a ship in flight does when its landing
+tile changes hands (§ *A gravship en route when its landing tile changes hands*,
+[#177](https://github.com/cjd721/Rimworld-Archinity/issues/177)).
 
 It does not own: the Ultra pursuit that the defenses answer to
 ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)); which mods ship
@@ -727,6 +729,359 @@ Established by [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147), 
 One small correction to [#66](https://github.com/cjd721/Rimworld-Archinity/issues/66): the field on
 `GenStep_OrbitalPlatform` is `private LayoutDef layoutDef`, not a `StructureLayoutDef` — its
 conclusion (def-driven, no new C#) is unaffected. **[V]**
+
+## A gravship en route when its landing tile changes hands
+
+### Purpose and scope
+
+This section answers [#177](https://github.com/cjd721/Rimworld-Archinity/issues/177): **what a
+gravship already committed to a tile does when that tile changes hands, or gains a hostile
+settlement, before the ship lands, and by which routes the player's commitment is kept.**
+
+It is the gravship clause of `TERRITORY.md` § *A caravan en route when its destination changes
+hands* ([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152)). The routes use the same
+letters, **GF-A to GF-G for CF-A to CF-G**, and each says where the gravship differs. It serves the
+same requirement: [`requirements/ERA.md`](../requirements/ERA.md) § *The era advance*, *"Nothing
+else may change on a delay… while the player is caravanning toward it"*. It also covers the
+Schism ([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)), revolts
+([#131](https://github.com/cjd721/Rimworld-Archinity/issues/131)), and ordinary conquest by us,
+Rim War, Faction Territories and RimPacts.
+
+This section does not own:
+- **which** settlements transfer ([#34](https://github.com/cjd721/Rimworld-Archinity/issues/34));
+- **how** a transfer is written (`engine/factions-and-worldgen.md`; **T-140**);
+- **selecting a route** ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
+
+### Verdict
+
+- **Possible? Yes.** Odyssey never re-checks the landing tile, and nothing in the 155-mod corpus
+  does either. A gravship lands on whoever holds the tile when it arrives, and **any NPC
+  settlement it lands on counts as attacked**, with the owner driven to hostile (**T-171**). Every
+  route below closes that gap. The seams are all public or reachable, and the arrival runs on the
+  synced world tick.
+- **Multiplayer? Yes** for GF-B, GF-C, GF-D, GF-E and GF-G. **GF-F is Yes** when it reuses the
+  existing-map landing UI, which Multiplayer already syncs, and **With work** as our own dialog
+  (T-82/T-95/T-96).
+
+### How gravship travel differs from a caravan
+
+All **[V]** in `Assembly-CSharp.dll` 1.6. The mechanism is in
+`engine/gravship-and-substructure.md` § *In flight*.
+
+| | Caravan, pod or VF vehicle (#152) | Gravship |
+|---|---|---|
+| What it holds | an arrival action holding the target **object** | a **tile** (`Gravship.destinationTile`) and no arrival action |
+| Re-check | caravans `StillValid` on every interval; pods and aircraft on arrival or never | **never**. The launch validator and confirmation run once, at the pick |
+| Destroy-and-recreate | aborts the order (`Spawned == false`) | **lands on the replacement** |
+| `SetFaction` | re-checks against the new owner | lands on the new owner |
+| Landing on a non-hostile settlement | only an **attack** order hits allies (T-138) | **every** landing on a non-player settlement is an attack (`ArriveNewMap` → `AffectRelationsOnAttacked`) |
+| Can stop mid-route | `StopDead` | **no**. The ship has no hover state; every outcome is a landing somewhere |
+| Window | days of marching | **4,000 ticks per radian** of arc, at most about 12,600 ticks. Under VGE it starts earlier, at the launch ritual (T-172) |
+| Player UI in flight | the caravan is selectable and re-orderable | `Gravship` declares no gizmos. There is no in-flight redirect |
+| Player UI at arrival | the arrival letter | a landing marker (confirm or move) on both paths. **Abort** exists only on an existing map, and on a new map the relations hit is already applied |
+
+**What each trigger can do inside that window:**
+- **Era advance.** [#113](https://github.com/cjd721/Rimworld-Archinity/issues/113) fires it from
+  research completion. While the ship flies, its crew is despawned into the world object, so the
+  advance can land in the window **only** in these cases [I]:
+  - through research on another map: a grav-anchored or VGE-kept origin, a second colony, or the
+    other player's map;
+  - during VGE's pre-launch ritual, when the colony is still on the ground.
+- **Schism and revolt.** These are authored transfers on a quest or incident clock, so they can
+  fire on any tick [I, both unbuilt].
+- **Ordinary conquest.** NPC-on-NPC takeovers by Rim War, FT&V and RimPacts run on world ticks.
+  The shapes are the same ones #152 read.
+- **A tile that gains a settlement or site.** `Gravship.Tile` stays at the origin during flight, so
+  the destination is never reserved. `TileFinder.TryFindNewSiteTile` (`!AnyWorldObjectAt`) can
+  place a quest site on it [V], and Rim War's `Settler.ArrivalAction` →
+  `WorldUtility.CreateSettlement` can found a settlement there [V].
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **GF-A** Vanilla as shipped | The ship lands on the new occupant. A formerly empty or hostile tile now held by an ally is **attacked, and the ally turns hostile**, with only an after-the-fact letter. **Not recommended alone** | vanilla | — | Easy | Yes |
+| **GF-B** Sweep the ship inside our transfer | The transfer checks the one in-flight ship and VGE's pending launch targets, then warns and turns the ship back or diverts it (GF-C) | our transfer command | C# | Medium | Yes |
+| **GF-C** Divert | The ship lands at its origin, at the nearest valid tile, or through vanilla's own crash-landing abort. A **response** fed by GF-B or GF-G, not a detector | our code on `Gravship.destinationTile` | C# | Medium | Yes; tile choice deterministic (T-135) |
+| **GF-D** Protect the endpoint | Our transfer and placement code skips the ship's tile, or defers that tile's change until touchdown | our transfer selection (#34) | C# | Medium | Yes |
+| **GF-E** Accept and warn | Vanilla stands. The transfer letter names the ship and what it will now land on, **while it is still in the air** | our transfer letter | C# | Easy–Medium | Yes |
+| **GF-F** The arrival becomes a decision | On a changed tile, the player chooses to land, move or abort, and then an encounter or parley can follow | our arrival hook + vanilla landing marker, or our dialog | C# | Medium–Hard | Yes with the vanilla marker; With work with our dialog (T-82/T-95/T-96) |
+| **GF-G** Guard the arrival | At touchdown, the tile is compared with what the player confirmed at launch, **whoever changed it**. On a mismatch the guard hands off to GF-C, GF-E or GF-F | Harmony prefix on `GravshipUtility.ArriveNewMap` / `ArriveExistingMap` (or `Gravship.TickInterval`) | C# | Medium | Yes [I] |
+
+**GF-A — vanilla as shipped** (CF-A).
+- **Gets:** nothing to build. A tile that stays hostile, or that passes from one hostile faction to
+  another, lands as the player expected.
+- **Cannot:**
+  - warn at all before the landing;
+  - tell a deliberate landing from a stale one;
+  - spare a new owner who is an ally. Here it is **worse than CF-A**: a caravan with a trade
+    order simply aborts, but a gravship has no order to abort.
+- **Consequences:**
+  - The hazard fires on the campaign's own transfers. The Schism takes Church ground, or an ally
+    absorbs the hostile settlement the player was about to raid.
+  - An empty tile can become a surprise landing inside an enemy base.
+
+**GF-B — sweep the ship inside our transfer** (CF-B).
+- **Gets:** the synced transfer reads three things, all public or scribed [V]:
+  - `Find.CurrentGravship?.destinationTile` — there is one slot, so one ship at most;
+  - `WorldComponent_GravshipController.landingTile` for the takeoff cutscene. It is private but
+    scribed as `"targetTile"`, and Multiplayer freezes clients during the cutscene;
+  - VGE's `LordJob_Ritual_ExposeData_Patch.targetTile`, a public static dictionary, for a launch
+    that is scheduled but not yet flown (T-172).
+
+  For each hit it sends one letter that names the ship and the new occupant, then applies a GF-C
+  response or clears the pending ritual target so the player re-picks.
+- **Cannot:**
+  - see transfers made by Rim War, FT&V, RimPacts or quests;
+  - see a site or settlement that appears on the tile;
+  - stop the ship. Unlike CF-B's `StopDead`, every outcome is a landing somewhere.
+- **Consequences:** no stored state, and no `Rand` unless the divert picks randomly. It is the
+  smallest honest answer **for transfers we author**, as CF-B is for caravans.
+
+**GF-C — divert** (CF-C, minus the rebind). The rebind lever disappears, because the ship already
+follows the tile through a recreation.
+- **Gets** three landing choices [I as composed; the seams are V]:
+  - **home again** — `destinationTile` goes back to the origin. Unless a grav anchor or VGE kept
+    that map, the origin is now empty, so the ship re-founds there (`ArriveNewMap` →
+    `SettleUtility.AddNewHome`);
+  - **nearest valid tile** — the donor is vanilla's
+    `WorldComponent_GravshipController.AbortLanding`, which rewrites
+    `Find.CurrentGravship.destinationTile` from a `FastTileFinder` query and rolls a doubled
+    mishap chance;
+  - **invoke `AbortLanding` itself** on an existing-map arrival, where it is already a synced
+    method.
+
+  `destinationTile` is a public field that vanilla itself rewrites.
+- **Cannot:**
+  - know what the player wanted;
+  - let the player pick a new tile in flight without a picker of ours (see the build questions).
+- **Consequences:**
+  - `Gravship.DrawPos` slerps between `initialTile` (private) and the destination, so a
+    mid-flight rewrite jumps the icon unless `initialTile` and `traveledPct` are reset. The step
+    per tick is also recomputed from the new arc, so the remaining flight time changes. Both are
+    harmless [I].
+  - A divert to an empty **surface** tile founds a `Settlement`, which counts against the
+    client-local `Prefs.MaxNumberOfPlayerSettlements` (see *Persistence and multiplayer*). The
+    arrival path does not consult it [V].
+  - Pick "nearest" deterministically, not through `GetClosestTile_NewTemp` (**T-135**).
+
+**GF-D — protect the endpoint** (CF-D).
+- **Gets:** the commitment is never broken, in one of two forms:
+  - **skip for good**, exactly CF-D;
+  - **defer until touchdown**. This is new for gravships. The window is short, bounded and
+    observable: `Find.CurrentGravship` goes null in `LandingEnded`, and any pending VGE ritual
+    target clears when the ritual ends.
+  - **reserve the tile in flight** (added on review): a placeholder `WorldObject` on the
+    destination tile for the flight's duration. Vanilla's `TileFinder.TryFindNewSiteTile` already
+    rejects any tile with `AnyWorldObjectAt` [V], so quest sites skip it with no patch; the
+    composition is [I], unbuilt. It covers **arrivals onto an empty tile only** — it does nothing
+    against a transfer of a settlement already there, and a Rim War settler still needs its own
+    check (unread).
+- **Cannot:**
+  - **skip for good** keeps the advance from being whole (the CF-D objection), and lets either
+    player freeze a settlement by pointing a ship at it;
+  - **defer until touchdown** runs into two clauses of `ERA.md` § *The era advance*. *"Nothing
+    else may change on a delay"* is the first; its illustration is twenty days, but the rule
+    itself names no threshold. The second is *"a single, indivisible act"*: *"a world half
+    re-authored — some settlements transferred, others not"* is the failure it names, and a
+    deferred tile is exactly that for the window, **however short**. Whether either clause
+    admits this is a requirement call, not ours. Neither clause binds the Schism, a revolt or
+    conquest, which are not the advance;
+  - neither form can stop a Rim War settler or a quest site from taking the tile without also
+    patching them.
+- **Consequences:**
+  - Defer needs a queued transfer, which is stored state.
+  - It is the only route that fits the Schism played blow by blow, which can pick another target.
+
+**GF-E — accept and warn** (CF-E).
+- **Gets:**
+  - one line in the transfer letter;
+  - unlike CF-E, the warning can arrive **before** the consequence, because the ship is still in
+    the air when the transfer fires. The player cannot act on it, though (see GF-C).
+- **Cannot:**
+  - avoid the attack on a new ally;
+  - warn ahead of the era turn (#113 has no confirmation).
+- **Consequences:** the attack hazard stays open unless GF-B's divert or GF-G is paired with it.
+
+**GF-F — the arrival becomes a decision** (CF-F).
+- **Gets:** the changed landing as a beat: the new owner's guns at the pad, a toll, a parley, or
+  the choice to go round. There are two shapes:
+  - **Vanilla's landing UI** [I as composed]. Vanilla already shows a landing marker on a
+    new-map arrival (`GenStep_GravshipMarker` → `GravshipLandingMarker.SpawnSetup` →
+    `Notify_LandingAreaConfirmationStarted`) [V]. That marker offers only confirm and move,
+    though: the **Abort** button draws only when `landingMap` is set, which only
+    `ArriveExistingMap` does. It also appears **after** `ArriveNewMap` has already applied the
+    relations hit. So the route has three steps:
+    1. generate the settlement's map without the attack consequence (`GetOrGenerateMap`, as
+       `SettlementUtility.AttackNow` does);
+    2. hand the ship to `ArriveExistingMap`, which gives confirm, move and abort (a crash landing
+       nearby);
+    3. apply the relations hit on confirm.
+
+    Multiplayer already syncs `GravshipLandingMarker.BeginLanding` and `AbortLanding` [V].
+  - **An E-letter or E-quest fired at arrival**, as in CF-F.
+- **Cannot:**
+  - reuse `IncidentWorker_CaravanMeeting` (same reason as CF-F);
+  - be fired by the storyteller at the ship. `Storyteller.AllIncidentTargets` never includes the
+    gravship, and its `Gravship` target tag is used by no `IncidentDef` in either corpus root [V].
+- **Consequences:**
+  - A generated enemy map is a real map, with defenders standing.
+  - Our own dialog carries T-82/T-95, and a modded letter carries T-96.
+  - It needs GF-G's comparison to know the tile changed.
+
+**GF-G — guard the arrival** (CF-G).
+- **Gets:** a prefix on `GravshipUtility.ArriveNewMap` and `ArriveExistingMap`, both reached from
+  `Gravship.TickInterval` on the synced world tick [V]. `ArriveExistingMap` is called directly.
+  `ArriveNewMap` is queued through `LongEventHandler.QueueLongEvent`, and vanilla's own
+  `AbortLanding` queues it a second time, so the guard must let a divert it caused through [V].
+  It compares the tile's current occupant,
+  owner and relation with what the player confirmed at launch. It is the **only route that sees
+  every source**:
+  - our transfers;
+  - Rim War settlers and conversions, RimPacts `CedeOne`, and FT&V;
+  - quest sites, including one that sets `preventGravshipLanding`;
+  - VGE's stale pre-ritual launch (T-172), for free.
+- **Cannot:**
+  - remember what was confirmed without new scribed state. `Gravship` has no spare field, and the
+    controller stores only `takeoffTile`/`targetTile` (a build question);
+  - a **stateless** variant can only re-ask whenever the tile holds any non-hostile settlement.
+    That would also re-ask a player who deliberately confirmed a raid on a neutral.
+- **Consequences:**
+  - It covers what CF-G covers for caravans, and needs no knowledge of who made the change.
+  - `ArriveNewMap` runs inside Multiplayer's `FactionContext` push for the ship's faction [V].
+  - **Do not hang it on `TakeoffEnded` or `TravelTo`**, which run unfrozen and at client-local
+    cutscene timing (**T-78**).
+
+**Recommendation (not a selection):** **GF-G, feeding GF-F's vanilla landing-marker shape**, with
+**GF-E's line** in the transfer letter.
+- GF-G is the one detector that also catches the transfers we do not author and the tiles that
+  gain a settlement. On a gravship both of those are live, because the destination is never
+  reserved.
+- GF-F's marker shape costs no dialog-sync work, since Multiplayer already syncs that UI.
+- If a stored launch snapshot is unwanted, **GF-B + GF-C (home again)** is the smallest answer
+  for our own transfers.
+- GF-D's *defer* is worth raising with the ERA requirement's owner. The window is hours, not
+  days, but deferring one tile also leaves the advance divisible for that window (see GF-D).
+
+### Constraints
+
+- **The ship always lands.** There is no hover, no cancel and no in-flight gizmo [V]. "Abort"
+  means a landing somewhere else, and vanilla's own abort is a crash landing with a doubled
+  mishap roll.
+- **The launch dialog is the only warning today**, and it describes the tile as it was at launch
+  [V] (`SettlementProximityGoodwillUtility.GetConfirmationDescriptions`). **T-171.**
+- **Under VGE the commitment starts at the ritual**, and the launch itself re-checks nothing
+  [V]. **T-172.**
+- **One gravship at a time** (`Current.Game.Gravship`) [V]. A sweep has one object to find, and
+  two Multiplayer players cannot both be in flight.
+- **Transfer shape does not matter for a gravship** [V]. `SetFaction` and destroy-and-recreate
+  both land on the new occupant. Contrast CF-A, where recreation aborts the order (**T-140**).
+- **Nothing that runs at takeoff is safe for game-state writes** in Multiplayer (**T-78**).
+
+### Available mechanisms
+
+- **Vanilla, `Assembly-CSharp.dll` 1.6** [V]:
+  - `CompPilotConsole.StartChoosingDestination_NewTemp` is the validator. `Settlement.GravShipCanLandOn`
+    is `Faction != OfPlayer`, and `TileFinder.IsValidTileForNewSettlement(forGravship: true)`
+    admits NPC settlements and rejects `Site.preventGravshipLanding`.
+  - `SettlementProximityGoodwillUtility.CheckConfirmSettle` shows `ConfirmLandOnHostileFactionBase`
+    or `ConfirmLandOnNeutralFactionBase`, plus the `GoodwillToMakeHostile` price, **at launch only**.
+  - `WorldComponent_GravshipController.InitiateTakeoff` → `TakeoffEnded` → `GravshipUtility.TravelTo`
+    adds the `Gravship` world object. `Tile` is the projected origin, and `destinationTile` is public.
+  - `Gravship.TickInterval` advances `traveledPct` by `0.00025 / SphericalDistance` per tick. At
+    1 it calls `ArriveExistingMap` if the tile's `MapParent` has a map, otherwise `ArriveNewMap`.
+  - `ArriveNewMap` runs `GetOrGenerateMap` on the tile's current `MapParent`, or founds a home. For
+    a non-player `Settlement` or attack `Site`, it sends *"gravship entered enemy base"* and calls
+    `AffectRelationsOnAttacked`.
+  - `ArriveExistingMap` opens the landing marker with confirm, move and `AbortLanding`.
+    `AbortLanding` rewrites `destinationTile` to a `FastTileFinder` tile and calls `ArriveNewMap`.
+    Neither landing path touches relations.
+- **Vanilla Gravship Expanded** (`3609835606/1.6/Assemblies/VanillaGravshipExpanded.dll`) [V]:
+  - it moves the pick before the launch ritual (T-172);
+  - it patches `InitiateLanding` (moving pawns off the pad), `LandingEnded` (landing outcomes),
+    `TakeoffEnded` (keep or settle the origin map) and `InitiateTakeoff` (a mood memory);
+  - `WorldComponent_GravshipController_WorldComponentOnGUI_Patch` transpiles the landing marker's
+    confirm button into `TryBeginLanding`, which checks **cells** (bounds, indestructible
+    obstacles, a crash-landing confirm), never the tile or its owner. GF-F's marker shape must
+    compose with it;
+  - its gravlift launch targets the orbit tile directly above;
+  - **nothing on arrival.**
+- **RimPacts** (`3762723122/Assemblies/RimPacts.dll`) [V]:
+  - `Patch_GravshipLandWarn` adds a second **launch-time** warning;
+  - a postfix on `Settlement.GravShipCanLandOn` bars landing during its world war, **at the pick
+    only**;
+  - `Patch_GravshipAbandonKeepSettlement` changes what happens to the origin;
+  - `Patch_Gravship_NegativeLanding` scales the landing-mishap odds for `Find.CurrentGravship`;
+  - `Patch_SettlementAttacked_SiegeAid` postfixes `SettlementUtility.AffectRelationsOnAttacked`.
+    It breaks a non-aggression pact with the owner, logs an unauthorized attack and can send
+    allied aid. **A stale landing (T-171) therefore costs more under RimPacts.** It re-checks
+    nothing.
+
+  It is also a transfer source (`CedeOne`, #152).
+- **Worksites Expanded** (`MiningOutpost.dll`) adds a launch-time warning for an orbital-platform
+  site. **Defensive Positions** and **VEF** carry state across the flight (`Gravship..ctor`,
+  `CopyCellContents`). **None touches the destination** [V].
+- **Multiplayer** (`2606448745/1.6/AssembliesCustom/Multiplayer.dll`) [V]:
+  - it syncs the tile-pick lambdas, `AbortLanding` (`SyncMethod`) and
+    `GravshipLandingMarker.BeginLanding`;
+  - it postfixes `ArriveExistingMap`/`ArriveNewMap` to open a session, and pushes the ship's
+    `FactionContext` around `ArriveNewMap`.
+
+  **MP Compat**'s `VanillaGravshipExpanded` class (in `Referenced/`) syncs VGE's pre-ritual pick
+  and `ExecuteGravshipLaunch`.
+- **Nearest donors for what does not exist:**
+  - vanilla `Caravan_PathFollower`'s `StillValid` re-check, for the shape of GF-G;
+  - vanilla `AbortLanding`, for GF-C;
+  - the existing-map landing marker, for GF-F.
+- **The wide pass** covered both corpus roots, `-g '*.dll' -g '!**/obj/**' -g '!**/Referenced/**'`,
+  and `-i`, with ASCII **and** typed null-interleaved UTF-16 patterns for `ArriveNewMap`,
+  `ArriveExistingMap`, `GravShipCanLandOn`, `InitiateTakeoff`, `TakeoffEnded`, `LandingEnded`,
+  `AbortLanding` and `gravship`. It also ran ASCII-only for `InitiateLanding`,
+  `GravshipController`, `GravshipLandingMarker`, `CheckConfirmSettle`,
+  `StartChoosingDestination` and `TravelTo`, and UTF-16-only for `destinationTile` and
+  `GravshipUtility`. Results:
+  - `ArriveNewMap`, `ArriveExistingMap` and `AbortLanding` hit **only Multiplayer**. For
+    `ArriveNewMap`, **both** encodings hit that one file, a same-heap validator for each sweep
+    form.
+  - `gravship` hit 11 mods in ASCII and 9 in UTF-16, the UTF-16 nine being a subset. All eleven
+    were read by their `HarmonyPatch` targets.
+  - `Referenced/` was searched separately for MP Compat's class.
+  - The review re-ran the sweep. `ArriveExistingMap` is an **ASCII miss** even in Multiplayer,
+    which names it only as an `AccessTools.Method` string literal. ASCII `destinationTile` hit 15
+    mods, and `CurrentGravship` hit two. Intersected with a gravship reference, that leaves
+    RimPacts, VGE, VEF, Worksites Expanded and Multiplayer, all read above.
+    `AffectRelationsOnAttacked` (ASCII) adds Rim War, FT&V, VF and RimPacts. Two mods patch it:
+    RimPacts (above), and Rim War's `Prevent_AffectRelationsOnAttacked_Patch`. That one skips the
+    hit only on a one-shot `RimWarSettlementComp.preventRelationChange`, which only its caravan
+    *reinforce* gizmo sets, so it never fires for a gravship. FT&V and VF only call it.
+  - **No mod re-checks the landing tile** [V on the sweep as run].
+
+### Status
+
+**READ.** Every mechanism above is [V] and cited by `Type.Method`. Routes GF-B to GF-G are [I] as
+compositions. The flight-time figure is [V] as a formula and [I] as a typical duration. Established
+by [#177](https://github.com/cjd721/Rimworld-Archinity/issues/177).
+
+It corrects the inherited framing from #152's open question: a gravship is **not** an aircraft that
+skips a re-check. It carries no target at all. It also adds one case #152's caravans do not have:
+the destination tile can **gain** a settlement or site, because nothing reserves it.
+
+### Open questions
+
+- **Does `ERA.md` § *The era advance* admit a deferral of one tile until a committed ship lands?**
+  Two clauses apply. One is *"nothing else may change on a delay"*, which names no threshold. The
+  other is *"a single, indivisible act"*, and it is broken for the window however short that is.
+  The answer decides whether GF-D's *defer* form is admissible for the advance. *Requirements;
+  ERA.md's owner.*
+- **Transfer shape per beat** no longer matters for gravships, but still matters for caravans.
+  *[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).*
+- **Build questions for the next map**, all owned by [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):
+  - where GF-G stores the launch-time snapshot;
+  - GF-C's precedence between home, nearest tile and the vanilla abort;
+  - whether GF-F generates the enemy map before touchdown or re-routes through
+    `ArriveExistingMap` some other way;
+  - whether an in-flight re-pick needs a tile picker of ours in Multiplayer;
+  - GF-E's letter text.
 
 ## Persistence and multiplayer
 

@@ -326,3 +326,32 @@ is registered: `SyncMethod.Register(typeof(IdeoDevelopmentUtility), "ApplyChange
 multifaction ideo page (`Page_ChooseIdeo_Multifaction`) is **preset-only** — it filters
 Classic, Custom and Fluid out of the category loop [V]. MP Compat carries no ideology-editor
 compat class [V].
+
+## A pawn with no ideology
+
+Verified against 1.6.4871 on [#142](https://github.com/cjd721/Rimworld-Archinity/issues/142).
+The system that selects from this is `docs/specs/ANDROIDS.md` § *A captured Glitterite*.
+
+**A null `Ideo` on an adult humanlike is a supported state.** Babies hold one as a matter of
+course, so the character card, the social card, needs and precept thoughts all null-guard
+`pawn.Ideo` [V]. A pawn with no faith gets no certainty tick
+(`Pawn_IdeoTracker.IdeoTrackerTickInterval` tests `ideo != null`) and no precept thoughts.
+
+**Only one def field produces it: `PawnKindDef.preventIdeo`.** `PawnGenerator` skips faith
+assignment for such a kind [V]. `Pawn.ShouldHaveIdeo` is `!baby && !kindDef.preventIdeo`; a mutant
+also needs `!mutant.Def.disablesIdeo`, which is Anomaly-only [V]. In vanilla only Odyssey's drone kinds
+set it, and no mod in either corpus root does [V]. `PawnGenerationRequest.ForceNoIdeo` does not make
+a faithless pawn. It is read only by the world-pawn redress validator [V].
+
+**A null set any other way comes back on load.** `Pawn_IdeoTracker.ExposeData` (PostLoadInit) logs
+*"did not have an ideo set; assigning fallback ideo"* and calls `SetIdeo(FallbackIdeo())` for any
+pawn whose `Ideo` is null and who `ShouldHaveIdeo` [V]. The fallback is the faction's primary faith,
+or a random one. `preventIdeo` lives on the kind, so every `ChangeKind` — `SetFaction` to the player,
+world-pawn redress — ends it (`docs/TRAPS.md` T-112).
+
+**`FactionDef.hiddenIdeo` is not "no ideology."** `FactionGenerator` still generates a real `Ideo`
+and marks it `hidden` [V]. `Pawn.SpawnSetup` sets `Ideo.hidden = false` the first time a member
+holding it spawns [V], so the faith appears in the player's ideoligion list at first contact.
+
+**No faith is not the same as unconvertible.** A faithless pawn converts on the first attempt —
+`docs/TRAPS.md` T-161.

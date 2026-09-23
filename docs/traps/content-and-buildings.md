@@ -431,6 +431,66 @@ bill's configuration, pasted onto another bill*. `935982361/1.6/Assemblies/Impro
 (`ImprovedWorkbenches.ExtendedBillDataStorage.MirrorBills`, `DoFiltersMatch`);
 `Data/Core/Defs/ThingDefs_Misc/Apparel_Various.xml`, `Apparel_Headgear.xml`. [V] by reading.*
 
+### T-163 — An android-category gene we author is installed on every player-built android, or offered to the player, depending on one field
+
+VRE – Android adopts **any** `GeneDef` whose `displayCategory` is `VREA_Hardware` or
+`VREA_Subroutine` into `Utils.allAndroidGenes` (`GeneDefGenerator_ImpliedGeneDefs_Patch.Postfix`).
+That makes it look like the natural home for a gene only one faction's androids carry. What happens
+next depends on `isCoreComponent`, and neither outcome is announced:
+
+- **`isCoreComponent true`** (the default for anything inheriting `VREA_HardwareBase`): the
+  `Window_CreateAndroidBase` constructor seeds `selectedGenes` with every android gene that
+  `CanBeRemovedFromAndroid()` refuses, and the toggle will not un-select it.
+  `Building_AndroidCreationStation.FinishAndroidProject` installs that list. So **every android the
+  player builds carries the gene**. A "this is a Glitterite" marker authored this way turns every
+  player-built android into a Glitterite for any code keyed on it.
+- **`isCoreComponent false`** (the `VREA_SubroutineBase` default): the gene is an optional
+  subroutine in the creation window, which the player can add to their own androids. It is also
+  removable at the behaviorist station from any android the station accepts, prisoners included.
+- A gene in any other category is invisible to both windows. `Window_AndroidModification` seeds
+  only from `IsAndroidGene`, and `FinishAndroidProject` strips and reinstalls only
+  `allAndroidGenes`. The station then can neither show nor remove it.
+
+**Remedy.** Choose the category for who should be able to see and remove the gene. If it must be
+android-category but not player-selectable, postfix `Window_CreateAndroidBase.GeneValidator` (a
+public virtual that filters the drawn list) to hide it. That works for a **non-core** gene only: a
+core gene reaches `selectedGenes` through the constructor, not through `GeneValidator`, so hiding it
+does not stop the install. `docs/specs/ANDROIDS.md` § *Jailbreaking a
+captured Glitterite*.
+
+*[#143](https://github.com/cjd721/Rimworld-Archinity/issues/143). `VREAndroids.Window_CreateAndroidBase`
+(constructor, `GeneValidator`), `.Window_AndroidModification`, `.Utils.CanBeRemovedFromAndroid`,
+`.Building_AndroidCreationStation.FinishAndroidProject`,
+`.Building_AndroidBehavioristStation.FinishAndroidProject`, `.GeneDefGenerator_ImpliedGeneDefs_Patch`;
+`2975771801/1.6/Defs/GeneDefs/GeneDefs.xml`. [V]*
+
+### T-164 — Every surgery on an android is Crafting work and cannot fail
+
+VRE – Android rewrites surgery for any `IsAndroid()` patient, with no message:
+
+- `HealthCardUtility_CreateSurgeryBill_Patch` swaps the bill's recipe for
+  `RecipeDef.RecipeForAndroid()`, a **clone** with `workSkill Crafting`. Any `Medicine` skill
+  requirement becomes `Crafting`, and the work speed stat becomes `ButcheryMechanoidSpeed`
+  (unless the recipe already used Crafting).
+- `WorkGiver_DoBill_ThingIsUsableBillGiver_Patch` removes android patients from vanilla's medical
+  work-giver and gives them to `VREA_DoBillsAndroidOperation` (`workType Crafting`). **Doctors never
+  operate on androids; crafters do.**
+- `Recipe_Surgery_CheckSurgeryFail_Patch` is an `int.MaxValue` prefix that skips
+  `Recipe_Surgery.CheckSurgeryFail` for an android patient, and the default result means "did not
+  fail". `surgerySuccessChanceFactor`, skill, medicine and the operating bed do nothing, and no
+  android surgery can fail, botch or kill.
+
+A beat written as "a doctor opens it up, and it might go wrong" is impossible as shipped on both
+counts.
+
+**Remedy.** Author android surgeries with `workSkill Crafting` so no clone is made. If an operation
+must be able to fail, roll inside its own `ApplyOnPawn`.
+
+*[#143](https://github.com/cjd721/Rimworld-Archinity/issues/143), `docs/specs/ANDROIDS.md` §
+*Jailbreaking a captured Glitterite*. `VREAndroids.Utils.RecipeForAndroid`,
+`.HealthCardUtility_CreateSurgeryBill_Patch`, `.WorkGiver_DoBill_ThingIsUsableBillGiver_Patch`,
+`.Recipe_Surgery_CheckSurgeryFail_Patch`; `2975771801/1.6/Defs/WorkGiverDefs/WorkGivers.xml`. [V]*
+
 ---
 
 ## Rituals and titles
@@ -767,6 +827,128 @@ grant.
 `.ResetPermitsAndPoints` / `.Notify_Resurrected`, `Verse.Pawn.GetGizmos`,
 `RimWorld.RoyalTitlePermitWorker.AidDisabled_NewTemp` (`Assembly-CSharp.dll`). [V]*
 
+### T-167 — A VPE path lock gates only the *Unlock* button; psytrainers and psyrings walk past it by default
+
+`PsycasterPathDef.ignoreLockRestrictionsForNeurotrainers` **defaults to `true`**. While it is true,
+nothing outside VPE's psycast tab consults the path's `requiredGene` / `requiredFocus` /
+`requiredBackstoriesAny` / `requiredMeme` / `requiredMechanitor`:
+
+- **Psytrainers.** VPE generates a `Psytrainer_<ability>` for **every** psycast `AbilityDef`
+  (`ThingDefGenerator_Neurotrainer_ImpliedThingDefs_Patch`), including any path we author, tagged
+  `RewardStandardLowFreq`. `CompPsytrainer.CanBeUsedBy` skips the lock check. `DoEffect` then calls
+  `UnlockPath` unconditionally, so the whole locked path opens to any psycaster.
+- **Psyrings.** Technomancer's `VPE_CraftPsyRing` makes a ring from any psycast the crafter knows.
+  `Psyring.Notify_Equipped` gives the ability to any psycaster wearing it and never reads the path.
+- **Casting.** `AbilityExtension_Psycast.IsEnabledForPawn` refuses a locked path's ability only when
+  the flag is false.
+
+No message and no greyed option appear. A founder-only or gene-locked path simply has a
+non-founder casting from it.
+
+**Fix.** Set `<ignoreLockRestrictionsForNeurotrainers>false</ignoreLockRestrictionsForNeurotrainers>`
+on every gated path, as VPE Hemosage's `VPEH_Hemosage` does. Removing psytrainers (#10 §5's decision)
+closes only the trainer half. `ensureLockRequirement` alone parks a psytrainer-opened path at the
+next recheck (T-168), but a psyring's ability belongs to a path the wearer never unlocked, so it
+stays castable.
+
+*[#162](https://github.com/cjd721/Rimworld-Archinity/issues/162), `docs/specs/PSYCHIC.md` § *A
+psycaster path only the founders can take*. `VanillaPsycastsExpanded.CompPsytrainer.CanBeUsedBy` /
+`.DoEffect`, `.AbilityExtension_Psycast.IsEnabledForPawn`, `.Technomancer.Psyring.Notify_Equipped`,
+`.ThingDefGenerator_Neurotrainer_ImpliedThingDefs_Patch` (`2842502659/1.6/Assemblies/VanillaPsycastsExpanded.dll`). [V]*
+
+### T-168 — `ensureLockRequirement` rechecks on three signals only, parks the path, and never revokes or refunds
+
+`PsycastUtility.RecheckPaths` is VPE's only relock. It runs only from postfixes on
+`HediffSet.DirtyCache`, `Pawn_GeneTracker.Notify_GenesChanged` and
+`Pawn_AbilityTracker.Notify_TemporaryAbilitiesChanged`. Keys that change by any other signal leave
+the path open until some unrelated hediff change happens to fire a recheck:
+
+- `requiredMeme`, on an ideoligion change or conversion;
+- `requiredBackstoriesAny`, on a backstory edit;
+- anything a custom `CanPawnUnlock` reads.
+
+When it does fire, the path is **parked**, not removed. It moves to `previousUnlockedPaths`,
+`AbilityExtension_Psycast.ShowGizmoOnPawn` hides that path's gizmos, the learned abilities stay in
+`CompAbilities`, and `points` is untouched. When the key returns, the path comes back free. A path
+**without** `ensureLockRequirement` never relocks once unlocked, whatever happens to the key.
+
+**Fix.** Key relockable paths on a hediff or a gene, whose changes fire the recheck. If a key must
+change by another signal, call `pawn.RecheckPaths()` (public extension) in the same synced command.
+
+*[#162](https://github.com/cjd721/Rimworld-Archinity/issues/162). `VanillaPsycastsExpanded.PsycastUtility.RecheckPaths`,
+`.HediffSet_DirtyCache_Patch`, `.Pawn_GeneTracker_Notify_GenesChanged_Patch`,
+`.Pawn_AbilityTracker_Notify_TemporaryAbilitiesChanged_Patch`, `.AbilityExtension_Psycast.ShowGizmoOnPawn`
+(`2842502659/1.6/Assemblies/VanillaPsycastsExpanded.dll`). [V]*
+
+### T-169 — The vanilla psylink method is not a chokepoint: a gate there misses most rank writes
+
+A Harmony gate on `Hediff_Psylink.ChangeLevel` looks as if it guards psylink rank. It misses
+most writes, silently:
+
+- **The one-argument overload is skipped.** `PawnUtility.ChangePsylinkLevel` calls
+  `ChangeLevel(int, bool)` directly. So a prefix on `ChangeLevel(int)` never sees the anima tree
+  (`CompPsylinkable.FinishLinkingRitual`), the blinding ritual or the bestowing ceremony. It sees
+  only neuroformer upgrades, which reach it through the virtual `Hediff_Level.ChangeLevel`.
+  VRE – Android's android block has exactly this shape.
+- **The first rank never calls `ChangeLevel`.** A neuroformer, the `ChangePsylinkLevel` null
+  branch, a gene's hediff and `PawnGenerator` all *add* the hediff at level 1.
+- **Some writers set the field directly.** `Hediff_Psylink.CopyFrom` (Anomaly duplicates),
+  Prepare Carefully's `AddPsylinkOrSetLevel` and VPE-Puppeteer's `MindJump.TransferMind` write
+  the level without calling any method.
+- **Under VPE the method is dead code.** VPE's prefix on `ChangeLevel(int, bool)` returns false
+  and hands off to `Hediff_PsycastAbilities.ChangeLevel`. That method writes
+  `psylink.level = this.level` directly, as do VPE's XP loop, NPC generation and title grants.
+  None of them calls the vanilla method.
+
+**Fix.** Under VPE, gate `Hediff_PsycastAbilities.ChangeLevel(int)`, the virtual override that
+every VPE rank change after the first passes through. Gate the first rank where
+`PsychicAmplifier` is added. Close the direct field writers at their own defs.
+
+*[#163](https://github.com/cjd721/Rimworld-Archinity/issues/163), `docs/specs/PSYCHIC.md` §
+*What raises psylink rank besides the altar*. `Verse.Hediff_Psylink.ChangeLevel` / `.CopyFrom`,
+`RimWorld.PawnUtility.ChangePsylinkLevel` (`Assembly-CSharp.dll` 1.6.4871);
+`VanillaPsycastsExpanded.Hediff_Psylink_ChangeLevel`, `.Hediff_PsycastAbilities.ChangeLevel`;
+`VREAndroids.Hediff_Psylink_ChangeLevel_Patch`. [V]*
+
+### T-170 — Quest rewards add a psylink neuroformer on a pity timer that no def tag controls
+
+The psylink neuroformer (`ThingDef PsychicAmplifier`) has no `thingSetMakerTags`, so it looks as
+if it can never be a quest reward. It can. `Reward_Items.InitFromValue` adds one by `ThingDefOf`
+before any tag-driven generation runs. The conditions:
+
+- Royalty is active;
+- the chance ramps from 0 at 45 days to 1 at 60 days since `History.lastPsylinkAvailable`
+  (`QuestTuning.DaysSincePsylinkAvailableToGuaranteedNeuroformerChance`);
+- the reward is worth at least 600;
+- the giver is not the Empire;
+- the quest's `disallowedThingDefs` does not list it.
+
+The timer starts at game start (`History.FinalizeInit`). It resets only when a psylink becomes
+*available* (`History.Notify_PsylinkAvailable`):
+- an anima-tree link;
+- a chosen neuroformer reward (`QuestPart_Choice`);
+- a quest that carries one being added (`QuestPart_DropPods`, `QuestPart_GiveToCaravan`,
+  `QuestPart_SpawnWorldObject`);
+- a title reward containing one;
+- vanilla's bestowing loop. VPE's transpiler removes that loop, so under VPE bestowing does not
+  reset it.
+
+It does **not** reset on psylinks from the blinding ritual, VPE XP or our own code. A campaign
+whose first psylink comes late therefore sees neuroformers guaranteed in item rewards from about
+day 60, and again roughly every 45 to 60 days after each one is offered. Nothing logs it.
+[#21](https://github.com/cjd721/Rimworld-Archinity/issues/21) read the missing tag as proof
+that no quest could reward one.
+
+**Fix.** Make the item inert in XML: remove `CompProperties_UseEffectInstallImplant` from the
+ThingDef, and keep the def, which `ThingDefOf` needs. Or keep `History.lastPsylinkAvailable`
+current from C#. Stripping tags does nothing.
+
+*[#163](https://github.com/cjd721/Rimworld-Archinity/issues/163). `RimWorld.Reward_Items.InitFromValue`,
+`RimWorld.QuestTuning`, `RimWorld.History.Notify_PsylinkAvailable` / `.FinalizeInit`,
+`RimWorld.QuestPart_Choice`, `.QuestPart_DropPods.PostQuestAdded`, `.QuestPart_GiveToCaravan`,
+`.QuestPart_SpawnWorldObject`, `.RitualOutcomeEffectWorker_Bestowing.Apply`, `RimWorld.Pawn_RoyaltyTracker`
+(`Assembly-CSharp.dll` 1.6.4871); `VanillaPsycastsExpanded.RitualOutcomeEffectWorker_Bestowing_Apply_Patch.Transpiler`. [V]*
+
 ## Ideology authoring
 
 ### T-121 — No `FactionDef` restriction applies inside the ideology reform dialog
@@ -834,5 +1016,36 @@ ideology fields are NPC-only" is wrong as a generalisation and right about these
 *A campaign base for the player faith*. `RimWorld.Dialog_ChooseMemes.CanUseMeme` / `.CanRemoveMeme`,
 `RimWorld.Page_ChooseIdeoPreset.PostOpen`; `Data/Core/Defs/FactionDefs/Factions_Player.xml`.
 1.6.4871.*
+
+### T-161 — A pawn with no ideology is the easiest pawn to convert
+
+A null `Ideo` reads like "nothing for conversion to act on". It is the opposite. Nothing on the
+conversion path treats a null faith as a refusal:
+
+- **`Pawn_IdeoTracker.IdeoConversionAttempt`** does not test `ideo != null`. It lowers `Certainty`,
+  and at `<= 0` calls `SetIdeo(initiatorIdeo)` [V]. A pawn that never had a faith has never had
+  `SetIdeo` run, so its certainty field is still **0**, and the **first** attempt converts it. After a
+  save and load, `ExposeData` gives it a random starting certainty whether or not it holds a faith,
+  and it converts on an ordinary schedule instead.
+- **The Convert ability.** `CompAbilityEffect_Convert.Valid` asks only human, not a baby, no mental
+  state, **not the same ideology** and conscious. `null != caster.Ideo`, so the target is valid. The
+  ability plays its normal *success* message [V].
+- **The conversion ritual.** `RitualRoleConvertee.AppliesToPawn` refuses only `p.Ideo ==
+  ritual.ideo` [V], and `Dialog_BeginRitual` draws its candidates from
+  `FreeColonistsAndPrisonersSpawned` [V]. A prisoner with no faith is a legal convertee, and the
+  best outcome calls `SetIdeo` [V].
+
+Only the warden route is loud: `InteractionWorker_ConvertIdeoAttempt.Interacted` dereferences
+`recipient.Ideo.GetRole(recipient)` and throws [V]. The two routes a player is most likely to use
+say nothing.
+
+**Remedy.** "Believes nothing" and "can never be converted" are two properties. Gate the second
+where the faith is written — `Pawn_IdeoTracker.SetIdeo` and `IdeoConversionAttempt` — and close the
+ability and ritual offers for legibility. `docs/specs/ANDROIDS.md` § *A captured Glitterite*.
+
+*[#142](https://github.com/cjd721/Rimworld-Archinity/issues/142). `RimWorld.Pawn_IdeoTracker.IdeoConversionAttempt`
+/ `.ExposeData`, `RimWorld.CompAbilityEffect_Convert.Valid`, `RimWorld.RitualRoleConvertee.AppliesToPawn`,
+`RimWorld.Dialog_BeginRitual`, `RimWorld.RitualOutcomeEffectWorker_Conversion.Apply`,
+`RimWorld.InteractionWorker_ConvertIdeoAttempt.Interacted`. 1.6.4871.*
 
 ---

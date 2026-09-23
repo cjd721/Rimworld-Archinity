@@ -55,7 +55,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-36 | Swapping `Faction.def` freezes the title ladder — `royalTitleTags`, `royalFavorLabel` and `categoryTag` do not follow |
 | T-45 | `PlanetLayer` geometry rebuilds from *scribed* values, so a layer-size patch after worldgen is a silent no-op |
 | T-49 | `Find.RandomSurfacePlayerHomeMap` returns null once the only home is in orbit, taking three quest nodes with it |
-| **T-54** | **World Tech Level silently strips factions from the worldgen roster and gensteps from the map** |
+| **T-54** | **World Tech Level silently strips factions from the worldgen roster — and, with its separate "Ancient debris" toggle (`Filter_GenSteps`) on, any genstep a level row names from every map (ours only if named)** |
 | T-68 | `SetFactionDirect` leaves a seized turret in the wrong attack-target bucket until a reload |
 | T-65 | VEF's `forcedPointsRange` sentinel is `IntRange.One`; omit it and the authored raid fires at zero points |
 | T-70 | `QuestNode_End` sets `signalListenMode` on the end part but not on the goodwill change beside it |
@@ -98,6 +98,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-153 | A VEF `QuestChainExtension` on a shop-sold quest also grants it free at game start and load — the shelved copy is invisible to the chain's duplicate check |
 | T-157 | `StorytellerComp_SingleOnceFixed` fires on one interval — a quest whose `TestRun` fails then is lost for the campaign, with no log |
 | T-158 | `QuestPart_Venerate` does not save its completion signal — after a save before the visitors' lord exists, the payload never fires |
+| T-162 | `recruitable = false` is a difficulty option (the getter ignores it once `unwaveringPrisoners` is off), and seven writers turn it back on — it hides only *recruit* and *reduce resistance*; enslave, reduce-will and convert stay offered |
+| T-165 | WTL's "Ancient debris" filter misses vanilla ancient dangers, strips encounter maps' turrets and remains, and clamps every NPC base's build to the world era |
+| T-166 | WTL's `AlwaysAllowOffworld` voids every `offworld`-flagged row for every def type — nine vanilla incidents, the ship-part crashes among them, reach a Neolithic home map in #7's frozen configuration |
+| T-174 | World Tech Level's quest filter discards quests at `QuestManager.Add` from every source — givers, chains, our code — silently, spending the scanner's signal or the uplink's hack |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -132,6 +136,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | **T-143** | **KCSG's static `GenOption.settlementLayout` is never reset — a `chooseFromlayouts` faction's garrison is multiplied by whatever layout was generated last in the process, and diverges between clients after a rejoin** |
 | T-155 | A bill edit is synced only if the field is watched in the scope where the edit runs — a mod button writing any other bill field changes one client |
 | T-160 | Vanilla's `PlayerKnowledgeDatabase` is a per-machine file — campaign knowledge modelled on it shows differently to the two players and is lost on rejoin |
+| T-173 | The orbital quest givers cache the giver-tag list on the comp, unsaved — a tag change reaches only comps that have not drawn, and host and joiner can draw different lists |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -172,6 +177,13 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-141 | A faction-dialogue option appended for the Industrial comms console also appears at Medieval Overhaul's messenger table, an era early |
 | T-146 | A permit granted without a title is permanent — vanilla never revokes it, and the "Call aid" gizmo keeps offering it after whatever granted it is gone |
 | T-156 | Better Workbench Management's "paste settings" keeps the target's material filter whenever the two recipes' fixed filters differ — "steel only" is dropped with no message |
+| T-161 | A pawn with no ideology is the easiest pawn to convert — its certainty starts at 0, so the first attempt converts it, and the Convert ability and the conversion ritual both accept a faithless prisoner and write a faith |
+| T-163 | An android-category gene we author is locked onto every player-built android (core) or offered to the player (non-core) — VRE adopts any `VREA_Hardware`/`VREA_Subroutine` `GeneDef`, and a gene in any other category is invisible to both stations |
+| T-164 | Every surgery on an android is a Crafting clone done by crafters, and it cannot fail — VRE skips `CheckSurgeryFail` for androids |
+| T-167 | A VPE path lock gates only the psycast tab's *Unlock* button — with `ignoreLockRestrictionsForNeurotrainers` at its default `true`, psytrainers (implied for every psycast) open a locked path and psyrings hand over its abilities, to any psycaster, castable |
+| T-168 | VPE's `ensureLockRequirement` rechecks only on hediff, gene and temporary-ability changes, parks the path rather than revoking it, and never refunds the point — a meme or backstory key never relocks by itself |
+| T-169 | The vanilla psylink method is not a chokepoint: `ChangePsylinkLevel` skips `ChangeLevel(int)`, the first rank is an add, some writers set `level` directly, and under VPE every rank write goes through `Hediff_PsycastAbilities.ChangeLevel` instead |
+| T-170 | Quest rewards add a psylink neuroformer by `ThingDefOf` on a 45–60-day pity timer (Royalty, reward ≥ 600, non-Empire giver). No def tag controls it, and it resets only when a psylink becomes "available" — an anima link, a neuroformer offered in a quest or title reward, or vanilla bestowing (which VPE removes) — never on blinding-ritual, XP or scripted psylinks |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 
@@ -198,6 +210,8 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-139 | `CaravanArrivalAction.StillValid` returns `true` in the base class — an arrival action of ours that does not override it marches on to a destroyed or transferred target |
 | T-144 | An XML `<mapGenerator>` on the Settlement `WorldObjectDef` also rebuilds every new player colony — player and NPC settlements share one def |
 | T-154 | Odyssey layout placement gives up silently — a crate, prefab or corner thing with no cell is not made, a refused item is destroyed, and the objective room can generate sealed |
+| T-171 | A gravship lands on whoever holds its tile on arrival — no re-check of owner, relation or `preventGravshipLanding`; any non-player settlement landed on gets `AffectRelationsOnAttacked`, and the tile is never reserved in flight |
+| T-172 | Under VGE the landing tile is picked before the launch ritual and `ExecuteGravshipLaunch` flies to it unchecked — the commitment starts at the ritual |
 
 ---
 
@@ -220,18 +234,19 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole. **All five are now over that line**, counted 2026-09-23 after the second
-capability batch of the day (#145–#179, T-153–T-160): `world-creation.md` (57),
-`content-and-buildings.md` (35), `multiplayer.md` (29), `defs-and-patching.md` (18) and
-`worldgen-layouts.md` (21).
+read whole. **All five are now over that line**, counted 2026-09-23 after the third
+capability batch of the day (#142–#180, T-161–T-174): `world-creation.md` (61),
+`content-and-buildings.md` (42), `multiplayer.md` (30), `defs-and-patching.md` (18) and
+`worldgen-layouts.md` (23).
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
 sharpened the case rather than changing it.** None of the five names the subject, so
 T-65, T-70 through T-73, T-76/T-77 and now **T-88 through T-91** sit in
 `world-creation.md` on the strength of factions and goodwill alone — filed under an
 *Incidents, quests and goodwill* heading inside it — and T-39 and T-48 are the same
-subject filed under determinism and worldgen respectively. **That is 27 entries under
-*Incidents, quests and goodwill* in `world-creation.md` and 29 across the register**, against
-a host file whose remaining 30 are 23 about factions and worldgen and 7 under *Holdings,
-outposts and world objects changing hands*. Adding a group
+subject filed under determinism and worldgen respectively, as are T-173 (orbital quest
+givers, under determinism) and T-170 (the neuroformer quest reward, under rituals and titles).
+**That is 29 entries under *Incidents, quests and goodwill* in `world-creation.md` and 33
+across the register**, against a host file whose remaining 32 are 25 about factions and
+worldgen and 7 under *Holdings, outposts and world objects changing hands*. Adding a group
 changes this index's shape and is Conrad's call; it is recorded here rather than taken.

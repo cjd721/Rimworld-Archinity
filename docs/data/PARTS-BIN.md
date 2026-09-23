@@ -1755,7 +1755,9 @@ AbilityDefs, not 399** (the higher number counts the independent 1.4/1.5/1.6 cop
 and **15 live paths, not 17** — `VPE_Animat` and `VPE_Puppeteer` are inside an XML
 comment in `Paths.xml`.
 
-**`PsycasterPathDef`'s complete gating surface is pure XML fields:** **[V]**
+**`PsycasterPathDef`'s gating surface is pure XML fields:** **[V]** *(corrected 2026-09-23,
+#162 — see `docs/specs/PSYCHIC.md` § *Vanilla Psycasts Expanded — the facts every section
+rests on*)*
 
 ```
 requiredGene       (GeneDef)
@@ -1765,11 +1767,18 @@ requiredMechanitor (bool)
 requiredBackstoriesAny
 lockedReason       ([MustTranslate])
 ensureLockRequirement (bool)
+ignoreLockRestrictionsForNeurotrainers (bool, default true)
 ```
 
-`CanPawnUnlock` is the AND of exactly those. And `ensureLockRequirement: true` makes
-access **dynamically re-evaluated** — `PsycastUtility.RecheckPaths` moves a path
-between `unlockedPaths` and `previousUnlockedPaths` as the condition flips. **[V]**
+`CanPawnUnlock` is `public virtual` and is the AND of **five conditions**, not seven fields:
+backstory, meme, gene (`GetGene(...).Active`), mechanitor and focus
+(`requiredFocus.CanPawnUse`). `lockedReason` is text and `ensureLockRequirement` a recheck
+flag. **`ignoreLockRestrictionsForNeurotrainers` defaults `true`, and while it is true the
+AND gates only the tab's *Unlock* button** — psytrainers open the path, and psyrings hand over
+its abilities, to any psycaster (**T-167**). `ensureLockRequirement: true` makes access re-evaluated only on hediff,
+gene and temporary-ability changes: `PsycastUtility.RecheckPaths` parks a failing path in
+`previousUnlockedPaths` (abilities and points kept, gizmos hidden) and never refunds; a meme or
+backstory key does not relock by itself (**T-168**). **[V]**
 
 > ```xml
 > <requiredGene>Archinity_ArchonGene_Whatever</requiredGene>
@@ -1777,7 +1786,8 @@ between `unlockedPaths` and `previousUnlockedPaths` as the condition flips. **[V
 > <lockedReason>...</lockedReason>
 > ```
 > **A path declared like this activates the instant the named Archon gene is installed
-> and deactivates if it is removed. That wires the Waystone's two power tracks —
+> and is parked (not revoked) if it is removed — and needs
+> `ignoreLockRestrictionsForNeurotrainers false`, or psytrainers and psyrings bypass it (T-167). That wires the Waystone's two power tracks —
 > "named, chosen and deterministic" genes and psychic ability — together in pure XML.**
 > Hemosage already ships exactly this shape with `<requiredGene>Hemogenic</requiredGene>`.
 
@@ -1798,11 +1808,20 @@ prefixed to `return false`, killing vanilla's random-power grant. **[V]**
 
 **XP is a linear function of psyfocus gained**, and the only rate knob is
 `PsycastSettings.XPPerPercent` — **a C# mod setting, not XML, and unsynced.** **[V]**
+*(Corrected 2026-09-23, #163 — `docs/specs/PSYCHIC.md` § *What raises psylink rank besides the
+altar*.)* **XP is psylink rank itself:** `GainExperience` loops `ChangeLevel(1, …)` while
+`level < maxLevel`, so there is no within-rank level. **Every psyfocus gain is XP**, not only
+meditation — the caravan psyfocus tick (no meditation needed), and every positive offset or
+recharge (go-juice, deathrest, ~10 mod feeders). **`XPPerPercent` does not reach three XP
+abilities** (Timeskip Meditation, Drain Psyessence, Puppeteer's Ascension), which pass raw XP.
+And `maxLevel` is not a harmless cap: `ApplySettings` writes it into
+`PsychicAmplifier.maxSeverity`, which caps `CompPsylinkable.CanPsylink`. **[V]**
 
 > **There is no XML knob for the earn rate. The XML-side lever Archinity actually has
 > is `MeditationFocusStrength` / `MeditationFocusGain` on the focus objects and the
-> pawn — patch those and you move XP rate, because XP is downstream of psyfocus gain.
-> That is the correct place to intervene.**
+> pawn — patch those and you move XP rate, because XP is downstream of psyfocus gain.**
+> *(2026-09-23: that moves meditation only; every other psyfocus feeder and the three raw-XP
+> abilities still write rank — see PSYCHIC.md routes B–D.)*
 
 **Framing: 100% reskinnable, and this is a clean decisive answer. [V]** Every
 player-visible string was classified across the 19,583-line decompile. VPE makes 142

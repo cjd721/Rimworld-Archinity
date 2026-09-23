@@ -265,3 +265,39 @@ the first clause alone. (**T-49** is the counter-case: it is the *layer* test in
 
 Established on [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56); the system built on
 it is `docs/specs/TRACE.md` § *The escape rule*. 1.6.4871.
+
+## In flight — what the ship carries, and what arrival reads
+
+All [V] against `Assembly-CSharp.dll` 1.6.
+
+- **What a gravship may target.** The launch validator is
+  `CompPilotConsole.StartChoosingDestination_NewTemp`. It checks fuel and range, the signal
+  jammer, and not the same tile. Then:
+  - a `MapParent` with a map passes;
+  - anything else must pass `TileFinder.IsValidTileForNewSettlement(tile, forGravship: true)`.
+
+  `Settlement.GravShipCanLandOn` is `Faction != OfPlayer`, so **every NPC settlement is a legal
+  target**. The pick then runs `SettlementProximityGoodwillUtility.CheckConfirmSettle`. For a
+  settlement tile, it warns that the owner is hostile or neutral, and prices the goodwill loss.
+- **The in-flight object.** `GravshipUtility.TravelTo` adds a `RimWorld.Planet.Gravship` world
+  object. Its `Tile` is the origin, projected onto the destination layer, and it **stays there
+  for the whole flight**. `destinationTile` is a **public field**; vanilla itself rewrites it in
+  `WorldComponent_GravshipController.AbortLanding`.
+- **Speed.** `traveledPct` advances `0.00025 / GenMath.SphericalDistance(start, end)` per tick, so
+  a flight takes 4,000 ticks per radian of arc. A hop straight up to orbit is effectively instant.
+  The game has one slot for it: `Current.Game.Gravship` (`Find.CurrentGravship`).
+- **Not a storyteller target.** `Storyteller.AllIncidentTargets` returns maps, player caravans and
+  the world, never the gravship. The `Gravship` `IncidentTargetTag` on its `WorldObjectDef` is used
+  by no `IncidentDef` in either corpus root.
+- **Arrival is by tile.** When `traveledPct` reaches 1:
+  - `ArriveExistingMap` runs if the tile's `MapParent` has a map. It offers the landing marker,
+    whose confirm and abort Multiplayer syncs.
+  - Otherwise `ArriveNewMap` generates a map for whatever `MapParent` is there now, or founds a
+    home. It treats any non-player `Settlement` as attacked. Only then does
+    `GenStep_GravshipMarker` spawn a landing marker, which offers confirm and move **but no
+    abort** (`landingMap` is unset).
+
+  The launch checks are never repeated. See **T-171**, and **T-172** for VGE's pre-ritual pick.
+
+([#177](https://github.com/cjd721/Rimworld-Archinity/issues/177); `docs/specs/GRAVSHIP.md` § *A
+gravship en route when its landing tile changes hands*.)

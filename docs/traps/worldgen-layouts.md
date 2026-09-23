@@ -361,6 +361,91 @@ and tile checks:
 [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172). `Assembly-CSharp.dll` 1.6
 `CaravanArrivalAction.StillValid`, `Caravan_PathFollower.PatherTickInterval`.*
 
+### T-171 — A gravship lands on whoever holds its tile on arrival, and any non-player settlement it lands on counts as attacked
+
+A gravship in flight is the `RimWorld.Planet.Gravship` world object. It carries a **tile**
+(`destinationTile`), not a target object and not an arrival action. When `Gravship.TickInterval`
+reaches `traveledPct >= 1`, it resolves the destination **by tile, at that moment**:
+
+- `MapParentAt(destinationTile)?.Map != null` → `GravshipUtility.ArriveExistingMap`, which
+  offers the landing marker (confirm, move, or abort to a crash landing nearby);
+- otherwise → `GravshipUtility.ArriveNewMap`, which calls `GetOrGenerateMap` on **whatever
+  `MapParent` now stands on the tile**. If the tile is empty, it founds a player home.
+  `GenStep_GravshipMarker` then spawns a landing marker that offers **confirm or move, but no
+  abort**. The abort button needs `landingMap`, and only `ArriveExistingMap` sets it.
+
+**Nothing re-runs the launch checks.** The launch validator
+(`CompPilotConsole.StartChoosingDestination_NewTemp`: `TileFinder.IsValidTileForNewSettlement(…,
+forGravship: true)`, `Site.preventGravshipLanding`, the signal-jammer rule) and the launch
+confirmation (`SettlementProximityGoodwillUtility.CheckConfirmSettle`, which names the owner
+**at launch** as hostile or neutral and prices the goodwill loss) both run once, at the pick.
+
+In `ArriveNewMap`, **any** `Settlement` (or all-`considerEnteringAsAttack` `Site`) whose faction is
+not the player's produces the *"gravship entered enemy base"* letter and
+`SettlementUtility.AffectRelationsOnAttacked`. That call applies `GoodwillToMakeHostile`, which
+drives the owner to hostile **whatever the relation is**. The only exceptions are the ones
+`Faction.CanChangeGoodwillFor` refuses: a faction with no goodwill, a permanent-enemy def, or
+goodwill locked by a quest. No other check runs. So, silently:
+
+- A tile that passes to an **ally or neutral** while the ship is in the air is attacked, and the
+  new owner turns hostile. This is the gravship form of **T-138**, and it is wider: it fires for
+  every transfer, not only for attack orders.
+- An **empty tile that gains a settlement** is landed in without warning. The ship is set down
+  inside the base, and relations follow as above. The destination is not reserved:
+  `Gravship.Tile` stays at the origin for the whole flight, so `TileFinder.TryFindNewSiteTile`
+  (`!AnyWorldObjectAt`) and Rim War's `Settler` → `WorldUtility.CreateSettlement` both see the
+  landing tile as free.
+- **Destroy-and-recreate does not abort the flight**, unlike a caravan (**T-140** half 2). The
+  ship lands on the replacement.
+- A **site that forbids gravship landing** (`preventGravshipLanding`) and that appears on the tile
+  in flight is landed on anyway.
+
+**The window.** Flight runs `4,000` ticks per radian of arc (`0.00025 / GenMath.SphericalDistance`
+per tick): at most about 12,600 ticks, and near zero for a layer hop straight up. Under VGE, the
+commitment starts earlier, at the launch ritual (**T-172**).
+
+**Fix:** re-check at arrival against what the player confirmed, or act on the in-flight ship
+inside our transfer command. See `docs/specs/GRAVSHIP.md` § *A gravship en route when its landing
+tile changes hands*.
+
+*[#177](https://github.com/cjd721/Rimworld-Archinity/issues/177). `Assembly-CSharp.dll` 1.6
+`RimWorld.Planet.Gravship.TickInterval`, `GravshipUtility.TravelTo` / `.ArriveNewMap` /
+`.ArriveExistingMap`, `CompPilotConsole.StartChoosingDestination_NewTemp`,
+`TileFinder.IsValidTileForNewSettlement`, `Settlement.GravShipCanLandOn`,
+`SettlementProximityGoodwillUtility.GetConfirmationDescriptions`, `SettlementUtility.AffectRelationsOnAttacked`,
+`TileFinder.TryFindNewSiteTile`; `2222935097/v1.6/Assemblies/RimWar.dll` `RimWar.Planet.Settler.ArrivalAction`.*
+
+### T-172 — Under Vanilla Gravship Expanded, the landing tile is chosen before the launch ritual and never re-checked
+
+In vanilla, the pilot-console ritual runs first, and the tile is picked **after** it
+(`RitualOutcomeEffectWorker_GravshipLaunch.Apply` → `PreLaunchConfirmation` →
+`StartChoosingDestination_NewTemp`).
+
+VGE reverses the order:
+
+1. `Dialog_BeginRitual_ShowRitualBeginWindow_Patch` opens the tile picker **before** the ritual.
+2. `SettlementProximityGoodwillUtility_CheckConfirmSettle_Patch` holds the tile in a static.
+   When the ritual starts, `RitualBehaviorWorker_GravshipLaunch_TryExecuteOn_Patch` copies it into
+   `LordJob_Ritual_ExposeData_Patch.targetTile`, keyed by the ritual's `LordJob`, which scribes it.
+   `RitualOutcomeEffectWorker_GravshipLaunch_Apply_Patch` routes a grav-anchored launch through
+   `PreLaunchConfirmation` too, where vanilla would skip it, so the anchor is no exception.
+3. When the ritual ends, `GravshipUtility_PreLaunchConfirmation_Patch.ExecuteGravshipLaunch`
+   calls `InitiateTakeoff` with the stored tile. It runs no validator and no confirmation.
+
+So the player's commitment starts when the ritual is **scheduled**, not when the ship lifts. A
+change of hands during the gathering and the ritual leaves the ship to launch at the stale
+confirmation, and then **T-171** applies on arrival. MP Compat's `VanillaGravshipExpanded` class
+syncs the tile pick and `ExecuteGravshipLaunch`, so the stale launch is at least identical on both
+clients.
+
+**Fix:** any arrival-time guard covers this for free. A launch-time guard must also hook
+`ExecuteGravshipLaunch`, not only `CompPilotConsole`.
+
+*[#177](https://github.com/cjd721/Rimworld-Archinity/issues/177).
+`3609835606/1.6/Assemblies/VanillaGravshipExpanded.dll` (the types named above);
+`1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll` `Multiplayer.Compat.VanillaGravshipExpanded`;
+`Assembly-CSharp.dll` 1.6 `RitualOutcomeEffectWorker_GravshipLaunch.Apply`.*
+
 ### T-144 — An XML `<mapGenerator>` on the Settlement `WorldObjectDef` also rebuilds every new player colony
 
 Player and NPC settlements are made from the same def, `layer.Def.SettlementWorldObjectDef`:

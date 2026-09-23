@@ -383,6 +383,20 @@ Both patches sit in `[PatchGroup("Filters")]` behind
 this is a T-18 surface as well: two clients with different settings build different
 rosters.
 
+> **Correction — 2026-09-23, [#153](https://github.com/cjd721/Rimworld-Archinity/issues/153).**
+> Only the faction leg is behind `Filter_Factions`. `Patch_MapGenerator` has its own
+> `[HarmonyPrepare] IsFilterEnabled() => WorldTechLevel.Settings.Filter_GenSteps` — the
+> toggle the settings UI labels **"Ancient debris"**, which #7 § 5 froze **off** — so while
+> that toggle is off the genstep leg does not exist and every `GenStepDef` row is inert [V].
+> What the genstep leg does and misses when it is on is **T-165**.
+> **And the leg is narrower than stated above.** `DefTechLevels.Initialize` runs
+> `TechLevelDatabase<GenStepDef>.Initialize()` with no level function, so no genstep has a
+> "derived level": each is `Undefined` and passes at every world level unless a
+> `TechLevelConfigDef` row (by name, glob or null `defName`) or `Settings.Overrides` raises it [V].
+> WTL's own rows name only vanilla gensteps, and no other mod in either root ships a `GenStepDef`
+> row [V, sweep]. An Archinity genstep is therefore removed only if someone names it — the
+> exposure is `Settings.Overrides` (T-18), not a default.
+
 Treat the faction leg as effectively permanent. `Window_AddFactions.OpenIfAnyAvailable`
 is a real post-worldgen addition path that WTL itself drives from the world faction
 tab when the tech level rises, so the categorical "it can never be added" is wrong —
@@ -479,6 +493,54 @@ build* § 6b. `WorldTechLevel.Window_AddFactions.OpenIfAnyAvailable` / `.DoWindo
 (`3414187030/1.6/Lunar/Components/`); `RimWorld.FactionGenerator.CreateFactionAndAddToManager`.
 1.6.4871.*
 
+### T-165 — WTL's "Ancient debris" filter misses vanilla ancient dangers, and strips the maps you travel to
+
+Turning on World Tech Level's **"Ancient debris"** toggle (`Filter_GenSteps`) reads like "no
+above-era junk on a low-tech map". It is neither that narrow nor that complete, and neither gap
+says anything.
+
+**It misses what it is named for.** `TechLevelDatabase<GenStepDef>.Initialize()` runs with no
+first-pass function, so every `GenStepDef` starts `Undefined` and only the rows in
+`1.6/Defs/TechLevels_GenStepDefs.xml` carry a level [V]. Those name the Ideology debris
+(`ScatterRoadDebris`, `AncientJunkClusters`, … at Industrial/Spacer/Ultra), Biotech's
+`AncientExostriderRemains` (Ultra) and the `Turrets` site part. **`ScatterShrines` — vanilla's
+ancient dangers — is not a row**, so with the filter on, a Neolithic starting map still gets its
+sealed vault of cryptosleep caskets. Tile-mutator content (Odyssey's `Junkyard`, VEE's
+`VEE_MechanoidShipChunks`) is not reached either: it arrives through mutator `extraGenSteps`
+whose `GenStepDef`s have no row.
+
+**And it reaches what you did not mean.** `Patch_MapGenerator.GenerateContentsIntoMap_Prefix`
+filters the whole genstep list of **every** map by `WorldTechLevel.Current` — the home map, a
+faction base, an encounter, a quest site's `extraGenStepDefs` alike [V]. It does not read the
+map's parent. So below Industrial the `Turrets` site part's genstep is removed from a quest site
+the player travels to, and `AncientMechs`, `MechanoidRemains` and `AncientLandingPad` vanish from
+encounter maps too — a quiet widening of "keep it out of the back yard" into "soften the places
+the player chooses to go".
+
+**The same toggle also clamps every settlement's build.** `Filter_GenSteps` is the
+`[HarmonyPrepare]` of `Patch_BaseGen` too, whose `Generate_Prefix` sets every non-player
+`FactionDef.techLevel` to `TechLevelClamped()` = `min(techLevel, WorldTechLevel.Current)` for the
+duration of each `BaseGen.Generate` and restores it in a finalizer; its `Resolve` transpiler also
+drops `RuleDef`s above the level (`SleepingMechanoids`, Ultra) [V]. Vanilla's settlement resolvers
+read `faction.def.techLevel` for edge defenses, mortars, power and lighting
+(`SymbolResolver_Settlement`, `_EdgeDefense`, `_MannedMortar`, …) [V]. So an above-era faction
+base the player walks into is laid out as an in-era one [I: composition of the two reads] — the
+opposite of the lethal encounter `docs/requirements/ERA.md` asks for. The two compat patches
+`ModCompat_RealRuins` and `ModCompat_VFECore` hang off the same toggle.
+
+The fix for the first half is a `TechLevelConfigDef` row of ours naming `ScatterShrines` (and
+any mutator genstep we want) — XML, but inert unless the toggle is on. There is no fix for the
+second half inside WTL; scope a home-only removal with the vanilla levers in
+`docs/specs/ERA.md` § *Above-era content seeded on the player's own map* instead.
+
+*`WorldTechLevel.Patches.Patch_MapGenerator.GenerateContentsIntoMap_Prefix`,
+`WorldTechLevel.Patches.Patch_BaseGen` (`Generate_Prefix`, `Resolve_Transpiler`),
+`WorldTechLevel.TechLevelUtility.TechLevelClamped`, `WorldTechLevel.DefTechLevels.Initialize`, `WorldTechLevel.TechLevelDatabase<T>.Initialize` /
+`.ApplyOverrides`, `1.6/Defs/TechLevels_GenStepDefs.xml` (`3414187030`);
+`Verse.MapGenerator.GenerateMap`, `Core/Defs/MapGeneration/BasePlayerMapGenerator.xml`,
+`Core/Defs/Sites/Parts/Turrets.xml`. T-54, T-18.
+[#153](https://github.com/cjd721/Rimworld-Archinity/issues/153). 1.6.4871.*
+
 ---
 
 ### T-109 — Unlisting a faith from its last faction is a deferred, silent mass conversion
@@ -559,11 +621,60 @@ the kind look like a free marker. It does not last:
 - **`MentalBreakWorker_RunWild`** calls `ChangeKind(WildMan)`. Re-taming then goes through
   `SetFaction` and resets the kind again.
 - `GameComponent_PawnDuplicator.Duplicate` copies `kindDef`, so a duplicate carries the marker.
+- **World-pawn redress.** `PawnGenerator` reuses a living world pawn of the request's race and calls
+  `ChangeKind(request.KindDef)`. The faction must match unless the request sets
+  `WorldPawnFactionDoesntMatter`, and vanilla's prisoner-willing-to-join quest
+  (`PrisonerWillingToJoinQuestUtility.GeneratePrisoner`) sets it. Anything the kind carried goes with
+  it, including `preventIdeo` (#142).
 
 No log line in any case.
 
-*[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). `Verse.Pawn.SetFaction`, `Verse.Pawn.ChangeKind`,
-`Verse.AI.MentalBreakWorker_RunWild`, `RimWorld.GameComponent_PawnDuplicator.Duplicate`. 1.6.4871.*
+*[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134); redress bullet
+[#142](https://github.com/cjd721/Rimworld-Archinity/issues/142). `Verse.Pawn.SetFaction`, `Verse.Pawn.ChangeKind`,
+`Verse.AI.MentalBreakWorker_RunWild`, `RimWorld.GameComponent_PawnDuplicator.Duplicate`,
+`Verse.PawnGenerator.IsValidCandidateToRedress` / `RedressPawn`. 1.6.4871.*
+
+---
+
+### T-162 — `recruitable = false` is a difficulty option, and seven writers turn it back on
+
+`Pawn_GuestTracker.recruitable` is the vanilla "cannot be recruited" flag. It holds much less than
+its name suggests:
+
+- **The getter ignores it unless the storyteller's `unwaveringPrisoners` is on.**
+  `Pawn_GuestTracker.Recruitable` returns `true` first thing when
+  `!Find.Storyteller.difficulty.unwaveringPrisoners` [V]. `DifficultyDef` defaults it to `true`, and
+  no vanilla `DifficultyDef` overrides it [V]. The custom-difficulty checkbox can turn it off. After
+  that, every "unrecruitable" pawn can be recruited, and the prisoner tab shows an ordinary
+  resistance number.
+- **It hides two of the prisoner modes, not all of them.** `ITab_Pawn_Visitor`'s
+  `CanUsePrisonerInteractionMode` drops a mode for an unrecruitable pawn only if the mode sets
+  `hideIfNotRecruitable`. Only Core's `AttemptRecruit` and `ReduceResistance` set it. Ideology's
+  `Enslave`, `ReduceWill` and `Convert` stay [V]. Vanilla's own first-capture letter offers
+  enslavement instead (`OptionalEnslaveDesc`).
+- **Writers set it back to true:**
+  - `PawnGroupKindWorker_Normal` does it for the `forceOneDowned` raider.
+  - `QuestPart_PawnJoinOffer` and `QuestNode_Root_RefugeePodCrash` do it.
+  - `PawnGenerator` does it on `ForceRecruitable` [V].
+  - VPE Puppeteer's `Hediff_Subjugation.PostRemoved`, on a high-severity removal, sets it true for
+    an unrecruitable pawn. For a recruitable one it `SetFaction`s the pawn straight to the player [V].
+  - Ushanka's Glittertech Expansion `HediffCompGammaSerum.RemoveWillAndCertainty` sets it true and
+    zeroes resistance, will and certainty [V].
+  - VQE Ancients' `VQEA_MasterfulSocial` gene flips it on a 20% roll per social interaction [V].
+  - An eighth, Anomaly's brainwipe (`PsychicRitualToil_Brainwipe`), is outside the DLC floor.
+
+None of these logs anything.
+
+**Remedy.** A pawn that must never be recruited is a pawn fact. Postfix the `Recruitable` getter on
+a durable marker instead of writing the field. `docs/specs/ANDROIDS.md` § *A captured Glitterite*.
+
+*[#142](https://github.com/cjd721/Rimworld-Archinity/issues/142). `RimWorld.Pawn_GuestTracker.Recruitable`,
+`RimWorld.DifficultyDef.unwaveringPrisoners`, `RimWorld.ITab_Pawn_Visitor` (local
+`CanUsePrisonerInteractionMode`), `Data/Core|Ideology/Defs/**/PrisonerInteractionMode.xml`,
+`RimWorld.PawnGroupKindWorker_Normal`, `RimWorld.QuestPart_PawnJoinOffer`,
+`RimWorld.QuestGen.QuestNode_Root_RefugeePodCrash`; `3033779606/1.6/Assemblies/VPEPuppeteer.dll`,
+`3522676478/1.6/Assemblies/GlittertechExpansion.dll`,
+`3618306875/1.6/Assemblies/VanillaQuestsExpandedAncients.dll`. 1.6.4871.*
 
 ---
 
@@ -1468,5 +1579,67 @@ field, or `autoAccept` with the lord made on the initiate signal.
 *[#158](https://github.com/cjd721/Rimworld-Archinity/issues/158), `docs/specs/ENCOUNTERS.md` § 4
 (V2). `RimWorld.QuestPart_Venerate`, `RimWorld.QuestPart_MakeLord`, `RimWorld.LordJob_Venerate`
 (`Assembly-CSharp.dll` 1.6).*
+
+### T-166 — WTL's `AlwaysAllowOffworld` voids every `offworld` row, so ship parts crash on a Neolithic home map
+
+`TechLevelDatabase<T>.ApplyOverrides` skips any `TechLevelConfigDef` row flagged
+`<offworld>true</offworld>` whenever `Settings.AlwaysAllowOffworld` is on — for **every** def type,
+not only offworld maps [V]. The skipped def keeps its first-pass level, which for `IncidentDef` is
+`Undefined`, so `Patch_Storyteller`'s incident filter passes it at any world level.
+
+WTL flags its own rows for `ShipChunkDrop`, `DefoliatorShipPartCrash`,
+`PsychicEmanatorShipPartCrash`, `PsychicSoothe`, `PsychicDrone` (both Archotech),
+`ResourcePodCrash` and the three `RefugeePodCrash*` defs (plus VEE's space-battle, shuttle,
+animal-pod and cargo-pod crashes) [V]. The only other `offworld` rows WTL ships are
+`PawnKindDef` rows. **#7 § 5 froze `AlwaysAllowOffworld` on and
+`Filter_Incidents` on**, so in the campaign's settled configuration a mechanoid ship part — an
+Ultra structure — can land on a Neolithic colony's map as an ordinary storyteller incident, and
+the "Incidents" toggle that appears to forbid it is doing nothing for those nine vanilla defs. The
+setting's own description is about offworld *generation*; nothing on the settings page says it
+reaches the storyteller.
+
+**Mitigation:** an Archinity `TechLevelConfigDef` row for the same `defName` **without** the
+`offworld` flag survives the skip and re-gates it — XML, no toggle moved [I: composes two [V]
+reads, not run].
+Whether any of these incidents should arrive at all is the arrival band's
+([#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)).
+
+*`WorldTechLevel.TechLevelDatabase<T>.ApplyOverrides`, `WorldTechLevel.Patches.Patch_Storyteller`
+(`MakeIncidentsForInterval_Postfix`, `IncidentFilter`), `1.6/Defs/TechLevels_IncidentDefs.xml`
+(`3414187030`). T-18. [#153](https://github.com/cjd721/Rimworld-Archinity/issues/153).
+1.6.4871.*
+
+### T-174 — World Tech Level's quest filter discards quests at `QuestManager.Add`, from every source, silently
+
+With WTL's `Filter_Quests` setting on, `Patch_QuestManager.Add_Prefix` skips `QuestManager.Add`
+for any quest whose root has `MinRequiredTechLevel > WorldTechLevel.Current`. Its sibling
+`Patch_QuestUtility.SendLetterQuestAvailable_Prefix` suppresses that quest's letter.
+
+Nothing checks the source. **The refusal covers every path that adds a quest**, not only the
+storyteller, whose own WTL filter is a separate transpiler on `ChooseNaturalRandomQuest`. That
+means giver tags (T-71), chains, subquest generators and our own code. The quest has already been
+through `QuestGen.Generate`. It is returned to the caller unadded, and the caller carries on:
+- `CompOrbitalScanner.LocateSignal` resets its signal after announcing *"orbital signal
+  detected"* 8–10 days earlier.
+- A hacked `AncientUplink` is spent.
+- Nothing appears and nothing is logged.
+
+**Two further leaks.** Harmony still runs every **postfix** on `QuestManager.Add` after the prefix
+skips the original. So VEF's chain-tracking postfix can record a quest that was never added [I].
+Whether a generated-but-unadded quest leaves pawns or world objects behind is also [I].
+
+Every `QuestScriptDef` defaults to `TechLevel.Undefined`: `TechLevelDatabase<QuestScriptDef>.Initialize()`
+runs with no level function. So the trap bites only a quest that a `TechLevelConfigDef` row or
+`Settings.Overrides` (T-18) has raised. One such row silently removes that quest from every
+source until the era arrives.
+
+**Fix:** never use a WTL quest row as a gate on a quest something else must deliver. Gate at the
+giver instead (`docs/specs/ORBIT.md` § *Holding every `OrbitalScanner` giver shut*, R2/R3).
+
+*[#180](https://github.com/cjd721/Rimworld-Archinity/issues/180). `WorldTechLevel.Patches.Patch_QuestManager`,
+`Patch_QuestUtility`, `Patch_NaturalRandomQuestChooser`, `DefTechLevels.Initialize`
+(`3414187030/1.6/Lunar/Components/WorldTechLevel.dll`); `RimWorld.QuestUtility.GenerateQuestAndMakeAvailable`,
+`RimWorld.CompOrbitalScanner.LocateSignal`, `RimWorld.CompAncientUplink.Notify_Hacked`
+(`Assembly-CSharp.dll` 1.6). Mechanism [V]; the two leaks [I]. T-18.*
 
 ---

@@ -1436,6 +1436,137 @@ Enemy Strongholds* (`RptEesBridge`: `StrongholdData.intelLevel` / `militaryPower
 all display donors for `TERRITORY.md` § *Showing what the player has learned about a settlement*.
 ([#178](https://github.com/cjd721/Rimworld-Archinity/issues/178))
 
+## What the 2026-09-23 third capability batch found
+
+Merged from the drafts for #142, #143, #153, #162, #163, #177 and #180, after independent review.
+These are amendments to existing rows; no verdict moves. Evidence marks are the resolving agent's.
+Conflicts are cargo, not verdicts.
+
+**Ushankas Glittertech Expansion** — `ushanka.glittertechexpansion` (`3522676478`).
+`HediffCompGammaSerum.RemoveWillAndCertainty` sets any prisoner recruitable and zeroes resistance,
+will and certainty (**T-162**) **[V]**. It is Glitterite content that undercuts a never-recruited
+Glitterite unless the `Recruitable` getter is postfixed.
+([#142](https://github.com/cjd721/Rimworld-Archinity/issues/142))
+
+**VPE Puppeteer** — `vanillaexpanded.vpe.puppeteer` (`3033779606`). All **[V]**:
+
+- `Hediff_Subjugation.PostRemoved`, on a high-severity removal, sets `recruitable` true for an
+  unrecruitable pawn, and `SetFaction`s a recruitable one straight to the player (**T-162**).
+  ([#142](https://github.com/cjd721/Rimworld-Archinity/issues/142))
+- `VPEP_Ascension` (`Ability_Ascension`) grants psylink XP (Σ puppet skill XP ÷ 100), which under
+  VPE is rank. `VPEP_MindJump` (`MindJump.TransferMind`) moves the psylink and VPE's rank hediff
+  between bodies by direct write (**T-169**).
+  ([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163))
+
+**VQE Ancients** — `vanillaquestsexpanded.ancients` (`3618306875`). The `VQEA_MasterfulSocial` gene
+flips `recruitable` on a 20% roll per social interaction (**T-162**) **[V]**.
+([#142](https://github.com/cjd721/Rimworld-Archinity/issues/142))
+
+**VRE – Android** — `vanillaracesexpanded.android` (`2975771801`). All **[V]**:
+
+- `Building_AndroidBehavioristStation.CanAcceptPawn` accepts any `IsAndroid()` colonist, slave or
+  colony prisoner, with no provenance check, and a Hauling work giver carries prisoners in. As
+  shipped the station cannot awaken, consume an item or recruit: stripping a marker gene there only
+  unlocks the prisoner. ([#142](https://github.com/cjd721/Rimworld-Archinity/issues/142),
+  [#143](https://github.com/cjd721/Rimworld-Archinity/issues/143))
+- Android surgery is re-skilled to a Crafting clone, done by crafters, and never fails (**T-164**).
+- Any `GeneDef` in the `VREA_Hardware` / `VREA_Subroutine` display categories joins its creation
+  and modification windows — a core one onto every player-built android (**T-163**).
+  ([#143](https://github.com/cjd721/Rimworld-Archinity/issues/143))
+
+**VRE – Archon** — `vanillaracesexpanded.archon`. All **[V]**:
+
+- The kidnap patch (`VREArchon_KidnappedPawnsTracker_Kidnap_Patch`) `SetXenotype`s kidnapped pawns
+  to `VRE_Archon`. A precedent for turn-then-join only.
+  ([#143](https://github.com/cjd721/Rimworld-Archinity/issues/143))
+- `VRE_Transcendent` is archite with `canGenerateInGeneSet` at its default `true`, so it can drop
+  in random archite genepacks; `GenePool_Archite.xml` reserves it only inside our lottery. MP
+  Compat has no VRE–Archon class. ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162))
+- `VRE_InnatePsylink` is a psylink by gene (through VEF `GeneUtils`), also with
+  `canGenerateInGeneSet` at its default. Our own `GenePool_Archite.xml` has it at tier 5.
+  ([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163))
+
+**More Archotech Garbage (Continued)** — `zal.morearchotechgarbage` (`3241944893`). All **[V]**:
+
+- `ArchotechGeneExtractor` does not weight archite genes to 0; `ArchotechGeneRipper` lets the
+  player pick any gene, archite included; `CompArchiteGenepackSpawner` draws any `biostatArc > 0`
+  gene, ignoring `canGenerateInGeneSet`. Together they defeat any gene-keyed or reserved-gene
+  design, `VRE_Transcendent` included, and only C# closes them.
+  ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162))
+- The `MakeArchotechRoyalPsychicAmp` recipe supplies a psylink item, and
+  `CompTargetEffect_CureHeatFillFocus` feeds psyfocus, which under VPE is XP.
+  ([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163))
+
+**Medieval Overhaul** — `dankpyon.medieval.overhaul` (`3219596926`). Ships the reference patch for
+removing above-era content from the home map: `1.6/Patches/ToggleOptions/MOSetting_RemoveJunk.xml`
+removes 11 Ideology debris gensteps from `MapCommonBase`, and `MOSetting_RemoveExostrider.xml`
+removes the exostrider from `Base_Player`. Each sits behind an MO settings toggle applied at patch
+time (**T-18**) **[V]**. ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)) Four MO
+drugs feed psyfocus, which under VPE is XP **[V]**.
+([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163))
+
+**Ushankas Hacking Expansion** — `ushanka.hackingexpansion`. Seeds `USH_AncientCyberdeck` on every
+`Base_Player` map and `USH_DataCenter` through `MapCommonBase` — above-era content on the home map,
+removable by `docs/specs/ERA.md` AE-1/2/3. A wide-pass hit, listed and not read further.
+([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153))
+
+**World Tech Level** — `m00nl1ght.worldtechlevel` (`3414187030`):
+
+- `Filter_GenSteps` (the "Ancient debris" toggle) also gates `Patch_BaseGen`, which clamps every
+  non-player faction's `techLevel` to the world level for each `BaseGen.Generate` (**T-165**). The
+  genstep leg of **T-54** sits behind this toggle, not `Filter_Factions` **[V]**.
+- `AlwaysAllowOffworld` voids every `offworld`-flagged `TechLevelConfigDef` row for every def type,
+  incident rows included (**T-166**) **[V]**. Multiplayer's join-time config sync carries WTL's
+  settings; a mid-session toggle is not covered (**T-18**).
+  ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153))
+- `Filter_Quests` also prefixes `QuestManager.Add`, refusing an above-level quest from every
+  source (**T-174**). `TechLevels_TileMutatorDefs.xml` marks 16 mutators Industrial, all five
+  structure mutators among them **[V]**. ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180))
+
+**Vanilla Landmarks Expanded** — `vanillaexpanded.vexploratione` (its defs carry the `VEE_` prefix).
+The `VEE_MechanoidShipChunks` tile mutator has no WTL row, so the genstep filter never reaches it
+(**T-165**). ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153))
+`VEE_Plant_TreeAnima_Ancient` is a second anima-linking target, so a second psylink source **[V]**.
+([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163))
+
+**VFE Deserters** — `oskarpotocki.vfe.deserters`. `VFED_PsychicAmplifier` upgrades psylink, and
+the neuroformer is contraband stock **[V]**.
+([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163))
+
+**Worksites Expanded** — `godsfathermixtape.worksitesexpanded` (`3687071198`). All **[V]**:
+
+- Its black market stocks neuroformers from a C# list.
+  ([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163))
+- A `CheckConfirmSettle` prefix warns on orbital-platform sites, at launch only.
+  ([#177](https://github.com/cjd721/Rimworld-Archinity/issues/177))
+- `OpportunitySite_OrbitalPlatform` is `givenBy OrbitalScanner`, as #149 recorded.
+  ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180))
+
+**EdB Prepare Carefully** — `edb.preparecarefully`. `AddPsylinkOrSetLevel` sets psylink level at
+game start by direct write (**T-169**) **[V]**.
+([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163))
+
+**Vanilla Gravship Expanded – Chapter 1** — `vanillaexpanded.gravship` (`3609835606`). Reorders
+launch: the tile is picked before the ritual and `ExecuteGravshipLaunch` flies to it unchecked
+(**T-172**). No arrival-time patch; its landing-marker transpiler checks cells, not the tile's owner
+**[V]**. ([#177](https://github.com/cjd721/Rimworld-Archinity/issues/177))
+
+**RimPacts – Diplomacy Overhaul** — `wowgag.RimPacts` (`3762723122`). `Patch_GravshipLandWarn` and a
+world-war `GravShipCanLandOn` postfix, both at launch only; `Patch_GravshipAbandonKeepSettlement`;
+and `Patch_SettlementAttacked_SiegeAid`, a postfix on `AffectRelationsOnAttacked`, so a stale
+gravship landing also breaks a non-aggression pact and can draw allied aid — amplifying **T-171**.
+It is also a settlement-transfer source **[V]**.
+([#177](https://github.com/cjd721/Rimworld-Archinity/issues/177))
+
+**GravTech** — `als.gravtech` (`3545374124`). `AdvShip_ComputerCore` is a bare `CompOrbitalScanner`,
+a fourth `OrbitalScanner` giver, behind `AdvShipParts` (Ultra); its unsaved quest cache is
+**T-173**'s **[V]**. ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180))
+
+**Better Architect Menu** — `ferny.BetterArchitect`. A `PatchOperationAdd` of `designationCategory
+Ferny_Outreach` on `OrbitalScanner`, `success Always`, re-adds a removed category depending on load
+order, so removing the scanner's category in XML does not make it unbuildable **[V]**.
+([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180))
+
 ## Open
 
 - **`rwmt.MultiplayerCompatibility` is a required member of the shipping set, not a

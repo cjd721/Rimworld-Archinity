@@ -1157,4 +1157,29 @@ scouted X") modelled on it, or kept in any static, `ModSettings` value (**T-18**
 `RimWorld.PlayerKnowledgeDatabase`, `Verse.GenFilePaths.ConceptKnowledgeFilePath`
 (`Assembly-CSharp.dll` 1.6). [V].*
 
+### T-173 — The orbital quest givers cache the giver-tag list on the comp, unsaved
+
+`CompOrbitalScanner` and `CompAncientUplink` each read `QuestUtility.GetGiverQuests(QuestGiverTag.OrbitalScanner)`
+**once**, on first use, into a private `scannerQuests` field. `PostExposeData` saves only
+`locateSignalTick`, so the field is rebuilt after every load. That covers VGE's scanner-cluster
+module and GravTech's computer core too, since both are `CompOrbitalScanner`.
+
+**A change to which quests the tag holds reaches only comps that have not drawn yet.** Such a change
+can come from a runtime `givenBy` edit, or a Harmony gate on `GetGiverQuests` keyed to a flag. A
+scanner that has already located a signal keeps drawing from the old list until the game is
+reloaded, and nothing is logged.
+
+In Multiplayer the host keeps its live comps across a join, while the joiner builds fresh lists from
+the save. **The two can then draw different quests on the same tick** [I]. An uplink draws once, so
+only the scanner family matters in practice.
+
+**Fix:** gate at the giver, not the list, so the list never changes. If the list must change, flush
+every live giver's `scannerQuests` inside the same synced call, and redo the change on every load.
+
+*[#180](https://github.com/cjd721/Rimworld-Archinity/issues/180), `docs/specs/ORBIT.md` § *Holding
+every `OrbitalScanner` giver shut*. `RimWorld.CompOrbitalScanner.ScannerQuests` / `PostExposeData`,
+`RimWorld.CompAncientUplink.ScannerQuests` (`Assembly-CSharp.dll` 1.6);
+`VanillaGravshipExpanded.CompScannerCluster_OrbitalScannerModule`. Mechanism [V]; the MP divergence
+[I]. Kin to T-20.*
+
 ---

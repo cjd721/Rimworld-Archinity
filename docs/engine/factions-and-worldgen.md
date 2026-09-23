@@ -817,3 +817,34 @@ the routes are `docs/specs/TERRITORY.md` §3.
 - **A quest cannot be routed to a named faction from XML.** `QuestNode_GetFaction.IsGoodFaction`
   filters on hidden, `ofPawn`, `exclude`, permanent-enemy, relation kind, attack state and
   goodwill-reward flags — never on `FactionDef` or on any stored record.
+
+## A prisoner joining the player — what `Recruit` and `SetFaction` do to guest state
+
+Verified against 1.6 `Assembly-CSharp` on [#143](https://github.com/cjd721/Rimworld-Archinity/issues/143).
+The system that uses it is `docs/specs/ANDROIDS.md` § *Jailbreaking a captured Glitterite*.
+
+- **Both entry points clear prisoner state the same way.** `RecruitUtility.Recruit` unlocks apparel,
+  swaps `replaceOnRecruited` titles, calls `guest.SetGuestStatus(null)`, then `SetFaction`, then
+  `guest.Notify_PawnRecruited()`, which nulls `slaveFaction`. `Pawn.SetFaction` **opens** with
+  `guest?.SetGuestStatus(null)`, so a bare `SetFaction(Faction.OfPlayer)`, as
+  `Recipe_GhoulInfusion.ApplyOnPawn` does it, frees the prisoner too [V].
+- **`SetGuestStatus(null)`** leaves status `Guest` with no host. It then clears
+  `health.surgeryBills`, **unclaims a prison bed** (`Pawn_Ownership.Notify_ChangedGuestStatus`),
+  notifies the ideo, and refreshes the map's pawn registry and attack-target cache [V].
+- **`SetFaction(OfPlayer)`** then does the following [V]:
+  - `ChangeKind(basicMemberKind)`, for a humanlike that is not a quest lodger (T-112);
+  - notifies the lord; enables work settings;
+  - clears surgery bills again and resets medical care;
+  - `ClearMind_NewTemp(ifLayingKeepLaying: true)`, so a patient stays in bed;
+  - recomputes needs, notifies relations and records the population increase.
+- **Left behind on `Pawn_GuestTracker`:** `resistance`, `will`, `interactionMode`, `recruitable`,
+  `ideoForConversion` and `everEnslaved`. A later capture re-rolls resistance and will from the
+  kind (`SetGuestStatus` `Prisoner` branch) [V]. That nothing reads the rest for a free colonist is
+  [I].
+- **No faith is written.** A null-`Ideo` joiner gets `FallbackIdeo()` (now the player's primary)
+  with a logged warning at the next load, unless the joining code calls `SetIdeo` (`ideology.md`
+  § *A pawn with no ideology*).
+- **A surgery may join its own patient.** `Bill_Medical.Notify_IterationCompleted` calls
+  `ApplyOnPawn` and then `billStack.Delete(this)`. `BillStack.Delete` is a plain `List.Remove`, so
+  the list `SetFaction` already cleared is harmless [V]. `Recipe_GhoulInfusion` is the vanilla
+  instance.

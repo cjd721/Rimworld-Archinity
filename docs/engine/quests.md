@@ -463,9 +463,28 @@ The two orbital callers weight their draw by `NaturalRandomQuestChooser.GetNatur
   itself when the slate lacks one, so any caller can run them. Their root,
   `QuestNode_Root_Asteroid`, places 1–3 tiles from a random player tile and ignores
   `siteDistRange` **[V]**.
+- **"Zero-weight" means more than `rootSelectionWeight 0`.** `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`
+  returns 0 in five cases:
+  - `rootSelectionWeight <= 0`;
+  - threat points below `rootMinPoints`;
+  - `DaysPassedSinceSettle < rootEarliestDay`;
+  - progress score below `rootMinProgressScore`;
+  - a same-root quest that appeared within `minRefireDays`.
+
+  So gating the tag's quests by any of these fields takes the throwing path the moment all of them
+  are gated, unless one ungated quest stays on the tag **[V]**.
+- **Each orbital giver caches the list on its comp, and the cache is not saved.** A tag change
+  reaches only comps that have not drawn yet (**T-173**) **[V]**.
+- **World Tech Level can silently eat a giver's quest.** Its `Filter_Quests` prefix on
+  `QuestManager.Add` refuses above-level quests from any source (**T-174**) **[V]**.
+- **The corpus holds four `OrbitalScanner` givers and eight tagged quests.** The givers are the
+  scanner, the uplink, VGE's scanner-cluster module and GravTech's `AdvShip_ComputerCore`. No mod
+  assembly calls `GetGiverQuests` **[V]**.
 
 Established on [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149);
-`docs/specs/CHARTING.md` § *The orbital scanner and Charting*.
+`docs/specs/CHARTING.md` § *The orbital scanner and Charting*. Extended on
+[#180](https://github.com/cjd721/Rimworld-Archinity/issues/180); `docs/specs/ORBIT.md` § *Holding
+every `OrbitalScanner` giver shut*.
 
 ---
 

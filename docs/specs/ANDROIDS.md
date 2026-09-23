@@ -36,7 +36,12 @@ android-hacking capability to build.
 
 Established by [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78). Evidence
 class **READ**. The psylink question below is
-[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)'s, also **READ**.
+[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)'s, also **READ**. Since
+[#142](https://github.com/cjd721/Rimworld-Archinity/issues/142) this document also owns **the captured
+Glitterite as an android pawn** — no faith, never recruited, enslaved or converted — because no other
+spec owns the Glitterite faction's pawns; see *A captured Glitterite*.
+[#143](https://github.com/cjd721/Rimworld-Archinity/issues/143) adds the one exception, the jailbreak;
+see *Jailbreaking a captured Glitterite into an android colonist*.
 
 ---
 
@@ -297,7 +302,650 @@ everything a psycasting android would then do.
 4. **The behaviorist-station path is [I]** — that an existing android can have a de-cored
    `VREA_PsychicallyDeaf` stripped at `VREA_AndroidBehavioristStation` follows from
    `Window_AndroidModification` extending `Window_CreateAndroidBase`, but its accept path was not
-   read end to end.
+   read end to end. *#143 has since read the station's accept path for prisoners and the gene
+   rules it enforces — see § Jailbreaking a captured Glitterite (J2/J3a) and T-163 — and this
+   item should be re-graded against that reading, not re-run.*
+
+---
+
+## A captured Glitterite — no faith, never on the player's side
+
+*Answers `docs/requirements/GLITTERTECH.md` § *A captured Glitterite*: "A Glitterite holds no
+faith and believes nothing. Captured, it can be held as a prisoner and nothing more: it is never
+recruited, enslaved or converted." Established by
+[#142](https://github.com/cjd721/Rimworld-Archinity/issues/142), evidence class **READ**. The one
+exception, the jailbreak, is [#143](https://github.com/cjd721/Rimworld-Archinity/issues/143)'s.*
+
+**Why this document.** No spec owns the Glitterite faction. `TRACE.md` owns their pursuit,
+`ORBIT.md` their settlements, and neither owns the pawn. The answer here depends on the Glitterite
+having an **android body** — VRE – Android genes, the creation and behaviorist machinery, and the
+`IsAndroid` predicate — and that body is this document's subject. It is also where #141's
+Glitterite/android distinction already lives. The answer is for the android
+Glitterite the fiction describes, not today's `Archinity.Glitterites` defs. Those make them race
+`Human` with Genie, Hussar and Highmate xenotypes, and they are due for a rewrite.
+
+### Verdict
+
+- **Possible? Yes.** Nothing in the corpus ships it. Vanilla's two flags each cover part of one
+  clause:
+  - `PawnKindDef.preventIdeo` makes a faithless pawn, but a faithless pawn is the **easiest** pawn
+    to convert (T-161).
+  - `recruitable = false` holds only under a difficulty option. It hides two of the five prisoner
+    modes, and seven writers set it back (T-162).
+
+  Two Harmony routes on verified seams cover every clause, keyed on a durable Glitterite marker.
+  **Route B** closes every offer. **Route C** refuses every effect at the chokepoints all paths
+  share.
+- **Multiplayer? Yes.** Every route reads pawn state that is already synced and runs inside commands
+  or ticks that are already synced. None adds a command, a UI write or a mod setting.
+
+### Every route keys on a marker
+
+Something must say "this pawn is a Glitterite", and must still say it after everything the game
+does to a pawn. The candidates [V]:
+
+| Marker | Survives | Loses it |
+|---|---|---|
+| **A gene in the Glitterite android xenotype** *(recommended)* | `ChangeKind` (joining, redress), `SetFaction`, sale. Every pawn the Glitterite faction generates carries it, including a vanilla `Slave`-kind pawn, because `Slave` has `useFactionXenotypes` true | Gene removal. VRE – Android adopts any `GeneDef` with `displayCategory` `VREA_Hardware`/`VREA_Subroutine` (`GeneDefGenerator_ImpliedGeneDefs_Patch.Postfix`), and `isCoreComponent` decides whether the creation and behaviorist windows can remove it (`Utils.CanBeRemovedFromAndroid`). The xenogerm erasures of T-111 do not reach androids through the UI: VRE's `Xenogerm_GetFloatMenuOptions_Patch` and `CompAbilityEffect_ReimplantXenogerm_Valid_Patch` both test `IsAndroid()` [V]. A `Xenogerm_GetGizmos_Patch` exists and was not read [I] |
+| A `PawnKindDef` | Nothing past `ChangeKind` (T-112) | Joining, redress, run-wild |
+| A hediff | `ChangeKind`, `SetFaction` | Surgery, if any recipe removes it. Needs `duplicationAllowed false` (T-113) |
+| Faction membership | — | Sale (`Pawn.PreTraded(PlayerSells)` → `SetFaction(null)`). Misses a Glitterite who is no longer a member |
+
+**#143 passes through the gene.** The jailbreak is the act that removes the marker. VRE's
+`Building_AndroidBehavioristStation.CanAcceptPawn` accepts an android `IsPrisonerOfColony` [V]. The
+"opened up" seam already exists and already takes prisoners. #143 then joins the pawn through
+`RecruitUtility.Recruit`, which every route below lets pass once the marker is gone. *#143 refines
+this:* stripping the marker at the station as shipped only **unlocks** the prisoner (#143's J3a) —
+it neither consumes, awakens nor joins, and it lifts every clause below at once. #143's recommended
+jailbreak is a surgery that removes the marker and joins in one call; see *Jailbreaking a captured
+Glitterite into an android colonist*.
+
+**The marker also reaches pawns the Glitterite faction never made** [V]. `XenotypeDef.factionlessGenerationWeight`
+defaults to **1**, and `PawnGenerator.AdjustXenotypeForFactionlessPawn` rolls every factionless
+baseliner against it. A Glitterite xenotype that leaves it at the default spawns factionless marked
+pawns — refugees, quest joiners, world pawns — whose joins route C then refuses. VRE – Android sets
+it `0` on `VREA_AndroidBasic` for the same reason; the Glitterite xenotype must too.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — vanilla flags** *(not recommended alone)* | No faith at generation (`preventIdeo`). Recruit and reduce-resistance are hidden (`recruitable = false`). Enslave, reduce-will and convert are hidden too, if `hideIfNotRecruitable` is patched onto those three modes | vanilla | XML, plus one C# write of `guest.Recruitable` at generation | Easy–Medium | Yes |
+| **B — close every offer** | No player-facing option ever appears: no warden mode, no Convert ability target, no convertee slot, no Glitterite in a slaver's stock. The prisoner tab reads *"Non-recruitable"* | our assembly. Donor for the tab: VRE – Android's `ITab_Pawn_Visitor_CanUsePrisonerInteractionMode_Patch` | C# patches + XML | Medium | Yes |
+| **C — refuse every effect** | No faith can be written, and no path can make the pawn the player's — including third-party ones nobody listed | our assembly | C# prefixes | Medium | Yes |
+| **B + C** *(recommended)* | B's legible "no" in front of C's absolute one | our assembly | C# + XML | Medium | Yes |
+
+**Which clause each route closes** [mechanisms V, coverage I]:
+
+| Clause | A | B | C |
+|---|---|---|---|
+| No ideology | At generation only. Conversion writes one (T-161); redress into another faction writes one | Yes against every vanilla offer | **Yes, absolutely** |
+| Recruit never offered or run | While `unwaveringPrisoners` is on and no writer flips it (T-162) | **Yes** | Run: yes. Offered: no |
+| Convert never offered or run | Warden mode only | Warden, ability, ritual | **All effects** |
+| Enslave never offered or run | Warden modes only | Warden, plus slaver stock | **All effects** |
+| No other path to the player | No | Vanilla offers only | **Yes** |
+| Imprisonment still works | Yes | Yes | Yes |
+
+One route does not cover every clause **and** read well to the player. C alone is absolute, but it
+refuses after the game has committed (see its consequences). B alone is legible but leaves
+third-party writers open. That is why the recommendation is both.
+
+#### Route A — vanilla flags
+
+**What it gets us.**
+- `<preventIdeo>true</preventIdeo>` on every Glitterite kind. `PawnGenerator` then assigns no faith,
+  and `Pawn.ShouldHaveIdeo` is false, so the load-time fallback does not fire [V].
+- The Glitterite faction's `hiddenIdeo` faith then never un-hides, because only a spawning *holder*
+  flips it (`Pawn.SpawnSetup`) [V].
+- `recruitable = false` shows *"Non-recruitable"* on the prisoner tab and hides the two Core modes
+  [V].
+- `hideIfNotRecruitable` is a plain def field, so patching it onto `Enslave`, `ReduceWill` and
+  `Convert` is XML [V].
+
+**What it cannot do.**
+- It cannot keep the faith null: the Convert ability and the conversion ritual both accept a
+  faithless prisoner and write one (T-161).
+- It cannot hold "never recruited" (T-162):
+  - The getter ignores the field unless the host's difficulty keeps `unwaveringPrisoners` on.
+  - `PawnGroupKindWorker_Normal` sets the field true on its `forceOneDowned` raider.
+  - Three corpus mods flip it: VPE Puppeteer subjugation, Ushanka's gamma serum, and VQE Ancients'
+    `VQEA_MasterfulSocial`.
+- There is no XML field for `recruitable`. `PawnGenerator` rolls it through `SetupRecruitable`, so
+  even this route writes it from C#.
+- It leaves slaver stock, the ability, the ritual and every direct `SetFaction` writer open.
+
+**Consequences.** Patching `hideIfNotRecruitable` onto the Ideology modes changes a vanilla rule for
+**every** unrecruitable prisoner: vanilla's first-capture letter tells the player an unrecruitable
+pawn can still be enslaved. `preventIdeo` rides on the kind, so it ends at the first `ChangeKind`
+(T-112).
+
+#### Route B — close every offer
+
+**What it gets us** — each seam verified to exist [V]:
+- **Recruit.** A postfix on the `Pawn_GuestTracker.Recruitable` getter returns false for a marked
+  pawn. It does not depend on difficulty, and every writer in T-162 becomes inert. It also buys
+  vanilla's own *"Non-recruitable"* line and its hidden recruit modes.
+- **Warden modes.** A postfix on `ITab_Pawn_Visitor`'s local `CanUsePrisonerInteractionMode` hides
+  `Enslave`, `ReduceWill` and `Convert`. VRE – Android ships exactly this patch shape, and finds
+  the local function by name, to hide `HemogenFarm` from androids. The warden work-givers act only
+  on the mode that is set: `WorkGiver_Warden_Chat`, `_Enslave` and `_Convert` all read
+  `ExclusiveInteractionMode` / `IsInteractionEnabled`. A mode that cannot be chosen is never run.
+  Captured prisoners start on `MaintainOnly`.
+- **Convert ability.** A postfix on `CompAbilityEffect_Convert.Valid`.
+- **Conversion ritual.** A postfix on `RitualRoleConvertee.AppliesToPawn`, with a reason string.
+- **Slaver stock.** `StockGenerator_Slaves.GenerateThings` picks a random faction from
+  `AllFactionsVisible` that is humanlike, not temporary and not the player. **`permanentEnemy`
+  is not excluded**, so as shipped a slaver can stock a Glitterite-faction `Slave` wearing the
+  faction's xenotype. The filter is ours; whether it filters the faction pick or the output is a
+  build question.
+- **No faith.** `preventIdeo` from route A, or a postfix on `Pawn.ShouldHaveIdeo`. That property is
+  the only reader of the load-time fallback.
+
+**What it cannot do.** It closes the vanilla offers. It does not close:
+- **Third-party writers.** Each of these calls `Pawn.SetFaction(Faction.OfPlayer)` or
+  `RecruitUtility.Recruit` directly, behind no prisoner mode [V]:
+  - RimPacts: `MarryIn`, `AcceptAsylum`, `ArriveStateVisit`, `RestoreIfRedressed`;
+  - Worksites Expanded: `Dialog_Parley`, `OrbitalVolunteerHall`, `WorksiteRecruitUtility`;
+  - FT&V `ChoiceLetter_VassalPurchasedPawn`;
+  - VQE Ancients' caskets.
+
+  Most can never pick a Glitterite. Proving that for each is the enumeration route C makes
+  unnecessary.
+- **The redress leak.** `PrisonerWillingToJoinQuestUtility.GeneratePrisoner` reuses any living
+  `Human` world pawn with `WorldPawnFactionDoesntMatter` [V]. Under the gene marker, a Glitterite
+  who escaped into the world could be offered back as a rescuable joiner.
+
+**Consequences.**
+- The player is told "no" in vanilla's own words where vanilla has them.
+- Ushanka's gamma serum becomes a dud on a Glitterite: its flag write is ignored, but it still sends
+  its success letter [V for the write; I for the letter reading wrong].
+- MP: every patch reads synced pawn state. The ITab choice itself is already a synced command
+  (`SyncMethod.Register(Pawn_GuestTracker, "SetExclusiveInteraction")` in `Multiplayer.dll`) [V].
+
+#### Route C — refuse every effect
+
+**What it gets us.** Every path found converges on four methods [V]:
+- **`Pawn.SetFaction(Faction.OfPlayer)`**. Paths that reach it:
+  - recruit (`RecruitUtility.Recruit`);
+  - enslave (`GenGuest.TryEnslavePrisoner` → `Pawn_GuestTracker.SetGuestStatus(Slave)` →
+    `SetFaction(newHost)`);
+  - VRE – Android's own `int.MaxValue` enslave prefix, which also goes through `SetGuestStatus`;
+  - purchase (`Pawn.PreTraded(PlayerBuys)`);
+  - every third-party writer above.
+
+  The only pawn-level `SetFactionDirect` to the player is inside `PawnGenerator` and
+  `GameInitData` (starting pawns), both of which make new pawns — hence the marker note on
+  `factionlessGenerationWeight` above.
+- **`Pawn_GuestTracker.SetGuestStatus(host, Slave)`**.
+- **`Pawn_IdeoTracker.SetIdeo`**. Paths that reach it:
+  - the ritual (`RitualOutcomeEffectWorker_Conversion`);
+  - the ability, via `IdeoConversionAttempt`;
+  - the speech;
+  - Reliquary pilgrims;
+  - redress;
+  - the load-time fallback.
+- **`Pawn_IdeoTracker.IdeoConversionAttempt`**. VFE Deserters also calls it directly.
+
+A prefix on each, refusing a marked pawn, holds every clause however the call arrived.
+
+**What it cannot do.** It refuses after the game has committed, and the callers do not expect a
+refusal:
+- **Recruit releases the prisoner.** `RecruitUtility.Recruit` calls `SetGuestStatus(null)` **before**
+  `SetFaction`, so a refused recruit is a Glitterite freed on the map, hostile.
+- **Enslave half-applies.** `SetGuestStatus(Slave)` writes `slaveFactionInt` after its
+  `SetFaction` call, so refusing only `SetFaction` leaves a half-slave. Refusing `SetGuestStatus`
+  as well is why it is on the list.
+- **The ability misreports.** It reports its failure branch, and a warden conversion would still
+  NRE first (T-161).
+
+C is the backstop that makes "never" true. It is not a player-facing answer.
+
+**Consequences.** MP: each refusal runs inside an already-synced command or tick, so both clients
+refuse identically. There is no desync, but the partial states above would also be identical on both
+clients. Harmony ordering: VRE's enslave prefix is `HarmonyPriority(int.MaxValue)`, so route C
+should not try to beat it on `GenGuest.EnslavePrisoner`. It meets it downstream at
+`SetGuestStatus` [V].
+
+#### Recommendation — not a selection
+
+Build **B + C on a gene marker**, with `preventIdeo` or the `ShouldHaveIdeo` postfix for a clean
+null. B makes the "no" legible and keeps the game out of C's partial states. C makes "never" true
+against paths nobody enumerated: seven `Recruitable` writers and more than a dozen direct
+`SetFaction(Faction.OfPlayer)` sites across five mods turned up in one pass. The gene marker is the one that survives joining, redress and sale, and it
+hands #143 its exception for free. Take A only as the XML half of B (`preventIdeo`), never as the
+answer.
+
+### Constraints
+
+- **No faith and no conversion are two properties.** A null `Ideo` converts on the first attempt —
+  T-161. A route that delivers the first clause without gating conversion delivers neither.
+- **Vanilla "unrecruitable" is not a pawn fact** — T-162.
+- **A kind is not a marker** — T-112, now including world-pawn redress.
+- **Anomaly-only precedents are unavailable** at our DLC floor. Anomaly is not installed: `Data/`
+  holds Core, Royalty, Ideology, Biotech and Odyssey. That rules out `Pawn.IsSubhuman` (mutants,
+  `MutantDef.consideredSubhuman`, which the getter reads), `MutantDef.disablesIdeo`, the
+  creepjoiner `Recruitable = false`, holding-platform containment and `studiableAsPrisoner` (whose
+  ITab branch is `ModsConfig.AnomalyActive`). The code is in `Assembly-CSharp`; the content that
+  would reach it is not.
+- **Imprisonment is untouched by every route.**
+  - Capture is `Pawn_GuestTracker.CapturedBy` → `SetGuestStatus(player, Prisoner)`. It sets a host
+    and never calls `SetFaction` on the prisoner [V].
+  - Release, execution and feeding are their own work-givers, and none is patched.
+  - The one open part is android upkeep in a cell. VRE – Android ships no warden work-giver (its
+    only warden-adjacent patch is the enslave prefix), so whether a prisoner's reactor or neutroamine
+    needs a warden is **[I]**.
+
+### Available mechanisms
+
+- **Vanilla, 1.6.4871 `Assembly-CSharp`, decompiled** [V]:
+  - `PawnKindDef.preventIdeo`, `Pawn.ShouldHaveIdeo`, `Pawn_IdeoTracker.ExposeData`'s fallback,
+    `FactionDef.hiddenIdeo` — `docs/engine/ideology.md` § *A pawn with no ideology*.
+  - The conversion funnel — T-161.
+  - `Pawn_GuestTracker.Recruitable` / `.SetGuestStatus` / `.CapturedBy`; `ITab_Pawn_Visitor`'s
+    `CanUsePrisonerInteractionMode`; the three warden work-givers; `GenGuest.TryEnslavePrisoner`;
+    `RecruitUtility.Recruit`; `Pawn.SetFaction`; `Pawn.PreTraded`; `StockGenerator_Slaves`;
+    `PawnGenerator.IsValidCandidateToRedress`; `PrisonerWillingToJoinQuestUtility`.
+  - `QuestNode_GetPawn` and `QuestGen_Pawns` exclude `permanentEnemy` factions when they
+    **generate** a pawn (`allowPermanentEnemyFaction` defaults false). An existing pawn is excluded
+    only when the slate sets the flag false explicitly [V].
+  - `permanentEnemy` is a strong filter on quest joiners, not a complete one.
+- **VRE – Android** (`2975771801/1.6/Assemblies/VREAndroids.dll`, decompiled) [V]:
+  - It touches no ideology, recruitment or conversion code. Its only prisoner patches are
+    `GenGuest_EnslavePrisoner_Patch` (the *Androids as tools* precept enslaves without the vanilla
+    path) and the `HemogenFarm` hide.
+  - Its behaviorist and polyanalyzer stations accept prisoners of the colony.
+  - Its own android kinds set resistance 0 and will 0 (`1.6/Defs/PawnKindDefs/PawnKinds_Special.xml`).
+    **A Glitterite built on those kinds is recruited on the first chat**, so the Glitterite kinds
+    must stay our own.
+- **Multiplayer** (`2606448745/1.6/AssembliesCustom/Multiplayer.dll`) [V]:
+  - It syncs `SetExclusiveInteraction`, `ToggleNonExclusiveInteraction` and the `ideoForConversion`
+    field.
+  - Storyteller difficulty is a **host-only** synced field, so route A's difficulty dependence is at
+    least identical on both clients.
+- **Wide pass** — both roots, `-g '!**/obj/**' -g '!**/Referenced/**'`, `-i`:
+  - ASCII sweeps: `RecruitUtility`, `SetGuestStatus`, `EnslavePrisoner`, `IdeoConversionAttempt`,
+    `set_Recruitable`, `SetExclusiveInteraction`, `ShouldHaveIdeo`, `preventIdeo`, and the
+    no-ideo / unrecruitable / unconvertible / unenslavable name family.
+  - Null-interleaved UTF-16 sweeps, typed literally: `preventIdeo`, `unrecruit`, `noideo`, `enslav`.
+  - XML: `<preventIdeo>`, `disablesIdeo`.
+  - Results:
+    - The `SetFaction(OfPlayer)` / `Recruitable` writers above, all decompiled.
+    - VFE Deserters' `FilthExtension_OnClean` conversion.
+    - **No mod ships a never-recruit, never-convert or no-faith mechanism**; `preventIdeo` has zero
+      uses in either root.
+  - Validators: `<initialResistanceRange>` returns 156 XML files; `VREAndroids` returns UTF-16 in
+    MP Compat; `prisoner` returns UTF-16 in VREAndroids.dll.
+
+### Status
+
+- **Verified [V]:**
+  - every seam named above;
+  - T-161, T-162;
+  - today's Glitterites hold a real, hidden faith that un-hides at first spawn;
+  - today's Glitterites are recruitable, enslavable and convertible;
+  - slavers can stock Glitterite-faction pawns;
+  - every player-side path found ends in `Pawn.SetFaction(Faction.OfPlayer)`.
+- **Inferred [I]:**
+  - that routes B and C compose into the requirement;
+  - that no path outside the ones read reaches the player side without `SetFaction` (C covers any
+    that does reach it);
+  - residual null-`Ideo` dereferences outside the paths read. The pawn-facing UI and needs are
+    guarded; 184 unguarded `.Ideo.` sites were not all read.
+- **Corrects the ticket:**
+  - "Only slows recruitment" understates today's defs. `hiddenIdeo` gives the Glitterites a real
+    faith.
+  - Ushanka's `USH_AncientGlittertechSoldier` is also on the Glitterite roster
+    (`Patches/Glittertech_FactionRebind.xml`), so any kind-level route must cover a kind we do not
+    own.
+  - The vanilla flag the ticket points at, `unrecruitable`, is `Pawn_GuestTracker.recruitable`, and
+    it is difficulty-gated.
+
+### Open questions
+
+1. **Build — owner #119.**
+   - Which marker: gene (recommended) or hediff.
+   - Whether the marker gene is `isCoreComponent` (fixed) or removable at the behaviorist station.
+     If removable at the station, that is #143's J3a unlock, not a join; the accept path is now read
+     (#143, *Jailbreaking a captured Glitterite*).
+   - `factionlessGenerationWeight 0` on the Glitterite xenotype (see *Every route keys on a marker*).
+   - Where the slaver filter sits.
+   - Whether C's refusals log.
+   - Whether `hideIfNotRecruitable` is patched globally or B's tab postfix does it per pawn.
+2. **Story — Conrad.**
+   - Should the prisoner tab explain *why*? B can reuse vanilla's *"Non-recruitable"* or add its
+     own line.
+   - May a Glitterite be **sold**? A sale takes it off the player's side and is not forbidden by
+     the requirement, but it sets its faction to null (`PreTraded(PlayerSells)`).
+3. **#143.**
+   - `SetFaction(OfPlayer)` resets the kind (T-112), so the jailbroken android gets a fallback faith
+     on the next load unless #143 gives it one deliberately.
+   - The behaviorist station already takes prisoners.
+4. **Unowned.**
+   - Android upkeep in a cell (reactor and neutroamine) — **[I]**.
+   - Ushanka's gamma serum sends a success letter on a Glitterite it cannot affect under B —
+     **[I]**.
+
+---
+
+## Jailbreaking a captured Glitterite into an android colonist
+
+*Answers `docs/requirements/GLITTERTECH.md` § *A captured Glitterite*, "Exploring, not chosen: the
+jailbreak": a Glitterite taken home, opened up and given back the persona and free will it removed
+may become an ordinary android colonist. A **jailbreak** (`CONTEXT.md`) is an operation on a
+prisoner, never a hack from the console. Established by
+[#143](https://github.com/cjd721/Rimworld-Archinity/issues/143), evidence class **READ**. It is the
+one exception to the section above, and every route here passes through that section's marker.*
+
+### Verdict
+
+- **Possible? Yes.** Nothing in the corpus ships it, but every piece does, and the cleanest shape is
+  an ordinary surgery. A surgery bill already reaches a held prisoner, hauls and consumes an item,
+  and runs as a job. VRE – Android already ships the item-consuming, android-only surgery class to
+  copy. Vanilla already ships a surgery that makes a prisoner the player's: Anomaly's
+  `Recipe_GhoulInfusion`, whose code is in `Assembly-CSharp` even though its content is not
+  installed. It is a precedent for the shape only: J1 calls none of it, so the DLC floor
+  ([#6](https://github.com/cjd721/Rimworld-Archinity/issues/6), no Anomaly) is not touched. VRE's awakening is the "free will" half, and it reaches any android, whatever made it.
+- **Multiplayer? Yes.** Surgery bills are a synced command, completion runs in a synced job tick,
+  and MP Compat already syncs the behaviorist station and the awakening letter's choices. No route
+  needs a custom dialog, and none should add one (see *Faith*).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **J1 — jailbreak surgery** *(recommended)* | A bill on the prisoner's Operations tab that consumes a persona subcore. When it completes, one call removes the marker, awakens the android, gives it a faith and makes it a colonist. There is never a moment when it is an unmarked prisoner | our `Recipe_Surgery` subclass + a `RecipeDef`; VRE – Android (`Recipe_InstallAndroidPart`, `VREA_PersonaSubcore`) | C# + XML | Medium | Yes |
+| **J2 — behaviorist station, patched** | The prisoner is carried into VRE's station. A postfix on `FinishAndroidProject` joins it when the marker has been removed in the window. The window can be allowed to strip the awakening genes. It consumes nothing | VRE – Android's `Building_AndroidBehavioristStation` + our postfixes | C# | Medium (Hard with a consumed item) | Yes |
+| **J3 — unlock, then recruit the vanilla way** | The operation only removes the marker. The warden then recruits (or enslaves, or converts) an ordinary prisoner. Two carriers: **J3a**, the station as shipped, with a non-core subroutine marker; **J3b**, vanilla `Recipe_RemoveHediff` with a hediff marker and a subcore ingredient | VRE station as shipped / vanilla `Recipe_RemoveHediff` | XML (J3b); XML + one Harmony hide postfix (J3a) | Easy (J3b) · Medium (J3a) | Yes |
+| **J4 — a ritual** *(not recommended)* | A rite of the player's faith with the prisoner in a `RitualRolePrisoner` slot; the outcome worker performs J1's call | vanilla Ideology rituals + our `RitualOutcomeEffectWorker` | C# + XML | Medium–Hard | Yes |
+| **J5 — our own building and job** *(not recommended)* | A dedicated jailbreak rig | ours; donors are the behaviorist station and Biotech's subcore scanner | C# | Hard | With work |
+
+**Recommended, not selected: J1.** It is the only route that does all three of what the requirement
+asks: a deliberate operation on a held prisoner, a consumed persona, and a colonist at the end. It
+does them atomically, and every moving part is already synced. J3 is the cheap alternative if
+the campaign wants the jailbreak to **open** the Glitterite rather than **turn** it. J2 is only
+worth it if the jailbreak should happen at a VRE machine rather than on a bed.
+
+#### J1 — jailbreak surgery
+
+**The seams, each verified to exist [V]:**
+- **It reaches the prisoner.** `ITab_Pawn_Health.ShouldAllowOperations` returns true for
+  `IsPrisonerOfColony`. A pending surgery makes the patient seek bed
+  (`HealthAIUtility.ShouldSeekMedicalRestUrgent` → `ShouldHaveSurgeryDoneNow`), which is how vanilla
+  operates on prisoners; that it runs unchanged for an android prisoner is **[I]**.
+- **It can be android-only and consume an item.** VRE's `Recipe_InstallAndroidPart` is a
+  `Recipe_Surgery` whose `AvailableOnNow` requires `IsAndroid()`. Its `VREA_InstallReactor` def
+  names an item in `<ingredients>`, and `Recipe_InstallReactor.ApplyOnPawn` reads that consumed item
+  from `ingredients`. `VREA_PersonaSubcore` is an ordinary `ThingDef` (§3), so it can be an
+  ingredient the same way.
+- **The operation can make the prisoner the player's.** `Recipe_GhoulInfusion.ApplyOnPawn` calls
+  `pawn.SetFaction(Faction.OfPlayer)` on the patient. After `ApplyOnPawn`,
+  `Bill_Medical.Notify_IterationCompleted` calls `billStack.Delete(this)`. That is safe even though
+  `SetFaction` has already cleared the bill list, because `BillStack.Delete` is a plain
+  `List.Remove`.
+- **Free will: `Gene_SyntheticBody.Awaken(title, text)` is public.** It removes every
+  `removeWhenAwakened` gene and restores `storedTripleName`, the full name that
+  `PawnGenerator_TryGenerateNewPawnInternal_Patch` hid behind a single name at generation. It then
+  sends `ChoiceLetter_AndroidAwakened`, where the player picks passions and a trait. A non-awakened
+  android is generated with an empty `TraitSet` when it carries `VREA_PsychologyDisabled`, so this
+  choice really is its personality coming back. The method checks nothing about where the pawn came
+  from.
+- **The join** is `RecruitUtility.Recruit(pawn, Faction.OfPlayer, billDoer)`, or `SetFaction` as
+  ghoul infusion does it. See *What happens to the guest state* below.
+
+**What it gets us.**
+- An operation the player orders on the Operations tab like any other, with the bill visible and
+  cancellable.
+- A price in fiction: the persona it is given back is a persona subcore, and a subcore costs four
+  colonists' scans at the polyanalyzer (§3).
+- Its free will, shown as VRE's awakening letter, with its full name back.
+- A faith chosen by the code, not by chance (see *Faith*).
+- One synced call, so no in-between state that #142's routes would have to reason about.
+
+**What it cannot do.**
+- **Fail, as shipped.** VRE prefixes `Recipe_Surgery.CheckSurgeryFail` to return "no failure" for
+  every android patient, and re-skills every android surgery to Crafting (T-164). A jailbreak that
+  can go wrong needs its own roll inside `ApplyOnPawn`.
+- **Be done by a doctor.** VRE routes android patients to `VREA_DoBillsAndroidOperation`
+  (`workType Crafting`) and removes them from the medical work-giver (T-164).
+- **Turn anything but an android.** That is by design: `AvailableOnNow` keys on the marker.
+
+**Consequences.**
+- The Operations tab offers the jailbreak on every marked prisoner as soon as the recipe is
+  researched. Gate it with `researchPrerequisite` as the Glittertech tree does.
+- Awakening sends a letter. A patient who is still a prisoner when `Awaken` runs passes
+  `PawnUtility.ShouldSendNotificationAbout` like any colony pawn [I]. Whether awakening runs before
+  or after the join is a build question.
+- MP: `HealthCardUtility.CreateSurgeryBill` is a registered `SyncMethod` in `Multiplayer.dll`
+  (and MP Compat's `CancelOperationModificationIfResultNull` guards VRE's postfix on it). Bill work
+  and `ApplyOnPawn` run in a synced job tick, so the `Rand` inside `SetIdeo`'s certainty roll and
+  `Awaken` is deterministic. MP Compat registers `ChoiceLetter_AndroidAwakened.MakeChoices` as a
+  sync method, with a default letter choice [V].
+
+#### J2 — behaviorist station, patched
+
+**What ships [V].**
+- `Building_AndroidBehavioristStation.CanAcceptPawn` takes any `IsAndroid()` pawn that is a
+  colonist, a slave or `IsPrisonerOfColony`. It refuses only awakened non-prisoner colonists, and
+  nothing checks provenance.
+- `WorkGiver_CarryToAndroidBehavioristStation` extends vanilla `WorkGiver_CarryToBuilding`, which
+  carries prisoners. It is Hauling work.
+- `JobDriver_ModifyAndroid` (Research work, `ResearchSpeed`) calls `FinishAndroidProject` from its
+  tick. That method removes every android gene and reinstalls the window's list, then ejects the
+  pawn.
+- MP Compat syncs the modification window (`AcceptInner` + a sync worker), the gizmo and float-menu
+  lambdas, and suppresses the in-tick `WindowStack.Add` in `TryAcceptPawn`.
+
+**What it cannot do as shipped.**
+- **Awaken.** Every `removeWhenAwakened` gene is `VREA_Hardware` (`isCoreComponent true`).
+  `Window_AndroidModification` never sets `disableAndroidHardwareLimitation`, so the toggle will not
+  remove them.
+- **Consume anything.** The station has no `requiredItems` or ingredient path at all:
+  `ReadyForModifying` checks only power, project and occupant.
+- **Join the pawn.** It stays a Glitterite-faction prisoner.
+
+**The patched route.** Two seams:
+- a postfix on `FinishAndroidProject` that joins the occupant when the marker is gone (and awakens
+  it, or lets the window have done so);
+- a postfix on the `Window_AndroidModification` constructor setting the public
+  `disableAndroidHardwareLimitation` for a marked occupant, which opens the awakening genes
+  (`CanBeRemovedFromAndroidAwakened`).
+
+**What it gets us.** The jailbreak happens *in* the Glitterite machine the player already owns. The
+player picks which subroutines to keep, which is J1's awakening with a gene-by-gene editor.
+
+**Consequences.** A persona-subcore price means adding an ingredient path to a building that has
+none. That is new hauling work, and it makes the route Hard. Research work, not Crafting.
+
+#### J3 — unlock, then recruit the vanilla way
+
+**J3a, the station as shipped.** VRE subroutines (`VREA_SubroutineBase`) inherit
+`isCoreComponent false`, so a marker authored as a subroutine is an ordinary removable toggle in
+`Window_AndroidModification` [V]. **J3b, pure XML.** Vanilla `Recipe_RemoveHediff` removes a
+whole-body hediff named by `removesHediff` when `targetsBodyPart` is false. It requires the hediff
+to be `Visible` [V]. A `RecipeDef` with that worker, the marker hediff and a subcore ingredient is a
+jailbreak surgery with no C#.
+
+**What it gets us.** The cheapest shape. The jailbreak *unlocks*; the colony still has to win the
+Glitterite over the ordinary way, against its kind's resistance.
+
+**What it cannot do.**
+- It gives no personality: no awakening, no traits and a single name, unless the pawn later
+  awakens by mood. See *Constraints*.
+- It cannot choose the Glitterite's future. Removing the marker lifts **every** clause of the
+  section above at once, so the unmarked prisoner can be enslaved or converted as readily as
+  recruited. A warden conversion NREs on its null faith (T-161).
+- J3b decides #142's open marker question as a **hediff**, which T-113 governs.
+- J3a needs the marker hidden from the creation window, or the player can build androids that carry
+  it (T-163). That is one `GeneValidator` postfix.
+
+**Consequences.** Recruitment goes through `RecruitUtility.Recruit` like any prisoner's.
+`preventIdeo` ends at the kind reset, so the colonist gets the load-time fallback faith, with a
+logged warning (see *Faith*).
+
+#### J4 — a ritual *(not recommended)*
+
+`RitualRolePrisoner.AppliesToPawn` accepts `IsPrisonerOfColony` [V], and MP carries a
+`Dialog_BeginRitual` sync worker (`SyncDictDlc`) [V]. The donor for a building-started rite is
+vanilla's anima linking: `PreceptDef AnimaTreeLinking` is `visible false`, `classic true` and
+`countsTowardsPreceptLimit false`, and `CompPsylinkable` finds it in the linker's own ideo [V].
+Whether a hidden precept reaches every player faith, including a custom one, is **[I]**.
+
+**Not recommended.** It makes the jailbreak a rite *of the player's faith*. That is a story choice,
+not a mechanism, and it drags in ritual quality rolls and the faith's precept list (T-121). Nothing
+it does needs a ritual, and the outcome worker would make J1's call anyway.
+
+#### J5 — our own building and job *(not recommended)*
+
+It is technically possible: a `Building_Enterable` on the behaviorist station's shape, plus the
+subcore scanner's `def.building.*` ingredient pattern (§3). **Strictly dominated by J1.** A surgery
+bill already provides the target selection, the ingredient hauling, the job, the progress and the
+MP sync that J5 would have to write. It would also be a custom building whose UI is not covered by
+MP Compat.
+
+### What happens to the guest state on joining
+
+All [V], `Assembly-CSharp` 1.6. Every route ends in `RecruitUtility.Recruit` or `Pawn.SetFaction`,
+and both clear the prisoner state the same way:
+
+1. `Recruit`: `apparel.UnlockAll()`, royal titles swapped by `replaceOnRecruited`, then
+   **`guest.SetGuestStatus(null)`**. `Pawn.SetFaction` opens with the same call, so a bare
+   `SetFaction` (ghoul-infusion style) gets it too.
+2. `SetGuestStatus(null)` sets the status to `Guest` with **no host**, so the pawn is no longer a
+   prisoner, and clears `slaveFaction`. Then:
+   - `health.surgeryBills.Clear()`;
+   - `ownership.Notify_ChangedGuestStatus()` **unclaims the prison bed**;
+   - `Ideo?.Notify_MemberGuestStatusChanged`;
+   - the map's pawn registry and attack-target cache are updated.
+3. `SetFaction(OfPlayer)`:
+   - **`ChangeKind(basicMemberKind)`** (T-112), which ends any kind flag, `preventIdeo` included;
+   - the lord is told `ChangedFaction`;
+   - `workSettings.EnableAndInitialize()`;
+   - surgery bills cleared again, medical care reset;
+   - `ClearMind_NewTemp(ifLayingKeepLaying: true)`: jobs stop, a patient in bed stays in bed;
+   - needs recomputed, relations notified, colonist bar dirtied, population records updated.
+4. `Recruit` ends with `guest.Notify_PawnRecruited()`, which nulls `slaveFaction` again.
+
+**Left behind, inert:** `resistance`, `will`, `interactionMode`, `recruitable`,
+`ideoForConversion` and `everEnslaved` keep their values on the tracker. `SetGuestStatus` resets
+none of them for a non-prisoner. A later re-capture re-rolls resistance and will from the new kind
+[V]. That nothing reads the rest for a free colonist is **[I]**.
+
+**Through #142's routes.** Route C refuses `SetFaction(OfPlayer)`, `SetGuestStatus(Slave)`,
+`SetIdeo` and `IdeoConversionAttempt` for a *marked* pawn. So J1 and J2 must remove the marker
+**first**, inside the same call, and then write the faith and join. Route B closes only warden modes,
+the Convert ability, the convertee slot and slaver stock. It never touches the Operations tab or
+the behaviorist station, so neither J1's bill nor J2's station needs an exception in B.
+
+### Faith
+
+`SetFaction` does not write a faith. A Glitterite joining with a null `Ideo` keeps it until the next
+load. Then `Pawn_IdeoTracker.ExposeData` logs *"did not have an ideo set; assigning fallback ideo"*
+and calls `SetIdeo(FallbackIdeo())`, now the **player faction's primary** faith (`FallbackIdeo`
+takes `pawn.Faction.ideos.PrimaryIdeo`) [V]. The routes that write it deliberately, all through
+`Pawn_IdeoTracker.SetIdeo`, which rolls a fresh certainty [V]:
+- **the player's primary faith**, which is what the fallback would have done, minus the warning;
+- **the operator's faith** (`billDoer.Ideo`, which J1's `ApplyOnPawn` receives). That lever is
+  specific to this fiction: *it believes what the one who freed it believes*;
+- **none**. The pawn stays faithless until load, and then gets the fallback.
+
+**A player-chosen faith needs a dialog, and a dialog is not synced.** If the story wants the player
+to pick, the choice must travel as a synced command; the awakening letter's `MakeChoices` is the
+shipped pattern for that.
+
+### Constraints
+
+- **T-163 — the marker gene's category decides who carries it.** A `VREA_Hardware` gene with
+  `isCoreComponent true` is locked onto every player-built android. A `VREA_Subroutine` gene is
+  offered in the creation window. A plain gene is invisible to both windows, and then J2 and J3a
+  cannot remove it.
+- **T-164 — android surgery never fails, and it is Crafting work.**
+- **A basic Glitterite can awaken in its cell.** `Gene_SyntheticBody.TickInterval` rolls every
+  2500 ticks (50%) on any non-awakened android lacking `VREA_AntiAwakeningProtocols`: mood ≤ 0.05
+  awakens it and sends it berserk, mood ≥ 0.8 awakens it with an inspiration [V]. Awakening changes
+  no faction, but it hands back the name and personality the jailbreak is meant to give. The
+  Glitterite xenotype should carry `VREA_AntiAwakeningProtocols`. That gene is a non-core subroutine,
+  so the station can remove it, which J3a's players would find.
+- **A kind is not a marker** (T-112). The Glitterite kind ends at the join, so everything
+  kind-scoped ends with it.
+- **The jailbroken android is an ordinary android.** Psylinks follow *Psylinks — verdict and routes*
+  above, not the Glitterite rule.
+
+### Available mechanisms
+
+- **VRE – Android** (`2975771801/1.6/Assemblies/VREAndroids.dll`, `ilspycmd -t`) [V]:
+  - `Building_AndroidBehavioristStation` (`CanAcceptPawn`, `TryAcceptPawn`, `ReadyForModifying`,
+    `FinishAndroidProject`), `Window_AndroidModification`, `Window_CreateAndroidBase` (constructor
+    seeding, toggle predicate, `GeneValidator`, `disableAndroidHardwareLimitation`),
+    `WorkGiver_CarryToAndroidBehavioristStation`, `WorkGiver_ModifyAndroid`,
+    `JobDriver_ModifyAndroid`;
+  - `Gene_SyntheticBody.TickInterval` / `.Awaken`, `ChoiceLetter_AndroidAwakened`,
+    `PawnGenerator_TryGenerateNewPawnInternal_Patch`;
+  - `Utils.IsAndroid` / `IsAwakened` / `CanBeRemovedFromAndroid(Awakened)` / `RecipeForAndroid`;
+  - `Recipe_InstallAndroidPart`, `Recipe_InstallReactor`, `Recipe_Surgery_CheckSurgeryFail_Patch`,
+    `WorkGiver_DoBill_ThingIsUsableBillGiver_Patch`, `HealthCardUtility_CreateSurgeryBill_Patch`,
+    `RecipeWorker_AvailableOnNow_Patch`;
+  - defs: `WorkGivers.xml`, `GeneDefs.xml`, `Hediffs_BodyParts_Android(_Bases).xml`.
+- **Vanilla 1.6** [V]: `ITab_Pawn_Health.ShouldAllowOperations`, `Recipe_GhoulInfusion`,
+  `Recipe_RemoveHediff`, `Bill_Medical.Notify_IterationCompleted`, `BillStack.Delete`,
+  `WorkGiver_CarryToBuilding`, `Building_Enterable.SelectPawn`, `RecruitUtility.Recruit`,
+  `Pawn.SetFaction`, `Pawn_GuestTracker.SetGuestStatus` / `.Notify_PawnRecruited`,
+  `Pawn_Ownership.Notify_ChangedGuestStatus`, `Pawn_IdeoTracker.SetIdeo` / `.FallbackIdeo`,
+  `RitualRolePrisoner`, `CompPsylinkable`, `PreceptDef AnimaTreeLinking`.
+- **Multiplayer** (`Multiplayer.dll`) [V]: `SyncMethod.Register(HealthCardUtility,
+  "CreateSurgeryBill")`, `BillStack.AddBill`, the `Dialog_BeginRitual` sync worker.
+  **MP Compat** `Multiplayer.Compat.VanillaRacesAndroid` (loaded `1629973374/1.6`) [V]: the
+  modification window, `TryAcceptPawn`, the station lambdas, `MakeChoices`, the default letter
+  choice.
+- **Precedents.**
+  - VRE Archon (`3067715093`): `VREArchon_KidnappedPawnsTracker_Kidnap_Patch` calls
+    `SetXenotype(VRE_Archon)` on a kidnapped pawn, and the join is then vanilla's (`rescueesCanJoin`)
+    [V]. That is J3's two-step shape: transform, then let an ordinary path join.
+  - Ghoul infusion is J1's one-step shape.
+- **Wide pass.** Both roots, `-g '!**/obj/**' -g '!**/Referenced/**'`, `-i`.
+  - ASCII: `jailbreak`, `reprogram` → 0; `awaken` → VRE – Android and MP Compat only.
+  - Null-interleaved UTF-16, typed literally: `awaken` → the same two; `reprogram` → VRE – Android;
+    `jailbreak` → Worksites Expanded's `OpportunityCatalog`, a text-adventure ending, not a
+    mechanism [V].
+  - XML: `jailbreak|reprogram` → labels only.
+  - Every 1.6 assembly overriding `ApplyOnPawn` was decompiled and checked for `SetFaction` /
+    `RecruitUtility`. Ushanka's Hacking Expansion, VME, VFE Pirates, VFE Insectoids 2 and Ushanka's
+    Glittertech Expansion: none joins a pawn from a recipe. The Hacking Expansion's
+    `Ability_HijackSubcore` takes mechs and drones only.
+  - Validators: `VREAndroids.dll` returns for `ApplyOnPawn` (ASCII) and for `VREA` (UTF-16).
+  - **No mod ships a jailbreak, a recruiting surgery or a prisoner awakening.**
+
+### Status
+
+- **Verified [V]:** every seam above; the guest-state sequence; that the station and awakening reach
+  a pawn not made at the creation station; that the station as shipped cannot awaken, consume or
+  join; T-163, T-164.
+- **Inferred [I]:** that the seams compose into each route; the awakening letter's reach at a
+  prisoner; that the stale guest fields are never read; the hidden-precept reach for J4.
+- **Refines #142 (not a reversal):** #142's *"stripping it [at the station] IS the jailbreak"* holds
+  only for J3a. That removes the marker and leaves an unmarked prisoner of the Glitterite faction.
+  It does not consume, awaken or join.
+
+### Open questions
+
+1. **Story — Conrad.**
+   - *Turn* or *open*? J1/J2 hand the player a colonist; J3 hands the player a prisoner who can now
+     be recruited, enslaved or converted.
+   - Can a jailbreak fail? As shipped it cannot (T-164).
+   - Which faith does it wake into: the colony's, its operator's, or none until load?
+   - Does a jailbroken Glitterite stay recognisable to the story — to TRACE's pursuit, or to later
+     beats? The marker is gone by construction, so that needs a second, non-gating record.
+2. **Requirement — `docs/requirements/GLITTERTECH.md`'s owner.** The requirement says "may become an
+   ordinary android colonist" but not whether it arrives **awakened** (traits, joy, mental breaks,
+   skill gain) or **basic** (VRE's player-built default). "Given back the persona and free will"
+   reads as awakened.
+3. **Build — #119.**
+   - Which of #142's marker shapes, now constrained by T-163.
+   - Awaken before or after the join.
+   - `Recruit` versus a bare `SetFaction`.
+   - A research gate on the recipe.
+   - Hiding the marker from the creation window.
+   - `VREA_AntiAwakeningProtocols` on the Glitterite xenotype (part of the unticketed Glitterite
+     defs rewrite #142 named).
 
 ---
 

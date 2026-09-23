@@ -1869,7 +1869,7 @@ It does not own:
 ### Open questions
 
 - **Transfer shape per beat** (`SetFaction` or recreate). It decides whether an order carries on or aborts. *[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).*
-- **Odyssey gravship travel toward a tile that changes hands.** Not read. *Unowned; proposed ticket.*
+- **Odyssey gravship travel toward a tile that changes hands.** Answered by [#177](https://github.com/cjd721/Rimworld-Archinity/issues/177) in `GRAVSHIP.md` — never re-checked; routes GF-A…GF-G mirror CF-A…CF-G (T-171, T-172).
 - **A caravan inside the settlement's map at the moment of transfer.** Map pawns keep the old faction. *Unowned (first raised on #8 § 4, now closed).*
 - **Build questions for the next map:** CF-B's letter text, CF-C's re-target precedence, and how CF-G stores the ordered faction.
 

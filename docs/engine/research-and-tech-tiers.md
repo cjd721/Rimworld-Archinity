@@ -285,6 +285,47 @@ That planet-tab button is not dev-gated and is a route around any era clock — 
 [#109](https://github.com/cjd721/Rimworld-Archinity/issues/109); the clock built on it is
 `docs/specs/ERA.md`.
 
+### Which toggle gates which filter, and what an XML row can reach
+
+WTL's map and world filters are Harmony patches in one `PatchGroup("Filters")`, each behind a
+`[HarmonyPrepare]` that reads one settings toggle. A toggle that is off means the patch **is not
+applied**, so every `TechLevelConfigDef` row for that def type is inert [V].
+
+| Toggle (settings label) | Patch | Reaches |
+|---|---|---|
+| `Filter_GenSteps` ("Ancient debris") | `Patch_MapGenerator.GenerateContentsIntoMap_Prefix`; `Patch_BaseGen`; `ModCompat_RealRuins`, `ModCompat_VFECore` | the genstep list of **every** map, by `WorldTechLevel.Current` at generation — home, base, encounter and site `extraGenStepDefs` alike; and every `BaseGen.Generate`, which runs with each NPC faction's `techLevel` clamped to the world level (**T-165**) |
+| `Filter_WorldGenSteps` ("Ancient facilities and roads") | `Patch_WorldGenerator` (`get_GenStepsInOrder` only) and `Patch_TileMutatorDef.EverValid` / `.IsValidTile` postfixes | world gensteps (`AncientRoads`) and tile-mutator assignment — both called only from worldgen and debug tools, so a refused mutator never exists in that world |
+| `Filter_Incidents` ("Incidents") | `Patch_Storyteller.MakeIncidentsForInterval_Postfix`; `Patch_RaidStrategyWorker`; `Patch_PawnsArrivalModeWorker` | incidents the storyteller fires (and raid strategy / arrival mode choice) — not quests given by items, rituals or code |
+| `Filter_Factions` | `Patch_FactionGenerator` | the worldgen roster (**T-54**) |
+
+- **Levels come from XML rows unless WTL derives them.** `DefTechLevels.Initialize` gives
+  `GenStepDef`, `IncidentDef`, `QuestScriptDef`, `TileMutatorDef` and `WorldGenStepDef` no
+  first-pass function, so each starts `Undefined` and carries a level only if some
+  `TechLevelConfigDef` names it [V]. `FactionDef`, `PawnKindDef`, `ThingDef`, `ResearchProjectDef`
+  and a few others are derived.
+- **Any mod's rows reach the array.** `ApplyOverrides` reads every `TechLevelConfigDef` in the
+  `DefDatabase` with a matching `defType`, filters by `ifModPresent` / `unlessModPresent`, orders by
+  `priority` (a negative priority only fills an `Undefined` slot), and supports `*`/`?` globs and a
+  `contentPack` filter [V]. **This is T-54 turned round: the same XML that rescues our gensteps can
+  remove a vanilla one** — but only while its toggle is on.
+- **Two settings still win over XML.** `Settings.Overrides`, a per-install dictionary edited on the
+  settings page, is applied after every row; and `AlwaysAllowOffworld` drops every row flagged
+  `offworld` before it is applied (**T-166**). Both are **T-18**.
+- **Toggles apply live.** Closing the settings window calls `FiltersPatchGroup.ReApply()` [V]; no
+  restart separates two clients' map generation.
+- **Multiplayer does carry WTL's settings file at join.** WTL takes its settings through
+  `Mod.GetSettings<WorldTechLevelSettings>()` (a `LunarModSettings : ModSettings`), and
+  Multiplayer's `OverrideConfigsPatch` postfixes `LoadedModManager.GetSettingsFilename` to point a
+  restarted joining client at the host's copy; `worldtechlevel` is not in
+  `SyncConfigs.ignoredConfigsModIds` [V, `2606448745/1.6/AssembliesCustom/Multiplayer.dll`]. That
+  mitigates a mismatch at join; it does nothing about a toggle flipped mid-session. MP Compat
+  carries no WTL class in either heap of either assembly [V, sweep].
+
+What the genstep filter misses and over-reaches is **T-165**. Its use against vanilla content, and
+the vanilla levers that scope a removal to the player's own map, are
+[`docs/specs/ERA.md`](../specs/ERA.md) § *Above-era content seeded on the player's own map*
+([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)).
+
 ---
 
 ## Ignorance Is Bliss
