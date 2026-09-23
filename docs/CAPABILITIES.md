@@ -33,91 +33,67 @@ each system answers are in `docs/requirements/`. Gaps between specs are tracked 
 
 ## At a glance
 
-"Unanswered" counts requirement clauses that no spec answers. They are listed in
-[Not answered in any spec](#not-answered-in-any-spec) below. A beat must not assume them.
+"Open" names the capability tickets still open against a system: requirement clauses that no
+spec answers yet. They are listed in [Open capability questions](#open-capability-questions)
+below. Until one closes, write no beat that depends on it.
 
-| System | Possible? | Multiplayer? | Unanswered |
+| System | Possible? | Multiplayer? | Open |
 |---|---|---|---|
 | **Faith** | | | |
-| [The altar](#the-altar) | Partly: the spec cannot tell a willing giver from a coerced one | Yes (spec), conditional; one two-client run owed | 1 |
-| [Religion](#religion) | Yes | With work; varies by its four sub-cards | 2 |
+| [The altar](#the-altar) | Partly: willing-giver routes are on [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49), not in the spec | Yes (spec), conditional; one two-client run owed | — |
+| [Religion](#religion) | Yes | With work; varies by its four sub-cards | [#191](https://github.com/cjd721/Rimworld-Archinity/issues/191) |
 | [The psychic track](#the-psychic-track) | Partly: "rank only from the altar" needs VPE's XP loop cut or gated | Yes (spec), conditional | — |
 | [Transcendence](#transcendence) | Yes | Yes (spec), conditional | — |
 | **Politics** | | | |
-| [Faction politics](#faction-politics) | Yes; by design, no peace with a permanent enemy | Yes; With work for some routes | 2 |
-| [Territory](#territory) | Yes; one era-advance edge case | With work | — |
+| [Faction politics](#faction-politics) | Yes; by design, no peace with a permanent enemy | Yes; With work for some routes | [#192](https://github.com/cjd721/Rimworld-Archinity/issues/192), [#193](https://github.com/cjd721/Rimworld-Archinity/issues/193) |
+| [Territory](#territory) | Yes; one era-advance edge case | With work | [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92) |
 | [Pressure](#pressure) | Yes; the composition is [I] until played | Yes (spec), conditional | — |
 | [Encounters](#encounters) | Yes | Yes | — |
 | **Glittertech** | | | |
 | [Trace and the Glitterite pursuit](#trace-and-the-glitterite-pursuit) | Yes | With work (T-177) | — |
 | [Spendable currencies](#spendable-currencies-influence-and-intel) | Yes | With work | — |
 | [Hacking](#hacking) | Yes, on Ushanka's Hacking Expansion | With work | — |
-| [Androids](#androids) | Yes | Yes (spec), conditional on MP Compat's entry | 1 |
-| [Research](#research) | **Partly: Practice has no route** | Yes | 1 |
+| [Androids](#androids) | Yes | Yes (spec), conditional on MP Compat's entry | — |
+| [Research](#research) | **Partly: Practice has no route** | Yes | [#190](https://github.com/cjd721/Rimworld-Archinity/issues/190) |
 | **World and space** | | | |
-| [Era](#era) | Partly: the arrival band is open (#22) | With work | 1 |
-| [Charting](#charting) | Yes | With work | 1 |
-| [World infrastructure](#world-infrastructure) | Yes | With work | 3 |
-| [Orbit](#orbit) | Partly: closing orbit rests on our switches; #22 is open | Yes (spec), conditional | — |
+| [Era](#era) | Partly: the arrival band is open ([#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)) | With work | — |
+| [Charting](#charting) | Yes | With work | [#197](https://github.com/cjd721/Rimworld-Archinity/issues/197) |
+| [World infrastructure](#world-infrastructure) | Yes | With work | [#194](https://github.com/cjd721/Rimworld-Archinity/issues/194), [#195](https://github.com/cjd721/Rimworld-Archinity/issues/195) |
+| [Orbit](#orbit) | Partly: closing orbit rests on our switches; [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) is open | Yes (spec), conditional | — |
 | [Gravship](#gravship) | Partly: ordinary life arriving at an orbital home is gated | Mostly Yes; the home build is Unknown | — |
 | **Colony** | | | |
 | [Colony management](#colony-management) | Yes | Yes | — |
 | [Shipped defaults and presets](#shipped-defaults-and-presets) | Partly for gear sets; Yes for bills | Yes / With work | — |
 | [Items and gear](#items-and-gear) | Yes | Yes | — |
-| [Specialisation](#specialisation) | Yes, through a system of ours (Hard) | With work | 1 |
-| [Quests](#quests) (spans four specs) | Partly | With work | 5 |
+| [Specialisation](#specialisation) | Yes, through a system of ours (Hard) | With work | — |
+| [Quests](#quests) (spans four specs) | Partly | With work | [#196](https://github.com/cjd721/Rimworld-Archinity/issues/196), [#197](https://github.com/cjd721/Rimworld-Archinity/issues/197) |
 
-## Not answered in any spec
+## Open capability questions
 
-These requirement clauses have no route in any spec. Neither a verdict nor a limit exists for them
-yet. Until one does, write no beat that depends on them.
+Requirement clauses that no spec answers yet, each on its own ticket. When a ticket closes, its
+answer lands in the named spec, and its line here and on its card is replaced by that answer.
 
-**Faith**
-- **Betrayal's trigger.** Global Reverence passing a threshold fires the Church's authored mission
-  and then the betrayal (`requirements/RELIGION.md` § *Betrayal is final*). RELIGION builds only the
-  latch.
-- **"Accepting ends the run"** for the Church's ending. RELIGION routes the offer only. No spec
-  examines whether a quest-driven acceptance can end the game under Multiplayer, where
-  TRANSCENDENCE's rule 1 applies.
-- **The willing giver at the altar.** The routes exist on closed
-  [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49), but no spec carries them.
+- **Research by Practice**: a project that consumes authored resources ([#190](https://github.com/cjd721/Rimworld-Archinity/issues/190)). RESEARCH calls
+  it "the vanilla default", but CURRENCIES has verified that no field on `ResearchProjectDef`
+  consumes an arbitrary resource.
+- **Accepting the Church's offer ends the run** for both players under Multiplayer ([#191](https://github.com/cjd721/Rimworld-Archinity/issues/191)).
+- **Demand asks with no route**: a loaned specialist in eras without drop pods, a protected
+  route, a prisoner released ([#192](https://github.com/cjd721/Rimworld-Archinity/issues/192)).
+- **Candour about who a faction hates**: withholding NPC relations, then revealing them
+  ([#193](https://github.com/cjd721/Rimworld-Archinity/issues/193)).
+- **Funding a road to a higher tier** than the network would build ([#194](https://github.com/cjd721/Rimworld-Archinity/issues/194)).
+- **NPC factions fielding era-appropriate vehicles** ([#195](https://github.com/cjd721/Rimworld-Archinity/issues/195)).
+- **Quest presentation**: each subplot as its own parent quest, taken beats legible as taken, and
+  a challenge rating on every quest ([#196](https://github.com/cjd721/Rimworld-Archinity/issues/196)).
+- **"Announced itself" widening with era**: a quest leaving Charting's pool as eras advance
+  ([#197](https://github.com/cjd721/Rimworld-Archinity/issues/197)).
+- **Ally aid on an ally-owned site** rather than the ally's own settlement ([#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), reopened).
+  The overlay build already answers the clause; the site shape is the cheaper route not yet
+  priced.
 
-**Politics**
-- **Candour about who a faction hates** (`requirements/POLITICS.md` § *Standing buys
-  relationships*). No spec shows or withholds the NPC relation graph.
-- **The demand asks "a protected route" and "a prisoner released"** (§ *Demands ask for specific
-  capabilities*). POLITICS § 3 has no row for either.
-
-**Glittertech**
-- **Research by Practice.** "Research consumes authored resources for trial and error"
-  (`requirements/GLITTERTECH.md`, one of the campaign's three acquisition routes). RESEARCH calls it
-  "the vanilla default", but CURRENCIES has verified that no field on `ResearchProjectDef` consumes
-  an arbitrary resource.
-- **Keeping awakened androids out before Ultra, while allowing them at Ultra.** ANDROIDS § 6 names an
-  era-scoped removal as a route but gives it no carrier, weight or Multiplayer answer. The only
-  specified route also removes them at Ultra.
-
-**World and space**
-- **The era advance's historian letter and changelog** (`requirements/ERA.md` § *Player information
-  and agency*). The ERA spec never mentions either.
-- **Funding a road "to reach a higher tier".** WORLD-INFRASTRUCTURE prices funding a road *sooner*
-  and *farther*, but not to a higher tier.
-- **NPC factions fielding era-appropriate vehicles.** The spec covers player vehicles only.
-- **Laying the whole road network at the moment of the advance.** The requirement allows this as a
-  fallback if the gradual build proves expensive. It is unpriced, and so far unneeded.
-- **Which of two colonies a Charting find is measured from.** The quest tile falls back to a random
-  home map.
-
-**Colony and quests**
-- **Each subplot as its own parent quest** (`requirements/QUESTS.md` § *Necessary content nests*).
-  Only Charting's main line nests. The Schism's steps are shop rows or ordinary offers.
-- **Taken beats staying legible as taken.** Only the `3 / 9` readout is specced.
-- **A challenge rating on every quest.** Only shop offers declare one.
-- **"Announced itself" widening with era** (§ *The announcement test*). Charting's pool membership
-  is static per quest.
-- **The named-incident channel.** No spec addresses it.
-- **Changing an earned specialisation at a cost under routes A–D.** Only the posts route (E) and the
-  trained-hediff route (F) state a cost to change.
+Clauses this pass found unanswered, but that turned out to be shape decisions rather than
+capability questions, are owned by [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+The reasons are on [the capabilities document's ticket](https://github.com/cjd721/Rimworld-Archinity/issues/121).
 
 ---
 
@@ -212,8 +188,8 @@ The Empire transformed in place into a Roman-Catholic-like Church: Exaltation, t
 | Credit for a deed is chosen at acceptance: Church, founders, Schism or a mix | Yes. Options freeze at generation | Yes. Two near-simultaneous clicks: RUN owed (#16) | **A** our credit node: written options per deed, any reward mix, consequences per option, and a Schism option only when working with the Schism · Medium (spec recommends)<br>**B** patch the reward generator, so founder and Schism credit appears on every random-reward quest · Medium<br>**C** vanilla as shipped · Easy · *not a route to the requirement* | [§ Credit for a deed](specs/RELIGION.md#credit-for-a-deed--the-attribution-chosen-at-acceptance) |
 | Decrees whose failure costs mood, Exaltation or Goodwill; none while the Church is hostile | Yes | Yes [I] | **A** author the failure branch per decree · XML (+ one tiny node without VFED) · Easy with VFED / Medium without<br>**B** decrees end with the Church · XML · Easy<br>**C** a generic C# cost hook · Medium · *not recommended*: nothing generic to reach<br>**D** Church-issued decrees on a schedule · Easy / Medium. Spec recommends A + B | [§ Decrees](specs/RELIGION.md#decrees--what-failing-one-costs-set-per-decree) |
 | Who may hold a Church title | Yes, any rule. Founders-only needs C# | Yes [I] | **A** anyone, as shipped · Easy<br>**B** guard the write methods: refuse, or redirect to a founder · Medium<br>**C** steer each surface (accept menu, choose-pawn letter, inheritance, tribute collector) · Medium<br>**D** restricted by kind · Medium<br>**E** authored deeds name the founder · Easy / Medium | [§ Who may hold a Church title](specs/RELIGION.md#who-may-hold-a-church-title--every-exaltation-writer-and-the-seams-that-keep-titles-on-the-founders) |
-| Betrayal is final: the Church is permanently hostile | Yes (the latch). The trigger is not routed (see *Gaps*) | Yes (spec), condition: the bit's write calls `RecalculateAll` | **A** one saved bit read by a goodwill worker, capping the Church at −100 · C# · Medium (mapped)<br>**B** VFE Deserters' latch, if VFED ships · as shipped | [§ 6 Betrayal](specs/RELIGION.md#6-betrayal--the-permanent-hostility-latch) |
-| The Church's ending: sanctioned apotheosis offered at the top title | Partly. The offer is specced; "accepting ends the run" has no route (see *Gaps*) | With work (the refiring timer) | **A (as specced)** Royal Ascent's shape: a refiring offer gated on the top title, closed by the betrayal bit or the orbital reveal. Vanilla's Royal Ascent is stripped · XML · Easy (mapped) | [§ 7 Cost](specs/RELIGION.md#7-cost) |
+| Betrayal is final: the Church is permanently hostile | Yes (the latch). The threshold firing the authored mission is a quest from the synced tick, content for #119 | Yes (spec), condition: the bit's write calls `RecalculateAll` | **A** one saved bit read by a goodwill worker, capping the Church at −100 · C# · Medium (mapped)<br>**B** VFE Deserters' latch, if VFED ships · as shipped | [§ 6 Betrayal](specs/RELIGION.md#6-betrayal--the-permanent-hostility-latch) |
+| The Church's ending: sanctioned apotheosis offered at the top title | Partly. The offer is specced; "accepting ends the run" is open (#191) | With work (the refiring timer) | **A (as specced)** Royal Ascent's shape: a refiring offer gated on the top title, closed by the betrayal bit or the orbital reveal. Vanilla's Royal Ascent is stripped · XML · Easy (mapped) | [§ 7 Cost](specs/RELIGION.md#7-cost) |
 
 **What the story can do with it**
 - Run the Church on vanilla Royalty. Quests pay Exaltation, and a rung brings a bestower and honour guard, or the founders' own rite.
@@ -663,7 +639,7 @@ Hacking is the second technology front. Intel teaches the Glitterites' protocol 
 **What it cannot do**
 - A Glitterite person is never hackable, and no android is: nothing gives a humanlike pawn a hackable component. The jailbreak is surgery, never a hack.
 - The relay moves the numbers, not the job. The field pawn must stand on the target's map, and the home hacker must be in a Cyberpod on a home map. Cross-map hacking exists nowhere else in the corpus.
-- A hack yields no Intel. Ushanka's data items give research points and verbs.
+- As specced, a hack yields no Intel; Ushanka's data items give research points and verbs. That is HACKING's scope, not an engine limit: the "Hacked" quest signal and CURRENCIES' public `Credit` both exist.
 - A seized turret may stay mis-targeted until the next load unless the repair ships (T-68). After a RimWorld update, the re-hack reset can fail silently (T-69).
 - If an Ultra project needs an exemplar reachable only by the hack that project unlocks, the branch locks silently. The gate needs Biotech (T-40).
 - Mismatched Ushanka settings or builds between clients desync with no error (T-67, T-18).
@@ -722,7 +698,7 @@ How the colony earns knowledge: **Practice** (resources consumed by trial and er
 |---|---|---|---|---|
 | Exemplar: a project needs a named object studied at a bench, and the object survives | Yes | Yes | **A (as specced)** Vanilla `requiredAnalyzed` plus an analysable component on the object, with `destroyedOnAnalyzed false`; works at any tech level. More Realistic Research declined · vanilla · XML · Easy (mapped) | [§ The build](specs/RESEARCH.md#the-build) |
 | Instruction: a techprint or authored item unlocks the project; the largest nodes need Instruction derived from Intel | Yes | Yes (CURRENCIES: applying one is a synced Job) | **A (as specced)** Vanilla techprints; a quest reward naming a fixed project; the Intel exchange · vanilla · XML · Easy (mapped) | [§ 6. The seam with Intel](specs/RESEARCH.md#6-the-seam-with-intel), [CURRENCIES § The Intel exchange](specs/CURRENCIES.md#the-intel-exchange--a-balance-into-an-instruction-item) |
-| Practice: research consumes authored resources by trial and error | **Not answered** | — | None. The spec says only "Practice is the vanilla default and needs no spec". CURRENCIES verifies "no field on `ResearchProjectDef` debits a quantity of an arbitrary resource". See *Gaps* | [§ Purpose and scope](specs/RESEARCH.md#purpose-and-scope), [CURRENCIES § The interface to #67](specs/CURRENCIES.md#the-interface-to-67) |
+| Practice: research consumes authored resources by trial and error | **Not answered** | — | None. The spec says only "Practice is the vanilla default and needs no spec". CURRENCIES verifies "no field on `ResearchProjectDef` debits a quantity of an arbitrary resource". Open: #190 | [§ Purpose and scope](specs/RESEARCH.md#purpose-and-scope), [CURRENCIES § The interface to #67](specs/CURRENCIES.md#the-interface-to-67) |
 | Destructive analysis: a long job consumes an artifact and pays Intel and Trace, never research | Yes | Yes (A) | **A** Vanilla study loop plus our payout component: many sessions, progress saved on the item · XML + C# · Medium<br>**B** Our analysable subclass · Medium · *not recommended*: loses an interrupted session; shares the Exemplar gate's manager<br>**C** A production bill with an unfinished item · XML + C# · Medium<br>**D** A use-item job · Medium · *not recommended*: interruption loses all<br>**E** VEF studiable building · Medium · *not recommended*: buildings only, no saved progress<br>**F** Fully custom · Medium–Hard · *not recommended*: rebuilds A<br>Spec recommends A | [§ Destructive artifact analysis](specs/RESEARCH.md#destructive-artifact-analysis) |
 | No route reaches research past the era arc or the Exemplar gate for free | Yes | Yes | **A (as specced)** One lockout file: a shutoff per Class A carrier, a one-line fix for the vanilla Schematic book, and a whole-corpus audit script · XML + Python · Easy (mapped) | [§ Bypasses — the build](specs/RESEARCH.md#bypasses--the-build) |
 | Research unlocks a verb (work type, work tag, designator): the Neolithic on-ramp | Yes | Yes | **A** Gate a whole architect category · vanilla · XML · Easy (mapped)<br>**B** A research extension plus six patches for work types and single designators, rebuilt from VFE Tribals · ours · C# · Medium (mapped). A vanilla deny-list and `ResearchMod` were surveyed and not taken | [§ Granted capability — the build](specs/RESEARCH.md#granted-capability--the-build) |
@@ -787,7 +763,7 @@ The era is the campaign's single axis, Neolithic → Ultra. It is World Tech Lev
 - Switching on WTL's `Filter_Factions` is the one setting that breaks the world irrecoverably (T-07). It is frozen off.
 - AE-1 and AE-2 strip road wrecks from every map, encounter maps included. None of AE-1 to AE-3 reaches mutator-worker content such as the ancient uplink ([Orbit](#orbit)). AE-6 leaves an Ultra exostrider standing in the Neolithic yard.
 - AE-5(b) has no once-only guard (T-157).
-- The world's changes at the advance are owned elsewhere: which factions swap, shrink, vanish or appear is #34, with the mechanism in `engine/factions-and-worldgen.md`. The historian letter and changelog are unanswered (see *Gaps*).
+- The world's changes at the advance are owned elsewhere: which factions swap, shrink, vanish or appear is #34, with the mechanism in `engine/factions-and-worldgen.md`. The historian letter and changelog are authored flavour; the ERA spec does not mention them.
 - None of it is built. Every mechanism is [V]; that they compose is [I] until built and loaded twice.
 
 **Spec and tickets:** [`specs/ERA.md`](specs/ERA.md) · #109 era clock, #185 which clock under Async Time, #153 above-era home content, #113 capstone as trigger, #7 mechanism choice · open: #22 era-gate claims
@@ -843,7 +819,7 @@ Discovery becomes labour. A pawn works the apparatus, which surveys for ordinary
 
 ### World infrastructure
 
-**Possible?** Yes. Roads are a shipped engine system with no builder: NPC road growth over time is a build of ours, because nothing in the corpus does it. Contribution has five entry points, direct building ships, and vehicles ship as content. Two requirement clauses are unanswered: funding "to a higher tier", and NPC factions fielding era vehicles (see *Gaps*).
+**Possible?** Yes. Roads are a shipped engine system with no builder: NPC road growth over time is a build of ours, because nothing in the corpus does it. Contribution has five entry points, direct building ships, and vehicles ship as content. Two requirement clauses are unanswered: funding "to a higher tier", and NPC factions fielding era vehicles (#194, #195).
 **Multiplayer?** With work.
 - Vehicles desync silently without § 4a's three prefixes (T-74).
 - Funding commits need `[SyncMethod]`s. The float-menu, quest and pod forms are synced for free. The comms-console form needs T-82/T-95/T-97 discipline.
@@ -944,7 +920,7 @@ The gravship grows from late-Industrial transport into the colony's only home, a
 | Capability | Possible | MP | Routes | Spec |
 |---|---|---|---|---|
 | The colony lives aboard permanently, with the planetside base retired: deck, air, heat, food, power, shields | Yes ([I] that it composes) | Unknown: no verdict; two concerns named | **A (as specced)** Odyssey + VGE as shipped. A research retier moves habitation to Spacer · XML · Easy *(mapped)*. An over-budget alert, because overflow is otherwise silent (T-46) · C# · Medium *(mapped)*<br>**G** remove the standing cabin-fever penalty · XML · Easy · *not recommended* | [§ The build](specs/GRAVSHIP.md#the-build), [§ The deck budget](specs/GRAVSHIP.md#the-deck-budget), [§ Life support](specs/GRAVSHIP.md#life-support) |
-| The founders are vacuum-immune; everyone else wears suits | Yes | Unknown (spec silent) | **A** vanilla's archite gene `VacuumResistance_Total`. The gene needs no code; delivery weight is not stated. The spec's only delivery sketch is an archite-capsule supply line; the route is #119's | [§ Life support](specs/GRAVSHIP.md#life-support) |
+| The founders are vacuum-immune; everyone else wears suits | Yes | Unknown (spec silent) | **A** vanilla's archite gene `VacuumResistance_Total`. The gene needs no code; delivery weight is not stated. The spec's only delivery sketch is an archite-capsule supply line; the altar's named-gene grant ([ALTAR § 9](specs/ALTAR.md)) is a story delivery that needs no capsules. The route is #119's | [§ Life support](specs/GRAVSHIP.md#life-support) |
 | Disasters, conditions and threats that make sense in space happen in orbit | Yes (spec: "All of it is reachable; most of it by XML") | Yes (spec) | **A** a whitelist pack across orbit's four gates: incidents, game conditions, faction arrivals, arrival modes · XML · Easy per def, Medium as a curated pack<br>**B** VGE's 9 orbital incidents and 8 matching conditions, as shipped · Easy<br>Spec recommends A + B + C | [§ Ordinary colony life](specs/GRAVSHIP.md#ordinary-colony-life-on-an-orbital-home), [four gates](specs/GRAVSHIP.md#the-four-gates-and-what-passes-them-today) |
 | People arrive and join, and quests are offered, at an orbital home | Partly: no walking in, ever | Yes (spec); build (d) Unknown | **C** authored arrivals by pod and shuttle · XML · Medium<br>**D** vanilla's wanderer and refugee-pod family unblocked in orbit · C# · Medium<br>**Build (d)** a null-home patch for two quest nodes, needed only if our content uses them (T-49) · C# · Medium *(mapped)* | [Nobody joins](specs/GRAVSHIP.md#nobody-joins-and-the-flag-that-says-otherwise-is-a-dead-letter), [Quests](specs/GRAVSHIP.md#quests-are-gated-somewhere-else-entirely) |
 | Visitors and traders at the ship; trade at stations | Partly | Yes (spec); F No | **E** visitors and walking trader caravans redirected off the impassable map edge · C# · Medium<br>**F** shuttle to a guild station and trade there · Better Traders Guild · as shipped · Easy · MP **No** | [§ Routes](specs/GRAVSHIP.md#routes) |
@@ -1133,7 +1109,7 @@ A good smith becomes a weaponsmith or an armoursmith, and a captive's specialisa
 
 ### Quests
 
-**Possible?** Partly. Answered: the main plot line's nesting, recovery, the chain readout, the no-roll rule, six of the seven channels (the giver partly), both shop clauses, the arrival reason and the shared board. Unanswered in any spec: subplots as parent quests, taken beats staying legible, a challenge rating outside the shops, the era-relative announcement test, and the named-incident channel.
+**Possible?** Partly. Answered: the main plot line's nesting, recovery, the chain readout, the no-roll rule, all seven channels (the giver partly), both shop clauses, the arrival reason and the shared board. Open: subplots as parent quests, taken beats staying legible and a challenge rating outside the shops (#196); the era-relative announcement test (#197).
 **Multiplayer?** With work: one sync registration on the shop's `ActivateQuest`. Charting's find path, decrees and timed encounters run on the synced tick, and Multiplayer syncs quest acceptance as shipped.
 
 Almost everything the campaign delivers arrives as a quest or an event. No spec owns quests; the clauses of [`requirements/QUESTS.md`](requirements/QUESTS.md) are answered across Charting, Currencies, Religion and Encounters.
@@ -1141,14 +1117,14 @@ Almost everything the campaign delivers arrives as a quest or an event. No spec 
 | Capability | Possible | MP | Routes | Spec |
 |---|---|---|---|---|
 | The main plot line is a standing, auto-accepted parent quest, with its necessary beats nested beneath it | Yes (main line) | Yes | **A (as specced)** `QuestPart_ChartingSpine : QuestPart_SubquestGenerator` sets `quest.parent` on each beat. The parent is a `QuestScriptDef` with `isRootSpecial`, `autoAccept` and no expiry, plus a ~25-line root node of ours · vanilla subclass, no Harmony · C# + XML · Medium (mapped). VEF quest chains were rejected for the spine (not labour, no player UI) and are recommended for gated side content | [CHARTING § 2](specs/CHARTING.md#2-the-return-pool--questpart_chartingspine--questpart_subquestgenerator) · [§ Alternatives](specs/CHARTING.md#alternatives-and-what-separates-them) |
-| Each subplot is its own parent quest | No answer in any spec | Unknown: settled only once a route exists | None. The Schism's steps are catalogue rows or ordinary offers (CURRENCIES § *The Schism catalogue*, routes A–D) | [CURRENCIES § The Schism catalogue](specs/CURRENCIES.md#the-schism-catalogue--a-spend-that-advances-the-plot) |
+| Each subplot is its own parent quest | Open (#196) | Unknown: settled only once a route exists | None. The Schism's steps are catalogue rows or ordinary offers (CURRENCIES § *The Schism catalogue*, routes A–D) | [CURRENCIES § The Schism catalogue](specs/CURRENCIES.md#the-schism-catalogue--a-spend-that-advances-the-plot) |
 | Declining, failing or losing a beat never soft-locks its plot line | Yes | Yes | **A (as specced)** only `EndedSuccess` advances the derived cursor. An expired or destroyed site ends the quest non-success, and the same beat is next | [CHARTING § Failure and recovery](specs/CHARTING.md#failure-and-recovery) |
-| The player sees where they are in a plot line; taken beats stay legible as taken | Partly: the readout only | Yes | **A (as specced)** the quest tab shows `3 / 9` on the parent and indents children beneath it, free from vanilla. That taken beats stay legible *as taken* is not stated | [CHARTING § 8](specs/CHARTING.md#8-where-the-player-sees-it) |
-| Every quest declares a challenge rating before commitment | Partly: shop offers only | With work (the shop's registration) | VEF's contract window draws one pip per `Quest.challengeRating` (catalogue Build A). Build B draws it on the offer row with vanilla's `QuestChallengeRatingTip`. **No spec states it for beats, decrees, encounters or any other channel** | [CURRENCIES § The purchasable quest catalogue](specs/CURRENCIES.md#the-purchasable-quest-catalogue) |
+| The player sees where they are in a plot line; taken beats stay legible as taken | Partly: the readout only; the rest is open (#196) | Yes | **A (as specced)** the quest tab shows `3 / 9` on the parent and indents children beneath it, free from vanilla. That taken beats stay legible *as taken* is not stated | [CHARTING § 8](specs/CHARTING.md#8-where-the-player-sees-it) |
+| Every quest declares a challenge rating before commitment | Partly: shop offers only; the rest is open (#196) | With work (the shop's registration) | VEF's contract window draws one pip per `Quest.challengeRating` (catalogue Build A). Build B draws it on the offer row with vanilla's `QuestChallengeRatingTip`. **No spec states it for beats, decrees, encounters or any other channel** | [CURRENCIES § The purchasable quest catalogue](specs/CURRENCIES.md#the-purchasable-quest-catalogue) |
 | A quest states plainly why it is happening | Yes | Yes | **A (as specced)** `QuestUtility.SendLetterQuestAvailable(quest, discoveryMethod)` takes free text for the letter body: one translation key. An encounter can name its asker in the letter (G2) | [CHARTING § 8](specs/CHARTING.md#8-where-the-player-sees-it) |
 | What nobody announced is discovered through Charting, and "announced itself" widens with era | Partly: per-quest membership only | Yes | **A (as specced)** any quest joins Charting's survey pool through a one-line XML `ChartingSurveyExtension` patch (T-06) · XML · Easy (mapped). A told quest stays out of every pool through `isRootSpecial` with `rootSelectionWeight` 0. **No spec states a mechanism for the era-relative widening**; the per-quest dispositions belong to the ledger (#14) | [CHARTING § 3](specs/CHARTING.md#3-the-survey-pool) · [ENCOUNTERS § 1](specs/ENCOUNTERS.md#1-the-timer--what-offers-the-quest-after-x-days) |
 | Necessary content never depends on a roll | Yes | Yes | **A (as specced)** the spine is a fixed list in order, with no roll (the Archonexus donor). Each pool carries its own guaranteed-find timer, which labour matures, and `scanFindGuaranteedDays` must be set or there is none. For the Schism, spending elsewhere stalls the plot but never strands it | [CHARTING § 1](specs/CHARTING.md#1-the-apparatus--compchartingapparatus--compscanner) · [§ 2](specs/CHARTING.md#2-the-return-pool--questpart_chartingspine--questpart_subquestgenerator) · [CURRENCIES § The Schism catalogue](specs/CURRENCIES.md#the-schism-catalogue--a-spend-that-advances-the-plot) |
-| Channels: storyteller pool, world object, named incident | Partly | Yes | **Storyteller pool:** ENCOUNTERS T3 (`rootSelectionWeight` + `rootEarliestDay`) · XML · Easy. **World object:** the Charting apparatus (CHARTING § 1), and caravans and outposts rolling finds (Natural discovery routes A–E). **Named incident: no spec addresses it as a channel** | [ENCOUNTERS § 1](specs/ENCOUNTERS.md#1-the-timer--what-offers-the-quest-after-x-days) · [CHARTING § Natural discovery](specs/CHARTING.md#natural-discovery--caravans-and-outposts-rolling-finds-as-they-go) |
+| Channels: storyteller pool, world object, named incident | Yes | Yes | **Storyteller pool:** ENCOUNTERS T3 (`rootSelectionWeight` + `rootEarliestDay`) · XML · Easy. **World object:** the Charting apparatus (CHARTING § 1), and caravans and outposts rolling finds (Natural discovery routes A–E). **Named incident:** a storyteller comp fires a named incident on a day (ENCOUNTERS T1, T2 or T4) · XML / C# · Easy / Medium | [ENCOUNTERS § 1](specs/ENCOUNTERS.md#1-the-timer--what-offers-the-quest-after-x-days) · [CHARTING § Natural discovery](specs/CHARTING.md#natural-discovery--caravans-and-outposts-rolling-finds-as-they-go) |
 | Giver channel: a trader, visitor, book or scan hands the content over | Partly: a faction giver only | Yes | **G1** a random non-hostile faction · `QuestNode_GetFaction` · XML · Easy<br>**G2** a named leader as asker, with a faction-def exclusion list · `QuestNode_GetPawn` · XML · Easy<br>**G3** a numeric goodwill floor or a tech/culture filter · our node · C# · Medium<br>Vanilla's giver tag is a closed enum (`Traders`, `OrbitalScanner`, `Reading`, `Beggars`), and a quest joins a tag's list with one XML `<li>`. Handover by trader, visitor or book is not otherwise answered | [ENCOUNTERS § 2](specs/ENCOUNTERS.md#2-the-giver--drawn-at-random-neutral-or-better) · [CHARTING § Two premises this corrects](specs/CHARTING.md#two-premises-this-corrects) |
 | Decree channel: obligations an institution imposes once the founders hold standing in it | Yes | Yes [I] | **A** each Church decree authors its own failure cost (mood, lost Exaltation, lost Goodwill) · vanilla quest nodes + VFED's `QuestNode_GetEmpire` or our node · XML · Easy with VFED / Medium without<br>**B** decrees stop while the Church is hostile · one patch on `DecreeSetup` · XML · Easy<br>**C** a generic cost hook · C# + Harmony · Medium · *not recommended*: there is nothing for a generic hook to reach<br>**D** Church-issued decrees on a schedule, not from a breakdown · XML (conceited titleholders only) or C# · Easy / Medium<br>Spec recommends A with B | [RELIGION § Decrees](specs/RELIGION.md#decrees--what-failing-one-costs-set-per-decree) |
 | Purchase channel: a shop, paid in Influence or Intel | Yes | With work: one `RegisterSyncMethod` on `ActivateQuest` (Build A); whether `QuestInfo` serialises unaided is not settled by reading | **Build A** VEF `QuestGiverDef` + our currency pair and window (~95 lines) · C# · Medium (mapped)<br>**Build B** our own catalogue (~260 lines, ~290 in the cost table) · C# · Hard (mapped) · the fallback if #14 declines VEF<br>Spec recommends Build A | [CURRENCIES § The purchasable quest catalogue](specs/CURRENCIES.md#the-purchasable-quest-catalogue) |
@@ -1166,9 +1142,9 @@ Almost everything the campaign delivers arrives as a quest or an event. No spec 
 - Sell missions and techprints side by side in the Schism and Glitterite shops, each entry appearing when its conditions are met and leaving on its own clock. A failed mission can come back free, paid again or refunded.
 
 **What it cannot do**
-- No spec presents a subplot as a parent quest. The Schism's plot is a shop shelf or ordinary offers.
-- A challenge rating is declared only on shop offers.
-- No spec gives a mechanism for the announcement test's era widening, or for a named-incident channel.
+- No spec presents a subplot as a parent quest (#196). The Schism's plot is a shop shelf or ordinary offers.
+- A challenge rating is declared only on shop offers (#196).
+- No spec gives a mechanism for the announcement test's era widening (#197).
 - A shop entry whose clock ran out still charges if bought: it takes payment, sends the letter and starts nothing, unless our guard tests the quest state first. An entry whose script builds no choice part vanishes from the shelf (T-76).
 - The *same* failed quest can never return; only a fresh roll of its script can.
 - A timed encounter on a one-interval storyteller window is lost for the campaign if its giver or target is missing that day (T-157). VEF's chain timer generates it broken instead (T-71).

@@ -13,7 +13,20 @@ the row is deleted.
 
 ## Open capability tickets
 
-None open. The last nine, #181–#189, were answered on 2026-09-23.
+[The capabilities document](https://github.com/cjd721/Rimworld-Archinity/issues/121) found these
+requirement clauses unanswered by any spec (2026-09-23).
+
+| Ticket | The capability in question | Answer lands in |
+|---|---|---|
+| [#190](https://github.com/cjd721/Rimworld-Archinity/issues/190) Research by Practice | A project that consumes authored resources | `RESEARCH.md` |
+| [#191](https://github.com/cjd721/Rimworld-Archinity/issues/191) Accepting the Church's offer ends the run | A quest acceptance that ends the game for both players | `RELIGION.md` |
+| [#192](https://github.com/cjd721/Rimworld-Archinity/issues/192) Demand asks with no route | A loan without above-era delivery, a protected route, a prisoner released | `POLITICS.md` |
+| [#193](https://github.com/cjd721/Rimworld-Archinity/issues/193) Who a faction hates | Withholding and revealing NPC relations | `POLITICS.md` |
+| [#194](https://github.com/cjd721/Rimworld-Archinity/issues/194) A road funded to a higher tier | A contribution that raises a route's tier | `WORLD-INFRASTRUCTURE.md` |
+| [#195](https://github.com/cjd721/Rimworld-Archinity/issues/195) NPC era vehicles | NPC factions fielding vehicles | `WORLD-INFRASTRUCTURE.md` |
+| [#196](https://github.com/cjd721/Rimworld-Archinity/issues/196) Quest presentation | Subplot parent quests, taken beats, challenge rating | `CHARTING.md`, `CURRENCIES.md` |
+| [#197](https://github.com/cjd721/Rimworld-Archinity/issues/197) The announcement test widens with era | Charting pool membership changing mid-game | `CHARTING.md` |
+| [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92) The ally-aid battle (reopened) | Aid delivered on an ally-owned site | `TERRITORY.md` |
 
 ## Open capability claims under the build map
 
