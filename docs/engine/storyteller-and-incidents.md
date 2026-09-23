@@ -135,3 +135,36 @@ and `CaravanDemand` (ThreatSmall). Each targets `Caravan` and fires by `mtbDaysB
 `Vehicles.Patch_WorldPathing.StartVehicleCaravanPath` from `3014915404/1.6/Assemblies/Vehicles.dll`;
 `Multiplayer.Client.SyncMethods`, `SyncUtil`, `DialogTradeCtorPatch` from
 `2606448745/1.6/AssembliesCustom/Multiplayer.dll`; decompiled 2026-09-16 with `ilspycmd` 8.2.0.*
+
+## `parms.forced` skips the whole def-level gate block in `IncidentWorker.CanFireNow`
+
+`IncidentWorker.CanFireNow(IncidentParms parms)` gates on `parms.forced` before it reaches
+any def-level test. Everything in that block is skipped when `forced` is set [V]:
+`minThreatPoints` / `maxThreatPoints`, `earliestDay`, `disabledWhen`, `allowBigThreats`,
+biomes, `layerWhitelist` / `layerBlacklist`, `onlyAllowWhitelistedIncidents`,
+`ScenPart_DisableIncident`, `minPopulation`, `minGreatestPopulation`, `FiredTooRecently`,
+the `GameCondition.preventIncidents` quiet window, and the game-ender guards. Only
+`CanFireNowSub` is still consulted.
+
+**Everything that fires through `ThreatsGenerator` sets `forced`** [V]. Two consequences
+worth carrying: the layer narrowing in **T-48** does not apply to a forced fire, and a
+quiet window authored around a beat does not hold against one.
+
+*[#169](https://github.com/cjd721/Rimworld-Archinity/issues/169),
+`docs/specs/PRESSURE.md` §7.2. `RimWorld.IncidentWorker.CanFireNow`,
+`RimWorld.ThreatsGenerator` — `Assembly-CSharp.dll` 1.6.4871.*
+
+## `IncidentWorker_Raid.AdjustedRaidPoints` is the one seam where the faction and the points coexist
+
+`public static`, called once per raid from `IncidentWorker_RaidEnemy.TryGenerateRaidInfo`
+**after** faction and strategy resolution, and once more from
+`QuestNode_GenerateThreats` for preview text [V]. Everywhere else the two are apart: the
+points are chosen before a faction exists, and the faction is chosen without them.
+
+**Raid loot is generated from the pre-adjustment points** [V] — a scale applied here
+changes how hard the raid comes and not what it drops.
+
+*[#169](https://github.com/cjd721/Rimworld-Archinity/issues/169),
+`docs/specs/PRESSURE.md`. `RimWorld.IncidentWorker_Raid.AdjustedRaidPoints`,
+`RimWorld.IncidentWorker_RaidEnemy.TryGenerateRaidInfo`,
+`RimWorld.QuestGen.QuestNode_GenerateThreats` — `Assembly-CSharp.dll` 1.6.4871.*

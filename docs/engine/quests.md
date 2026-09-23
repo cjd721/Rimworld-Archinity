@@ -334,6 +334,14 @@ Verified against 1.6.4871 and `Multiplayer.dll` (`2606448745`).
   `areHelpers true`), apparel lock and `QuestNode_Leave` after a delay [V].
 - **Accepting a quest is synced**: `SyncMethod.Register(typeof(Quest), "Accept")`. Under async time,
   `MultiplayerAsyncQuest` caches the quest against a map on accept [V].
+- **A shelf life is set at generation and resolves without the quest ever being ticked.**
+  `RimWorld.QuestGen.QuestGen.InitializeQuestGen` sets `acceptanceExpireTick` from
+  `QuestScriptDef.expireDaysRange` [V], and `Quest.State` is **computed** — it returns
+  `EndedOfferExpired` as soon as `TicksUntilExpiry == 0 && acceptanceTick < 0`, where
+  `TicksUntilExpiry` derives from `acceptanceExpireTick` [V]. So a per-entry shelf life works
+  on an offer held **outside** `Find.QuestManager` that nothing ticks — which is what makes a
+  shop shelf possible, and what makes **T-124** possible on the same shelf.
+  ([#144](https://github.com/cjd721/Rimworld-Archinity/issues/144))
 
 Established on [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131).
 

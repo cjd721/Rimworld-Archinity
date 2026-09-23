@@ -270,15 +270,35 @@ Spendable leverage with the Schism, taken as a reward from its operations. It bu
 missions that advance the Schism's plot, and its favors. [Religion](docs/requirements/RELIGION.md)
 
 **Revolt**:
-A reverent population rising against its hostile government. What success makes of the
-faction is open. Never against the Church, whose revolt is the Schism.
+A reverent population rising against its hostile government, one of the two doors into a
+**sworn faction**. How much of the faction follows, and whether ground changes hands, is open.
+Never against the Church, whose revolt is the Schism.
 
 **Vassal**:
-A holding or a faction that owes the colony tribute. What a vassal is — a settlement taken by
-conquest, a friendly faction that submits, a whole faction — is open, and the shapes may coexist.
-[Religion](docs/requirements/RELIGION.md)
-_Avoid_: outpost (a site the colony staffs with its own people), ally (the Schism's successor pays
+A place or a people the colony has subjugated: autonomous — the player never operates it — and
+obligated, owing the colony on a standing basis. The umbrella over a **holding** and a **sworn
+faction**. [Territory](docs/requirements/TERRITORY.md)
+_Avoid_: outpost (the colony's own site, nothing subjugated), ally (the Schism's successor pays
 the colony and is not a vassal), tithe (VFE Empire's Church-only mechanism)
+
+**Holding**:
+A single settlement **taken** by force and made to pay the colony, with no map the player runs
+and no people to manage. [Territory](docs/requirements/TERRITORY.md)
+_Avoid_: vassal alone (ambiguous between the two kinds), colony, settlement (still the NPC place
+until it is taken)
+
+**Sworn faction**:
+A whole faction that has **given** itself to the colony — by submission at high Reverence, or by
+a revolt the colony backed. It owes **services, not goods**, and its settlements never become
+holdings. [Territory](docs/requirements/TERRITORY.md)
+_Avoid_: client, subject, vassal faction, ally (the Schism's successor is an ally and was never
+subjugated)
+
+**Outpost**:
+A site the colony builds, funds and staffs with its own people, producing goods in kind for as
+long as it is staffed. **Not a vassal** — nothing has been subjugated.
+[Territory](docs/requirements/TERRITORY.md)
+_Avoid_: holding (taken, not built), colony (no map, no management)
 
 **Intel**:
 Accumulated Glitterite technical intelligence. The player converts or trades it for

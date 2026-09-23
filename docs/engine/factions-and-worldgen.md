@@ -324,6 +324,20 @@ Ignorance Is Bliss gates via a postfix on `FactionCanBeGroupSource`.
 
 Empty-pool behaviour is **fail-open and fail-quiet** (`docs/TRAPS.md` T-17).
 
+**There *is* an XML lever on raid commonality, per `FactionDef`.**
+`FactionDef.raidCommonalityFromPointsCurve` is what `RaidCommonalityFromPoints` reads — a
+curve keyed on threat points, authored per def [V]. This corrects
+[#120](https://github.com/cjd721/Rimworld-Archinity/issues/120)'s *"a raid-weight increase
+has no XML lever"*, which is right about goodwill and wrong about XML in general.
+([#169](https://github.com/cjd721/Rimworld-Archinity/issues/169))
+
+**Strategy and arrival mode carry the same per-faction XML weighting the faction does.**
+`RaidStrategyDef.selectionWeightCurvesPerFaction` and
+`PawnsArrivalModeDef.selectionWeightCurvesPerFaction` are matched in
+`RaidStrategyWorker.SelectionWeightForFaction`; vanilla uses the arrival-mode one for
+mechanoid drop pods [V]. This file previously documented the faction weight and not these.
+([#169](https://github.com/cjd721/Rimworld-Archinity/issues/169))
+
 Two further constraints on anything authored here: `RaidStrategyDef` has no
 `minTechLevel` field, so every tech gate is worker code (`docs/TRAPS.md` T-16);
 and any `RaidStrategyDef` we author is silently excluded from the VFE Empire
@@ -510,6 +524,36 @@ situation caps max goodwill at ≤ 0.** Losses that are not drift:
 
 Natural goodwill is the sum of situation offsets: `NaturalEnemy` −130, `SameIdeo` +10, meme
 pairs from −50 to +10.
+
+**A `GoodwillSituationWorker` returns two numbers and they behave completely differently.**
+This is the distinction anything goodwill-driven has to get right [V]:
+
+| Half | How it reaches goodwill | Rate |
+|---|---|---|
+| `GetMaxGoodwill` — a **cap** | `Faction.GoodwillWith` applies `Mathf.Min(baseGoodwill, GetMaxGoodwill(…))` **on every read** | **immediate** — live within the 1000-tick recache, which itself calls `CheckHostilityChanged` → `Notify_GoodwillSituationsChanged` |
+| `GetNaturalGoodwillOffset` — a **drift target** | summed into `Faction.NaturalGoodwill`, chased by `CheckReachNaturalGoodwill` | 10 per 3,000,000 ticks ≈ **50 in-game days**, halting at `natural + 50` |
+
+`FactionRelation.CheckKindThresholds` compares `faction.GoodwillWith(other)` — the **capped**
+value — so a cap really does flip the relation kind [V]. That is how vanilla makes attacking a
+settlement hostile *now*: `GoodwillSituationWorker_AttackingSettlement` returns a
+`GetMaxGoodwill` of −80.
+
+**The two do not compose cleanly.** `CheckReachNaturalGoodwill` reads `BaseGoodwillWith`
+(**uncapped**) and takes its band from `NaturalGoodwill`, so a cap changes what the player sees
+and what the relation kind is while the base number underneath keeps drifting on its own terms
+[V]. It also **resets `naturalGoodwillTimer` to 0** on every tick the base sits inside the band,
+so the 50-day clock only runs while the faction is already outside it [V].
+
+**The practical rule:** anything that must become hostile on a story-relevant timescale uses a
+`GetMaxGoodwill` cap or a direct `TryAffectGoodwillWith` call, **never the drift**. With the
+`NaturalEnemy` −130 offset the band is `[−180, −80]`, so a faction starting at neutral drifts
+down 10 per 50 days and **stops at −80** — eight steps, roughly 400 in-game days, five points
+past the −75 hostile threshold and nowhere near −100. A system built on the drift looks correct
+in review and takes over a year to bite; nothing reports it.
+`SettlementProximityGoodwillUtility.CheckSettlementProximityGoodwillChange` is **not** the
+drift — it is a direct `TryAffectGoodwillWith` on a fixed 900,000-tick (15 in-game day)
+schedule [V], which is why it moves roughly three times faster.
+([#169](https://github.com/cjd721/Rimworld-Archinity/issues/169))
 
 **`Faction.defeated` has one vanilla writer**, `SettlementDefeatUtility.CheckDefeated`, when the
 last base falls on a map. A faction emptied by `SetFaction` transfers is not defeated.

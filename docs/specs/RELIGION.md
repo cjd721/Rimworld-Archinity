@@ -3835,3 +3835,274 @@ the point.
    a click, a charge, an object. The requirement is silent and the fiction may want a delay; VEF's
    `WorldComponent_FactionGoodwillImpactManager` is the shape if one is wanted (*The build —
    Reverence*, *Mod donors*), and it costs nothing extra because it already ships.
+
+---
+
+## A campaign base for the player faith — forced precepts and tighten-only minimums
+
+### Purpose and scope
+
+Answers [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md) § *Faith inside the
+colony*, *Exploring, not chosen*: the player faith may rest on a campaign-authored base that
+forces its required precepts and roles and sets a minimum on others — tolerance of other faiths
+no more tolerant than intolerant, for example — which the player may tighten and never loosen.
+Established on [#140](https://github.com/cjd721/Rimworld-Archinity/issues/140), verified against
+RimWorld 1.6.4871.
+
+This section owns **how a campaign base is imposed and held**. The *catalogue* — which precepts
+and which roles — is requirement content and belongs to
+[#124](https://github.com/cjd721/Rimworld-Archinity/issues/124) and
+[#116](https://github.com/cjd721/Rimworld-Archinity/issues/116). What a role precept holds and
+how a seat arrives mid-campaign is § *The player faith's role hierarchy* above; the Church's own
+doctrine is NPC-side and is § *Exaltation*.
+
+### Verdict
+
+- **Possible? Yes, and the whole shape ships on disk.** *Forced precepts and a tighten-only
+  minimum* is `MemeDef.requireOne` plus the required-precept branch of `IdeoFoundation.CanAdd`:
+  a `requireOne` sublist force-adds one of its precepts, makes it unremovable, and restricts
+  that issue to **the other members of the same sublist**. *Getting the base onto a faith the
+  player still authors* is a Harmony pair on `Page_ChooseIdeoPreset` — VFE Tribals ships exactly
+  that in 1.6, gated on the scenario's player faction def, and hands the player
+  `Page_ConfigureIdeo` afterwards.
+- **Multiplayer? Yes, with no MP-specific work.** Authoring runs once on the host in
+  single-player and the whole `IdeoManager` is snapshotted to joiners; the only live edit path,
+  `IdeoDevelopmentUtility.ApplyChangesToIdeo`, is a registered `SyncMethod`; MP's own
+  faction-creation ideo page is preset-only, stricter than anything we need.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A. A campaign `MemeDef` with `requireOne`** | Forced precepts per issue, unremovable, plus a per-issue legal *set* — the tighten-only minimum as asked. Survives a reform. | Vanilla Ideology (`MemeDef.requireOne`, `Ideo.GetMemeThatRequiresPrecept`, `IdeoFoundation.CanAdd`); donor VFE Pirates `2723801948` | XML | Easy | Yes |
+| **B. A campaign player `FactionDef` with `disallowedPrecepts`, selected by `ScenPart_PlayerFaction`** | A floor on any issue at character creation and at generation; disallowed options never appear in the editor | Vanilla (`Ideo.CanAddPreceptAllFactions` → `IdeoFoundation.CanAddForFaction`); donors vanilla `PlayerTribe`, VFE Tribals `3079786283` | XML | Easy | Yes |
+| **C. A campaign `IdeoPresetDef` (+ `IdeoPresetCategoryDef`)** | A named campaign faith on the ideo page carrying the campaign memes; the only ideo route MP's faction-creation page offers | Vanilla `Page_ChooseIdeoPreset.DrawCategory` / `DoPreset`; donor VIE Memes and Structures `2636329500` | XML | Easy | Yes |
+| **D. The VFE Tribals pattern — two Harmony patches on `Page_ChooseIdeoPreset`** | Skips the preset page when the scenario's player faction is ours, seeds the base, then opens the editor so the player authors the rest. The requirement end to end. | Our assembly; donor read in full: `VFETribals.Page_ChooseIdeoPreset_PostOpen_Patch` / `_DoNext_Patch` | C# | Medium | Yes |
+| **E. A `ScenPart` overriding `PostIdeoChosen`** | Asserts the base onto whatever the player produced, on *every* exit of the ideo page — Classic and "Load saved…" included | Our assembly, on vanilla's `ScenPart.PostIdeoChosen` virtual | C# | Medium | Yes |
+| **F. A postfix on `IdeoFoundation.CanAdd`** | The one gate the editor, the reform dialog and the generator all pass through; closes B's holes and lets the floor move later | Our assembly; donor `WorldTechLevel.Patches.Patch_IdeoFoundation.CanAdd_Postfix` | C# | Medium | Yes |
+| **G. A hand-installed `.rid`** | The player loads a campaign-authored ideology file from the ideo page | Vanilla `Page_ChooseIdeoPreset.DoLoad` | — | Easy, **not recommended** | Yes |
+
+**Recommendation, not a selection: A + D, with B for free.** A is the requirement's mechanism,
+already shipped and already used this way by a mod on disk. D is the donor that already solves
+"campaign base, player authors the rest" and is gated on exactly the key a campaign scenario
+owns. B costs two XML lines and makes the editor look right at creation time. **Every route is
+[I] as a composition** — the mechanisms each rests on are [V], the claim that they combine into
+the campaign base is inferred until something is built.
+
+#### Route A — a campaign `MemeDef` with `requireOne`
+
+**What it gets us.**
+
+- `MemeDef.requireOne` is `List<List<PreceptDef>>` [V]. `IdeoFoundation.AddRequiredPreceptsForMemes`
+  removes any non-required precept holding the issue, then picks one member of each sublist by
+  `selectionWeight` [V]. Adopting the meme *forces* a precept into every issue the list names.
+- **The forced precept cannot be removed.** `Precept.DrawPreceptBox` builds the Remove option only
+  when `def.canRemoveInUI && !def.issue.HasDefaultPrecept`, then nulls its action when
+  `ideo.GetMemeThatRequiresPrecept(def) != null`, relabelling it *"CannotRemove: RequiredByMeme"* [V].
+- **The tighten-only minimum is the swap rule.** The issue float menu lists every other `PreceptDef`
+  of the issue and gates each on `IdeoUIUtility.CanListPrecept` → `Ideo.CanAddPreceptAllFactions` →
+  `IdeoFoundation.CanAdd(def, checkDuplicates: false)` [V]. With `checkDuplicates` false the live
+  branch is: *if the ideology already holds a meme-required precept of this issue, accept the
+  candidate only if a meme requires it too* — `return ideo.PreceptIsRequired(precept)` [V].
+  **The legal set for that issue is exactly the sublist we authored.** For the requirement's own
+  example, a sublist of `IdeoDiversity_Disapproved`, `_Horrible`, `_Abhorrent` gives a faith that
+  starts on one of the three, may move between them, and can never reach `Standard`, `Approved`,
+  `Respected` or `Exalted`.
+- **It survives a reform**, where Route B does not: `Dialog_ReformIdeo` edits a scratch ideo built
+  by `ideo.CopyTo(newIdeo)`, which carries the memes, so both the swap rule and the remove block
+  still apply [V].
+
+**What it cannot do.**
+
+- **It cannot put the meme on the ideology.** `Dialog_ChooseMemes.CanUseMeme` / `CanRemoveMeme`
+  consult the player `FactionDef` only when `Current.Game.World == null`; once a world exists — which
+  it does throughout normal setup — both fall to a faction loop that skips `allFaction.def.isPlayer`
+  [V]. `requiredMemes`, `forcedMemes`, `allowedMemes` and `disallowedMemes` on a *player* faction def
+  are inert in the meme picker. The meme arrives only by Route C, D or E.
+- A meme costs one of the player's 1–4 slots, and a fluid ideology starts with exactly one [V].
+- A fluid reform allows one meme change; dropping the campaign meme takes its forced precepts with it
+  (`IdeoFoundation.EnsurePreceptsCompatibleWithMemes`) [V].
+
+**Consequences.** Everything the campaign forces sits on one def the player can read — good for
+legibility, useless for concealment (VFE Tribals' `VFET_PreceptBase` shows the other pattern:
+`visible false` + `classic true` + `countsTowardsPreceptLimit false` [V]). A `requireOne` sublist
+also constrains generation for any NPC faction given the meme. And **another mod's meme whose
+`requireOne` touches the same issue widens our legal set**, because `PreceptIsRequired` scans all
+the ideology's memes; VIE Memes and Structures already patches `requiredMemes` onto
+`IdeoDiversity_Exalted` and `IdeoDiversity_Respected` [V].
+
+#### Route B — `FactionDef.disallowedPrecepts` on a campaign player faction
+
+**What it gets us.** `Ideo.CanAddPreceptAllFactions` loops `Find.FactionManager.AllFactions`,
+filtered only by `humanlikeFaction` and `IsPrimary(this) || IsMinor(this)`, **with no `isPlayer`
+exclusion**, and calls `IdeoFoundation.CanAddForFaction`, which rejects anything in
+`forFaction.disallowedPrecepts` [V]. `Page_ConfigureIdeo.SelectOrMakeNewIdeo` sets the player
+faction's primary to the ideology *before* the editor opens [V], so the gate is live while the
+player authors. Because the loop keys on `IsPrimary || IsMinor` and `ideosMinor` is rebuilt from
+live colonist faiths (`docs/engine/ideology.md` § *One field, two lifecycles*), **it applies to
+every faith any colonist holds** — converts flipping the primary do not escape it. Generation
+respects it too, through `IdeoGenerationParms(Find.FactionManager.OfPlayer.def)` [V]. Vanilla's
+`PlayerTribe` and four corpus mods ship it [V].
+
+This **corrects the standing claim that `FactionDef`'s ideology fields are NPC-only**: `fixedIdeo`,
+`forcedMemes`, `ideoName` and `deityPresets` are, because they are applied inside
+`Page_ChooseIdeoPreset.PostOpen`'s `if (allFaction != Faction.OfPlayer …)`. `disallowedPrecepts`
+is not in that block and reaches the player by a different path.
+
+**What it cannot do — three silent holes.**
+
+1. **Bypassed at reform.** `Dialog_ReformIdeo` edits `IdeoGenerator.MakeIdeo(...)`'s result, which is
+   in no `IdeoManager` and listed by no faction [V], so the faction loop finds nothing and accepts
+   everything. **No `FactionDef` restriction of any kind applies inside the reform dialog.**
+2. **Bypassed by Classic.** `IdeoGenerator.GenerateClassicIdeo` adds every `classic: true` precept
+   directly, consulting only `genParms.disallowedPrecepts` and never `CanAddForFaction` [V]. The
+   Classic, Custom, Fluid and "Load saved…" buttons are hardcoded in
+   `Page_ChooseIdeoPreset.DoWindowContents`, so no XML removes them [V].
+3. **Bypassed by Load**, which scribes a `.rid` straight in with no `CanAdd` on the path [V].
+
+**Consequences.** The rejection is **invisible**: `CanAddForFaction` returns a bare `false` →
+`AcceptanceReport.WasRejected` with `Reason == ""`, and `Precept.DrawPreceptBox` lists a rejected
+option only when the reason is non-blank [V] — the precept simply disappears from the menu. And
+watch the default: generation fills each issue by `defaultSelectionWeight`, and in
+`Issue_IdeoDiversity` only `IdeoDiversity_Standard` has a non-zero one [V] — disallow it without
+patching a weight onto a strict precept and **the issue generates empty**.
+
+#### Route C — a campaign `IdeoPresetDef`
+
+A named campaign faith on the ideo page. `DrawCategory` iterates
+`DefDatabase<IdeoPresetCategoryDef>` (minus the three hardcoded entries) and
+`DefDatabase<IdeoPresetDef>`, so a mod adds both [V]; `IdeoPresetDef` carries only `categoryDef`,
+`memes`, `iconPath` and `classicPlus` [V]. VIE Memes and Structures ships 19 [V]. **It cannot force
+a precept, only memes** — the precepts ride in on Route A — and **a preset is not authoring**:
+`DoPreset` generates and goes straight to the next page, so everything but the memes is rolled [V].
+
+#### Route D — the VFE Tribals pattern
+
+The requirement, already built by someone else, read out of
+`294100/3079786283/1.6/Assemblies/VFETribals.dll` (the mod's shipped source is 1.4 only and was
+not used):
+
+- `VFETribals.Page_ChooseIdeoPreset_PostOpen_Patch.Postfix` returns unless
+  `Current.Game.Scenario?.playerFaction?.factionDef == VFET_DefOf.VFET_WildMen` — **the campaign's
+  own `ScenPart_PlayerFaction` def is the whole gate**. When it matches it strips from
+  `classicIdeo` every precept whose `defName` does not start with `VFET_`, then calls `DoNext()`
+  so the preset page never renders [V].
+- `VFETribals.Page_ChooseIdeoPreset_DoNext_Patch.Prefix` returns false on the same gate and instead
+  sets `classicMode = true`, `SetPrimary(classicIdeo)`, calls `Find.Scenario.PostIdeoChosen()`, and
+  hand-builds a `Page_ConfigureIdeo` with `ideo = classicIdeo` — **the player still lands in the
+  editor and authors the rest on top of the campaign base** [V].
+- The forced content is ordinary `PreceptDef`s marked `<classic>true</classic>`, which
+  `GenerateClassicIdeo` adds unconditionally [V].
+
+**What it cannot do.** VFE Tribals turns on `classicMode`, a global switch with consequences well
+beyond the ideo page. A campaign that wants memes — and therefore Route A — does not want it, so
+our version seeds the base onto a *non*-classic ideology. The patch sites are the same; the
+payload is not, and **that substitution is the inferred step**. The seam is uncrowded: three mods
+reference `Page_ChooseIdeoPreset` at all and only VFE Tribals patches these two methods.
+
+#### Route E — a `ScenPart` overriding `PostIdeoChosen`
+
+`Scenario.PostIdeoChosen()` walks `AllParts` and calls the virtual, and **every exit from the ideo
+page calls it** — `DoClassic`, `DoLoad`, `DoPreset` and `Page_ConfigureIdeo.CanDoNext` [V]. It is
+the one seam that sees the finished faith whatever produced it, including the two paths that
+bypass `CanAdd` entirely. A part there can add the campaign meme, run
+`EnsurePreceptsCompatibleWithMemes` to pull in its `requireOne` precepts, and add campaign roles
+through `Ideo.AddPrecept(..., init: true)` (`docs/engine/ideology.md` § *Adding a role to a live
+ideology*). Vanilla ships no ideology `ScenPart` [V], so this is new code, but it hooks a virtual
+and needs no Harmony. It **still runs under Multiplayer**:
+`Page_ConfigureStartingPawns_Multifaction.GeneratingPawns` calls `_scenario.PostIdeoChosen()` [V].
+It does not stop a later reform undoing the base.
+
+#### Route F — a postfix on `IdeoFoundation.CanAdd`
+
+The single choke point: the editor and the reform dialog (`CanListPrecept` →
+`CanAddPreceptAllFactions` → `foundation.CanAdd`), the add-precept float menu, and generation all
+reach it [V], and it is unaffected by the scratch-ideo hole because it reads `this.ideo`. The
+donor is `WorldTechLevel.Patches.Patch_IdeoFoundation.CanAdd_Postfix`
+(`294100/3414187030/1.6/Lunar/Components/WorldTechLevel.dll` — **not** `1.6/Assemblies/`, which
+holds only `LunarLoader.dll`) [V]. **The seam is free**: World Tech Level is its only patcher in
+the corpus. Two cautions: **do not patch `IdeoUtility.IsMemeAllowedFor` for the meme half** — World
+Tech Level does and it never reaches the custom editor, because `Dialog_ChooseMemes.CanUseMeme`'s
+faction loop does not call it when no NPC faction shares the ideology; and
+**`IdeoUIUtility.AddPrecept` is crowded** (VEF and VIE Memes and Structures both patch it, VIE by
+transpiler [I]).
+
+#### Route G — a hand-installed `.rid` — not recommended
+
+`.rid` is save-data, not content: `Verse.GenFilePaths.AllCustomIdeoFiles` reads
+`FolderUnderSaveData("Ideos")` and nothing else, and `RimWorld.IdeoFiles.RecacheData` is its only
+consumer [V]. **Zero `.rid` files exist anywhere in either corpus root** — a mod cannot ship one
+into the Load list; a human copies it into the player's save-data folder. It also bypasses every
+gate, so the result is only as correct as the file.
+
+### Constraints
+
+Engine facts that bound every route:
+
+- **The ideo page's four top-level choices are hardcoded.** Classic, Custom, Fluid and
+  "Load saved…" are drawn literally in `Page_ChooseIdeoPreset.DoWindowContents`; only the *preset*
+  categories come from defs [V]. No XML can remove a choice; only a patch can.
+- **Classic escapes precept gating entirely.** `GenerateClassicIdeo` never calls
+  `CanAddForFaction` [V]. Any route relying on `FactionDef` must also handle a Classic start.
+- **The reform dialog escapes faction gating entirely** — it edits an unregistered scratch `Ideo`
+  [V]. Meme-based forcing (Route A) survives it; `FactionDef`-based forcing (Route B) does not.
+- **A `FactionDef`'s meme fields do nothing for the player in the custom editor** when a world
+  exists [V]. Precepts hold, memes leak — the asymmetry is the trap.
+- **A non-fluid ideology can never be reformed**, so a fixed campaign faith closes every reform
+  hole at a stroke (`docs/engine/ideology.md` § *Fluid reform needs a fluid ideology*) [V].
+- **Nothing on disk sets `fixedIdeo` or `canRemoveInUI`.** Both fields work — `canRemoveInUI` is
+  read by `Precept.DrawPreceptBox`, `fixedIdeo` by `Page_ChooseIdeoPreset.PostOpen` [V] — but the
+  corpus provides no precedent for either.
+- Traps candidates raised by this investigation are listed in the resolution comment on
+  [#140](https://github.com/cjd721/Rimworld-Archinity/issues/140) under *Proposed for shared
+  documents*; `docs/TRAPS.md` is the orchestrator's to write.
+
+### Available mechanisms
+
+| Mechanism | What it provides | Evidence |
+|---|---|---|
+| `MemeDef.requireOne` + `Ideo.GetMemeThatRequiresPrecept` + the `PreceptIsRequired` branch of `IdeoFoundation.CanAdd` | Forced precepts and a per-issue legal set — the requirement's mechanism | [V] |
+| `FactionDef.disallowedPrecepts` via `Ideo.CanAddPreceptAllFactions` → `IdeoFoundation.CanAddForFaction` | A per-issue floor at creation and generation, XML-only | [V] |
+| `IdeoPresetDef` / `IdeoPresetCategoryDef` | A campaign faith listed on the ideo page, memes only | [V] |
+| `ScenPart.PostIdeoChosen()` virtual, called on all four page exits | The post-authoring seam | [V] |
+| `Ideo.AddPrecept(..., init: true)` | Adding a precept or role to a live ideology | [V], § *The player faith's role hierarchy* |
+| `VFETribals.Page_ChooseIdeoPreset_PostOpen_Patch` / `_DoNext_Patch` (`3079786283/1.6/Assemblies/VFETribals.dll`) | The shipped end-to-end donor: campaign base, then the player authors the rest | [V] |
+| `WorldTechLevel.Patches.Patch_IdeoFoundation.CanAdd_Postfix` (`3414187030/1.6/Lunar/Components/WorldTechLevel.dll`) | The shipped donor for gating precept availability at the choke point | [V] |
+| VFE Pirates' pirate meme (`2723801948/1.6/Mods/Ideology/Defs/MemeDefs/Memes_Misc.xml`) | A shipped multi-element `requireOne` — a floor, exactly ours | [V] |
+| VIE Memes and Structures (`2636329500`) | 19 mod `IdeoPresetDef`s; 38 files using `requireOne` as a hard single-precept force | [V] |
+| `Multiplayer.Client.SyncMethods.Init` → `SyncMethod.Register(typeof(IdeoDevelopmentUtility), "ApplyChangesToIdeo").ExposeParameter(1)` | The one synced ideology edit path | [V] |
+| `Multiplayer.Client.Factions.Page_ChooseIdeo_Multifaction` | MP's own faction-creation ideo page — preset-only, Classic/Custom/Fluid hidden | [V] |
+
+**What does not exist, and where it shaped the routes**: no `ScenPart` for ideology in vanilla
+(Route E is new code); no mod-shippable `.rid` (Route G demoted); no mod anywhere sets
+`canRemoveInUI` or `fixedIdeo`; nothing in the corpus references `Ideo.CanAddPreceptAllFactions`,
+`IdeoUIUtility.CanListPrecept` or `Dialog_ReformIdeo` at all. The VIE family on disk is two mods
+(Memes and Structures, Icons and Symbols) — Hats and Rags, Dryads, Relics, "Ideology Fixes" and
+"More Ideoligion Memes" are not in the corpus, so nothing here rules them in or out.
+
+### Status
+
+**Evidence class: READ.** Settled by Ideology DLC defs and decompiled 1.6.4871, plus decompiled
+`VFETribals.dll`, `WorldTechLevel.dll`, `Multiplayer.dll` and `Multiplayer_Compat.dll`. Every
+mechanism above is [V]. **Every route is [I] as a composition** — nothing has been built.
+
+Established on [#140](https://github.com/cjd721/Rimworld-Archinity/issues/140), which carries the
+full sweep record and the corrections to inherited claims — including that **"the campaign ships a
+`.rid`"**, asserted twice elsewhere in this document (§ *Superseded build* 1, § *Persistence and
+multiplayer* → *The commitment*), **overstates what is possible**; those passages should point at
+Routes C/D/E instead.
+
+### Open questions
+
+1. **Which issues carry a minimum, and where each floor sits.** Requirement content —
+   [#124](https://github.com/cjd721/Rimworld-Archinity/issues/124), overlapping
+   [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116) for the forced-roles half.
+2. **Is the campaign faith fluid or fixed?** A fixed faith can never be reformed and so closes
+   every reform hole; a fluid one can grow with the campaign. A story decision, and it decides
+   which routes are needed. Unowned.
+3. **Must the Classic option be closed, and how visibly?** Routes D and E repair a Classic start
+   silently; `WorldTechLevel.Patches.Patch_Page_ChooseIdeoPreset.DrawCategory_Transpiler` [V] is
+   the donor if the option should never appear. Unowned.
+4. **Build questions, deferred to the next map**: whether the campaign meme is Structure or Normal
+   category; whether the base rides one meme or several; whether Route D's payload seeds a
+   non-classic ideology or follows VFE Tribals into `classicMode`.

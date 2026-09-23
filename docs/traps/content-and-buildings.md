@@ -698,4 +698,72 @@ every gate.
 *[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). `RimWorld.GameComponent_PawnDuplicator.CopyHediffs`,
 `Verse.HediffDef.duplicationAllowed`. 1.6.4871.*
 
+## Ideology authoring
+
+### T-121 — No `FactionDef` restriction applies inside the ideology reform dialog
+
+`Dialog_ReformIdeo` edits `newIdeo = IdeoGenerator.MakeIdeo(...)` — a scratch ideology that is
+**in no `IdeoManager` and listed by no faction** [V]. Every faction-def gate on precept choice
+runs through `Ideo.CanAddPreceptAllFactions`, whose faction loop tests
+`ideos.IsPrimary(this) || ideos.IsMinor(this)`; against the scratch copy that loop matches
+nothing, falls through, and **accepts everything** [V].
+
+So `disallowedPrecepts`, `requiredMemes` and every sibling field **silently stop applying the
+moment the player clicks Reform**. The meme picker in that dialog is bypassed the same way.
+There is no error, no message and no visible difference in the UI — the restricted options are
+simply back.
+
+What *does* survive a reform is `MemeDef.requireOne`, because `ideo.CopyTo(newIdeo)` carries the
+memes and both `CanAdd`'s swap rule and `GetMemeThatRequiresPrecept`'s remove block read the copy
+[V]. A campaign floor that must hold through a reform belongs on a meme, not on a faction def.
+
+*[#140](https://github.com/cjd721/Rimworld-Archinity/issues/140), `docs/specs/RELIGION.md` §
+*A campaign base for the player faith*; `docs/engine/ideology.md` § *Forcing and floor-setting a
+player ideology*. `RimWorld.Dialog_ReformIdeo`, `RimWorld.IdeoGenerator.MakeIdeo`,
+`RimWorld.Ideo.CanAddPreceptAllFactions`, `RimWorld.IdeoFoundation.CanAddForFaction`.
+1.6.4871.*
+
+### T-122 — A precept refused by `disallowedPrecepts` vanishes from the menu instead of greying out
+
+`IdeoFoundation.CanAddForFaction` returns a **bare `false`**, which becomes an
+`AcceptanceReport.WasRejected` whose `Reason` is `""` [V]. `Precept.DrawPreceptBox` lists a
+rejected option only when the reason is non-blank [V].
+
+**The player sees a shorter list and no explanation — and so do we.** A restriction that is
+working and a restriction that was never loaded look identical in the editor, so the only way to
+tell a typo in `disallowedPrecepts` from a correct gate is to read the def.
+
+**Remedy:** verify the gate by reading the faction def in play, not by looking at the issue menu;
+if a reason must be shown, the report has to be constructed with one.
+
+*[#140](https://github.com/cjd721/Rimworld-Archinity/issues/140), `docs/specs/RELIGION.md` §
+*A campaign base for the player faith*. `RimWorld.IdeoFoundation.CanAddForFaction`,
+`RimWorld.Precept.DrawPreceptBox`, `Verse.AcceptanceReport`. 1.6.4871.*
+
+### T-123 — `FactionDef` meme fields on a *player* faction def are inert whenever a world exists
+
+`Dialog_ChooseMemes.CanUseMeme` and `CanRemoveMeme` consult the player `FactionDef` **only in the
+`Current.Game.World == null` branch** [V]. Once a world exists — which it does throughout normal
+setup, since `Page_ChooseIdeoPreset.PostOpen` reads `Find.FactionManager.AllFactions` — both fall
+to a faction loop that **explicitly skips `allFaction.def.isPlayer`** [V].
+
+So `FactionDef.requiredMemes`, `forcedMemes`, `allowedMemes` and `disallowedMemes` have **no
+effect on a player-authored custom ideology's meme selection**. Vanilla ships
+`<disallowedMemes><li>Transhumanist</li></disallowedMemes>` on `PlayerTribe` and it does not bind
+the editor [V] — which is exactly what makes the field look as though it works. World Tech
+Level's `IsMemeAllowedFor` postfix leaks through the same hole [V].
+
+**This is the opposite of `disallowedPrecepts`**, which *does* reach the player by a different
+path (`docs/engine/ideology.md` § *Forcing and floor-setting a player ideology*). "FactionDef
+ideology fields are NPC-only" is wrong as a generalisation and right about these four.
+
+**Remedy:** put the meme on the ideology by a route that does not go through the picker — a
+`IdeoPresetDef`, a `Page_ChooseIdeoPreset` patch (VFE Tribals is the shipped donor), or a
+`ScenPart.PostIdeoChosen`.
+
+*[#140](https://github.com/cjd721/Rimworld-Archinity/issues/140), `docs/specs/RELIGION.md` §
+*A campaign base for the player faith*. `RimWorld.Dialog_ChooseMemes.CanUseMeme` / `.CanRemoveMeme`,
+`RimWorld.Page_ChooseIdeoPreset.PostOpen`; `Data/Core/Defs/FactionDefs/Factions_Player.xml`.
+1.6.4871.*
+
 ---

@@ -6,15 +6,15 @@
 > “Glitterite” is a civilization and origin. Other androids can be sincere believers and
 > can be essentially ordinary people. Glitterites deliberately removed emotion, fervor
 > and the faculties needed to connect to the channel; they run on anima-rich
-> neutroamine, cannot receive psylinks and are not hackable. The VRE donor's
-> unconditional psylink block is a carrier constraint, not permission to generalize the
-> Glitterite condition to every android in the fiction.
+> neutroamine, cannot receive psylinks and are not hackable. The VRE donor's psylink block is a
+> carrier constraint, not permission to generalize the Glitterite condition to every android in
+> the fiction. *(#141: nor is that block unconditional — it is two XML-reachable gates. See
+> **Psylinks — verdict and routes**.)*
 
-> **Premise reopened — 2026-09-16.** The psylink block is **not** shown to be unconditional. A
-> read on [#124](https://github.com/cjd721/Rimworld-Archinity/issues/124) found the `ChangeLevel(int)`
-> prefix misses vanilla's main `ChangeLevel(int, bool)` path, and the first psylink is refused by a
-> gene-gated settings list instead. §2, *Status*, *Verification* and decision 3 stand unrevised until
-> [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141) answers; do not cite them as settled.
+> **Premise reopened 2026-09-16, answered 2026-09-23.** The psylink block is **not** unconditional,
+> and #78's statement of it was wrong in both halves. [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)
+> settled it; the answer is *Psylinks — verdict and routes* below, and §2, *Status*, *Verification*
+> and decision 3 are corrected in place.
 
 This document owns **player-manufactured android bodies as a production capability** —
 what an android is mechanically, what builds one, what gates it, and how the campaign's
@@ -35,7 +35,269 @@ believers. Glitterites are explicitly excluded from hacking; there is no missing
 android-hacking capability to build.
 
 Established by [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78). Evidence
-class **READ**.
+class **READ**. The psylink question below is
+[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)'s, also **READ**.
+
+---
+
+## Psylinks — verdict and routes
+
+*Answers `docs/requirements/GLITTERTECH.md`: "**Whether an android can hold a psylink is open.**
+If a route lets it, the campaign may take it; if none does, the asymmetry stands."
+Established by [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141).*
+
+### Verdict
+
+- **Possible? Yes.** An android colonist can hold a psylink and level it. The refusal is **two
+  independent gates carried by two different genes** — `VREA_SyntheticImmunity` refuses the hediff,
+  `VREA_PsychicallyDeaf` zeroes psychic sensitivity — and the second one's refusal is vanilla's
+  code, not VRE's. Both are reachable from XML, and **lifting either alone gets you nothing.**
+  Two of vanilla's four grant routes open with a pure-XML lift; the anima tree needs one more
+  patch for a reason that has nothing to do with androids; the psylink neuroformer's *upgrade*
+  step is the only thing that genuinely needs C#.
+- **Multiplayer? Yes.** Every XML route changes defs and introduces no code path, so it has no
+  sync surface of its own, and the machinery it hands the android to is already carried —
+  `Multiplayer.Compat.VanillaRacesAndroid` and `Multiplayer.Compat.VanillaPsycastsExpanded` both
+  sit in the loaded `1629973374/1.6/Assemblies/Multiplayer_Compat.dll`. **[V]**
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — global lift** | *Every* android can hold, level and cast from a psylink. Two operations: the `PsychicAmplifier` entry (gate 1) and `VREA_PsychicallyDeaf`'s stat factor (gate 2) | VRE – Android (`vanillaracesexpanded.android`, `2975771801`) — its own `AndroidSettings` def and `AndroidSettingsExtension`, plus the gene def | XML patch | Easy | Yes |
+| **B — per-android lift** | The player chooses, at the creation station, which androids can hear the channel; those that can also lose synthetic immunity. Two operations: `isCoreComponent` on `VREA_SyntheticImmunity` (gate 1) and on `VREA_PsychicallyDeaf` (gate 2) | same, via `VREAndroids.AndroidGeneDef.isCoreComponent` | XML patch | Easy | Yes |
+| **C — anima access** *(additive)* | An awakened android may take the linking ritual at the anima tree | vanilla `MeditationFocusTypeAvailabilityCache.PawnCanUseInt`'s hediff bypass | XML patch | Easy | Yes |
+| **D — our own prefix** | A gate that is **not** a gene — a story flag, the altar, an era — and the only way to reopen the neuroformer upgrade | our assembly; donor `VREAndroids.Pawn_HealthTracker_AddHediff_Patch` | C# | Medium | Yes |
+| **E — leave it** | The asymmetry stands as a stated cost of an artificial body | — | — | — | — |
+
+**Recommended, not selected: B.** It is the only route that makes the psylink a decision about
+*one android* rather than a fact about the species, it costs two XML operations, and the price it
+charges — the android that can hear the channel is the android that can fall ill — is a trade the
+campaign's argument about personhood can use. A and B are not exclusive; C stacks on either.
+Selection is a story decision.
+
+### The two gates
+
+> **They are two independent mechanisms with two different genes, and nothing connects them.**
+> Gate 1 is `VREA_SyntheticImmunity`: it is the gene `Pawn_HealthTracker_AddHediff_Patch` tests
+> before it will consult `AndroidCanCatch`, and `AndroidCanCatch` is what reads the
+> `androidsShouldNotReceiveHediffs` list that `PsychicAmplifier` sits in. Gate 2 is
+> `VREA_PsychicallyDeaf`: a `PsychicSensitivity` stat factor of 0 feeding vanilla's own
+> `< float.Epsilon` tests. **[V]** Neither gene appears anywhere in the other's path —
+> `AndroidCanCatch` never reads `VREA_PsychicallyDeaf`, and vanilla's sensitivity tests never read
+> `VREA_SyntheticImmunity`. A route that lifts one has not touched the other, which is why route A
+> is *two* operations and why the phrase "the android psylink block" is always wrong in the
+> singular.
+
+**Gate 1 — `VREA_SyntheticImmunity` refuses the first psylink hediff.**
+`RimWorld.PawnUtility.ChangePsylinkLevel` makes
+`PsychicAmplifier` and calls `pawn.health.AddHediff(...)` when the pawn has no psylink, and calls
+`Hediff_Psylink.ChangeLevel(int, bool)` when it already has one. **[V]**
+`VREAndroids.Pawn_HealthTracker_AddHediff_Patch.Prefix` — and `VREAndroids.HediffSet_AddDirect_Patch.Prefix`,
+which delegates to the same helper — routes every android hediff through
+`Pawn_HealthTracker_AddHediff_Patch.HandleHediffForAndroid`, which returns `false` when
+`pawn.HasActiveGene(VREA_SyntheticImmunity) && !Utils.AndroidCanCatch(hediff.def)`. **[V]**
+`Utils.AndroidCanCatch` consults, in order: an `AndroidSettingsExtension` mod extension on the
+hediff def (`androidCanCatchIt`); the `"Sterilized"` tag; `VREA_AndroidSettings.androidsShouldNotReceiveHediffs`;
+then a class / `chronic` / `Immunizable` / `makesSickThought` battery. **[V]** `PsychicAmplifier` is
+the fifth entry of that list in `2975771801/1.6/Defs/AndroidSettings.xml` **[V]**, and vanilla's
+`HediffDef PsychicAmplifier` carries no tags, no comps, no `chronic` and no `makesSickThought` — so
+taking it off the list makes `AndroidCanCatch` return `true`. **[V]**
+
+**Gate 2 — `VREA_PsychicallyDeaf` zeroes psychic sensitivity, and the refusal that follows is
+vanilla's, not VRE's.** `VREA_PsychicallyDeaf` declares
+`<statFactors><PsychicSensitivity>0</PsychicSensitivity></statFactors>` **[V]**, and
+`RimWorld.Psycast.GizmoDisabled` and `RimWorld.Verb_CastPsycast.ValidateTarget` both refuse at
+`PsychicSensitivity < float.Epsilon`. **[V]** This gate is not in VRE's Harmony patches at all — it
+is a stat factor in a def meeting a vanilla comparison. Lift gate 1 alone and the android holds a
+psylink level and a psycast gizmo it can never press.
+
+**`Hediff_Psylink_ChangeLevel_Patch` is not gate 1, and never was.** It is declared
+`[HarmonyPatch(typeof(Hediff_Psylink), "ChangeLevel", new Type[] { typeof(int) })]` — the
+**one-argument override only**. **[V]** Vanilla `Verse.Hediff_Psylink` declares both
+`ChangeLevel(int, bool)` and `override ChangeLevel(int)`, and the one-arg delegates to the
+two-arg **[V]**, so the prefix catches only `CompUseEffect_InstallImplant.DoEffect`,
+`JobDriver_InstallImplant`, `Recipe_ChangeImplantLevel.ApplyOnPawn`, `HediffComp_ChangeImplantLevel`
+and the dev tool. **[V]** Every ritual grant path reaches `ChangeLevel(int, bool)`, which VRE does
+not patch.
+
+### What each grant route does once gate 1 is lifted
+
+| Grant route | Vanilla call site | State after an XML lift |
+|---|---|---|
+| **Bestowing ceremony** | `RitualOutcomeEffectWorker_Bestowing` → `ChangePsylinkLevel(1, false)` **[V]** | Works, first level and every later level |
+| **Blinding ritual** (Ideology) | `RitualOutcomeEffectWorker_Blinding.ApplyExtraOutcome` → `ChangePsylinkLevel(1)` **[V]** | Works |
+| **Psylink neuroformer** | `CompUseEffect_InstallImplant.DoEffect`: `AddHediff` when absent, else `ChangeLevel(1)` **[V]** | First use works; **every upgrade stays blocked** by the one-arg prefix. No XML reaches it — that is route D's unique job |
+| **Anima tree linking** | `CompPsylinkable.FinishLinkingRitual` → `ChangePsylinkLevel(1)` **[V]** | Still closed — see route C |
+
+### Route A — global lift
+
+Two operations against VRE – Android's own declared compatibility seam; the `AndroidSettings` def's
+label reads *"Can be used for mod compatibility from outside via xml patches."* **[V]**
+
+- **Gate 1** (the `VREA_SyntheticImmunity` path): take `PsychicAmplifier` off
+  `androidsShouldNotReceiveHediffs`, **or** add an
+  `AndroidSettingsExtension` with `androidCanCatchIt true` to the hediff def — the extension is
+  checked first and short-circuits **[V]**, and VRE ships that exact operation shape on
+  `HediffDef[@Name="DiseaseBase"]` in `1.6/Patches/Core.xml`. **[V]** Note that neither operation
+  touches the gene: they change what `AndroidCanCatch` answers, so the gate opens for every
+  android whether or not it carries `VREA_SyntheticImmunity`.
+- **Gate 2** (the `VREA_PsychicallyDeaf` path): restore its `PsychicSensitivity` factor to a
+  non-zero value. **Removing the
+  gene from the xenotype bases does not work:** `Window_CreateAndroidBase` seeds `selectedGenes`
+  from `Utils.AndroidGenesGenesInOrder.Where(x => !x.CanBeRemovedFromAndroid())`, not from the
+  xenotype, and `Building_AndroidCreationStation.FinishAndroidProject` installs the project's gene
+  list **[V]** — so the gene lands on every player-built android whatever the xenotype says.
+
+**What it gets us.** Psylinks as an ordinary colonist capability that happens to include androids.
+No new UI, no new decision, nothing for the player to discover.
+
+**What it cannot do.** It is a statement about the species. Every android built, bought, captured or
+awakened becomes psychically sensitive, and the gene's own label and description then lie.
+
+**Consequences.** `VREA_PsychicallyDeaf` also shields androids from hostile psychic effects.
+`Psycast.CanApplyPsycastTo` refuses a target at `PsychicSensitivity < float.Epsilon` **[V]**, so
+lifting the factor removes that shield; that psychic *incidents* begin to bite too is **[I]**.
+
+### Route B — per-android lift
+
+Set `<isCoreComponent>false</isCoreComponent>` on the concrete `VREA_SyntheticImmunity` and
+`VREA_PsychicallyDeaf` defs, overriding the `true` they inherit from `VREA_HardwareBase`. **[V]**
+**One def per gate, and both are needed:** de-coring `VREA_SyntheticImmunity` alone opens gate 1
+and leaves the android deaf; de-coring `VREA_PsychicallyDeaf` alone restores sensitivity to a pawn
+that can still never be given the hediff.
+
+That flips exactly the predicate the creation window uses. `Utils.CanBeRemovedFromAndroid` returns
+false for `AndroidGeneDef { isCoreComponent: not false }` **[V]**; `Window_CreateAndroidBase`
+pre-selects every gene that fails it and refuses to un-toggle it. **[V]** With the field false both
+genes become ordinary selectable hardware, and an android built without `VREA_SyntheticImmunity`
+never enters `HandleHediffForAndroid`'s `AndroidCanCatch` branch at all — gate 1 does not apply to
+it. **[V]**
+
+**What it gets us.** The story can point at *this* android. A sensitive unit is a deliberate build
+with a visible biostat cost in the creation window, and the fiction gets a mechanical reason why
+most androids are deaf.
+
+**What it cannot do.** The lever is gene presence and nothing else — it cannot make the capability
+depend on an era, an altar, a quest or a pawn's history (that is route D). Nor can it separate
+*can hold a psylink* from *can catch tuberculosis*: dropping `VREA_SyntheticImmunity` opens every
+hediff `AndroidCanCatch` was filtering — diseases, addictions, toxic buildup, `Carcinoma`. **[V]**
+
+**Consequences.** Androids that arrive rather than get built (recruits, awakened NPCs, gifts) carry
+both genes from the xenotype. Stripping them afterwards is the behaviorist station's
+`Window_AndroidModification`, which extends the same base and shares its removal predicate — so it
+should follow, **[I]**, not read end to end.
+
+**A lever worth knowing.** VRE – Android adopts as an android gene **any `GeneDef` in the database**
+whose `displayCategory` is `VREA_Hardware` or `VREA_Subroutine`:
+`GeneDefGenerator_ImpliedGeneDefs_Patch.Postfix` iterates `DefDatabase<GeneDef>.AllDefsListForReading`
+and calls `AddAndroidGene` on every match. **[V]** Archinity can therefore author its own android
+hardware components in pure XML and have them appear in the creation window — which is what makes a
+*named, in-fiction component* (rather than "the absence of a gene") an Easy option rather than a C#
+one. That such a gene composes into a working psychic android is **[I]**.
+
+### Route C — anima access (additive)
+
+The anima tree is closed to androids for two reasons, **neither of which is the psylink block.**
+
+1. `CompPsylinkable.CanPsylink` requires `Props.requiredFocus.CanPawnUse(pawn)` **[V]**. Vanilla's
+   `MeditationFocusDef Natural` declares `requiredBackstoriesAny` of `Tribal` / `AdultTribal` /
+   `ChildTribal` in the Childhood slot **[V]**, and `MeditationFocusTypeAvailabilityCache.PawnCanUseInt`
+   returns `false` when a focus with a non-empty `requiredBackstoriesAny` matches nothing **[V]**.
+   VRE – Android's backstories declare only `AwakenedAndroid` and `ColonyAndroid`. **[V]**
+   **This gate would close the anima tree to androids even if VRE – Android did not exist.**
+2. `VREAndroids.MeditationFocusTypeAvailabilityCache_PawnCanUseInt_Patch` forces the result `false`
+   for any pawn with `VREA_JoyDisabled` **[V]** — every non-awakened android. That gene carries
+   `removeWhenAwakened true` **[V]**, so awakening clears it, and `Gene_SyntheticBody` calls
+   `MeditationFocusTypeAvailabilityCache.ClearFor(pawn)` so the cache does not keep a stale
+   `false`. **[V]**
+
+The bypass is vanilla's own and it is XML: `PawnCanUseInt` returns `true` if **any hediff on the
+pawn** lists the focus in `HediffDef.allowedMeditationFocusTypes`. **[V]** Give an android-carried
+hediff — `VREA_Reactor`, or a new one — `Natural`, and an awakened android can take the ritual.
+
+**What it cannot do.** Nothing for a non-awakened android, because of reason 2; awakening is
+`Gene_SyntheticBody.Awaken`'s authored transition and is not on the player's schedule.
+
+**Consequences.** A hediff that grants `Natural` grants it wherever that hediff goes. Scope it to a
+def only androids carry.
+
+### Route D — our own prefix
+
+Two jobs no XML reaches. **A gate that is not a gene:** a prefix of ours ahead of VRE's
+`HarmonyPriority(int.MaxValue)` `Pawn_HealthTracker_AddHediff_Patch` can let `PsychicAmplifier`
+through for a pawn selected by anything the campaign likes; the donor is VRE's own patch and the
+seam is verified. **The neuroformer upgrade:** `Hediff_Psylink_ChangeLevel_Patch` is unconditional
+on `IsAndroid()` and reads no gene **[V]**, so levels 2–6 by neuroformer need a prefix ahead of it
+or an `Unpatch`.
+
+**Consequences.** Patching against another mod's `int.MaxValue`-priority prefix is ordering-sensitive
+and the kind of thing that breaks quietly on a VRE update. Take it only if the campaign needs a
+non-gene gate. **[I]** by construction.
+
+### Constraints every psylink route inherits
+
+**A psylink on an android is a level counter until `PsychicSensitivity` is non-zero.** Gate 2 is
+vanilla's and applies to any pawn. **[V]**
+
+> **⚠ With Vanilla Psycasts Expanded and Royalty both running, bestowing a title on a
+> psylink-blocked android throws.** `VanillaPsycastsExpanded.RitualOutcomeEffectWorker_Bestowing_Apply_Patch`
+> transpiles vanilla's psylink loop out of `RitualOutcomeEffectWorker_Bestowing.Apply` and replaces
+> it with `ApplyTitlePsylink`, whose null branch calls `PawnUtility.ChangePsylinkLevel(pawn, 1, false)`
+> and then **immediately dereferences `pawn.Psycasts()`**. **[V]** For an android, `ChangePsylinkLevel`
+> is swallowed by gate 1, `Psycasts()` returns `null` — it is
+> `hediffSet.GetFirstHediffOfDef(VPE_PsycastAbilityImplant)` **[V]** — and the next line NREs inside
+> a ritual outcome. **Zeroing `maxPsylinkLevel` on the title does not avoid it**: the null branch runs
+> before any level arithmetic. **[V]** This bears on [`RELIGION.md`](RELIGION.md) §4's Church-title
+> design wherever an android could be the honoree.
+
+**VPE replaces psylink levelling wholesale.** `VanillaPsycastsExpanded.Hediff_Psylink_ChangeLevel`
+prefixes `ChangeLevel(int, bool)` and returns `false`, routing the level into
+`pawn.Psycasts().ChangeLevel(...)`; `Hediff_Psylink_PostAdd` attaches `VPE_PsycastAbilityImplant`;
+`Hediff_Psylink_TryGiveAbilityOfLevel` suppresses vanilla's random-ability grant. **[V]** So with VPE
+loaded the campaign's "psylink level" is really a psycast point, and a lifted gate 1 hands androids
+psycast points. `VPE_PsycastAbilityImplant`'s def carries no tags, comps, `chronic` or
+`makesSickThought`, so `AndroidCanCatch` permits it and VPE's `PostAdd` postfix does not NRE on an
+android. **[V]**
+
+**Multiplayer, re-read rather than inherited.** `Multiplayer.Compat.VanillaRacesAndroid`
+(`[MpCompatFor("vanillaracesexpanded.android")]`) and `Multiplayer.Compat.VanillaPsycastsExpanded`
+(`[MpCompatFor("VanillaExpanded.VPsycastsE")]`) are both in the loaded 1.6 `Multiplayer_Compat.dll`,
+not the `Referenced/` copy. **[V]** The latter registers sync methods on
+`VanillaPsycastsExpanded.Hediff_PsycastAbilities` for `SpentPoints`, `ImproveStats`, `UnlockPath`,
+`UnlockMeditationFocus` and `GainExperience`, plus sync workers for the psyset dialogs **[V]** —
+everything a psycasting android would then do.
+
+### Corrections this section makes to #78
+
+1. *"The prefix is the whole block, and it is unconditional"* — **wrong.** The prefix is not the
+   block; it catches only the one-argument `ChangeLevel` overload, which no ritual grant path uses.
+2. *"`VREA_PsychicallyDeaf` … a player can deselect it when designing an android"* — **wrong.** It
+   inherits `isCoreComponent true` from `VREA_HardwareBase`, and neither
+   `CanBeRemovedFromAndroid()` nor `CanBeRemovedFromAndroidAwakened()` is true for a hardware gene
+   without `removeWhenAwakened`, so the creation window will not un-toggle it. **[V]** #78's
+   *conclusion* (deselecting buys nothing) was right; both halves of its reason were wrong, and the
+   corrected mechanism is exactly what makes routes A and B possible.
+
+### Open questions
+
+1. **Requirement gap, handed to `docs/requirements/GLITTERTECH.md`'s owner.** It says the question
+   is open and the campaign may take a route if one exists. Routes exist. What no document states:
+   **which** androids — all of them (A) or a chosen build (B) — and whether route B's price (the
+   android that hears the channel is the android that can fall ill) is one the campaign wants
+   visible. Fiction, not capability.
+2. **`docs/COSMOLOGY.md`'s *"no Glitterite can form a psylink or open a channel"* is untouched** —
+   it is about Glitterites, and the 2026-09-13 authority correction above already separates
+   Glitterite from android. But under route A the distinction stops being mechanical and becomes
+   purely authorial. Unowned.
+3. **Build questions, deferred to the next map:** the exact operations and their `expect:` counts;
+   list-removal versus mod extension for the `PsychicAmplifier` lift; whether route B's sensitive
+   android gets an authored Archinity hardware gene of its own; whether route C's `Natural` grant
+   hangs off `VREA_Reactor` or a new hediff.
+4. **The behaviorist-station path is [I]** — that an existing android can have a de-cored
+   `VREA_PsychicallyDeaf` stripped at `VREA_AndroidBehavioristStation` follows from
+   `Window_AndroidModification` extending `Window_CreateAndroidBase`, but its accept path was not
+   read end to end.
 
 ---
 
@@ -98,7 +360,7 @@ carries only 10 — the awakening restores joy, comfort, mental breaks and skill
 
 | Option | Consequence |
 |---|---|
-| **Xenotype on `Human`** *(what ships)* | Counts as a colonist everywhere vanilla counts colonists. Holds an `Ideo`, so **Devotion works with no new code**. Cannot take psycasts. Awakening is a shipped, authored transition. |
+| **Xenotype on `Human`** *(what ships)* | Counts as a colonist everywhere vanilla counts colonists. Holds an `Ideo`, so **Devotion works with no new code**. Cannot take psycasts *as shipped* — two XML-reachable gates, see *Psylinks — verdict and routes*. Awakening is a shipped, authored transition. |
 | PawnKind / faction-member only | Would make androids NPC-only and delete the capability the requirement asks for. Rejected. |
 | Mechanoid-adjacent (`Building_MechGestator` path) | Produces a **mechanitor-bonded mech**, not a colonist — no `Ideo`, no Devotion, no backstory, no social tab. Wrong shape for a campaign about personhood. |
 
@@ -107,16 +369,22 @@ that lets the campaign make its argument, because the argument is precisely that
 android is a person; a mechanoid-adjacent android would concede the Glitterite position in
 the mechanics while the text denied it.
 
-**Psycasts: androids cannot hold a psylink.** `VREAndroids.Hediff_Psylink_ChangeLevel_Patch`
-prefixes `RimWorld.Hediff_Psylink.ChangeLevel(int)` at `HarmonyPriority(int.MaxValue)` and
-returns `false` when `pawn.IsAndroid()`.
+**Psycasts: androids cannot hold a psylink *as shipped*, and the block is two XML-reachable gates,
+not one unconditional prefix.** Corrected by
+[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141); the mechanism, the routes and the
+weights are in *Psylinks — verdict and routes* above.
 
-**The prefix is the whole block, and it is unconditional.** `VREA_PsychicallyDeaf` appears on
-both the basic and awakened xenotype bases, but it is a *selectable* `VREAndroids.AndroidGeneDef`
-with `biostatCpx 1` — a player can deselect it when designing an android, and doing so changes
-nothing, because the prefix does not consult genes. **[V]** That strengthens the hand-back rather
-than weakening it: there is no loadout, no awakening and no XML edit that buys an android a
-psylink. It is a **campaign consequence, not a bug** — see *Outstanding decisions*.
+> **Superseded — the two sentences #78 left here were wrong in both halves.** It said
+> `VREAndroids.Hediff_Psylink_ChangeLevel_Patch` was "the whole block, and it is unconditional",
+> and that `VREA_PsychicallyDeaf` was deselectable. The prefix is declared on
+> `Hediff_Psylink.ChangeLevel(**int**)` only — the one-argument override, which no ritual grant
+> path calls — and `VREA_PsychicallyDeaf` inherits `isCoreComponent true` from `VREA_HardwareBase`,
+> so the creation window refuses to un-toggle it. **[V]** The real gates are
+> `Pawn_HealthTracker_AddHediff_Patch` reading an XML list behind `VREA_SyntheticImmunity`, and
+> vanilla's own
+> `PsychicSensitivity` test — the first keyed on `VREA_SyntheticImmunity`, the second on
+> `VREA_PsychicallyDeaf`, and neither gene appears in the other's path. **There is an XML edit that
+> buys an android a psylink; there are two, and you need both.**
 
 **Devotion: no blocker found.** The 1.6 assembly contains **no `Ritual*` metadata string at
 all**, so VRE – Android patches no ritual participation path; androids are humanlike pawns
@@ -387,8 +655,17 @@ argument is a **penalty** applied to android colonists — see *Outstanding deci
   VRE – Android's 1.6 assembly and defs. Read end to end. **[V]**
 - **Verified available mechanism** — multiplayer safety for that capability, in Multiplayer
   Compatibility's loaded 1.6 assembly. **[V]**
-- **Verified** — androids are a Biotech xenotype on race `Human`; they are colonists, they
-  hold an `Ideo`, and they cannot hold a psylink. **[V]**
+- **Verified** — androids are a Biotech xenotype on race `Human`; they are colonists and they
+  hold an `Ideo`. **[V]**
+- **Verified, and it replaces #78's claim** — androids cannot hold a psylink *as shipped*, and the
+  refusal is two **independent** gates keyed on two different genes: `VREA_SyntheticImmunity` gates
+  `Pawn_HealthTracker_AddHediff_Patch`'s deferral to `AndroidCanCatch`, which reads the
+  `androidsShouldNotReceiveHediffs` list; `VREA_PsychicallyDeaf`'s `PsychicSensitivity` factor of 0
+  meets vanilla's own `< float.Epsilon` tests. Both are reachable from XML; neither gene appears in
+  the other's path. #78's "unconditional prefix" was wrong. **[V]** —
+  [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141).
+- **Proposed** — routes A–D for lifting that refusal. The mechanisms each composes are **[V]**;
+  that they compose into a psycasting android is **[I]** until built.
 - **Proposed** — the Analysis gate on `VREA_AndroidTech`. The mechanism is #67's and is
   **[V]**; its application here is **[I]**.
 - **Proposed, and a fiction call** — scoping the outlander/pirate xenotype bleed.
@@ -398,9 +675,12 @@ Evidence class **READ**: settled by the 1.6 defs of `2975771801`, its decompiled
 `1.6/Assemblies/VREAndroids.dll`, the decompiled
 `1629973374/1.6/Assemblies/Multiplayer_Compat.dll`, vanilla `Assembly-CSharp` and vanilla
 Biotech defs, plus a two-root two-encoding wide pass validated against known positives.
-Nothing here needed the game launched.
+The psylink section adds a full decompile of vanilla `Assembly-CSharp`, `2842502659`'s
+`1.6/Assemblies/VanillaPsycastsExpanded.dll`, and vanilla Royalty/Core hediff and meditation-focus
+defs. Nothing here needed the game launched.
 
-Established by [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78).
+Established by [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78) and
+[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141).
 
 ---
 
@@ -527,9 +807,12 @@ are the wrong shape for this requirement. They are recorded as a real but reject
 
 ## Verification
 
-**Settled by reading** — the manufacture chain, the xenotype shape, the psylink block, the
-persistence, the MP Compat coverage, the hardcoded ingredient list, the faction-patch bleed and
-our own factions' immunity to it. Paths and anchors are cited above.
+**Settled by reading** — the manufacture chain, the xenotype shape, the persistence, the MP Compat
+coverage, the hardcoded ingredient list, the faction-patch bleed and our own factions' immunity to
+it. The **psylink block is settled by reading too, and differently from what #78 recorded**: two
+independent gates keyed on two different genes — `VREA_SyntheticImmunity` on the hediff,
+`VREA_PsychicallyDeaf` on the stat — both XML-reachable, anchored in
+*Psylinks — verdict and routes*. Paths and anchors are cited above.
 
 **Observable checks that would demonstrate the requirement is satisfied**, if someone wants
 them in-game rather than on paper:
@@ -569,16 +852,19 @@ that patch is written.
    or doctrinal equivalence), because an android colonist shares the colony's `Ideo` by
    construction.
 
-3. **Androids cannot take psycasts, permanently.** This is shipped behaviour and cannot be
-   patched away without fighting a `HarmonyPriority(int.MaxValue)` prefix — deselecting
-   `VREA_PsychicallyDeaf` does not help, because the prefix never reads genes. The campaign must
-   decide whether that is
-   a *stated* cost of an artificial body — which is a defensible and interesting reading — or
-   whether it contradicts *"the campaign does not treat artificial bodies as inherently
-   inferior."* **It is the one place where the mechanics do impose an asymmetry, and the
-   requirement's wording does not currently anticipate it.** Handed to
-   `docs/requirements/GLITTERTECH.md`'s owner. This has implications for
-   `docs/specs/TRANSCENDENCE.md` if the endgame assumes any colonist can be a psycaster.
+3. **Whether androids take psycasts is now a choice, not an engine fact.** *(Rewritten by
+   [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141); #78's "permanently, and cannot
+   be patched away" is struck.)* The refusal is two independent gates — `VREA_SyntheticImmunity`
+   on the hediff, `VREA_PsychicallyDeaf` on the stat — both XML-reachable, and four routes lift
+   them — see *Psylinks — verdict and routes*. What the campaign must decide is no longer *can we*
+   but **which androids, and at what price**: route A makes every android sensitive and makes the
+   gene's own description a lie; route B makes it a per-unit build that costs synthetic immunity.
+   Leaving it alone (route E) keeps the asymmetry as a *stated* cost of an artificial body, which
+   remains a defensible reading — but it is now an authorial choice against
+   *"the campaign does not treat artificial bodies as inherently inferior,"* not a constraint the
+   engine imposes. Handed to `docs/requirements/GLITTERTECH.md`'s owner. It still has implications
+   for `docs/specs/TRANSCENDENCE.md` if the endgame assumes any colonist can be a psycaster —
+   those implications are now satisfiable.
 
 4. **Resolved: an android costs no Intel per unit.** Intel is exchanged for Instruction items,
    and [`CURRENCIES.md`](CURRENCIES.md) admits no other debit (§5). Whether `VREA_AndroidTech`

@@ -24,7 +24,9 @@ any major RimWorld update.
 | `facilities-and-recipes.md` | Bench augments, linkable facilities, recipe gating |
 | `items-and-materials.md` | Deterioration, armour maths, the stuff ladder, recycling, and `Book` |
 | `health-and-death.md` | What decides a pawn is dead, and the three "cannot die" switches |
-| `ideology.md` | How the player faction's ideology changes, and what the believer count gates |
+| `ideology.md` | How the player faction's ideology changes, what the believer count gates, and how a campaign forces or floors a player faith |
+| `psycasts-and-meditation.md` | What gates a psylink and a meditation focus, and the android and VPE stacks on top of both |
+| `equipment-and-kits.md` | What reaches a pawn's weapon and what reaches its apparel, which of those is authorable, and what can take a kit off again |
 | `world-time-and-layers.md` | The 60-day year, and the Odyssey orbit layer |
 | `gravship-and-substructure.md` | Affordances, what flies, the cell budget, and the two pressurisation rules |
 | `mods/medieval-overhaul.md` | MO's settings surface, resource chains and licensing |

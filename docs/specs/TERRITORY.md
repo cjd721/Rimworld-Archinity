@@ -35,6 +35,397 @@ It does **not** own:
 
 ---
 
+## What a holding pays, and how the player takes it
+
+### Purpose and scope
+
+**What this section answers:** the *form* a holding's payment can take, the schedule it can arrive
+on, the act by which the player actually takes it, and whether the rebuild debt that gates it can
+be expressed. It resolves
+[#166](https://github.com/cjd721/Rimworld-Archinity/issues/166) against
+[`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *A holding is a settlement taken by
+force* — *"the form the payment takes is open and every shape is on the table"*.
+
+*The build* §3 below answered **whether a holding can exist**; this section answers **what it does
+once it does**. §3's R0/R1/R2 findings are cited here, not re-derived.
+
+**What this section does not own:**
+
+- **What a holding pays *characteristically*** — its faction's trade and its own specialty:
+  [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165). The one seam that must land
+  there is named under *Open questions*.
+- **Taking the settlement** — [#164](https://github.com/cjd721/Rimworld-Archinity/issues/164).
+- **Advancing a holding to a later era** —
+  [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167).
+- **What a sworn faction owes** — [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168).
+  P3 below is the shipped *"the player asks"* shape and is #168's to reuse.
+- **How a holding ends** — [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172).
+- **Whether a caravan can reach orbit** —
+  [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127) and `SPACE`. *Where delivery
+  lands* is answered here; *whether the tile is reachable* is not.
+
+### Verdict
+
+- **Possible? Yes — every form the requirement names is carried by something already read, and the
+  hard part is shipped.** A basket on a clock, an accrual the player can see that keeps growing
+  while undelivered, a cadence the player chooses, unprompted sends, a stockpile a caravan
+  collects, a drop the player requests on a cooldown, and a payload of **generated people** all
+  exist in 1.6 as read code. What has to be built is *who* pays and *what* they pay, because every
+  shipped carrier hardcodes both.
+- **Multiplayer? Yes for the shipped carriers; With work for anything of ours.** VFE Empire's whole
+  tithe machine is synced by MP Compat today. Vanilla's `TradeRequestComp.Fulfill` and
+  `RoyalTitlePermitWorker_DropResources.CallResourcesToCaravan` are synced by Multiplayer itself.
+  Three named hazards under *Constraints*; none is a blocker.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **P1** Tithe engine, repointed | Payload + speed + cadence + daily accrual + delivery + legibility, all scribed. The whole of *what it pays and when* | VFE Empire `WorldComponent_Vassals` / `TitheInfo` / `TitheWorker` (+ MP Compat) | XML catalogue; patch C# to repoint | **Medium** (Easy left as the Empire's) | **Yes**, one ordering hazard |
+| **P2** Outposts' delivery layer | Five ways payment physically arrives, including a pack animal that walks in and a stockpile on the tile | VEF `Outposts.Outpost.Deliver` | C# reuse/copy; XML yields | **Medium** | **With work** — T-18 |
+| **P3** Royal permit as *"the player asks"* | A basket **or pawns** dropped where the player points, on a cooldown, priced in favour; XML-authored | vanilla Royalty `RoyalTitlePermitDef` / `RoyalTitlePermitWorker_DropResources` | XML (+ C# if per-holding) | **Easy → Medium** | **Yes**, one subclass caveat |
+| **P4** Standing debt on the tile | The rebuild gate: a scribed demand on the settlement, legible in its inspect string, paid by a caravan standing there | vanilla `TradeRequestComp`; donor VEF `Outpost.costPaid` | patch C# + XML comp | **Easy → Medium** | **Yes** |
+| **P5** Accrued credit spent on a menu | The holding's own restocking, priced list — *spend against what it can supply* | vanilla `Settlement_TraderTracker` + MP's `MpTradeSession` | XML if the credit is silver or favour; C# otherwise | **Easy** (silver/favour) · **Hard** (bespoke credit) | **Yes** for silver/favour |
+| **P6** Unprompted sends | Gifts and ally traffic on the storyteller's own clock. §3 R5, not re-derived | vanilla | XML | **Easy** | **Yes** |
+
+**Every route is [I] as a route.** The mechanisms each composes are [V]; the composition is
+inferred until built. **P1 + P2 + P4 is the combination the requirement's prose describes**, and
+they do not collide: P1 owns *what and when*, P2 owns *how it arrives*, P4 owns *whether it may
+start at all*.
+
+#### P1 — VFE Empire's tithe engine, repointed off the Empire
+
+**Gets us** [V] (`294100/2938820380/1.6/Assemblies/VFEEmpire.dll`, `1.6/Defs/Misc/TitheTypeDefs.xml`):
+
+- **A scribed per-settlement record.** `TitheInfo` holds `Type`, `Speed`, `Setting`, `Lord`,
+  `Settlement` and `DaysSinceDelivery` (`VFEEmpire.TitheInfo.ExposeData`).
+- **A payload catalogue in XML.** Seven `TitheTypeDef`s — steel 25, wood 40, gold 5, silver 50,
+  2 survival meals, honor 5 every 5 days, 1 slave every 10 days. Each carries `item`, `count`,
+  `deliveryDays`, `workerClass` and its labels. **A new payload is a def**, unless it needs a worker.
+- **Four schedule shapes at once.** A per-def fixed interval (`TitheTypeDef.deliveryDays`); a
+  player-chosen cadence (`VassalUtility.DeliveryDays` — `EveryWeek` 7, `EveryQuadrum` **15**,
+  `EveryYear` **60**, `Never`); a per-instance random multiplier (`VassalUtility.Mult` /
+  `Commonality` — 0.5× to 2.5×, weights 60/100/20/5/1); and a per-settlement modifier
+  (`TitheWorker.AmountProducedBase` multiplies by every `Honor_Settlement.def.titheSpeedFactor`).
+- **Accrual is shipped, including the case the player cannot collect.**
+  `WorldComponent_Vassals.DoDay` runs on `TicksGame % 60000 == 0`, increments `DaysSinceDelivery`
+  and delivers at the cadence; `TitheWorker.CreateDeliveryThings` makes **one stack per day
+  accrued**. **When `Deliver` returns false — caravan over mass capacity, or the lord not on a
+  player home map — `DaysSinceDelivery` is not reset**, so the debt grows and pays out whole later.
+- **Legibility is shipped.** `RoyaltyTabWorker_Vassals.DoVassal` prints the per-delivery range, a
+  `VFEE.InStockpile` line of `AmountProducedRange × DaysSinceDelivery`, and a progress bar of
+  `DaysSinceDelivery / DeliveryDays` — *what is owed and when it is due*, in the requirement's words.
+- **A non-goods payload is expressible.** `TitheWorker_Honor.DeliverInt` calls
+  `Lord.royalty.GainFavor(...)` and delivers no `Thing`. The seam is `workerClass` in XML.
+
+**Cannot** [V]:
+
+- **Choose who pays.** `WorldComponent_Vassals.AllPossibleVassals` filters `Faction.OfEmpire`.
+- **Choose what a settlement pays.** `WorldComponent_Vassals.GetTitheInfo` takes a random
+  `TitheTypeDef` and a weighted-random `TitheSpeed`. The characteristic payload is a replacement of
+  that method — **#165's**, not a def.
+- **Deliver anywhere but the lord.** `TitheWorker.DeliverInt` reaches the lord's caravan or a drop
+  beside the lord on a player home map, and returns false otherwise. No per-record target exists.
+- **Gate on anything.** Nothing in `DoDay` consults a debt, a cooldown or a cap.
+
+**Consequences.** Entry, cadence and release are the Royalty tab's, gated on Empire vassalage points
+and 100-tile reach; taking the engine means keeping that tab or writing our own entry. **Multiplayer
+[V]:** `Multiplayer.Compat.VanillaFactionsEmpire` registers `SyncedVassalizeSettlement`, the
+`DoVassal` cadence lambdas (2, 3, 4), `ReleaseAllVassalsOf`, a `SyncWorker<TitheInfo>` keyed on
+`Settlement`, and wraps `GetTitheInfo` in
+`Rand.PushState(Gen.HashCombineInt(settlement.ID, settlement.Tile))` — **the payload draw is
+deterministic under MP.**
+
+#### P2 — VEF's Outposts delivery layer
+
+**Five delivery surfaces**, all [V] (`Outposts.Outpost.Deliver`,
+`294100/2023507013/1.6/Assemblies/Outposts.dll`):
+
+| Method | What arrives |
+|---|---|
+| `Teleport` | Goods placed at a player-built `VEF_OutpostDeliverySpot`, else a reachable map-edge cell |
+| `PackAnimal` | A biome-appropriate pack animal of the player's faction, generated loaded, spawned at the edge and walked in under `Outposts.LordJob_Deliver` → `LordToil_Drop` → `JobGiver_DropAll` |
+| `ForcePods` | `TradeUtility.SpawnDropPod` at the delivery spot, else `DropCellFinder.TradeDropSpot(map)` |
+| `PackOrPods` | Pods if `Outposts_DefOf.TransportPod.IsFinished`, pack animal otherwise — **era-appropriate delivery for free** |
+| `Store` | Accrues into the world object's `containedItems`; the player brings a caravan and takes it through `Outposts.Dialog_TakeItems` (`Outpost.TakeItem` / `TakeItems` are the commits) |
+
+Every branch ends in a consolidated delivery letter. `Outpost.deliveryMap` is a scribed,
+player-settable `Map` defaulting in `SpawnSetup` to the nearest `IsPlayerHome` map. **The reverse
+direction ships too** [V]: `Outposts.Dialog_GiveItems` and
+`Outposts.TransportPodsArrivalAction_AddToOutpost` put goods *and pawns* into a player-held world
+object from a caravan or by pod — which is how a rebuild cost could be paid from home rather than
+by a caravan standing on the tile.
+
+**Cannot** [V]: address a faction; pay anything that is not a `Thing`; vary the method per object —
+the branch comes from `OutpostsMod.Settings.DeliveryMethod`, one global per-client setting.
+
+**Consequences.** That settings read is **T-18 and is not in §2b's B4 list**, which names only
+`ProductionMultiplier` and `TimeMultiplier`. It is worse than a differing number: the `PackAnimal`
+branch calls `PawnGenerator.GeneratePawn` off the shared stream, so two clients with different
+delivery settings take different draws at the same tick. Recorded here; **§2b is #81's and is not
+edited from this ticket.**
+
+#### P3 — vanilla's royal permit as *"the player asks and it arrives"*
+
+[V], `Assembly-CSharp.dll`. `RoyalTitlePermitDef` is XML: `royalAid` (`itemsToDrop` as a
+`List<ThingDefCountClass>`, `pawnKindDef` + `pawnCount`, `favorCost`, `aidDurationDays`),
+`cooldownDays`, `minTitle`, `permitPointCost`, `faction`, `usableOnWorldMap`, and `layerBlacklist`
+(a `List<PlanetLayerDef>`). `RoyalTitlePermitWorker_DropResources.OrderForceTarget` drops the basket
+at a cell the player targets on a colony map; `CallResourcesToCaravan` drops it into a caravan on
+the world map. `RoyalTitlePermitWorker.FillAidOption` reads
+`pawn.royalty.GetPermit(def, faction).LastUsedTick` against `def.CooldownTicks` and offers the aid
+free off cooldown, or for `royalAid.favorCost` favour while on it.
+
+**Gets us** the requirement's *"the player must be able to ask, not only to receive"* in shipped,
+XML-authored form, including a **pawn** payload — and a worked precedent that aid can be
+blacklisted per planet layer.
+
+**Cannot** [V]: exist without a royal title. Availability runs through
+`RoyalTitlePermitDef.AvailableForPawn` (`permitPointCost`, `minTitle`, prerequisites) and
+`Pawn_RoyaltyTracker`, and the currency is royal favour. Using the *shape* for holdings means
+riding the royalty tracker or reimplementing the cooldown. `AidDisabled_NewTemp` blocks a hostile
+faction and an underground map.
+
+#### P4 — the rebuild gate as a standing debt
+
+**It can be expressed, and vanilla ships the shape** [V]. `RimWorld.Planet.TradeRequestComp`
+carries a scribed `requestThingDef`, `requestCount` and `expiration`; `CompInspectStringExtra`
+prints the requested thing, its market value and the time left **in the world object's own inspect
+string**; `GetCaravanGizmos` yields the fulfil command only while
+`CaravanVisitUtility.SettlementVisitedNow(caravan) == parent`; `Fulfill` takes the goods with
+`CaravanInventoryUtility.TakeThings`, pays goodwill and fires a quest signal. A comp added to an
+existing `WorldObjectDef` backfills into a live save
+([`engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md)).
+
+VEF supplies the other half [V]: `Outpost.AddPawn` consumes `Ext.CostToMake` out of the absorbed
+caravan's goods and sets a scribed `costPaid`.
+
+**Correction, and it is load-bearing — stated precisely, because the imprecise form is dangerous.**
+**`costPaid` is a real gate, and it is not on the production path** [V]. Its four occurrences in
+`Outposts.Outpost` are the field declaration, its `Scribe_Values.Look` in `ExposeData`, and **a read
+and a write both inside `Outpost.AddPawn`**, where `if (!costPaid)` gates the **one-time deduction
+of `Ext.CostToMake` from the absorbed caravan's goods** and the flag is then set — scribed, so the
+charge survives a reload and is never taken twice. What it does **not** do is withhold yield:
+neither `Produce()` nor `TickInterval(int)` consults it, directly or through any property [V].
+
+***So VEF ships a scribed "this one has paid" ledger and no pay-before-you-yield gate. The withhold
+is one `if` of ours on top of that ledger.*** **Do not read this as "`costPaid` is dead" — removing
+it stops charging the player.**
+
+**Cannot** [V]: `TradeRequestComp` carries exactly one `ThingDef` and count, so a multi-item cost
+needs several comps or one of ours in the same shape; `ActiveRequest` is `expiration > TicksGame`,
+so a never-lapsing debt means an absurd expiration or an override.
+
+**Tech-tier scaling: yes, and it is XML** [V]. `FactionDef.techLevel` is a public `TechLevel` field
+and a settlement's owner is `Settlement.Faction`; a cost table keyed by `TechLevel` is a
+`DefModExtension` in the shape `OutpostExtension.CostToMake` already uses. **Caveat:**
+`RimWorld.Planet.Settlement` carries **no tier field of its own** [V] — the tier is its faction's.
+Whether a settlement can carry anything of its own is
+[#165](https://github.com/cjd721/Rimworld-Archinity/issues/165)'s.
+
+#### P5 — accrued credit spent on a menu
+
+**The list is free** [V]. `Settlement_TraderTracker` gives every settlement a faction-derived,
+restocking stock: `TraderKind` is
+`settlement.Faction.def.baseTraderKinds[abs(settlement.HashOffset()) % count]`,
+`RegenerateStockEveryDays` is 30, and `RandomPriceFactorSeed` is
+`Gen.HashCombineInt(settlement.ID, 1933327354)` — deterministic per settlement. Multiplayer
+replaces the trade session with a synced `MpTradeSession` keyed on
+`CaravanVisitUtility.SettlementVisitedNow(caravan)` [V].
+
+**The currency is the constraint, and it is a fork rather than a shade** [V].
+`RimWorld.TradeCurrency` has exactly two values — `Silver` and `Favor` — chosen by
+`TraderKindDef.tradeCurrency`; `TradeDeal.CurrencyTradeable` tests `IsFavor` or
+`ThingDef == ThingDefOf.Silver`, `TradeDeal` adds a `Tradeable_RoyalFavor` row in favour mode, and
+`TradeUtility.GetPricePlayerSell` takes a `TradeCurrency`. **A menu priced in silver or royal favour
+is Easy and rides the whole shipped UI; a menu priced in a bespoke per-holding credit is Hard** —
+a `Tradeable` subclass plus patches across `CurrencyTradeable`, `UpdateCurrencyCount`,
+`LimitCurrencyCountToFunds` and the price path.
+
+#### Where payment arrives — and it follows home for free
+
+**Both shipped delivery paths pick their destination by `Map.IsPlayerHome`** [V] —
+`TitheWorker.DeliverInt` gates on it; `Outpost.Deliver` and `Outpost.SpawnSetup` select the nearest
+map satisfying it. And [V] `Verse.Map.IsPlayerHome` is true when `wasSpawnedViaGravShipLanding`,
+**or** the parent is a player-faction `MapParent` with `def.canBePlayerHome`, **or**
+`GravshipUtility.PlayerHasGravEngine(this)`.
+
+**So when the gravship becomes home, delivery follows it with no code at all** — the direct answer
+to the requirement's *"delivery has to follow that move rather than assume a fixed tile"* and to
+[#127](https://github.com/cjd721/Rimworld-Archinity/issues/127).
+
+Surfaces available, all [V]: a drop pod at `DropCellFinder.TradeDropSpot` (orbital trade beacon →
+comms console → any colonist building → random cell); a player-placed delivery-spot building; a
+map-edge placement; a pack animal that walks in; a direct add to a caravan; and a stockpile on the
+world object. **No planet-layer gate exists on any of them** — the only one read anywhere in the
+payment paths is `RoyalTitlePermitDef.layerBlacklist`, which proves such a gate is expressible if
+orbit should ever be excluded.
+
+#### Can the pawn payload generate people? Yes — three read implementations
+
+1. **`VFEEmpire.TitheWorker_Slaves.CreateDeliveryThings`** [V]:
+   `PawnGenerator.GeneratePawn(PawnKindDefOf.Slave, Find.FactionManager.RandomNonHostileFaction(…))`
+   then `pawn.guest.SetGuestStatus(Faction.OfPlayer, GuestStatus.Slave)`. **It never touches the
+   settlement's inhabitants** — the settlement is a fiction, the pawn is fresh.
+2. **`VOE.Outpost_Town.Produce`** [V]: generates pawns of the occupants' own `kindDef` and faction
+   on a per-occupant social-skill roll.
+3. **Vanilla `RoyalAid.pawnKindDef` + `pawnCount`** [V], XML-authored, delivered by the permit workers.
+
+**So a people-paying holding needs no population model**, and
+[#10](https://github.com/cjd721/Rimworld-Archinity/issues/10)'s altar-fuel route is a `workerClass`
+and a def.
+
+#### Recommendation (not a selection)
+
+**P1 for the ledger, P2 for the arrival, P4 for the gate.** P1 is the only read carrier that already
+holds payload, cadence, accrual and legibility in one scribed record and is synced end to end; P2
+is the only read carrier for *how the goods physically show up*, and its `PackOrPods` branch gets
+era-appropriate delivery without a rule of ours; P4 is vanilla and synced. **P3 is what
+[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168) should read** before designing an
+ask. **P5 is Easy only if the credit is silver or royal favour** — see *Open questions*.
+
+### Constraints
+
+- **No shipped carrier lets the campaign choose who pays or what they pay.** P1's two selectors are
+  both hardcoded; that is the single line every route has to cross.
+- **`costPaid` gates the build charge, not the yield** [V]. It is read and written only inside
+  `Outpost.AddPawn`; the production path never consults it. The withhold is ours — the charge is not.
+- **`Settlement` has no tier or specialty of its own** [V]. Everything characteristic derives from
+  the faction until #165 says otherwise.
+- **Vanilla trade knows two currencies** [V]. A third is a patch set, not a field.
+- **The tithe walk's order is client-dependent.** [V on the mechanism; [I] that it desyncs in play.]
+  `WorldComponent_Vassals.DoDay` iterates a `Dictionary<Settlement, TitheInfo>` whose insertion
+  order is set by `GetTitheInfo` calls — and the Royalty tab's `AllPossibleVassals` is one such
+  call, made client-locally. `TitheWorker.AmountProduced` draws `GenMath.RoundRandom` off the
+  shared stream (always fractional at `TitheSpeed.Half` or `NormalAndHalf`), and
+  `TitheWorker_Slaves` additionally calls `RandomNonHostileFaction` and `PawnGenerator.GeneratePawn`.
+  MP Compat seeds `GetTitheInfo` but **does nothing about the walk order.** This sharpens §3's
+  RUN item: the trigger is *one client opened the Royalty tab and the other did not.*
+- **`OutpostsMod.Settings.DeliveryMethod` is a third T-18 read on the payout path**, and the branch
+  it chooses is the one that generates a pawn.
+- **Multiplayer registers `OrderForceTarget` only for `ITargetingSource` implementors
+  `where t.Assembly == typeof(Game).Assembly`** [V] (`Multiplayer.Client.SyncMethods`). **A permit
+  worker — or any targeting source — declared in our assembly is silently outside that
+  registration.** Proposed as a trap.
+- **`Dialog_TakeItems` and `Dialog_GiveItems` are `Window`s and are unsynced** (**T-80**). The
+  commits to register are `Outpost.TakeItem` / `TakeItems` and the give side.
+- **Already synced, and free:** `TradeRequestComp.Fulfill`,
+  `RoyalTitlePermitWorker_DropResources.CallResourcesToCaravan` and every vanilla
+  `OrderForceTarget`, `MpTradeSession`, and the whole VFE Empire tithe surface [V].
+
+### Available mechanisms
+
+| Mechanism | What it provides | Route | Evidence |
+|---|---|---|---|
+| `VFEEmpire.TitheInfo` / `WorldComponent_Vassals.DoDay` / `TitheWorker` | Scribed record, daily clock, accrual, undelivered-debt carry-over | P1 | [V] `294100/2938820380/1.6/Assemblies/VFEEmpire.dll` |
+| `VFEEmpire.TitheTypeDef` (7 defs) | Payload catalogue in XML, with `workerClass` and `deliveryDays` | P1 | [V] `.../1.6/Defs/Misc/TitheTypeDefs.xml` |
+| `VassalUtility.DeliveryDays` / `Mult` / `Commonality` | Cadence set (7 / 15 / 60 / never) and a 0.5×–2.5× weighted speed | P1 | [V] |
+| `TitheWorker.DeliverInt` | Delivery to a caravan, or `DropPodUtility.DropThingsNear` on a player home map; **returns false and preserves the accrual** when neither is available | P1 | [V] |
+| `TitheWorker_Honor.DeliverInt` | A payload that is not a `Thing` at all | P1 | [V] |
+| `TitheWorker_Slaves.CreateDeliveryThings` | Generated slave pawns, independent of the settlement's population | P1 | [V] |
+| `RoyaltyTabWorker_Vassals.DoVassal` | The legibility surface: per-delivery range, accrued "in stockpile", due-date bar | P1 | [V] |
+| `Multiplayer.Compat.VanillaFactionsEmpire` | Syncs vassalise, cadence, release; seeds the payload draw | P1 | [V] `294100/1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll` |
+| `Outposts.Outpost.Deliver` (+ `Deliver_Pods`, `Deliver_PackAnimal`, `LordJob_Deliver`) | Five arrival surfaces, a player-set `deliveryMap`, a delivery letter | P2 | [V] `294100/2023507013/1.6/Assemblies/Outposts.dll` |
+| `Outposts.Dialog_TakeItems` / `Dialog_GiveItems` / `TransportPodsArrivalAction_AddToOutpost` | Caravan and pod transfer both ways against a player-held world object | P2, P4 | [V] |
+| `RoyalTitlePermitDef` / `RoyalAid` / `RoyalTitlePermitWorker_DropResources` | XML-authored requested drop of goods **or pawns**, on a cooldown, priced in favour, with a planet-layer blacklist | P3 | [V] `Assembly-CSharp.dll` |
+| `RimWorld.Planet.TradeRequestComp` | A scribed standing demand on a world object, legible in its inspect string, paid by a visiting caravan, **synced by Multiplayer** | P4 | [V] `Assembly-CSharp.dll` |
+| `Outposts.Utils.CanSpawnOnWithExt` / `Outpost.AddPawn` / `costPaid` | Cost check against caravan inventory, one-time consumption of it, and a scribed paid-flag that **gates the charge inside `AddPawn` and nothing on the production path** | P4 | [V] |
+| `FactionDef.techLevel` | The only tech-tier signal a settlement has | P4 | [V] |
+| `Settlement_TraderTracker` / `TradeCurrency` / `Tradeable_RoyalFavor` | A faction-derived restocking list, priced, in two currencies only | P5 | [V] |
+| `Verse.Map.IsPlayerHome` | Gravship clauses — delivery follows home without code | P2, P4, #127 | [V] |
+
+**What does not exist, and where it shaped the routes:** nothing in the corpus lets a *chosen*
+settlement pay a *chosen* payload. The wide pass narrowed to five mods — VFE Empire, Rim War, FT&V,
+RimPacts, Worksites Expanded — all already depth-read on
+[#120](https://github.com/cjd721/Rimworld-Archinity/issues/120), and `VFEEmpire.TitheTypeDef` is
+the **only payment def family in the corpus**. What is far better supplied than the payment systems
+are the **delivery, request, accrual and debt primitives**, and they come from vanilla and VEF
+rather than from a vassalage mod. That is why every route above composes a shipped primitive with
+one hardcoded selector replaced.
+
+### Status
+
+**Evidence class: READ**, established on
+[#166](https://github.com/cjd721/Rimworld-Archinity/issues/166). Every mechanism in the table is
+[V]; every route is [I] by construction.
+
+**Sweeps, with the form that produced each result.** Both corpus roots plus
+`common/RimWorld/Data`, `-g '*.dll' -g '!**/obj/**' -g '!**/Referenced/**'` throughout, attributed
+with `python tools/corpus.py --which -`.
+
+| Sweep | Form | Result |
+|---|---|---|
+| ASCII validator | `rg -a -l -e "TitheTypeDef"` | VFE Empire only — the form finds a `#Strings` name known present |
+| ASCII, case-sensitive | `-e "Tithe"` / `"Vassal"` / `"Tribute"` | Tithe: VFE Empire, Worksites Expanded. Vassal: Rim War, VFE Empire, FT&V, RimPacts. Tribute: Rim War, FT&V, RimPacts, Worksites Expanded |
+| ASCII validator, `-i` | `rg -a -l -i -e "TitheWorker"` | VFE Empire — a `#Strings` type name known present, found by the case-insensitive form |
+| ASCII, `-i` | `rg -a -l -i -e "Stipend"` / `-e "Upkeep"` | **zero** |
+| UTF-16 validator, same heap, `-i` | `rg -a -l -i "T\x00i\x00t\x00h\x00e\x00A\x00r\x00r\x00i\x00v\x00e\x00d\x00"` and `"I\x00n\x00S\x00t\x00o\x00c\x00k\x00p\x00i\x00l\x00e\x00"`, escapes typed literally into the pattern, never through `$(…)` | VFE Empire (and MP Compat for the second) — both are `Translate` key literals, i.e. `#US` strings, so each validator is drawn from the heap being searched |
+| UTF-16 `#US`, `-i` | same form for `Tithe`, `Tribute`, `Vassal` | **the same five mods** |
+| UTF-16 `#US`, `-i` | same form for `Stipend`, `Upkeep` | **zero** |
+| XML, `-i` | `rg -l -i -e "Stipend" -e "Upkeep" -g '*.xml'` | 4 mods, **all prose**: two building descriptions, one backstory, and RimPacts' keyed strings for the **player** paying silver to keep a world decision active — the mirror of this document, not a carrier |
+| XML def families | `rg -o -i -e "<[A-Za-z0-9_]+\.[A-Za-z0-9_]*(Tithe\|Tribute\|Vassal\|Payout\|Levy\|Tax)[A-Za-z0-9_]*>" -g '*.xml'`, read as a frequency table | **`VFEEmpire.TitheTypeDef` only** (18 occurrences = 7 defs × copies across roots and versions) |
+
+**The load-bearing negative is the def-family row**, which was built case-insensitively over both
+roots and `Data` from the start. The `Stipend` / `Upkeep` rows were first run ASCII-only and
+case-sensitive; they have been re-run in both encodings with `-i` and with a validator drawn from
+each heap, and the result is unchanged.
+
+**Premises corrected:**
+
+1. **`Outpost.costPaid` gates the build charge and nothing on the production path** [V]. Any
+   reading of *The build* §2 or of
+   [#170](https://github.com/cjd721/Rimworld-Archinity/issues/170) that treats VEF as shipping a
+   pay-before-you-yield gate is wrong — and any reading that treats `costPaid` as inert is also
+   wrong, because the `if (!costPaid)` inside `Outpost.AddPawn` is what charges the player.
+2. **§2b's B4 is incomplete.** `OutpostsMod.Settings.DeliveryMethod` is a third settings read on the
+   payout path, and the branch it selects generates a pawn off the shared stream [V]. Recorded
+   here; the edit belongs to #81's section.
+3. **§3 R0's *"delivers only into the lord's caravan or by drop pod beside the lord"*** is exact
+   [V], and the omitted half matters: **when it can do neither it preserves the accrual** rather
+   than dropping the payment.
+
+**Verified available mechanisms — not selected:** the whole table above.
+
+### Open questions
+
+**Requirement gaps.** [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) was authored by
+[#35](https://github.com/cjd721/Rimworld-Archinity/issues/35), now closed, so these are **unowned**:
+
+1. **Is a per-holding accrued credit a "third currency"?** § *Constraints* forbids one — *"Goodwill
+   and Reverence are the levers"* — while § *Required behavior* offers *"a credit the holding
+   accrues that the player spends against that holding's own list"* as a live route. Vanilla makes
+   this a sharp fork: silver or royal favour is Easy and free, anything else is Hard. **Someone must
+   say whether a per-holding ledger counts as a currency.**
+2. **Can the rebuild debt lapse?** The requirement says *"the debt stands either way"* but never
+   says whether it expires, and `TradeRequestComp.expiration` is mandatory in the shipped shape.
+3. **What happens to accrual the player cannot collect** — home unreachable, or in transit to orbit.
+   The shipped behaviour is *keep accruing and pay out whole later*; the requirement states no
+   intent, and "pays out whole later" carries a balance tail.
+
+**Handed to a sibling, not taken here:**
+
+- **The characteristic payload** replaces `WorldComponent_Vassals.GetTitheInfo`'s random draw.
+  [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165).
+- **Changing what a holding pays after the fact** is a field write, not a rebuild — `TitheInfo.Type`
+  and `.Speed` are plain scribed fields [V].
+  [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167) should know this.
+- **P3 is the shipped *"the player asks"* shape** and is
+  [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168)'s to reuse rather than re-derive.
+
+**RUN, narrow, unowned — only if P1 is selected.** Two clients. Client A alone opens the Royalty
+vassal tab (populating the dictionary through `AllPossibleVassals`); client B does not. Vassalise
+two settlements with fractional per-day amounts on the same cadence. On the first shared delivery
+day, expect identical stacks on both clients, or a desync trace naming `GenMath.RoundRandom` under
+`WorldComponent_Vassals.DoDay`.
+
+**Build questions deferred to the next map** (unowned until a route is selected): whether P1's
+record is repointed or reimplemented; where the rebuild `if` sits; whether one delivery path serves
+holdings and §2's outposts; which delivery method a holding uses and whether the player chooses it;
+the numbers, which are
+[the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+
+---
+
 ## The build
 
 **Both capabilities are already-solved problems with worked reference implementations in the
@@ -420,9 +811,11 @@ every shape named on
 [Vassals — can we, and by which routes](https://github.com/cjd721/Rimworld-Archinity/issues/120).
 None of the shapes is selected.
 
-1. **A settlement vassal by conquest.** Break a `Settlement`, pay to rebuild it, and it then yields.
-   A cap and a cooldown apply. This is [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)
-   session 2's shape, and Conrad's preference if only one shape exists.
+1. **A settlement vassal by conquest** — now called a **holding**
+   ([`requirements/TERRITORY.md`](../requirements/TERRITORY.md)). Break a `Settlement`, pay to
+   rebuild it, and it then yields. A cooldown applies; **the cap of three does not** — #35
+   replaced it with a rebuild cost that scales with the settlement's tech tier. This is
+   [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2's shape, amended.
 2. **A friendly faction that submits at high Reverence**
    ([`requirements/RELIGION.md`](../requirements/RELIGION.md) § *Reverence*).
 3. **A whole faction as a vassal,** after the player conquers or liberates all of it, or after a
@@ -766,14 +1159,20 @@ schedule.
 
 #### Open questions
 
-- **Requirements → [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35):**
-  - does a conquered vassal leave its faction or stay in it (R1 against R2);
-  - what happens to a settlement vassal whose parent faction becomes a vassal;
-  - how vassalage ends;
-  - where tribute arrives;
-  - which perks a vassal faction gives beyond tribute;
-  - adjacent: the colony paying tribute, which
-    [`requirements/POLITICS.md`](../requirements/POLITICS.md) § *Campaign progression* points at #35.
+- **Requirements — answered by [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35),
+  now closed, in [`requirements/TERRITORY.md`](../requirements/TERRITORY.md).** It states the two
+  kinds (a **holding** taken, a **sworn faction** given) and hands the rest onward:
+  - does a conquered vassal leave its faction or stay in it (R1 against R2) — **answered: it
+    becomes the colony's, and "ours means owed, not operated" is the requirement**;
+  - what happens to a settlement vassal whose parent faction becomes a sworn faction — still
+    open, nearest owner [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168);
+  - how vassalage ends → [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172);
+  - where tribute arrives → [#166](https://github.com/cjd721/Rimworld-Archinity/issues/166);
+  - which perks a vassal faction gives beyond tribute →
+    [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168);
+  - adjacent: **the colony paying tribute is explicitly not #35's.**
+    [`requirements/POLITICS.md`](../requirements/POLITICS.md) § *Campaign progression* now
+    records that it has no owner.
 - **RUN (only if R0 or R3 is selected).** Two clients. Client A alone opens the Royalty vassal page.
   Vassalise two Empire settlements in reverse list order, on the same weekly schedule, with fractional
   amounts. On the first shared delivery day, expect identical stacks, or a desync naming

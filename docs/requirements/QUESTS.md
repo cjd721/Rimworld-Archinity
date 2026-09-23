@@ -142,15 +142,17 @@ exchange, paid in Intel. Both are in.
   [the storyteller](https://github.com/cjd721/Rimworld-Archinity/issues/60). This document
   imposes no cap on offers or on accepted quests.
 - Reward pools, genes and psycast gates belong to
-  [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31); conquest entry, cost and
-  consequences to [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35).
+  [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31); conquest entry and cost to
+  [territory](TERRITORY.md), and what a hostile faction does about it to
+  [#169](https://github.com/cjd721/Rimworld-Archinity/issues/169).
 
 ## Open questions
 
 - **Which mechanism carries nesting, and what it costs.** The vanilla parent/sub-quest
-  relationship is a verified available mechanism; selecting it, and writing the generator
-  it needs, belongs to
-  [the Chronicle's authoring mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/40).
+  relationship is a verified available mechanism
+  ([the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57));
+  selecting it, and writing the generator it needs, belongs to
+  [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **Whether auto-accept is forced on beats by the presentation** rather than chosen. The
   requirement is settled — discoveries auto-accept blanket, and declining is walking away
   ([Charting](CHARTING.md)) — so this is now only a question of whether the mechanism

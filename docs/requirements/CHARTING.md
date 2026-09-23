@@ -262,7 +262,8 @@ announcements and nobody is in a position to tell the colony about them.
   readout rather than by adopting it. Recorded so the requirement is not quietly lost to
   reuse.
 - **Which def carries a beat**, and how the return pool's finds nest under a parent quest.
-  [The Chronicle's authoring mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/40).
+  The routes are answered by [the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57)
+  (`docs/specs/CHARTING.md`); choosing one is [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 - **The mundane table.** A Waystone-less apparatus, buildable by ordinary research, that
   only ever feeds the survey pool. It would separate *the colony surveys* from *the
   founders detect* — a distinction the fiction already makes — and it is what a second
@@ -279,11 +280,10 @@ announcements and nobody is in a position to tell the colony about them.
   [world infrastructure](WORLD-INFRASTRUCTURE.md). Charting never creates, upgrades or pays
   for a road. Whether completed mobility infrastructure later contributes a reach rung is
   a cross-spec integration choice, not part of the road-building requirement.
-- **Nothing in `docs/requirements/` states that map generation must be cross-client
-  identical.** Named by
-  [seeded map generation under Multiplayer](https://github.com/cjd721/Rimworld-Archinity/issues/88)
-  and now owned by
-  [must both clients generate the same map](https://github.com/cjd721/Rimworld-Archinity/issues/104).
-  It is load-bearing for every site Charting produces.
+- **Map generation must be cross-client identical, and that is an engineering trap, not a
+  requirement.** Both clients generate every map and Multiplayer's checksum cannot see it, so
+  a divergent map is a delayed desync. Registered as T-120 by
+  [must both clients generate the same map](https://github.com/cjd721/Rimworld-Archinity/issues/104);
+  T-33 covers KCSG. It is load-bearing for every site Charting produces.
 - **The significant-site catalogue**, search band distances, effort formulas and
   presentation values. Balance and authoring, after the structure is built.

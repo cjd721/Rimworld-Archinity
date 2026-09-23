@@ -1062,6 +1062,119 @@ undeclared. Verdict unchanged. ([#130](https://github.com/cjd721/Rimworld-Archin
 whenever the active storyteller carries `storytellerThreat` (**T-115**) **[V]**. No corpus
 storyteller sets it. ([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130))
 
+## What the 2026-09-23 capability batch found
+
+Merged from the resolution and correction comments on #140, #141, #144, #146, #147, #148, #150,
+#155, #166 and #169. Every mod below already has a tier row; these are amendments to it, not new
+admissions. Evidence marks are the resolving agent's.
+
+**Rows amended, by mod.**
+
+**VFE Tribals** — `OskarPotocki.VFE.Tribals` (`3079786283`). The **end-to-end donor for a
+campaign-forced player ideology**: a Harmony pair on `Page_ChooseIdeoPreset` (`PostOpen` /
+`DoNext`), gated on the scenario's player faction def, handing the player `Page_ConfigureIdeo`
+afterwards to author the rest **[V]**. Also the donor for a **custom player `FactionDef` carrying
+`disallowedPrecepts`** (`3079786283/1.6/Defs/FactionDefs/Factions_Player.xml`) **[V]**, and for
+the concealment pattern `visible false` + `classic true` + `countsTowardsPreceptLimit false` on
+`VFET_PreceptBase` **[V]**. Note **T-15** and the stale-source warning still apply to this mod.
+([#140](https://github.com/cjd721/Rimworld-Archinity/issues/140))
+
+**VFE Pirates** — `OskarPotocki.VFE.Pirates` (`2723801948`). The donor for a **meme-enforced
+precept floor**: its pirate meme authors multi-element `requireOne` sublists — `Raiding_Respected`
+/ `Raiding_Required`, `VFEP_Camaraderie_Respected` / `VFEP_Camaraderie_Exalted` — the strict end
+of each issue and nothing below it, which is the shape a campaign floor wants
+(`1.6/Mods/Ideology/Defs/MemeDefs/Memes_Misc.xml`, second copy in the `Mods/` root — **T-22**)
+**[V]**. ([#140](https://github.com/cjd721/Rimworld-Archinity/issues/140))
+
+**Vanilla Ideology Expanded – Memes and Structures** — `VanillaExpanded.VMemesE` (`2636329500`).
+Two additions to its existing row: it is the corpus's donor for mod **`IdeoPresetDef`s**, and it
+is **the one mod that widens vanilla precepts' `requiredMemes`** — 12 XML patches, two of them on
+`IdeoDiversity_Exalted` and `IdeoDiversity_Respected` **[V]**. That is cargo for any campaign
+tolerance floor, because `Ideo.PreceptIsRequired` scans *every* meme's `requireOne`, so a widened
+precept widens our legal set. It also authors single-element `requireOne` sublists — a hard forced
+precept with no choice at all **[V]**.
+([#140](https://github.com/cjd721/Rimworld-Archinity/issues/140))
+
+**Vanilla Races Expanded – Android** — `vanillaracesexpanded.android` (`2975771801`). Its
+`AndroidSettings` def is an **explicitly documented external-patch surface**: the def's own label
+reads *"this def will have various settings used for androids. Can be used for mod compatibility
+from outside via xml patches."* **[V]** `VREAndroids.AndroidSettingsExtension` on a `HediffDef`
+gives a **per-hediff override with precedence over the list** — `Utils.AndroidCanCatch` checks the
+extension first and short-circuits **[V]**, and VRE ships that exact operation shape itself on
+`HediffDef[@Name="DiseaseBase"]` in `1.6/Patches/Core.xml` **[V]**. See
+`docs/engine/psycasts-and-meditation.md` for the two independent psychic gates and for the
+`displayCategory` hook that makes third-party android hardware pure XML.
+([#141](https://github.com/cjd721/Rimworld-Archinity/issues/141))
+
+**Better Traders Guild** — `shunter.bettertradersguild`. Carries **orbital settlement visiting,
+orbital trade-request quests and shuttle trade** — and is **not covered by Multiplayer
+Compatibility** **[V]**, swept ASCII and UTF-16LE with both forms validated. Anything the campaign
+hangs on orbital trade through this mod is unsynced until we cover it.
+([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147))
+
+**Vanilla Furniture Expanded – Security** — `vanillaexpanded.vfesecurity`. Sets
+`planetLayerWhitelist: Surface` on its **manned turrets** and on the `CompProperties_WorldArtillery`
+host **[V]**, so neither functions in orbit. Same gate vanilla puts on `Turret_Mortar`; see
+`docs/engine/world-time-and-layers.md` § *Cross-layer budgets, gates and the selected layer*. The
+lever is a `PatchOperationAdd` of `<li>Orbit</li>` — XML, Easy, **[I]** that the patch alone
+suffices. ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147))
+
+**VFE – Insectoids 2** — `OskarPotocki.VFE.Insectoid2`. **A live collision, recorded as cargo.**
+`VFEInsectoids.PawnsArrivalModeWorker_CanUseWith_Patch` postfixes the arrival-mode check to return
+**false for `Faction.OfInsects` on `EdgeDrop`, `CenterDrop`, `EdgeDropGroups` and `RandomDrop`**
+**[V]**. All five orbit-capable arrival modes are drop modes, so **insectoids can never arrive at
+an orbital home while this mod is loaded**, whatever the layer whitelists say. (The mod is already
+declined on Conrad's call; this is why the negative would survive even if it were not.)
+([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147))
+
+**Vanilla Gravship Expanded – Chapter 1** — `vanillaexpanded.gravship` (`3609835606`). Three
+additions:
+
+- **It is the corpus's dominant source of orbital `GeneratedLocationDef`s.**
+  `3609835606/1.6/Defs/GeneratedLocationDefs/GeneratedLocations.xml` ships **10** (`VGE_IceAsteroids`
+  … `VGE_DerelictStation`), against Odyssey's **1** (`Asteroids`) **[V]**. The figure is **ten**:
+  #146 measured it two independent ways — open tags and `<defName>` elements, 10/10 — across both
+  corpus roots plus `Data/`. *(An earlier incidental pass on #148 said four; that count was not
+  taken over the whole file and is superseded.)* Every one targets `Orbit`, and
+  `WorldComponent_LocationGenerator` budgets **per layer**, so the contention is an orbital-layer
+  question. A second source of pre-reveal orbital objects — see **T-132**.
+- **It patches the gravship travel path**: `InitiateTakeoff`, `TakeoffEnded` and `LandingEnded`
+  **[V]**. Anything we hang on that path shares the seam — and **T-78** says Multiplayer wraps
+  only the landing half.
+- **MP Compat carries a `VanillaGravshipExpanded` compat class in `Referenced/`** **[V]** — real
+  code that runs only while this mod is running, not a stub.
+- It also carries `IncidentWorker_EscapePodCrash`, and `corpus.py --check` reported it **updated
+  since the pin** (2026-08-19 → 2026-09-15) during this batch; the readings above are from the
+  copy on disk today.
+  ([#146](https://github.com/cjd721/Rimworld-Archinity/issues/146),
+  [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148),
+  [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150))
+
+**Compositable Loadouts** — `Wiri.compositableloadouts` (`2679126859`). Appended to its existing
+row in § *What the 2026-09-12 capability batch found*:
+
+> **Unsynced in 1.6 Multiplayer.** `Wiri.compositableloadouts`, `CompositableLoadouts`,
+> `LoadoutManager`, `LoadoutComponent` and `Dialog_TagEditor` appear in exactly one file under
+> `1629973374`: `1.4/Referenced/Multiplayer_Compat_Referenced.dll`. Nothing in 1.5 or 1.6,
+> `Assemblies/` or `Referenced/` **[V]** (both sweep forms validated on the same files; `VREAndroids`
+> UTF-16LE hits 1.4, 1.5 and 1.6). Its *Satisfy loadout now* gizmo
+> (`Inventory.LoadoutComponent.CompGetGizmosExtra`) calls `Loadout.RequiresUpdate()`, setting a
+> field `Loadout.ExposeData` scribes, with **no synced command behind it** **[V]**. Its *Clear
+> inventory now* gizmo survives only because it terminates in `Pawn_JobTracker.TryTakeOrderedJob`,
+> which MP registers **[V]**. Also: `Inventory.ThinkNode_LoadoutRealisation` equips a weapon **only
+> when `pawn.equipment.Primary == null`** — it never swaps one **[V]** — and `SetPawnLastUpdated`
+> calls `Rand.Range(10000, 15000)` inside the think node **[V]**.
+
+This **corrects** the existing row's *"the only thing in the corpus that reaches weapons from a
+preset"*: it is the only **mod** that does. Odyssey's outfit stand is vanilla's own authored
+equipment set and it includes the weapon — `docs/engine/equipment-and-kits.md`, and **T-136** for
+how a derived stand def fails silently.
+([#155](https://github.com/cjd721/Rimworld-Archinity/issues/155))
+
+**Nothing new for the bar.** No mod in this batch moved tier, and #166 tripped over no conflict at
+all. Two rows above (VFE – Insectoids 2, Better Traders Guild) are cargo per
+`docs/agents/capability-research.md` § *Conflicts are cargo, not verdicts*.
+
 ## Open
 
 - **`rwmt.MultiplayerCompatibility` is a required member of the shipping set, not a

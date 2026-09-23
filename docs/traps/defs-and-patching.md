@@ -259,10 +259,25 @@ config error and no log line. The def loads, the field is populated, and the val
 adjacent field `naturalGoodwillOffset` *is* read — by `GoodwillSituationWorker_SameIdeo` and
 `_MemeCompatibility` — which is what makes the dead one plausible.
 
-**The fix:** a `GoodwillSituationDef` that must cap goodwill needs a `workerClass` overriding
-`GetMaxGoodwill` and returning the number itself. Treat `baseMaxGoodwill` as documentation.
+**The scope is the whole def, not just the field: a `GoodwillSituationDef` with no
+`workerClass` is inert end to end.** `workerClass` defaults to
+`typeof(GoodwillSituationWorker)`, whose `GetMaxGoodwill` returns a hardcoded `100` and whose
+`GetNaturalGoodwillOffset` returns a hardcoded `0` [V]. `naturalGoodwillOffset` is read only by
+`_MemeCompatibility` and `_SameIdeo`, both gated on ideo membership [V]. So the def loads,
+registers, and is walked by `GoodwillSituationManager.RecalculateAll` every 1000 ticks
+contributing nothing — and **it does not even appear in
+`GoodwillSituationManager.GetExplanation`**, because `Recalculate` records a situation only when
+`maxGoodwill < 100 || naturalGoodwillOffset != 0` [V]. The faction card shows no row, so there
+is not even a visible zero to notice.
+(*Added 2026-09-23 from [#169](https://github.com/cjd721/Rimworld-Archinity/issues/169).*)
 
-*[#93](https://github.com/cjd721/Rimworld-Archinity/issues/93), `docs/specs/POLITICS.md` §
+**The fix:** a `GoodwillSituationDef` that must cap goodwill needs a `workerClass` overriding
+`GetMaxGoodwill` and returning the number itself. Treat `baseMaxGoodwill` as documentation. See
+`docs/engine/factions-and-worldgen.md` § *Hidden factions, alliances, and what holds a relation*
+for why the cap half and the offset half behave completely differently once a worker exists.
+
+*[#93](https://github.com/cjd721/Rimworld-Archinity/issues/93),
+[#169](https://github.com/cjd721/Rimworld-Archinity/issues/169), `docs/specs/POLITICS.md` §
 *Standing as a content gate*. `RimWorld.GoodwillSituationDef`,
 `RimWorld.GoodwillSituationWorker.GetMaxGoodwill`, `RimWorld.GoodwillSituationManager.Recalculate`.
 1.6.4871.*
@@ -397,5 +412,46 @@ VPE's `Ability_ReverseEngineer` — need their own answer.
 `RimWorld.TradeShip.GenerateThings`, `RimWorld.ThingSetMaker_TraderStock.Generate`,
 `RimWorld.StockGenerator_Techprints`, `RimWorld.ThingSetMaker_Techprints`, `RimWorld.Reward_Items`;
 `Core/Defs/TraderKindDefs/TraderKinds_Orbital_Misc.xml`. 1.6.4871.*
+
+### T-136 — `OutfitStandBase` declares no `thingClass`, so a derived def is a plain `Building` with no error
+
+Odyssey's outfit stand ships an abstract base and a concrete def, and **the parts that make it an
+outfit stand are on the concrete one**. `OutfitStandBase`
+(`Data/Odyssey/Defs/ThingDefs_Buildings/Buildings_Furniture.xml`) is
+`ParentName="FurnitureBase" Abstract="True"` and declares neither `<thingClass>` nor
+`<storageGroupTag>`; both sit on `Building_OutfitStand` **[V]**. A def written as
+`ParentName="OutfitStandBase"` therefore inherits `<thingClass>Building</thingClass>` from
+`BuildingBase` **[V]**, and `Verse.Building : ThingWithComps` implements no
+`IStoreSettingsParent`, `IThingHolder` or `IApparelSource` **[V]**.
+
+**The result builds, is selectable, shows a storage tab stub, and does nothing** — no *Swap
+outfit* gizmo, no contents, no weapon transfer — **and logs nothing**. The inherited
+`<inspectorTabs>` still name `ITab_ContentsOutfitStand`, whose `SelThing as Building_OutfitStand`
+is null **[V]**, so the tab has no valid target either **[I]**.
+
+**The second half compounds it.** The base's `<defaultStorageSettings>` disallows
+`ApparelUtility` and `Weapons` **[V]**, and inheritance **appends** list children rather than
+replacing them (`XmlInheritance.RecursiveNodeCopyOverwriteElements` — **T-05**, and
+`docs/engine/def-loading.md` § *Inheritance appends lists, it does not replace them*) **[V]** —
+so a child cannot un-disallow them by adding entries. It needs
+`<disallowedCategories Inherit="False">` or a `<thingDefs>` filter. A kit stand that gets this
+wrong silently never receives its weapon.
+
+Deriving also joins **no** storage group, because `storageGroupTag` is likewise on the concrete
+def; `Building_OutfitStand.StoreSettings` then falls through to its own `settings` **[V]**. That
+is often what a per-role kit wants, but it is a decision the def makes, not a default.
+
+**The general shape is worth knowing beyond this def:** vanilla's abstract `*Base` defs are not
+guaranteed to carry the `thingClass` that gives the family its behaviour, and omitting one is
+legal. **Check the concrete sibling, not just the base.**
+
+**Fix:** derive, declare `<thingClass>Building_OutfitStand</thingClass>`, and override the
+default filter with `Inherit="False"` or an explicit `<thingDefs>` list.
+
+*[#155](https://github.com/cjd721/Rimworld-Archinity/issues/155), `docs/specs/DEFAULTS.md` §
+*The whole kit, weapon included*; `docs/engine/equipment-and-kits.md`.
+`Data/Odyssey/Defs/ThingDefs_Buildings/Buildings_Furniture.xml`,
+`Data/Core/Defs/ThingDefs_Buildings/Buildings_Base.xml`, `Verse.Building`,
+`RimWorld.Building_OutfitStand`, `RimWorld.ITab_ContentsOutfitStand`. 1.6.4871.*
 
 ---

@@ -40,13 +40,77 @@ line. An available quest can be ignored; an absent one cannot be summoned.
 | Surface (Core) | 100 | 10 |
 | Orbit (Odyssey) | 130 | **5** |
 
-Tile count scales ~4^subdivisions, so orbit has orders of magnitude fewer tiles
-than the surface. `PlanetLayerDef.Orbit` sets `settlementsPer100kTiles` to
-`1000~1000` (one per ~100 tiles), so few tiles also means few settlements,
-asteroids and sites.
+Tile count is exactly **`12 + 10 × (3^subdivisions − 1)`** — it scales with
+**~3^subdivisions, not ~4^**. `PlanetLayer.Subdivide` emits one new vertex per
+triangle and one triangle per (vertex, adjacent-triangle) pair, so triangles
+triple each pass and the surviving degree-5/6 vertices are the tiles. That gives
+**2,432 tiles at subdivisions 5 and 7,292 at 6**. Orbit therefore has orders of
+magnitude fewer tiles than the surface. `PlanetLayerDef.Orbit` sets
+`settlementsPer100kTiles` to `1000~1000` (one per ~100 tiles), so few tiles also
+means few settlements, asteroids and sites — roughly 9 at subdivisions 5 and 27
+at 6.
+
+*This file previously stated ~4^, which was wrong; `docs/traps/world-creation.md`
+T-45 and `Archinity.Pacing/Patches/Orbit_LayerSize.xml` both carried the correct
+law. Corrected from [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150).
+Verified against 1.6.4871 rev590.*
 
 **Our change, not vanilla:** `Archinity.Pacing` raises the orbit layer's
-subdivisions to 6. Vanilla Odyssey ships 5, as tabled above.
+subdivisions to 6 — `Archinity.Pacing/Patches/Orbit_LayerSize.xml`, a
+`PatchOperationReplace` on
+`/Defs/PlanetLayerSettingsDef[defName="Orbit"]/settings/subdivisions` **[V]**.
+Vanilla Odyssey ships 5, as tabled above. **This matters beyond tile count:** the
+orbit grid is ~3× denser than the one Odyssey's own constants were chosen for, so
+orbit tiles run roughly √3 finer, and **T-45** means the geometry is rebuilt from
+scribed values — *which* grid a given save carries depends on when its world was
+made. **A threshold derived from orbit grid geometry is not stable across our own
+saves**; author it per layer instead of deriving it
+([#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)).
+
+### Cross-layer budgets, gates and the selected layer
+
+- **`PlanetLayerDef.rangeDistanceFactor` is vanilla's own tile-budget conversion
+  between layers** — `Orbit` sets **20** — consumed by
+  `CompPilotConsole.GetMaxLaunchDistance` as
+  `MaxLaunchDistance / layer.Def.rangeDistanceFactor` **[V]**. It is the shipped
+  precedent for the *shape* of a per-layer threshold, not a number to inherit:
+  it was chosen against vanilla's subdivisions-5 grid, which `Archinity.Pacing`
+  replaces (above).
+  ([#150](https://github.com/cjd721/Rimworld-Archinity/issues/150))
+- **`Orbit` carries four separate whitelist gates plus `isSpace true`** —
+  `onlyAllowWhitelistedIncidents`, `onlyAllowWhitelistedGameConditions`,
+  `onlyAllowWhitelistedArrivals`, `onlyAllowWhitelistedArrivalModes` — each with a
+  different reader and a different XML key **[V]**. See **T-48** for what that
+  collapses, and the entry below for the fifth, building-level gate.
+  ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147),
+  [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150))
+- **`PlanetLayerDef.layerType` is XML-settable but pinned into the save**: the
+  layer is scribed `LookMode.Deep`, so a changed `layerType` does not reach an
+  existing world **[V]**. Same shape as **T-45**.
+  ([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148))
+- **`PlanetLayer.CanReachLayer` is the engine's cross-layer flight gate and it is
+  effectively unused** — `PlanetLayer.TryGetPath` is its only consumer **[V]**.
+  Nothing in `CompPilotConsole`'s validator or `CompLaunchable.ChoseWorldTarget`
+  consults a reveal or unlock state **[V]**, so greying the view-orbit gizmo does
+  not close the flight path.
+  ([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148))
+- **`WorldSelector.set_SelectedLayer` is the sole writer of the selected layer**,
+  and therefore the single chokepoint for anything that wants to police which
+  layer the player is looking at **[V]** — but see **T-133** for the bypass.
+  ([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148))
+- **`LayerConnection.fuelCost` defaults to zero**, and the scenario-injected
+  Surface↔Orbit pair sets none **[V]** — the layer hop itself is free; the
+  chemfuel a launch costs is the launch, not the hop.
+  ([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148))
+- **There is a fifth layer gate, at the building rather than the layer.**
+  `CompProperties_Mannable.planetLayerWhitelist`, read twice in `CompMannable`
+  (`CompInspectStringExtra`, `CompFloatMenuOptions`), both emitting
+  `CannotFunctionOnLayer` **[V]**. Vanilla sets `Surface` on the abstract
+  `BaseArtilleryBuilding`, whose only concrete child is **`Turret_Mortar`** — so
+  **mortars cannot be manned in orbit**, loudly, with the reason in the float
+  menu. Automatic turrets are unaffected. The lever is a `PatchOperationAdd` of
+  `<li>Orbit</li>` to that comp — XML, Easy **[I]** that the patch alone
+  suffices. ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147))
 
 Faction placement on the orbit layer is controlled by `FactionDef.layerWhitelist`
 / `arrivalLayerWhitelist` / `neutralArrivalLayerBlacklist`. Odyssey's own

@@ -170,6 +170,304 @@ Answers [`RELIGION.md` § *The Schism Path*](../requirements/RELIGION.md): *"Inf
 
 ---
 
+## Shop entries — a quest or an item, each with its own eligibility and shelf life
+
+### Purpose and scope
+
+Answers [`docs/requirements/QUESTS.md` § *Shops*](../requirements/QUESTS.md): a shop's stock
+comes from an authored set; **an entry is a quest or an item, and that stays open**; each entry
+declares its eligibility from saved state; each entry's shelf lifetime is its own — standing
+until bought, or expiring; an entry that stops being eligible may leave the shelf. Both shops,
+Influence and Intel, are in. Established on
+[#144](https://github.com/cjd721/Rimworld-Archinity/issues/144).
+
+**This section owns:** what a shop *entry* can be, what gates its appearance, and how long it
+stays on the shelf.
+
+**It does not own:**
+- The shelf itself, the currency pair and the accept sequence: *The purchasable quest catalogue*,
+  from [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). Read as-is — its shelf,
+  its `QuestCurrency`/`QuestCurrencyInfo` pair and its `ActivateQuest` seam are unchanged. **What
+  this section does change is what may ride on that shelf**: see *What this section reverses*.
+- **A failed bought quest returning to the shop:**
+  [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145). It shares route B's tick seam
+  and VEF's `QuestChainExtension.grantAgainOnFailure` as its donor.
+- Which entries exist, their prices and their cadence:
+  [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). This section supplies the
+  vocabulary; the values are balance.
+- The ordered Schism chain, whose steps are entries of a particular kind: *The Schism catalogue*.
+
+### What this section reverses
+
+**One standing verdict in this document is overturned here, and it is named rather than
+quietly replaced.** *Delivery surfaces for the Intel exchange* carried the row
+*"**VEF `QuestGiverDef`** — **Rejected for items; kept for Intel missions.** An item through it
+is a contract whose accept fires a drop pod — a letter, a quest-tab entry and a generator run
+per item, with **T-76** and **T-77** in the way."* That row is now marked **SUPERSEDED** in
+place and points here.
+
+**What changed is one shipped node, not an opinion.** `QuestNode_AddItemsReward.RunInt`
+constructs a `QuestPart_Choice` holding a single `Reward_Items` and adds the
+`QuestPart_DropPods` that `Reward_Items.GenerateQuestParts` yields **[V]** — so an item entry
+renders as an ordinary reward row and delivers on accept, rather than as a contract wearing one.
+That also removes the row's strongest objection: **T-76 prunes exactly the entries that lack a
+`QuestPart_Choice`**, and this node is what supplies one. The generator run and the quest-tab
+entry per item remain true and are now consequences under route A, not disqualifiers.
+
+**What did **not** change:** #106's shelf, its `QuestCurrency`/`QuestCurrencyInfo` pair and
+`ActivateQuest`; #54's balance and its exchange; #132's ordered chain. The superseded row's
+reasoning survives intact as the case for **route D**, the two-shelf fallback, which is kept for
+that reason.
+
+### Verdict
+
+- **Possible? Yes, with one part built.** One shelf holds both kinds, because **an item entry is
+  a quest whose only content is an items reward** — `QuestNode_AddItemsReward` builds the
+  single-choice `QuestPart_Choice` the shelf requires and the `QuestPart_DropPods` that delivers
+  it **[V]**. Per-entry eligibility is declared per entry in XML, gated at generation **and**
+  re-checked every frame the row is drawn, by one shipped node **[V]**. Every entry already
+  carries its own expiry clock, rolled from its own def, and that clock resolves with **no
+  ticking at all** **[V]**. What nothing ships is the *removal*: VEF rotates the whole shelf or
+  nothing, and a reset discards standing unbought offers **[V]**. Per-entry leaving is ours, on a
+  tick seam that is verified to exist.
+- **Multiplayer? Yes, with the fill and the accept on synced paths.** VEF's own entry point
+  generates inside a job toil, i.e. in the sim **[V]**; a main-tab button that lazily fills the
+  shelf would draw `Rand` from `OnGUI`. MP Compat's VEF entry touches only the quest-chain
+  **dev-mode** window — never `QuestGiverManager` or `Window_Contracts` **[V]** — so #106's single
+  `RegisterSyncMethod` on `ActivateQuest` remains the whole MP cost, and any per-entry pruning
+  belongs on `QuestGiverManager.Tick`, never in the `AvailableQuests` getter.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — One shelf; an item entry is an items-reward quest** | A single shop selling missions and techprints side by side, every entry an authored `QuestScriptDef` with its own gates and its own expiry clock | VEF `QuestGiverDef` / `QuestWorker` / `Window_Contracts` + vanilla `QuestNode_GenerateThing`, `QuestNode_AddItemsReward`, `QuestNode_RequirementsToAccept*` | XML, on top of #106's currency pair | Easy | Yes |
+| **B — A per-entry pass on the shelf's tick** (composes with A) | Entries leave one at a time: expired ones drop off, an ineligible one leaves, stock refills per entry | Ours; seam donors `VEF.Storyteller.QuestGiverManager.Tick` + `StorytellerWatcher.GameComponentTick`, predicate donors `RimWorld.FactionPermit.OnCooldown` + `RoyalTitlePermitDef.AvailableForPawn` | C# | Medium | Yes |
+| **C — One gate node of ours** (composes with A) | An entry gated on era, a currency balance or a political flag, not only on research, wealth, title or faction relation | Ours; donors `QuestNode_RequirementsToAcceptResearch` and `QuestPart_RequirementsToAcceptPlayerWealth` | C# | Medium | Yes |
+| **D — Two shelves: VEF for quests, our `CurrencyPurchaseDef` catalogue for items** | Item entries with per-entry `project` gate, `maxIssued`, cooldown and venue availability, free of every quest-shaped constraint | Ours (*The Intel exchange*, below) + VEF for the quest half | C# + XML | Medium — largely already specified | Yes |
+| **E — Reskin a vanilla trader** | A stock list with per-generator tech gating and a visit-lifetime shelf | vanilla `TraderKindDef` + `StockGenerator_*` | XML + C# | Hard — **not recommended** | Unknown |
+
+**Every mechanism cited is [V]; each route is [I] as a composition.**
+**Recommend A + B + C together** — A is XML on machinery already selected, B closes the only
+clause nothing ships, C is what lets an entry read the campaign rather than the colony. D stays
+as the fallback if an authored item proves too awkward inside a quest, and as where a non-item
+"favour" would go.
+
+#### A — one shelf, both entry kinds
+
+**What it gets us.**
+- **An item entry that is a first-class shelf row.** `QuestNode_AddItemsReward.RunInt` builds a
+  `QuestPart_Choice` with exactly one `Choice` holding a `Reward_Items`, then adds the parts
+  `Reward_Items.GenerateQuestParts` yields — a `QuestPart_DropPods` off the quest's `inSignal`, or
+  a `QuestPart_GiveToCaravan` **[V]**. `QuestNode_GenerateThing` makes the `Thing` into the slate
+  from XML **[V]**. A techprint entry is: generate the thing, make it the reward. It renders in
+  `Window_Contracts.DoRewards` like any reward and drops on accept.
+- **Per-entry eligibility, in XML, with the re-check included.**
+  `VEF.Storyteller.QuestWorker.GenerateQuests` calls `QuestScriptDef.CanRun` before generating, and
+  `CanRun` runs `root.TestRun(slate.DeepCopy())` **[V]** — every `TestRunInt` in the entry's own
+  graph is live (**T-71** is the chain path, not this one).
+  `QuestNode_RequirementsToAcceptResearch` is the shape: `TestRunInt` false while the project is
+  unfinished **and** `RunInt` attaches a part that `QuestUtility.CanAcceptQuest` re-evaluates every
+  frame the row is drawn **[V]**. `QuestNode_GiveTechprints` self-gates the other way — false once
+  the project is finished or its techprint requirement is met **[V]**, which is *The Intel
+  exchange*'s "`project` hides the entry" behaviour, shipped.
+- **Shelf life is already per entry, and needs no ticking.** `QuestGen.InitializeQuestGen` sets
+  `acceptanceExpireTick` from the def's `expireDaysRange`, rolled per entry **[V]**;
+  `QuestNode_SetTicksUntilAcceptanceExpiry` sets it from inside the graph **[V]**.
+  `Quest.TicksUntilExpiry` and `Quest.State` are **computed** — `State` is `EndedOfferExpired` the
+  moment the clock runs out **[V]** — so an offer held by `Scribe_Deep` outside
+  `Find.QuestManager`, which is never ticked, still knows it has expired.
+- **Standing until bought is the default:** `QuestGiverManager.Tick` resets only when
+  `resetEveryTick != -1` **[V]**.
+- **The XML gate vocabulary with no code**: `QuestNode_RequirementsToAcceptResearch`, `_Bedroom`,
+  `_ColonistWithTitle`, `_PlanetLayer` (the four `QuestPart_RequirementsToAccept` subclasses with
+  wrappers — [`docs/engine/quests.md`](../engine/quests.md) § *The accept-time gate*), plus
+  generation-time `QuestNode_ExpansionActive`, `QuestNode_ModIsActive`,
+  `QuestNode_HasRoyalTitleInCurrentFaction`, `QuestNode_IsFactionHostileToPlayer`,
+  `QuestNode_RequireRoyalFavorFromFaction`, `QuestNode_ViolentQuestsAllowed`,
+  `QuestNode_QuestUnique`, `QuestNode_CannotRun` and the `…OrFail` arithmetic family **[V]**.
+
+**What it cannot do.**
+- **Read our campaign state from XML.** `QuestNode_GetFieldValue` takes **instance** fields only
+  and needs the object already on the slate **[V]**; nothing puts a `WorldComponent` there. Era, a
+  balance or a political flag needs route C — the same wall `docs/engine/quests.md` records for
+  `Faction.PlayerGoodwill`.
+- **Make an entry leave.** Nothing in VEF reads `Quest.State` or `acceptanceExpireTick`;
+  `AvailableQuests` prunes only on null / `askerFaction` / `choice` **[V]**.
+- **Mix cadences inside one giver.** `Reset()` is `Clear()` then regenerate **[V]** — one cadence
+  per `QuestGiverDef`, and it discards standing unbought offers. Standing entries beside rotating
+  ones means several givers (XML, Easy) or route B.
+
+**Consequences.**
+- ⚠ **A per-entry shelf life introduces a pay-for-nothing failure, and it is silent.**
+  `Quest.Accept` is wrapped in `if (State == QuestState.NotYetAccepted)` and is a **no-op**
+  otherwise **[V]**, while `QuestGiverManager.ActivateQuest` still runs
+  `Add → Accept → SendLetterQuestAvailable → currencyInfo?.Buy → Remove` **[V]**, and its only
+  guard, `QuestUtility.CanAcceptQuest`, does not test `State` **[V]**. Buying an entry whose clock
+  has run out **charges the currency, sends the "quest available" letter and accepts nothing**.
+  Nothing logs. Proposed for the register on #144; the shop's own guard must test
+  `State == NotYetAccepted`, or route B must prune first.
+- ⚠ **`onlyOneReward: true` is necessary but not sufficient — T-76 is broader than its text.**
+  `QuestInfo`'s constructor populates `quest_Part_choice`/`choice` only when `onlyOneChoice` is
+  true **and** the generated quest actually contains a `QuestPart_Choice` **[V]**, and
+  `AvailableQuests` discards entries missing either on every read **[V]**. So **an entry whose
+  script builds no choice part is silently dropped from the shelf.** An item entry must go through
+  `QuestNode_AddItemsReward`, not a bare delivery node.
+- **The fill must not happen from the draw path.** VEF's own path is safe —
+  `JobDriver_UseQuestGiver` runs `CompQuestGiver.Use()` from a Toil `initAction` **[V]**, so
+  `GenerateQuests`' `RandomElement` draws inside the sim. Opening the shelf from
+  `Window_ArchinityNetwork` instead moves the lazy `Init()` into `OnGUI`.
+- **The shelf is lazy.** `CompQuestGiver.Use` creates the manager and calls `Init()` on first
+  interaction, and `StorytellerWatcher.GameComponentTick` ticks only managers already in the
+  dictionary **[V]**. A shop nobody has opened does not exist and does not rotate.
+- **Two further silent config hazards, both [V]:** `CompProperties_QuestGiver.questManagerID` is a
+  bare `int` keying `StorytellerWatcher.questGiverManagers`, so two comps sharing an id silently
+  share one shelf built from whichever `QuestGiverDef` was used first; and with
+  `generateOnce: true`, `AddQuestGiverManager` fills the shelf and `Use()` then calls `Init()`,
+  filling it again — harmless only when `maximumAvailableQuestCount` is set.
+- **No corpus example to copy.** `QuestGiverDef` appears in **zero XML files** across both roots,
+  vanilla and the DLC **[V]**.
+
+#### B — a per-entry pass on the shelf's tick
+
+**What it gets us.** The three clauses A leaves open: an expired entry leaves; an entry that stops
+being eligible leaves; an entry restocks on its own cadence.
+
+**The seam is verified.** `VEF.Storyteller.StorytellerWatcher` is a `GameComponent` holding
+`Dictionary<int, QuestGiverManager>` and calling `Tick()` on every manager every 60 ticks from
+`GameComponentTick` **[V]** — simulation time on every client. `QuestInfo` already scribes
+`tickGenerated`, `tickExpired` and `tickCompleted` **[V]**.
+
+**The predicate has a shipped donor.** Royalty's permit card is a shelf whose entries each declare
+their own eligibility and their own lifetime: `RoyalTitlePermitDef.AvailableForPawn` tests a
+prerequisite permit, a point cost and `currentTitle.seniority >= minTitle.seniority`, and
+`FactionPermit.OnCooldown` is `TicksGame < lastUsedTick + permit.CooldownTicks` over a per-entry
+scribed tick **[V]**. `RoyalTitlePermitWorker_DropResources` is the entry that delivers goods
+**[V]**. The architecture, not the currency.
+
+**What it cannot do.** Nothing about authoring — A still supplies the entries — and it does not
+fix the pay-for-nothing ordering, which is a guard in front of `ActivateQuest`.
+
+**Consequences.** ⚠ **The pruning must not go in `AvailableQuests`.** That getter is reached from
+`Window_Contracts.DoQuestsList` on every draw **[V]**; a time-dependent predicate there runs at a
+different frequency on each client — a client with the window shut never prunes — and mutates
+scribed state. VEF's existing null-prune is safe only because it is idempotent and
+state-independent.
+
+#### C — one gate node of ours
+
+**What it gets us.** An entry whose XML says *"from the industrial era"* or *"once Influence ≥ N"*.
+The donors are exact: `QuestNode_RequirementsToAcceptResearch` for a node that both fails
+`TestRunInt` and attaches a re-checking part **[V]**, and
+`QuestPart_RequirementsToAcceptPlayerWealth` for the numeric-threshold part — one `float`, a live
+comparison, the threshold in the refusal message, a two-line `ExposeData` **[V]**. Twelve vanilla
+subclasses of the abstract base exist to copy (`docs/engine/quests.md`).
+
+**What it cannot do.** It does not remove the entry: `CanAcceptQuest` blocks the purchase and
+`Window_Contracts.DoAcceptanceRequirementInfo` explains why — arguably the better shop behaviour,
+but *leaving* the shelf still needs B.
+
+**Consequences.** ⚠ **In Multiplayer the gate is advisory.** `Multiplayer.Client.SyncMethods`
+registers `Quest.Accept`, not `CanAcceptQuest`, and `ActivateQuest` calls `Accept` directly **[V]**
+(`docs/engine/quests.md`). A threshold over a shared balance must be re-checked *inside* the synced
+call — which *Failure and recovery* already requires of `TrySpend`.
+
+#### D — two shelves
+
+Already specified below at *The Intel exchange*: `CurrencyExchangeExtension` carries `project`,
+`maxIssued`, a purchase cooldown and an `ExchangeVenue.Available` check — per-entry eligibility and
+per-entry lifetime on our own surface, free of every quest-shaped constraint. Its cost is that the
+player learns two places to buy things, and that "a shop's stock" becomes two stocks.
+
+#### E — reskin a vanilla trader — not recommended
+
+`StockGenerator` carries `countRange`, `customCountRanges`, `totalPriceRange`,
+`maxTechLevelGenerate`, `maxTechLevelBuy` and a `PriceType`, and `TradeabilityFor` falls through to
+`ThingDef.tradeability` **[V]**. Per-entry tech gating and a visit-lifetime shelf exist. But the
+shelf is priced in silver through `Tradeable`, the cadence belongs to the visit rather than the
+entry, and **it cannot sell a quest at all** — which fails the requirement's load-bearing clause.
+Listed so it is visibly considered.
+
+### Available mechanisms
+
+The survey behind the routes. Every line **[V]**.
+
+**VFE Deserters, the named donor.** Its item shelf is `ContrabandManager`, a
+`[StaticConstructorOnStartup]` static walking `DefDatabase<ThingDef>`, auto-attaching a
+`ContrabandExtension` to anything carrying `CompProperties_Techprint` and deriving a missing
+`intelCost` from `BaseMarketValue / 100`. `ContrabandExtension` has `category`, `countMult`,
+`intelCost`, `useCriticalIntel`, `priority` — **no eligibility field and no lifetime field**. Every
+eligible item is on the shelf permanently, from turn one. Its services shelf (`DeserterServiceDef`)
+scales price by `WorldComponent_Deserters.Instance.VisibilityLevel.intelCostModifier` — saved state
+moving a **price**, not an eligibility.
+
+**And the donor already delivers a bought item as a quest, which is route A's precedent.**
+`DeserterTabWorker_Contraband` finishes a purchase with
+`QuestUtility.GenerateQuestAndMakeAvailable(VFED_DeadDrop, slate)` and an `availableTime` slate var,
+or `DropPodUtility.DropThingGroupsNear` for rush delivery. `VFED_DeadDrop` is a `QuestScriptDef`
+with `isRootSpecial`, `autoAccept`, a `QuestNode_WorldObjectTimeout` on `$availableTime` and a
+`QuestNode_AddItemsReward`.
+
+**VEF's quest-chain scheduler is a sibling mechanism, not this one.** `QuestChainExtension` is the
+richest per-entry eligibility vocabulary in the corpus — `requiredResearch`,
+`conditionSucceedQuests`, `conditionFailQuests`, `conditionSucceedQuestsCount`, `conditionEither`,
+`conditionMinDaysSinceStart`, `isRepeatable`, `mtbDaysRepeat`, `grantAgainOnFailure/Success/Expiry`
+with day ranges, `delayTicksAfterTriggering` — read by `GameComponent_QuestChains.TryScheduleQuest`
+against a scribed history of `QuestInfo` outcomes. But it ends in `questDef.CreateQuest()` or a
+`FutureQuestInfo`, both of which put the quest **straight into `Find.QuestManager`**. It never
+touches `QuestGiverManager.availableQuests`. It is the donor for *what an eligibility clause can
+say*, and the sibling half of #145.
+
+**Vanilla.** No vanilla surface sells a quest (*The rest of the corpus, and vanilla*, unchanged).
+Royalty's permit card is the nearest shipped shelf with per-entry eligibility and per-entry
+cooldown, and its entries are aid effects and resource drops.
+
+**Multiplayer.** `Multiplayer.Compat.VanillaExpandedFramework` reaches `VEF.Storyteller` at exactly
+four points, all inside `PatchQuestChainsDevMode`: `QuestChainsDevWindow:ViewQuestChains`,
+`GameComponent_QuestChains`'s `quests`/`futureQuests`, `QuestInfo:Quest`,
+`FutureQuestInfo:questDef`, with two debug-only synced methods. `ActivateQuest` and
+`QuestGiverManager` appear nowhere in the assembly.
+
+**The wide pass**, both roots plus vanilla and the DLC, `-a -g '*.dll' -g '!**/obj/**'
+-g '!**/Referenced/**'`, attributed through `tools/corpus.py --which -`; the UTF-16 half run as a
+hand-typed null-interleaved literal, never through `$(…)`, validated on
+`V\x00E\x00F\x00.\x00A\x00v\x00a\x00i\x00l\x00a\x00b\x00l\x00e\x00C\x00o\x00n\x00t\x00r\x00a\x00c\x00t\x00s\x00`:
+
+- `QuestGiverDef` → **Vanilla Expanded Framework only**, 10 paths across both roots.
+- `acceptanceExpireTick` → **VFE Deserters only**. One mod in the corpus touches vanilla's
+  per-offer expiry field. The interleaved half returns zero, consistent with a field reference in
+  `#Strings`.
+- XML `QuestGiverDef` → **zero files**; `questgiver` case-insensitive → zero;
+  `SetTicksUntilAcceptanceExpiry` → zero (vanilla uses `expireDaysRange` on the def).
+- XML `ContrabandExtension` → VFE Deserters only.
+- Shop-shaped def families (`ShopDef`, `VendorDef`, `PurchaseDef`, `CatalogDef`, `CatalogueDef`,
+  `StoreDef`, `OfferDef`, `ShopEntry`, `MerchandiseDef`, case-insensitive) → all zero but two
+  `StoreDef` hits that are keyed translations.
+- `CanAfford` → two unrelated mods. No third currency-shop implementation in the corpus.
+
+### Status
+
+**Evidence class: READ.** Mechanisms **[V]**; routes A–E **[I]** as compositions. From
+[#144](https://github.com/cjd721/Rimworld-Archinity/issues/144).
+[#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) and
+[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) were both re-read and their
+mechanisms stand. **One verdict in this document is superseded** — the *"Rejected for items"*
+row on VEF `QuestGiverDef` under *Delivery surfaces for the Intel exchange*, marked in place and
+explained at *What this section reverses*. Where that row and route A disagree, **route A is
+current**.
+
+### Open questions
+
+| Question | Owner |
+|---|---|
+| An entry that becomes ineligible — does it **leave**, or stay visibly locked with the reason shown (which vanilla's `QuestPart_RequirementsToAccept` gives free)? | Requirements → [`QUESTS.md`](../requirements/QUESTS.md) § *Shops* |
+| Where the per-entry pruning attaches, and what it stores per entry beyond `QuestInfo.tickGenerated` | Build map, on selection |
+| Whether route C's node also attaches a re-checking part, or gates at generation only | Build map, on selection |
+| What `QuestGiverManager.CallWindow`'s `Find.WindowStack.Add` does under Multiplayer from the synced toil — one client or both. Moot if the shop opens from a main tab; settled by two clients, not by reading | Unowned |
+| Which item entries exist, and what each one's eligibility clause and shelf life say | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) |
+
+---
+
 ## The build
 
 **One implementation, two `CurrencyDef` rows in one store, and it is ours to write** — the
@@ -1385,7 +1683,7 @@ a numeric Intel balance into a delivered Instruction item, and at what cost?**
 | **Orbital traders' techprint stock** | `Orbital_CombatSupplier` and `Orbital_Exotic` (`<faction MayRequire="Ludeon.RimWorld.Odyssey">TradersGuild</faction>`) carry `StockGenerator_Techprints`. A passing ship generates stock with **no** `makingFaction` (`TradeShip.GenerateThings` sets only `traderDef` and `tile`; `ThingSetMaker_TraderStock.Generate` passes it through), so `GetResearchProjectsNeedingTechprintsNow` skips the tag filter entirely. | **Rejected, and a leak to prevent.** It sells for **silver**, and it would sell *every* unfinished `techprintCount` project's techprint regardless of `heldByFactionCategoryTags` — which is why the exclusion postfix is mandatory (**T-99**). The same bypass is what keeps Empire-tagged techprints on sale after the Church turns hostile: the tag-gated Church trader route needs the Church non-hostile and a colonist holding Knight (Baron for its orbital trader) — [`RELIGION.md`](RELIGION.md) § *Verification* § *Exaltation*. |
 | **Faction Territories — `FactionTerritories.Vassalise.Dialog_Vassalage`** (`jaeger972.factionterritories`, `3626725895/Assemblies/FactionTerritories.dll`) | **A real carrier.** `DoWindowContents` reads `VassalagePointsComponent.GetPoints`; the *Buy* button builds goods with `ThingMaker.MakeThing`, delivers to `Find.AnyPlayerHomeMap` through `TryDeliverToMapSinglePod` (reflected `DropCellFinder.TradeDropSpot` → `DropPodUtility.MakeDropPodAt`) or to a caravan via `TryDeliverToCaravan`, and only then `TrySpendPoints` — logging *"Delivery succeeded but points could not be deducted (state changed)"* when that fails. All from a draw method. | **Not adoptable — the mod is declined** (map #2 *out of scope*, settled on [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)), its balance is keyed per faction and accrued passively (see *The wide pass*), and its purchase is unsynced. **Donor for `ExchangeVenue_Faction.Deliver`**: home-map choice and a single pod at `TradeDropSpot`. The original #54 survey recorded these points as spent *"on pawns, items and roads"* and this table initially omitted it. |
 | **Royal aid** — `RoyalTitlePermitWorker_DropResources` — **a real carrier** | `CallResources(IntVec3)` makes `royalAid.itemsToDrop`, `DropPodUtility.MakeDropPodAt`, messages with `LookTargets`, `TryRemoveFavor`. Multiplayer syncs it through the `OrderForceTarget` sweep and `CallResourcesToCaravan` explicitly. | **Adopt the shape, not the worker.** It is `ExchangeVenue_Faction.Deliver` plus a debit; the favor is per pawn and bound to the title ladder (see *Vanilla and the DLC*). |
-| **VEF `QuestGiverDef`** — this document's #106 Build A | Sells a *quest*: `QuestGiverManager.ActivateQuest` adds, accepts and then debits. | **Rejected for items; kept for Intel missions.** An item through it is a contract whose accept fires a drop pod — a letter, a quest-tab entry and a generator run per item, with **T-76** and **T-77** in the way. |
+| **VEF `QuestGiverDef`** — this document's #106 Build A | Sells a *quest*: `QuestGiverManager.ActivateQuest` adds, accepts and then debits. | ⚠ **SUPERSEDED — 2026-09-23, by *Shop entries*, from [#144](https://github.com/cjd721/Rimworld-Archinity/issues/144).** This row read *"Rejected for items; kept for Intel missions — an item through it is a contract whose accept fires a drop pod, a letter, a quest-tab entry and a generator run per item, with T-76 and T-77 in the way."* Every cost it names is real and still is. What it did not have is `QuestNode_AddItemsReward`, which builds the `QuestPart_Choice` T-76 prunes for and the `QuestPart_DropPods` that delivers, so an item entry is an ordinary reward row rather than a contract wearing one **[V]**. **The current verdict is route A of *Shop entries*: items through `QuestGiverDef` are the recommended shape**, because the requirement asks one shop to hold quests and items together. The rejection stands only as the case for route D (two shelves), which is kept as the fallback. |
 | **Bills** — a `RecipeDef` producing `Techprint_X` at a bench | The product resolves in XML (implied defs precede cross-references). But no ingredient takes a non-`Thing` (`RecipeWorker.ConsumeIngredient(Thing, …)`); `RecipeWorker.AvailableOnNow` is reached through `RecipeDef.AvailableOnNow` from `ITab_Bills` (listing and pasting) and `PlayerItemAccessibilityUtility` **[V]**, and from the health-tab surgery lists **[I]** — never from `WorkGiver_DoBill`, which tests `bill.ShouldDoNow()` / `PawnAllowedToStartAnew`; and `RecipeWorker.Notify_IterationCompleted` — the only per-iteration hook — runs **after** `GenRecipe.MakeRecipeProducts` in `Toils_Recipe.FinishRecipeAndStartStoringProduct`. | **Rejected as the default.** ~70 lines plus a Harmony postfix on `Bill_Production.ShouldDoNow`, **grant-before-debit**, and two bills can both pass the gate against one balance. Worth revisiting only if #117 wants a colonist to *work* the exchange — and then as a Job on the table venue, not a bill. |
 | **Comms-console `DiaOption`** — `FactionDialogMaker` | The vanilla surface for talking to a faction. | **Rejected.** Multiplayer syncs a `DiaOption` click by index and re-resolves the dialog client-locally (**T-82**), a `Dialog_NodeTree` subclass drops out of its bindings (**T-95**), and a missing `resolveTree` strands the dialog (**T-97**). D1 rows gated on `CanUseCommsNow` do the same job with none of that. |
 | **VFE Deserters' contraband shop** — the only corpus shop that already exchanges Intel for techprints | `ContrabandManager`'s static constructor runs `TryGiveExtension` over every `ThingDef` and registers each one carrying `CompProperties_Techprint` into `VFED_Imperial`, priced by `SetCostIfMissing` at `BaseMarketValue / 100` Intel. `DeserterTabWorker_Contraband` draws the `(applied/required)` suffix, and its purchase either generates `VFED_DeadDrop` with `itemStashThings` (a site to collect from) or, at double price, `DropPodUtility.DropThingGroupsNear(DropCellFinder.TradeDropSpot(Parent.Map), …)` — **both from the tab's draw method**. | **Donor for the row layout and both delivery ideas; not a dependency** (see *The named donor*). **And a leak:** if VFED ships, every Glitterite techprint is on its shelf. The dead-drop quest is a real faction-venue variant, but its script uses VFED's own nodes (`QuestNode_GetEmpire`, `QuestNode_GetDeserters`, `QuestNode_HiddenDelay`), so it is not free. |

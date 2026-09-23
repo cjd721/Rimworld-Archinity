@@ -61,6 +61,23 @@ checksums `Rand` state as simulation state, which is how desyncs are detected.
 **The consequence: the hazard is never "a mod uses `Rand`". It is a mod consuming the
 shared stream a different number of times, or at a different position, per client.**
 
+**The world tick has its own envelope, and it is the world-side counterpart to
+`MapRandomStateData`.** `Multiplayer.Client.AsyncTime.AsyncWorldTimeComp.PreContext` does
+`Rand.PushState(); Rand.StateCompressed = randState;` and `PostContext` does
+`randState = Rand.StateCompressed; Rand.PopState();`, wrapping
+`Find.TickManager.DoSingleTick()`. `randState` is **scribed**
+(`Scribe_Custom.LookULong(ref randState, "randState", 2uL)`) and checked every tick via
+`Multiplayer.game.sync.TryAddWorldRandomState`. **So a per-tick roll on a world object —
+a caravan, an outpost, a site — is deterministic by default**, for the same reason a
+Thing tick is. ([#146](https://github.com/cjd721/Rimworld-Archinity/issues/146))
+
+**Adding a world object is free from the world tick and a synced command from map
+context.** `Multiplayer.Client.Patches.WorldObjectAdd.Prefix` defers the add into a
+`[SyncMethod]` when `Multiplayer.MapContext != null`, and lets it through inline
+otherwise. The practical rule: **spawning a world object from the world tick is free;
+from map context it becomes a synced command.**
+([#146](https://github.com/cjd721/Rimworld-Archinity/issues/146))
+
 ## MP's own list of paths that must not touch the shared stream
 
 `MultiplayerStatic` wraps `RandPatches.Prefix`/`Finalizer` — a bare
@@ -295,8 +312,8 @@ justified *by* that requirement, so it is conditional on #104 answering yes.
 **non-RNG map-generation divergence is not.** A modded `GenStep` that branches on a
 reference `GetHashCode()`, iterates an unordered collection in hash order, or reads
 `DateTime.Now` / `Environment.TickCount` diverges between clients with no RNG involved at
-all — and per the section above, MP's checksum would not see it either. **That sits on no
-ticket.** #88 examined `PlanetTile.GetHashCode()` alone, and only far enough to confirm it
+all — and per the section above, MP's checksum would not see it either. **It is registered as
+T-120 and has not been swept; the sweep is build-time work.** #88 examined `PlanetTile.GetHashCode()` alone, and only far enough to confirm it
 is value-based.
 
 ## What is not synced for free

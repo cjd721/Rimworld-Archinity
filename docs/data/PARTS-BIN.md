@@ -2699,3 +2699,27 @@ silent failures in `docs/TRAPS.md`, verdicts and collisions in `docs/data/MOD-VE
   `docs/engine/factions-and-worldgen.md` § *What `Notify_RelationKindChanged` already does
   to faction-owned things*.
   ([#73](https://github.com/cjd721/Rimworld-Archinity/issues/73))
+
+## 19. Carriers the 2026-09-23 capability batch surfaced
+
+Same rule as §17 and §18: on disk already, never covered here. Mechanisms live in
+`docs/specs/`, silent failures in `docs/TRAPS.md`, verdicts and collisions in
+`docs/data/MOD-VERDICTS.md`.
+
+- **A per-faction standing record that already gates trade, war and raid points** —
+  **RimPacts – Diplomacy Overhaul**, `wowgag.rimpacts` (workshop `3762723122`,
+  `Assemblies/RimPacts.dll`). Supplies a per-faction `TrustRecord` held in a
+  `WorldComponent`, gating trade embargo, casus belli and raid points; a postfix on
+  `IncidentWorker_RaidEnemy.TryResolveRaidFaction` that **scales `parms.points` per
+  faction**; and a validator-wrapping prefix on the raid faction draw. **[V]**
+  **Unsynced and uncovered by Multiplayer Compatibility.** **[V]** Note the ticket-level
+  correction that came with it: RimPacts' `playerNotoriety` is a **global** scalar, not a
+  per-faction one — the per-faction value is `TrustRecord.trust`. **[V]**
+  ([#169](https://github.com/cjd721/Rimworld-Archinity/issues/169))
+- **Driving vanilla's incident cadence from one stored campaign number** — **VFE
+  Deserters**, `oskarpotocki.vfe.deserters` (workshop `3025493377`). Supplies four
+  `StorytellerComp` subclasses that do exactly that, through
+  `IncidentCycleUtility.IncidentCountThisInterval`. **[V]** That utility is `public` and
+  already documented in `docs/engine/storyteller-and-incidents.md`; these are the worked
+  subclasses to copy.
+  ([#169](https://github.com/cjd721/Rimworld-Archinity/issues/169))

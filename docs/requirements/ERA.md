@@ -19,8 +19,7 @@ never something that comes to you.
 **This document does not own the era clock.** Where the era is stored, when it advances, and
 what `AdvanceEra()` writes are [`docs/specs/ERA.md`](../specs/ERA.md)'s. It does not own
 what becomes available at each era ([`docs/progression/`](../progression/README.md)), the
-crafting and research *menu surface*
-([#96](https://github.com/cjd721/Rimworld-Archinity/issues/96)), or which faction replaces
+crafting *menu surface* ([colony](COLONY.md)), or which faction replaces
 which at a boundary ([the faction grid](https://github.com/cjd721/Rimworld-Archinity/issues/34)).
 
 ## Meaning

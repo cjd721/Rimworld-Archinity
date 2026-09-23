@@ -185,11 +185,12 @@ routes. What holds whichever route is chosen:
   player committed. A revolt never needs a faction the world was not created with.
   [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131) answers what is possible;
   the choice waits for its routes.
-- **What a vassal is stays open.** A settlement taken by conquest, a friendly faction that
-  submits, and a whole faction after a revolt or a conquest are all candidates, and they may
-  coexist. [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120) answers what is
-  possible; [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) states what a vassal
-  must be once it has.
+- **What a vassal is, is now stated in [territory](TERRITORY.md).** There are two kinds: a
+  **holding**, a single settlement taken by force, and a **sworn faction**, a whole faction
+  that has given itself. A revolt can only ever produce the second kind, because a holding
+  is taken and a sworn faction is given — but **how much of the faction follows, and whether
+  any ground changes hands, stays open** as the bullet above says. A sworn faction owes
+  **services rather than goods**, and its settlements never become holdings.
 - **Failure** drops that faction's Reverence sharply and collapses its Goodwill, and what was
   committed is lost. The faction can revolt again once its Reverence is rebuilt.
 - **An offer declined or left to expire stays away for about thirty days**, so an eligible faction
@@ -258,8 +259,9 @@ bands. Wars, alliances, Goodwill and vassal/revolt outcomes are tracked by
 
 Title and favor catalogs, conversion propagation amounts, decay, institutional
 effects, Reverence reaction bands, revolt success and UI thresholds still need design or tuning.
-Friendly submission and hostile revolt are distinct routes. [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)
-specifies their obligations and tithes. [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98)
+Friendly submission and hostile revolt are distinct routes into the same thing, a **sworn
+faction**; what one owes the colony is [territory](TERRITORY.md)'s, stated on
+[#35](https://github.com/cjd721/Rimworld-Archinity/issues/35). [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98)
 (Reverence, end to end — superseding closed #52),
 [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53) (Exaltation),
 [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) (Influence and Intel together)

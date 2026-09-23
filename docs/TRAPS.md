@@ -30,10 +30,11 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | **T-55** | **`GenTypes` resolves short names last-writer-wins; a mod type in no namespace replaces the vanilla one for every `Class=` lookup** |
 | T-69 | `AccessTools.Field(...)?.SetValue(...)` is a silent no-op after a rename — `ResetHackProgress` does it ten times |
 | T-79 | Granting a work type from research and not calling `Pawn.Notify_DisabledWorkTypesChanged()` leaves every colonist unable to do the work until the next load, with no message |
-| T-83 | `GoodwillSituationDef.baseMaxGoodwill` is declared and read nowhere — setting it in XML does nothing |
+| T-83 | A `GoodwillSituationDef` with no `workerClass` is inert end to end — `baseMaxGoodwill` is read nowhere, the default worker returns a hardcoded 100/0, and the faction card shows no row at all |
 | T-84 | `PreceptComp_GoodwillSituation` is inert in 1.6 — the list its only reader writes to is never read |
 | T-92 | Declaring a modded research tab silently enrols a `requiredAnalyzed`-gated project into the vanilla `Schematic` book's grant pool, bypassing the gate |
 | T-99 | Declaring `techprintCount` puts the techprint into every faction-less generator — orbital trade ships, map-gen loot and asker-less rewards skip `heldByFactionCategoryTags` |
+| T-136 | `OutfitStandBase` declares no `thingClass`, so a def derived from it is a plain `Building` — no gizmo, no contents, no error |
 
 ## World creation and factions — [`docs/traps/world-creation.md`](traps/world-creation.md)
 
@@ -80,6 +81,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-116 | `QuestPart_SetFactionHidden` does not scribe `hidden` — a part that hides a faction becomes one that reveals it after a save and load |
 | T-118 | A faction set in `IncidentParms` is ignored by `CaravanMeeting` and overwritten by `Ambush_EnemyFaction` and `CaravanDemand` — the encounter fires with a random faction |
 | T-119 | A caravan incident never fires in a biome its `mtbDaysByBiome` omits — vanilla's three caravan encounters are absent from every Odyssey and modded biome |
+| T-124 | A shelved offer whose expiry clock has run is bought for nothing — `Quest.Accept` no-ops, the currency is debited and a letter still arrives |
+| T-125 | Two VEF quest-giver comps sharing a `questManagerID` silently share one shelf, built from whichever `QuestGiverDef` was used first |
+| T-126 | `generateOnce: true` fills the shelf twice, at a budget of 100 unless `maximumAvailableQuestCount` is set |
+| T-127 | `QuestNode_GetSiteTile`'s early-out guard is typed `int` against a `PlanetTile`, so it never fires and `siteDistRange` never measures from a caravan |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -108,6 +113,9 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-96 | A modded `ChoiceLetter`'s options are synced by neither mechanism — identical on both clients, acting on one |
 | T-97 | A `DiaOption` without `resolveTree = true` strands its `mapDialogs` entry, and `ForceShowDialogs` re-opens an already-answered dialog forever |
 | T-114 | Multiplayer's multifaction faction creation runs no `GameComponent.StartedNewGame`, only two `ScenPart.PostGameStart`s, and never writes `GameInfo.startingAndOptionalPawns` — a game-start stamp silently misses a joining player's pawns |
+| T-120 | Map generation runs on both clients and outside MP's checksum — a `GenStep` that diverges without `Rand` (hash order, `GetHashCode`, `DateTime`) desyncs later, silently. Not yet swept |
+| T-135 | `GetClosestTile_NewTemp` resolves through a Burst job whose closest-tile tie-break depends on thread partitioning — two clients can pick different tiles |
+| T-137 | Multiplayer registers `OrderForceTarget` only for `ITargetingSource` implementors in the vanilla assembly — one declared in ours must register itself |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -142,6 +150,9 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-94 | `Bill_ProductionMech.CreateProducts` resolves the gestated pawnkind by reverse-lookup `.First()` — two `PawnKindDef`s sharing a race yield whichever `DefDatabase` ordering returns |
 | T-111 | A pawn's xenotype is not identity — reimplanting gives the recipient the caster's `XenotypeDef`, and implanting a xenogerm resets the target to Baseliner and deletes every xenogene |
 | T-113 | `HediffDef.duplicationAllowed` defaults to `true` — an Anomaly duplicate silently inherits every per-pawn record hediff, comps and fields included |
+| T-121 | No `FactionDef` restriction applies inside `Dialog_ReformIdeo` — every precept and meme gate silently lifts the moment the player clicks Reform |
+| T-122 | A precept refused by `disallowedPrecepts` vanishes from the issue menu instead of greying out; its rejection reason is the empty string |
+| T-123 | `FactionDef` **meme** fields on a player faction def are inert whenever a world exists — vanilla's own `PlayerTribe` `disallowedMemes` does nothing |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 
@@ -154,9 +165,16 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-42 | All five vanilla `RoadDef`s share `movementCostMultiplier 0.5` — upgrading a road is a silent no-op |
 | T-43 | A downgrade through `WorldGrid.OverlayRoad` returns silently; only a null `RoadDef` logs |
 | T-44 | A road in an `allowRoads = false` biome is drawn but inert |
-| T-48 | On an orbit layer the pool collapses to 18 of 91 incidents and 18 of 139 quests, unannounced |
+| T-48 | On an orbit layer the content pool collapses unannounced behind **four** separate whitelist gates — 18 of 91 incidents, and the storyteller's own reader leaves **2** of 139 quests, not the 18 the clause suggests |
 | T-87 | A `RoadDef.movementCostMultiplier` patch is discarded for any caravan carrying a vehicle that declares `customRoadCosts` — the first declarer replaces the value in either direction |
 | T-117 | A `Caravan_PathFollower` patch never runs for a Vehicle Framework caravan — VF diverts `StartPath` to its own sealed `VehicleCaravan_PathFollower` |
+| T-128 | `QuestNode_Root_WandererJoin.CanBeSpace` is `false` on all five shipped subclasses, and the joiner path is barred three times over |
+| T-129 | `TerrainDef Space` is `Impassable`, so whitelisting a walk-in arrival for an orbit layer is a silent no-op |
+| T-130 | Prisoners cannot be released and slaves cannot be emancipated on a vacuum map — the work giver simply never offers the job |
+| T-131 | Every sealed orbital home runs a standing −5 `NeedOutdoors` penalty; every gravship roof is thin |
+| T-132 | Odyssey populates every planet layer at world creation, so the Orbit layer is never empty and the view gizmo is live from the first tick |
+| T-133 | Scrolling out on the world map switches planet layer without consulting `CanSelectLayer` — a disabled gizmo is not a closed layer |
+| T-134 | `canTraverseLayers: true` turns a cross-layer distance into a near-zero projected hop, and poisons a static cache that later default calls read |
 
 ---
 
@@ -179,9 +197,11 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole. **Four of the five are over that line: `world-creation.md` (31),
-`content-and-buildings.md` (22), `multiplayer.md` (22) and `defs-and-patching.md` (16).
-`worldgen-layouts.md` (9) is the only one still short of it.**
+read whole. **All five are now over that line**, counted 2026-09-23 after the
+#140–#169 merge: `world-creation.md` (45), `content-and-buildings.md` (32),
+`multiplayer.md` (26), `defs-and-patching.md` (17) and `worldgen-layouts.md` (17) —
+the last of which was the only one short of it before this batch added seven orbit
+entries to it.
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
 sharpened the case rather than changing it.** None of the five names the subject, so

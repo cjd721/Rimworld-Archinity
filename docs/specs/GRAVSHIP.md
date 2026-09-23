@@ -396,6 +396,338 @@ it lands there — but only on a **surface** tile. A shrine on an orbit tile is 
 whitelist fence, which is a different and stronger reason nothing can raid it. (This finding was
 written for #10, which is now closed; it is recorded here because nothing else carries it.)
 
+## Ordinary colony life on an orbital home
+
+Which of the colony's everyday life continues once the ship is the home and the home is in orbit,
+and by which routes the rest is recovered. Answers
+[`docs/requirements/SPACE.md`](../requirements/SPACE.md) § *Living in orbit*; established by
+[#147](https://github.com/cjd721/Rimworld-Archinity/issues/147). The section above,
+*Living on the orbit layer*, states the five layer facts; this one states what they cost and what
+buys them back.
+
+### Verdict
+
+- **Possible? Partly, and the split is sharp.** Everything the colony *does to itself* works in
+  orbit unchanged — food, production, research, recreation, beauty, temperature, life support,
+  penned animals, prisoners held and recruited, pregnancy, birth, graves and Ideology rituals.
+  Everything that *arrives* is shut, by **four separate gates** rather than the one build (b)
+  prices, and **every walk-in path in the game is structurally dead in orbit**, so the obvious XML
+  fix for visitors and trader caravans is a silent no-op. **No vanilla joiner quest can generate at
+  all.** All of it is reachable; most of it by XML.
+- **Multiplayer? Yes** for every route but F. MP Compat carries `vanillaexpanded.gravship` and does
+  not carry `shunter.bettertradersguild`.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A** | The four-gate whitelist pack: which disasters, conditions, threats and factions exist in the orbital act | our patches on Odyssey's `layerWhitelist` / `canOccurOnAllPlanetLayers` / `arrivalLayerWhitelist` | XML | Easy per def, **Medium** as a curated pack | Yes |
+| **B** | Orbital weather and hazards, shipped and pre-whitelisted: 9 incidents, 8 game conditions | `vanillaexpanded.gravship` | ships as-is | Easy | Yes |
+| **C** | People arriving and joining, authored as quests on the channel the engine leaves open — pods and shuttles | `QuestNode_GetMap`(`canBeSpace`) + `QuestNode_GeneratePawn` + `QuestNode_DropPods`; donors `OrbitalFugitive`, `Script_BTG_TradeRequest` | XML | Medium | Yes |
+| **D** | Vanilla's own wanderer and refugee-pod family firing in orbit unmodified | our assembly, on `QuestNode_Root_WandererJoin.CanBeSpace` | C# | Medium | Yes |
+| **E** | Visitors and walking trader caravans at the ship | our assembly, on `IncidentWorker_NeutralGroup.TryResolveParmsGeneral`; donor `PawnsArrivalModeWorker_EdgeDrop` | C# | Medium | Yes |
+| **F** | The outbound half of orbital trade: shuttle to a station and trade there | `shunter.bettertradersguild` | ships as-is | Easy | **No** |
+| **G** | *(not recommended)* Remove the standing cabin-fever penalty | `PatchOperationReplace` on `NeedOutdoors` stage 2 | XML | Easy | Yes |
+
+Every mechanism cited below is **[V]**. Every claim that they compose into the described behaviour
+is **[I]** by construction. **Nothing is selected** — which incidents and which factions belong in
+the orbital act is a requirements question, and it has no owner (see *Outstanding decisions*).
+
+**The recommendation, not a selection: A + B + C.** B is free content that already opens both of
+the gates it needs, A is the only thing that makes the storyteller's orbital pool non-trivial, and
+C is the one arrival channel that does not need an assembly. D and E are worth their weight only if
+the fiction wants *vanilla's* people rather than ours.
+
+### The four gates, and what passes them today
+
+`PlanetLayerDef Orbit` sets **four** whitelist flags, each with a different reader and a different
+XML key — `docs/TRAPS.md` **T-48** and build (b) describe only the first. All **[V]**.
+
+| Gate | Reader | Opened by | Passing today |
+|---|---|---|---|
+| Incidents | `IncidentWorker.CanFireNow` | `IncidentDef.canOccurOnAllPlanetLayers` / `layerWhitelist` | **18 of 91** |
+| Game conditions | `GameCondition.MapExcludedByFilter` | `GameConditionDef.canAffectAllPlanetLayers` / `layerWhitelist` | **4 of 32** |
+| Faction arrivals | `IncidentWorker_PawnsArrive.FactionCanBeGroupSource` | `FactionDef.arrivalLayerWhitelist` | **4 factions** |
+| Arrival modes | `PawnsArrivalModeWorker.CanUseOnTile` | `PawnsArrivalModeDef.layerWhitelist` | **5 of 10** |
+
+`onlyAllowWhitelistedQuests` and `onlyAllowWhitelistedBiomes` exist on `PlanetLayerDef` and Orbit
+does **not** set them. **[V]**
+
+**Corpus scope for every count in this section: vanilla + Royalty + Ideology + Biotech + Odyssey.
+Anomaly is not installed on this disk** (`RimWorld/Data/` holds five folders). **[V]** So 91, 139
+and 32 are five-set totals, and any Anomaly def is outside them. #71's 18/91 was measured against
+the same five and reproduces exactly.
+
+**There is a fifth layer gate, at the building rather than the layer.**
+`CompProperties_Mannable.planetLayerWhitelist`, read twice in `CompMannable` —
+`CompInspectStringExtra` and `CompFloatMenuOptions`, both emitting `CannotFunctionOnLayer`. **[V]**
+Vanilla sets `<planetLayerWhitelist><li>Surface</li>` on the abstract `BaseArtilleryBuilding`, whose
+only concrete child is **`Turret_Mortar`** — so **mortars cannot be manned in orbit**, loudly, with
+the reason stated in the float menu. Vanilla Furniture Expanded – Security applies the same gate to
+its manned turrets and to `CompProperties_WorldArtillery`'s host. **[V]** This qualifies
+§ *Defenses* above, which says "vanilla turrets — fly fine on substructure": **automatic** turrets
+do; **manned** ones do not, and the mortar is the one the pursuit ladder would otherwise reach for.
+It is not one of the four layer gates and no whitelist pack touches it; the lever is
+`PatchOperationAdd` of `<li>Orbit</li>` to that comp, XML, Easy. **[I]** that the patch is
+sufficient.
+
+- The 18 incidents are seven `GiveQuest*` children of the abstract `GiveQuestBase`, plus `Aurora`,
+  `Eclipse`, `MeteoriteImpact`, `OrbitalDebris`, `PsychicDrone`, `PsychicSoothe`,
+  `ResourcePodCrash`, `ShortCircuit`, `OrbitalTraderArrival`, `ShipChunkDrop` and `RaidEnemy`. This
+  reproduces #71's count exactly from an independent parse of the merged def tree with
+  `ParentName` resolved. **[V]**
+- The 4 conditions are `Aurora`, `Eclipse`, `PsychicDrone`, `PsychicSoothe`. **No vanilla weather,
+  fallout, solar flare or blight exists in orbit at all**, and this gate is not build (b)'s.
+- The 5 arrival modes are `EdgeDrop`, `EdgeDropGroups`, `RandomDrop`, `MechClusterDrop`,
+  `SpecificDropDebug`. **`CenterDrop` is `Surface`-only** — nothing drops on top of you in orbit.
+- The 4 factions are Odyssey's `TradersGuild` and `Salvagers`, Core's `Mechanoid` and Royalty's
+  `Empire`. **Pirates, outlanders and tribals cannot send anyone to an orbital home**, friendly or
+  hostile, whatever the incident whitelist says — the faction gate is checked separately.
+  `TradersGuild` also sets `neutralArrivalLayerBlacklist: Surface`, so Ludeon's intent is that its
+  *neutral* groups appear only in orbit; it ships `caravanTraderKinds` and `visitorTraderKinds`
+  **empty**, which is why they never do.
+
+### Quests are gated somewhere else entirely
+
+The quest feed does **not** run through `onlyAllowWhitelistedQuests`. Three other gates do the work,
+and only the second is silent. All **[V]**.
+
+1. **`QuestScriptDef.everAcceptableInSpace`** — `QuestGen.Generate` attaches
+   `QuestPart_RequirementsToAcceptPlanetLayer` to every root that is neither `everAcceptableInSpace`
+   nor `autoAccept`, and its `CanAccept` refuses with `QuestNotSpace` / `QuestRequiredLayer`. **A
+   loud, stated refusal on the Accept button**, not a disappearance. **66 of 139** concrete
+   `QuestScriptDef`s already clear it.
+2. **`QuestGen_Get.GetMap(canBeSpace: false)`**, the default — returns null when the only home is
+   in space, so the root's `TestRun` fails and the quest is never offered. **This, not the
+   whitelist, is what actually empties the quest feed in orbit**, and nothing is logged.
+3. **`QuestScriptDef.CanQuestOccurOnTile`**, the layer whitelist proper — **18 of 139** pass, all of
+   them Odyssey's orbital-site family. Note that `World.Tile` is `PlanetTile.Invalid`, so for the
+   `World`-targeted `GiveQuest*` incidents `IncidentWorker_GiveQuest.CanQuestOccurOnTile`
+   short-circuits to `true` and never applies.
+
+**This contradicts build (b) above, and the contradiction is declared rather than merged.** Build
+(b) attributes the whole orbital content collapse — incidents *and* quests — to
+`onlyAllowWhitelistedIncidents`, and prices one `~80`-line patch against it. For **incidents** that
+is right. For **quests** it is not: `Orbit` never sets `onlyAllowWhitelistedQuests`, and the feed is
+emptied by `QuestGen_Get.GetMap(canBeSpace: false)` instead — a C# default that no `<li>Orbit</li>`
+reaches. **A whitelist-only patch pack will restore the incidents and leave the quest feed as empty
+as it found it.** Build (b)'s own text is left unedited so the two readings stay visible; when the
+next map selects a route, (b) should be re-scoped to incidents and game conditions, with quests
+taken by Route C or D.
+
+**The 18 is not the same measurement as `ORBIT.md`'s ten, and both are correct.** **[V]**
+`docs/specs/ORBIT.md` counts quest scripts that **place a site on** the Orbit layer — a destination
+a surface-based colony flies to. This section counts quest scripts that **pass the tile gate when
+the colony's own home tile is Orbit** — whether a quest can be offered at all while the ship is the
+home. Different predicates over the same 139. ORBIT.md's ten is a **strict subset** of this
+eighteen: its six scanner-given `OpportunitySite_*`, its three orbital `Gravcore_*` and
+`OrbitalFugitive` all appear here. The eight this adds —
+`Gravcore_AncientReactor`, `Gravcore_AncientStockpile`, `Gravcore_CrashedMechanoidPlatform`,
+`Gravcore_FrozenTerraformer`, `Gravcore_InsectLair`, `Gravcore_MechanoidRelay`, `GravshipWreckage`
+and `SurveySite` — carry `canOccurOnAllPlanetLayers: true` so they may be *offered* to an orbital
+home, while placing their sites on the **Surface**. (`SurveySite`'s `QuestNode_Root_Site` is
+whitelisted `Surface` outright. **[V]**) Neither number supersedes the other and neither file needs
+changing; the distinction is *offered here* versus *placed there*.
+
+**Route C is the XML answer and Ludeon uses it themselves.** `Script_OrbitalFugitive.xml` composes
+`canOccurOnAllPlanetLayers`, `everAcceptableInSpace`, `<QuestNode_GetMap><canBeSpace>true` and
+`QuestNode_Root_Site` with an Orbit whitelist; Better Traders Guild ships two more of the same
+shape. `QuestNode_GeneratePawn` and `QuestNode_DropPods` (with `joinPlayer` / `makePrisoners`) are
+the arrival half, and `DropCellFinder.GetBestShuttleLandingSpot` has **no layer or vacuum gate**, so
+shuttles are the second channel. **[V]**
+
+### Nobody joins, and the flag that says otherwise is a dead letter
+
+**No vanilla quest that adds a person to the colony can generate on an orbit-only home.** **[V]**
+`QuestNode_Root_WandererJoin` declares `protected virtual bool CanBeSpace => false` and **no
+subclass in vanilla or the four installed DLC overrides it** — swept the whole decompile for
+`override bool CanBeSpace`, zero hits. The affected defs:
+
+| Def | Source | Root node | Evidence |
+|---|---|---|---|
+| `WandererJoins` | `Core/Defs/QuestScriptDefs/Script_WandererJoins.xml` | `QuestNode_Root_WandererJoin_WalkIn` | **[V]** |
+| `RefugeePodCrash` | `Core/Defs/QuestScriptDefs/Script_TransportPodCrash.xml` | `QuestNode_Root_RefugeePodCrash` | **[V]** |
+| `RefugeePodCrash_Baby` | `Biotech/Defs/QuestScriptDefs/Script_TransportPodCrash_Baby.xml` | `QuestNode_Root_RefugeePodCrash_Baby` | **[V]** |
+| `WandererJoinAbasia` | `Royalty/Defs/QuestScriptDefs/Script_WandererJoins.xml` | `QuestNode_Root_WandererJoinAbasia` | **[V]** |
+| `RefugeePodCrash_Ghoul` | Anomaly — **not installed on this disk** | `QuestNode_Root_RefugeePodCrash_Ghoul` | **[I]** — the *class* is in the assembly and inherits the same unoverridden `CanBeSpace`; its def was not read |
+
+Every one of them sets `<autoAccept>true</autoAccept>`. **[V]**
+
+Four things make this load-bearing:
+
+- `RefugeePodCrash` **arrives by drop pod** (`AddSpawnPawnQuestParts` → `quest.DropPods`), so
+  nothing about the arrival is impossible in orbit. Only the map lookup is.
+- **There is a second, independent blocker in the same node.** `QuestNode_Root_WandererJoin.RunInt`
+  calls `quest.AcceptanceRequirementNotSpace(var.Parent)` whenever `!CanBeSpace` — **regardless of
+  the def's own flags**. **[V]** So even a build that fixed only `TestRunInt` would produce a quest
+  the colony cannot accept. Route D must clear both, and `CanBeSpace` is the one seam that does.
+- **`everAcceptableInSpace: true` on these defs is a dead letter, but it is not an ignored field,
+  and the difference matters to anyone who later tries to use it.** The field *is* consumed, in
+  `RimWorld.QuestScriptDef.CanQuestOccurOnTile`:
+  `if (!autoAccept && !everAcceptableInSpace && layerDef.isSpace) return false;` **[V]** — and in
+  `QuestGen.Generate`'s `if (!root.everAcceptableInSpace && !root.autoAccept)`. Because every def in
+  the table above already sets `autoAccept`, **`!autoAccept` short-circuits both tests before the
+  flag is ever reached**, so setting or clearing `everAcceptableInSpace` on them changes nothing.
+  Its net effect here is nil; its effect elsewhere, on the 60-odd non-`autoAccept` roots that carry
+  it, is real. An earlier draft of this section said the field "never runs", which was the right
+  conclusion for the wrong reason.
+- Even when a joiner letter is produced, `ChoiceLetter_AcceptJoiner` **disables the Accept option**
+  when the target map's layer `isSpace`. **[V]** The path is barred three times: once silently at
+  generation, once at acceptance by the quest part, once at the letter.
+
+**This corrects T-49 and this document.** *Living on the orbit layer* item 4 names
+`Find.RandomSurfacePlayerHomeMap` as what takes `QuestNode_Root_WandererJoin` down. In 1.6 that
+member appears in the node **only inside the `CanBeSpace == true` branch, which nothing reaches**;
+the live path is `QuestGen_Get.GetMap`. T-49's other two consumers, `QuestNode_GetSiteTile` and
+`QuestPart_SpawnMonolith`, do read it and stand — so build (d) is still the right patch for those
+two, and it is the wrong patch for joiners. **[V]** A correction to T-48 and T-49 is proposed on
+#147 and is the orchestrator's to merge.
+
+### What no route can do
+
+All **[V]** unless marked.
+
+- **No walking on or off the map, ever.** Three independent causes: `Map.CanEverExit` is false
+  (`BiomeDef Space` sets `canExitMap false`) so `PawnsArrivalModeWorker.CanUseOnMap` rejects any
+  `walkIn` mode; the three walk-in modes carry no layer whitelist either; and Odyssey's
+  `TerrainDef Space` is **`Impassable`**, so `RCellFinder.TryFindRandomPawnEntryCell` has no edge
+  cell to find. Whitelisting `VisitorGroup`, `TravelerGroup` or `TraderCaravanArrival` for Orbit is
+  a **silent no-op** — the worker returns false and the storyteller moves on.
+- **Nobody who arrives can leave.** `JobGiver_ExitMap.TryGiveJob` returns null on a map that cannot
+  exit, and every departure toil in the game ends in that job giver. **[I]** on the composition.
+- **Raiders never flee.** `Lord`'s constructor adds `LordToil_PanicFlee` only when
+  `Map.CanEverExit`; `QuestNode_Raid` forces `canTimeoutOrFlee` false likewise. Every orbital raid
+  is fought to the last pawn, and the fiction cannot opt out.
+- **No siege and no breaching.** Five of nine `RaidStrategyDef`s survive — `ImmediateAttack`,
+  `ImmediateAttackFriendly`, `ImmediateAttackSmart`, `StageThenAttack`, `ImmediateAttackSappers`.
+  `Siege` is whitelisted `Surface`; both `ImmediateAttackBreaching*` list only `EdgeWalkIn`;
+  `EmergeFromWater` is blacklisted. **Sappers survive**, and a sapper raid on a pressurised hull is
+  a decompression event the engine does not know it is causing.
+- **Prisoners cannot be released and slaves cannot be emancipated.**
+  `WorkGiver_Warden_ReleasePrisoner` and `WorkGiver_Warden_EmancipateSlave` both bail on
+  `!MapHeld.CanEverExit`. In orbit a prisoner's only exits are recruitment, execution, harvest, sale
+  to a trade ship, or age.
+- **No wild animals and no grazing.** `BiomeDef Space`: `animalDensity 0`, `plantDensity 0`,
+  `wildAnimalsCanWanderInto false`, `maxFishPopulation 0`. Pens work — `IsPlayerHome` holds — but on
+  `fertility 0` decking there is nothing to graze, so livestock are hay-and-kibble only. **[I]** on
+  the pen conclusion.
+- **The Space biome's own disease table is dead.** `BiomeDef Space` lists `Disease_OrganDecay` at
+  commonality 20, and `StorytellerComp_Disease` picks through `IncidentWorker.CanFireNow` — which
+  that def does not pass. A disease Ludeon wrote for space can never fire there.
+- **A standing −5 across the crew.** `Need_Outdoors.NeedInterval` decays at −0.32/day under a
+  non-thick roof with a **floor of 0.2**; `CurCategory` at 0.2 is `CabinFeverSevere`, which
+  `ThoughtWorker_NeedOutdoors` maps to stage 2 of `NeedOutdoors`, `baseMoodEffect −5`. Every
+  gravship roof is `RoofConstructed` (`isThickRoof false`) and VGE's `VGE_VacBarrierRoof` is thin
+  too. The need refills only where `Position.UsesOutdoorTemperature` — unroofed, i.e. vacuum — so
+  the crew pays it unless they take vacsuit walks outside the hull or are `PrefersIndoors`
+  (Undergrounder, Ideology `Tunneler`). **[I]** on "permanent and colony-wide"; **[V]** on every
+  value in the chain. **This is a beat, not only a cost**: the ship makes people want to see sky.
+- **Abilities marked `useableInVacuum: false` are off for the whole map**, not just in breached
+  rooms — `Ability.CanCast` and `CompApparelVerbOwner` test `MapHeld.Biome.inVacuum`, never the
+  cell. Two defs in vanilla + DLC set it; any mod that does is off for the entire orbital act.
+- **Orbital settlements cannot be peacefully visited at all.** `Settlement.Visitable` returns
+  `!Tile.LayerDef.isSpace`. Route F is the corpus's only answer.
+
+### Available mechanisms — what the corpus supplies
+
+**Two passes, because the gates have an XML half and a C# half and an XML sweep cannot see the
+second.** Construction is reported in full under *Verification — the wide pass behind the orbital
+negatives*, below; an earlier draft of this section ran only the XML half, without `-i` and without
+a validator, and carried a C# negative on it. That draft's count of "exactly ten mods" was wrong by
+one, and is corrected here.
+
+**Eleven mods on disk match the layer-field sweep; ten touch the four layer gates, and none of
+them widens one for orbit beyond its own content.** All rows **[V]**.
+
+| Mod | What it supplies for orbital life | Limitation |
+|---|---|---|
+| `vanillaexpanded.gravship` | **9 orbit-whitelisted incidents and 8 matching game conditions** — solar flare, gravitational anomaly, comet, micrometeor storm, space debris, asteroid shower, dust cloud, toxic dust cloud, escape-pod crash — plus `VGE_OpportunitySite_SolidCoreAsteroid` | hazard, not society; hard VEF dependency; opening both gates together is the pattern, and it is the only mod that does |
+| `VGE_EscapePodCrash` | the **only shipped thing that delivers a body to an orbital home**: `IncidentWorker_EscapePodCrash` drops a `VGE_EscapePodSkyfaller` on a roofed non-natural cell carrying a `VGE_DamagedEscapePod` with `CompProperties_HackableEscapePod` (defence 4000, intellectual 5) | it punches the hull by design; contents are a hack roll, not a quest |
+| `shunter.bettertradersguild` | `Settlement.Visitable` reopened for guild stations (Harmony postfix), `WorldObjectCompProperties_TradeRequest` patched onto `SpaceSettlement`, a `TransportersArrivalAction_Trade` shuttle option, and two space-safe quest scripts | **not covered by Multiplayer Compatibility** — swept both encodings, both validated |
+| `ushanka.glittertechexpansion` | 3 `canOccurOnAllPlanetLayers` incidents and 2 space-safe quests | not in MP Compat |
+| `godsfathermixtape.worksitesexpanded` | `OpportunitySite_OrbitalPlatform` quest | |
+| `vanillaexpanded.vexploratione` | `VEE_Aurora`, orbit-eligible | |
+| `ushanka.hackingexpansion` | one orbit-eligible incident | |
+| `oskarpotocki.vfe.deserters` | one `QuestNode_GetMap canBeSpace` in `PlotMission` | |
+| `icc.fov.elves` | the **only mod faction** declaring `Orbit` in `arrivalLayerWhitelist` | |
+| `smashphil.vehicleframework`, `dankpyon.medieval.overhaul` | `ParatrooperDrop` and a medieval siege strategy, both whitelisted **`Surface` only** | they narrow orbit, they do not widen it |
+| `vanillaexpanded.vfesecurity` | **not a layer gate — the fifth, building-level one**: `planetLayerWhitelist: Surface` on its manned turrets and on the `CompProperties_WorldArtillery` host | manned VFE Security guns and world artillery do not work in orbit; the eleventh mod, and the one the first sweep missed |
+
+**One live collision, found by the C# half.** `VFEInsectoids.PawnsArrivalModeWorker_CanUseWith_Patch`
+postfixes `PawnsArrivalModeWorker.CanUseWith` and returns **false for `Faction.OfInsects` on every
+drop mode** — `EdgeDrop`, `CenterDrop`, `EdgeDropGroups`, `RandomDrop`. **[V]** Since all five
+orbit-capable arrival modes are drop modes, **insectoids can never arrive at an orbital home while
+VFE Insectoids is loaded**, whatever the whitelists say. Conflicts are cargo, not verdicts — the
+mechanism is recorded here and the collision belongs in `docs/data/MOD-VERDICTS.md`.
+
+**The negative, now carried on both halves.** Nothing in the corpus ships a general orbital-life
+pack: no mod bulk-whitelists vanilla's social incidents for orbit, no mod opens the faction arrival
+gate beyond one faction of elves, and **no mod re-points the neutral-group path off the impassable
+map edge**. The two mods that patch that path at all — `wowgag.rimpacts`
+(`Patch_NeutralGroup_FactionCanBeGroupSource`, which suppresses embargoed and civil-war factions)
+and `vanillaracesexpanded.archon` — **narrow** it. **[V]** The nearest donor is VGE, and what it
+donates is weather.
+
+### Verification — the wide pass behind the orbital negatives
+
+Reported because a null-interleaved negative is worth only the bytes that reached ripgrep.
+
+**XML half.** Both roots, `rg -i -l -g '*.xml' -g '!**/obj/**'`, pattern
+`canOccurOnAllPlanetLayers|everAcceptableInSpace|arrivalLayerWhitelist|neutralArrivalLayerWhitelist|neutralArrivalLayerBlacklist|arrivalLayerBlacklist|neverPossibleInSpace|canBeSpace|layerWhitelist|layerBlacklist|onlyAllowWhitelisted|canAffectAllPlanetLayers`,
+attributed through `python tools/corpus.py --which -`. **Validator:** the identical form against
+`RimWorld/Data/` returns 43 files, so it executes. **Result: 26 paths → 11 mods**, the table above.
+`-i` is what surfaced `vanillaexpanded.vfesecurity`; the case-sensitive first run reported ten.
+
+**C# half.** Both roots, `rg -a -i -l -g '*.dll' -g '!**/obj/**' -g '!**/Referenced/**'`, twelve
+symbols — `FactionCanBeGroupSource`, `TryResolveParmsGeneral`, `TryFindRandomPawnEntryCell`,
+`MapExcludedByFilter`, `CanQuestOccurOnTile`, `CanBeSpace`, `CanUseOnTile`, `arrivalLayerWhitelist`,
+`onlyAllowWhitelistedIncidents`, `onlyAllowWhitelistedArrivals`, `everAcceptableInSpace`,
+`canOccurOnAllPlanetLayers` — run **twice**: ASCII (reaches `#Strings` member names and `#Blob`
+attribute arguments), then null-interleaved UTF-16LE with the `\x00` escapes **typed literally into
+the pattern**, never built through `$(…)`.
+
+**Validators, each drawn from the heap it tests.** ASCII: `IncidentWorker_EscapePodCrash`, a
+`#Strings` type name independently confirmed by decompiling it — returns
+`3609835606/…/VanillaGravshipExpanded.dll`. UTF-16LE: `VREAndroids`, an `AccessTools.TypeByName`
+literal that lives in `#US` — returns 17 files across both roots. Both forms execute.
+
+**Result.** Nine of the twelve symbols return **zero in both encodings**. The three that hit:
+`FactionCanBeGroupSource` (24 ASCII paths → 6 mods, 1 UTF-16), `TryFindRandomPawnEntryCell` (65
+ASCII), `TryResolveParmsGeneral` (zero — **nothing in the corpus overrides or patches the method
+Route E names**). Intersecting the 77 arrival-path files with an orbit-awareness sweep
+(`inVacuum|isSpace|PlanetLayerDef`) leaves **four** assemblies — VEF, VFE Insectoids, Faction
+Territories, RimPacts — and all four were read: two patch the arrival path and both **narrow** it,
+one for insectoid drop modes and one for embargoed factions. **[V]** No mod widens it for orbit.
+
+### Status
+
+**Evidence class: READ.** Verified against the whole-assembly decompile of RimWorld 1.6
+`Assembly-CSharp.dll`, the Core/Royalty/Ideology/Biotech/Odyssey def tree parsed with inheritance
+resolved, and decompiled `VanillaGravshipExpanded.dll`, `BetterTradersGuild.dll` and
+`Multiplayer_Compat*.dll`.
+
+- **Verified:** the four layer gates and their readers, plus the fifth at
+  `CompProperties_Mannable.planetLayerWhitelist`; the 18/4/5/4 counts, measured over vanilla + the
+  four installed DLC (**Anomaly is not on disk**); the three quest gates and the 66-of-139
+  `everAcceptableInSpace`/`autoAccept` count; `CanBeSpace` unoverridden, and the second blocker in
+  `RunInt`; `TerrainDef Space` impassable; the exit, flee, release and emancipate consequences; the
+  raid strategy survivors; the `Need_Outdoors` chain; the eleven-mod corpus survey on **both** an
+  XML and a dual-encoding DLL pass, each with a heap-matched validator; the MP Compat sweep.
+- **Inferred:** that each route composes into the described behaviour; the pen and prisoner-milling
+  conclusions; "permanent and colony-wide" for the cabin-fever penalty; `RefugeePodCrash_Ghoul`,
+  whose class was read but whose Anomaly def is not installed.
+- **One RUN item.** Reading cannot settle whether a drop-pod arrival onto a **fully roofed** orbital
+  hull finds a landing cell. **What to observe:** only home map on an orbit tile, hull completely
+  roofed, fire `RaidEnemy` from an orbit-whitelisted faction, and record whether pods land, whether
+  they punch the roof, and whether the room depressurises. If they cannot land on a sealed hull,
+  every drop-based route here needs an unroofed pad and the fiction needs a docking bay.
+
+Established by [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147), which also confirmed
+#71's two counts from an independent parse and corrected T-49's attribution for the joiner family.
+One small correction to [#66](https://github.com/cjd721/Rimworld-Archinity/issues/66): the field on
+`GenStep_OrbitalPlatform` is `private LayoutDef layoutDef`, not a `StructureLayoutDef` — its
+conclusion (def-driven, no new C#) is unaffected. **[V]**
+
 ## Persistence and multiplayer
 
 **Nothing new is persisted.** `Building_GravEngine.validSubstructure` and `allConnectedSubstructure`
@@ -547,6 +879,7 @@ reproduce it.
 | Question | Consequence | Owner |
 |---|---|---|
 | Which incidents and quests are whitelisted for orbit | decides whether the orbital act has a world | **No owner.** A requirements question with no ticket; the patch is build (b). This is a gap, not a hand-off |
+| …and it is **four** lists, not one — incidents, game conditions, factions-that-may-arrive, arrival modes — plus a judgement on whether the orbital act keeps the standing −5 cabin fever | decides who can reach the ship at all, and what the crew's baseline mood is | **No owner.** Widened by [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147); belongs in `docs/requirements/SPACE.md` § *Living in orbit* under [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127) |
 | Cabin size — 3×4, 4×4 or shared | 22–40% of the whole deck budget, and a standing mood cost either way | **No owner.** A requirements question with no ticket |
 | Whether the founders get `VacuumResistance_Total` | decides whether hull work needs suits, and commits to an archite-capsule supply line | **No live owner** — [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10) is closed |
 | Whether one gravcore per 15–30 days is acceptable pacing | decides how long the fit-out arc runs, and whether GravTech's pylons, reactor and amplifiers are reachable at all | nominally `docs/progression/`, **which is empty**. No document and no ticket owns it today |

@@ -141,15 +141,61 @@ the behaviour bites in practice.
 `onlyAllowWhitelistedArrivalModes` from the abstract `OrbitLayer`, along with
 `canFormCaravans false` and `isSpace true`. `IncidentWorker.CanFireNow` then returns
 false for any def that is neither `canOccurOnAllPlanetLayers` nor carries the layer in
-its `layerWhitelist`, and quest generation applies the same test to `QuestScriptDef`.
+its `layerWhitelist`.
 
-Across the merged Core-plus-five-DLC database that leaves **18 of 91 `IncidentDef`s and
-18 of 139 `QuestScriptDef`s** orbit-legal. A campaign act played from an orbital home
+**Those are four gates, not one, and each has a different reader and a different XML
+key** [V]. Whitelisting an `IncidentDef` alone leaves the game condition, the arriving
+faction and the arrival mode shut, and the incident then fails **with no message**.
+Nothing about the def you patched reports that three other doors are still closed.
+(*[#147](https://github.com/cjd721/Rimworld-Archinity/issues/147), 2026-09-23.*)
+
+**Correction, same source: the quest half has a different cause.** `Orbit` never sets
+`onlyAllowWhitelistedQuests` — there is no such field on the layer — and the quest feed
+is emptied by `QuestGen_Get.GetMap(canBeSpace: false)`, a C# default no `<li>Orbit</li>`
+reaches [V]. **A whitelist-only patch pack restores the incidents and leaves the quest
+feed as empty as it found it.** See **T-128** for the joiner family, where the same
+default bars the path three times over.
+
+Across the merged **Core plus four DLC** database — Royalty, Ideology, Biotech and
+Odyssey; **Anomaly is not on this disk**, so the denominators are over the DLC actually
+present — the layer-whitelisting clause stated above leaves **18 of 91 `IncidentDef`s**
+(94 tags − 3 abstract = 91) and **18 of 139 `QuestScriptDef`s** orbit-legal. Both figures
+are the **single clause**, reproduced independently by `grep -c`: eighteen defs set
+`canOccurOnAllPlanetLayers true` and none whitelists Orbit.
+
+**⚠ But 18 is a ceiling, and the storyteller never sees it.** The quest figure depends
+entirely on which reader you ask, and the gap is a factor of nine [V]:
+
+| Path | Orbit-legal quests | What it is |
+|---|---|---|
+| The layer-whitelist clause alone | **18 of 139** | the ceiling, reachable via `CanRun` paths — subquest generators, decrees |
+| `QuestScriptDef.CanQuestOccurOnTile` end to end | **66 of 139** | whitelist + blacklist + the `autoAccept` exemption + `neverPossibleInSpace` |
+| `IncidentWorker_GiveQuest.CanQuestOccurOnTile` | **2 of 139** | **the storyteller's actual path** — `OrbitalFugitive` and `SurveySite`, nothing else |
+
+The storyteller's own reader is the bottom row: it **drops the `autoAccept` exemption**
+and additionally demands `everAcceptableInSpace`, so **the effective orbital quest budget
+is two**. A reader who takes 18 as the storyteller's budget is wrong by a factor of nine,
+and nothing in the game reports either number. A campaign act played from an orbital home
 therefore loses wanderers, refugees, visitors, manhunter packs, infestations, solar
 flares, toxic fallout and every walk-in social event — not by a design decision but by
 a def field nobody set. **The storyteller keeps running; it simply has almost nothing
 to pick, and nothing anywhere reports the narrowing.** Patch `layerWhitelist` onto every
 def the campaign needs in orbit, and re-count after every mod addition.
+
+**The placing set nests inside the receiving gate, and that is authorship rather than
+structure** [V]. `docs/specs/ORBIT.md` counts **ten** quest scripts that *place* a world
+object on the Orbit layer; this entry counts which quests may be *given to* a colony whose
+home tile is Orbit. They answer different questions, and a direct containment check settles
+how they sit: **all ten are members of the 18, and inside the 66 as well.** The eight the
+18 adds — `Gravcore_AncientReactor`, `_AncientStockpile`, `_CrashedMechanoidPlatform`,
+`_FrozenTerraformer`, `_InsectLair`, `_MechanoidRelay`, `GravshipWreckage` and
+`SurveySite` — are all **surface**-placing. So a placing set and a receiving gate are
+distinct questions that happen to nest here because of how Odyssey authored its orbital
+family; nothing makes the nesting necessary, and a quest we author can sit in either set
+alone. (*Settled 2026-09-23 between
+[#147](https://github.com/cjd721/Rimworld-Archinity/issues/147) and
+[#148](https://github.com/cjd721/Rimworld-Archinity/issues/148); #147's containment claim
+was the correct one.*)
 
 Three supporting facts belong with it, because they close the exits an author would
 reach for. The `Space` biome is `constantOutdoorTemperature -75` and `inVacuum true`,
@@ -159,7 +205,12 @@ apply. Nobody walks on and nobody walks off; every arrival and departure is a sh
 or the gravship.
 
 *[#71](https://github.com/cjd721/Rimworld-Archinity/issues/71),
-`docs/specs/ORBIT.md`. 1.6.4871.*
+[#147](https://github.com/cjd721/Rimworld-Archinity/issues/147),
+[#148](https://github.com/cjd721/Rimworld-Archinity/issues/148), `docs/specs/ORBIT.md`.
+`RimWorld.IncidentWorker.CanFireNow`, `RimWorld.QuestScriptDef.CanQuestOccurOnTile`,
+`RimWorld.IncidentWorker_GiveQuest.CanQuestOccurOnTile`,
+`RimWorld.QuestGen.QuestGen_Get.GetMap`. Corpus scope: Core plus Royalty, Ideology,
+Biotech and Odyssey — **Anomaly absent**. 1.6.4871.*
 
 ### T-87 — A vehicle's `customRoadCosts` discards the road ladder, and it is not a floor
 
@@ -234,3 +285,178 @@ storyteller comp and does not care which follower moved the caravan. Aircraft in
 `Vehicles.World.VehicleCaravan`, `Vehicles.World.AerialVehicleInFlight` from
 `294100/3014915404/1.6/Assemblies/Vehicles.dll`; `RimWorld.Planet.Caravan_PathFollower.StartPath` /
 `.PatherTickInterval` / `.TryEnterNextPathTile` (`Assembly-CSharp.dll`). 1.6.4871.*
+
+## Living on an orbit layer
+
+Four of these belong with **T-48** and are filed here for the same reason it is: the orbit
+layer is the subject, and no group in the register names it. See the register's own note on
+the split this shape is asking for.
+
+### T-128 — `QuestNode_Root_WandererJoin.CanBeSpace` is `false` on all five shipped subclasses
+
+`WandererJoins`, `RefugeePodCrash`, `RefugeePodCrash_Baby` and `RefugeePodCrash_Ghoul`
+(**[I]** — the class inherits the same unoverridden `CanBeSpace`, but Anomaly is not installed
+on this disk and its def was not read) and `WandererJoinAbasia` never generate on an orbit-only
+home [V]. The gate is a C# property, **upstream of acceptance**, so each def's
+`everAcceptableInSpace: true` XML is a dead letter on these defs.
+
+**The path is barred three times, not once** [V]: silently at generation via
+`QuestGen_Get.GetMap(canBeSpace: false)`; at acceptance, because
+`QuestNode_Root_WandererJoin.RunInt` calls `quest.AcceptanceRequirementNotSpace(var.Parent)`
+whenever `!CanBeSpace` **regardless of the def's own flags**; and at the letter, by
+`ChoiceLetter_AcceptJoiner`. A build that fixed only `TestRunInt` would produce a quest the
+colony cannot accept.
+
+**`everAcceptableInSpace` is not an ignored field** — it *is* consumed, in
+`QuestScriptDef.CanQuestOccurOnTile` (`if (!autoAccept && !everAcceptableInSpace &&
+layerDef.isSpace) return false;`) and in `QuestGen.Generate` [V]. Every def in the joiner family
+sets `autoAccept`, so `!autoAccept` short-circuits both tests before the flag is reached. Dead
+letter *here*; real on the ~60 non-`autoAccept` roots that carry it.
+
+**Fix:** the one seam that clears all three is `CanBeSpace`. **T-49** is not the cause here and
+was corrected accordingly.
+
+*[#147](https://github.com/cjd721/Rimworld-Archinity/issues/147), `docs/specs/GRAVSHIP.md` §
+*Ordinary colony life on an orbital home*. `RimWorld.QuestGen.QuestNode_Root_WandererJoin`
+(`.CanBeSpace`, `.TestRunInt`, `.RunInt`), `RimWorld.QuestGen.QuestGen_Get.GetMap`,
+`RimWorld.QuestScriptDef.CanQuestOccurOnTile`, `RimWorld.ChoiceLetter_AcceptJoiner`;
+`Core/Defs/QuestScriptDefs/Script_WandererJoins.xml`. Corpus scope: vanilla + Core, Royalty,
+Ideology, Biotech, Odyssey — **Anomaly absent**. 1.6.4871.*
+
+### T-129 — `TerrainDef Space` is `Impassable`, so no edge-entry cell exists on an orbital map
+
+`RCellFinder.TryFindRandomPawnEntryCell` cannot succeed on a map whose edge is `Space` [V], and
+the arrival worker simply returns false.
+
+**So whitelisting `VisitorGroup`, `TravelerGroup` or `TraderCaravanArrival` for the Orbit layer
+is a silent no-op.** The def passes every layer gate you patched, the incident is selected, and
+nothing arrives. The whitelist looks like the fix and is not one; only a drop-style arrival mode
+reaches an orbital map at all.
+
+This is the companion of **T-48**'s exit half (`ExitMapGrid.MapUsesExitGridNow` false for
+`inVacuum`): nobody walks on and nobody walks off.
+
+*[#147](https://github.com/cjd721/Rimworld-Archinity/issues/147), `docs/specs/GRAVSHIP.md` §
+*Ordinary colony life on an orbital home*. `Verse.RCellFinder.TryFindRandomPawnEntryCell`,
+`RimWorld.PawnsArrivalModeWorker_EdgeWalkIn`; `Data/Odyssey/Defs/TerrainDefs/`. 1.6.4871.*
+
+### T-130 — Prisoners cannot be released and slaves cannot be emancipated on a vacuum map
+
+`WorkGiver_Warden_ReleasePrisoner`, `WorkGiver_Warden_EmancipateSlave` and
+`JobGiver_ExitMap.TryGiveJob` all bail on `!MapHeld.CanEverExit` [V], which is false on an
+orbital map.
+
+**There is no alert, no message and no disabled button — the work giver simply never offers the
+job.** A prison-break escapee has no exit job either, so it mills about the map until something
+else picks it up. From the player's side this reads as pawns ignoring an order.
+
+**Fix:** anything the campaign wants done with a prisoner in orbit — release, emancipation,
+exile — needs a shuttle or a transport pod path of its own. The vanilla verbs are not available
+and do not say so.
+
+*[#147](https://github.com/cjd721/Rimworld-Archinity/issues/147), `docs/specs/GRAVSHIP.md` §
+*Ordinary colony life on an orbital home*. `RimWorld.WorkGiver_Warden_ReleasePrisoner`,
+`RimWorld.WorkGiver_Warden_EmancipateSlave`, `RimWorld.JobGiver_ExitMap.TryGiveJob`,
+`Verse.Map.CanEverExit`. 1.6.4871.*
+
+### T-131 — Every sealed orbital home runs a standing −5 `NeedOutdoors` mood penalty
+
+`Need_Outdoors` floors at **0.2** under a thin roof [V], and 0.2 is `CabinFeverSevere` — stage 2
+of the need's thought chain. **Every gravship roof is thin** [V].
+
+So a colony living in orbit carries a permanent cabin-fever mood debuff that no amount of room
+size, beauty or lighting removes, because the cause is the roof and there is no alternative
+roof. Nothing reports it as a design consequence; it presents as a mood problem with no
+identifiable source.
+
+**Fix:** budget for it, or offset it deliberately. There is no thin-roof exemption for a
+vacuum-sealed hull.
+
+*[#147](https://github.com/cjd721/Rimworld-Archinity/issues/147), `docs/specs/GRAVSHIP.md` §
+*Ordinary colony life on an orbital home*. `RimWorld.Need_Outdoors`,
+`RimWorld.ThoughtDefOf.CabinFeverSevere`. 1.6.4871.*
+
+### T-132 — Odyssey populates every planet layer at world creation, so the Orbit layer is never empty
+
+`WorldComponent_LocationGenerator` runs from **`FinalizeInit`**, not from a gen step [V] — which
+is why an audit of `Orbit`'s `worldGenSteps` (`Tiles`, `Factions`) truthfully reports no object
+generation and is still wrong about the outcome. It then ticks in `WorldComponentTick`, budgeting
+per layer as `planetLayer.Def.generatedLocationFactor * worldLocationsTarget`, and Odyssey's
+`GeneratedLocationDef Asteroids` targets `Orbit`.
+
+`worldLocationsTarget` is fixed in the component's constructor from `world.PlanetCoverage` [V]:
+
+| Planet coverage | Asteroids in orbit at creation |
+|---|---|
+| < 5.1% | **3** |
+| 5.1% – 30.0% | **8** |
+| 30.1% – 50.0% | **12** |
+| ≥ 50.1% | **20** |
+
+**The floor is the point: no coverage setting produces an empty orbit layer**, and
+`AnyWorldObjectOnLayer` applies no filter [V], so one asteroid opens the view-orbit gizmo
+exactly as well as twenty. **The gizmo is live from the first tick of a fresh world.**
+
+Nothing logs and nothing warns. A design that assumes an empty layer — a reveal gated on orbit
+being visibly untouched — looks correct in review and is already false the moment the world is
+created.
+
+*[#148](https://github.com/cjd721/Rimworld-Archinity/issues/148), `docs/specs/ORBIT.md` §
+*The reveal gate*. `RimWorld.Planet.WorldComponent_LocationGenerator` (`.FinalizeInit`,
+`.WorldComponentTick`, `..ctor`), `RimWorld.Planet.GeneratedLocationDef`,
+`RimWorld.Planet.WorldObjectsHolder.AnyWorldObjectOnLayer`;
+`Data/Odyssey/Defs/GeneratedLocationDefs/GeneratedLocations.xml`. 1.6.4871.*
+
+### T-133 — Scrolling out on the world map switches planet layer without consulting `CanSelectLayer`
+
+`WorldCameraDriver` switches the selected layer on zoom when `PrefsData.zoomSwitchWorldLayer` is
+true — **it is true by default** — and `ScenarioBase` carries the matching `zoomMode` [V]. The
+switch does not go through whatever gate a design put on the layer button.
+
+**A disabled view gizmo is not a closed layer.** The player reaches orbit by scrolling out, the
+bypass leaves no trace, and nothing distinguishes a layer that was revealed from one that was
+scrolled into.
+
+**Fix:** `WorldSelector.set_SelectedLayer` is the sole writer of the selected layer
+(`docs/engine/world-time-and-layers.md`), so it — not the gizmo — is the chokepoint anything
+policing layer access has to take.
+
+*[#148](https://github.com/cjd721/Rimworld-Archinity/issues/148), `docs/specs/ORBIT.md` §
+*The reveal gate*. `RimWorld.Planet.WorldCameraDriver`, `Verse.PrefsData.zoomSwitchWorldLayer`,
+`RimWorld.Planet.WorldSelector.SelectedLayer`, `RimWorld.ScenarioBase`. 1.6.4871.*
+
+### T-134 — `canTraverseLayers: true` turns a cross-layer distance from `int.MaxValue` into a near-zero hop, and poisons a cache on the way
+
+`WorldGrid.TraversalDistanceBetween(start, end, passImpassable = true, maxDist = int.MaxValue,
+canTraverseLayers = false)` returns `int.MaxValue` across layers **by default** [V]. Pass `true`
+and it **projects** `start` onto `end`'s layer first, so the same call returns a small number —
+with no error, no warning and no change in the call site's shape.
+
+**A relocation or pursuit test written against this reads better with `true` and stops firing on
+exactly the move it was written for**: the planet↔orbit jump, the largest move in the campaign,
+measures as almost nothing.
+
+**The second half is worse, because it reaches callers that never passed `true`.** In order,
+`TraversalDistanceBetween` does `start == end` → `0`; either tile invalid → `int.MaxValue`;
+**then the static cache**; then the layer guard; then `!passImpassable && !CanReach`; then the
+flood fill [V]. On a `canTraverseLayers: true` cross-layer call it sets `cachedLayer = end.Layer`,
+projects `start`, and then writes the cache under the **original, unprojected** start — the local
+`planetTile`, saved before the reassignment [V]. So one such call on an ordered pair leaves a
+**finite** cross-layer distance that every subsequent *default* call on that same pair returns,
+ahead of the guard, until a different pair evicts it.
+
+**No vanilla caller passes `true`** — `GravshipUtility.TryGetPathFuelCost` pre-projects instead
+[V] — so the path is unarmed in shipped code today and one mod away from armed. **A corpus sweep
+cannot bound this**: a positional `true` leaves no string in any metadata heap, so a zero-hit
+sweep for `canTraverseLayers` is evidence about the identifier, not about callers.
+
+**Fix:** branch on the layer *before* the call rather than trying to make one call answer both
+cases. See `docs/engine/gravship-and-substructure.md` § *Landing hooks* for the four sources of
+`int.MaxValue` and why a finite value rules a layer change out while `int.MaxValue` does not rule
+one in.
+
+*[#150](https://github.com/cjd721/Rimworld-Archinity/issues/150), `docs/specs/TRACE.md` §
+*Planet↔orbit as a qualifying relocation*. `RimWorld.Planet.WorldGrid.TraversalDistanceBetween`,
+`RimWorld.GravshipUtility.TryGetPathFuelCost` (`Assembly-CSharp.dll`). 1.6.4871.*
+
+---

@@ -44,9 +44,11 @@ coercion still supplies raw Life. The receiving founder's selfhood is not a hidd
 purity score. The final alignment commitment is explicit in the ending, while
 the player's reasons remain theirs.
 
-[#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) specifies volunteer
-eligibility against the final rite, including volunteers sent by reverent factions.
-Exact pools, genes and psycast gates belong to
+[#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) closed with the capability
+answered: a rite can require a giver's faith and certainty, and a faction can send aligned
+pawns. Who counts as willing, the guards against using the altar as a conveyor, and how
+volunteers from reverent factions arrive are design choices for
+[the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119). Exact pools, genes and psycast gates belong to
 [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31).
 
 ## Saved state and remaining work

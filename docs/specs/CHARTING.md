@@ -1139,3 +1139,309 @@ It is a one-client check. The two-client Multiplayer test belongs to
   requirements document; mechanically it is one more `ThingDef` + `WorkGiverDef` with
   `maxAcceptedBand` set and the return pool disabled, so capability does not constrain the
   narrative choice.
+
+---
+
+## Natural discovery — caravans and outposts rolling finds as they go
+
+Added by [#146](https://github.com/cjd721/Rimworld-Archinity/issues/146), from
+[#126](https://github.com/cjd721/Rimworld-Archinity/issues/126). Answers
+`docs/requirements/CHARTING.md` § *Natural discovery*. Evidence class **READ** — vanilla
+defs and decompiled 1.6 assemblies; no STUB, no RUN.
+
+This section follows the routes shape in [`docs/specs/README.md`](README.md)
+§ *Lead with the answer*. It **supersedes §4's premise for natural finds only**: a find
+placed next to a caravan is not placed by the quest tile node, and is not measured from
+home. §4 continues to govern apparatus finds, which are.
+
+It also **closes one bullet in *Outstanding decisions*** above: that bullet says #39's
+successor does not exist. It does now — the rules for travel and tenure discovery are
+[#126](https://github.com/cjd721/Rimworld-Archinity/issues/126)'s, and the mechanism half is
+this section.
+
+### Verdict
+
+- **Possible? Yes — every clause.** Tile-entry rolls, a scribed per-tile re-roll timer,
+  placement adjacent to the finder, per-outpost-type search/chance/distance, and an outpost
+  that stops finding while a find is unresolved all sit on seams that exist and that shipped
+  mods already use. The first-entry-only fallback is not needed.
+- **Multiplayer? Yes for the rolls; with work on one inherited seam.** The world tick is a
+  single synchronised `Rand` stream, so a per-tick roll on a caravan or an outpost is
+  deterministic by default. The work is Outposts' mod settings, below.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A** | Every tile a player caravan actually enters — on foot *or* in vehicles — rolls once; pods, shuttles, aerial vehicles and the gravship excluded by the seam itself; the find lands on a tile we choose | vanilla + our assembly | C# — one Harmony postfix on `WorldObject.PositionChanged`, one `WorldComponent` | Medium | Yes |
+| **B** | The same rolls with **zero Harmony**, state scribed per caravan; costs one `<comps>` patch per caravan def and a self-managed last-tile compare | vanilla + Rim War's XML idiom + our comp class | patch + C# | Medium | Yes |
+| **C** | The shipped donor, already written by someone else | Faction Territories `FactionTerritories.dll` (donor only) | C# | Medium | Yes — **not recommended** |
+| **D** | The outpost half whole: which types search, each type's chance and distance, tenure cadence, and a scribed "unresolved find" latch | VEF `Outposts.dll`, donors in `VOE.dll` | C# + XML | Medium | With work |
+| **E** | A find delivered as a *quest* rather than a bare world object, still anchored on the finder | vanilla `QuestNode_GetSiteTile`, subclassed | C# (small) | Easy–Medium | Yes |
+
+A, B and C are three ways to get the same caravan event. **D is orthogonal** and is always
+needed for the outpost half. **E is optional** and matters only where a beat wants a quest.
+
+**Recommendation, not a selection: A + D, with E only where a beat needs a quest.** A is one
+patch against a seam **no mod in the corpus touches**, and it covers foot and vehicle
+caravans together. B is honest, but the comp must re-derive the tile-entry event that A is
+handed. C misses vehicle caravans outright.
+
+#### Route A — `WorldObject.PositionChanged`
+
+**What it gets us**
+
+- **[V]** `WorldObject.Tile`'s setter calls `PositionChanged(previous, current)` on every
+  reassignment; `WorldObject.PositionChanged` is `protected virtual` with an empty body.
+- **[V]** `Caravan_PathFollower.TryEnterNextPathTile` does `caravan.Tile = nextTile`, and
+  **[V]** `Vehicles.World.VehicleCaravan_PathFollower.TryEnterNextPathTile` does
+  `((WorldObject)caravan).Tile = nextTile`. `Vehicles.World.VehicleCaravan : Caravan`.
+  One seam, both movers, one filter — `is Caravan && IsPlayerControlled`.
+- **[V] The requirement's exclusions fall out for free and need no filter.**
+  `RimWorld.Planet.TravellingTransporters` and `RimWorld.Planet.Gravship` each hold
+  `initialTile`/`destinationTile` and advance a `traveledPct` in `TickInterval`, reassigning
+  `Tile` only on arrival; `Vehicles.World.AerialVehicleInFlight` writes `Tile` only in
+  `InitiateCrashEvent` and on arrival. **Nothing that flies fires a tile-entry event at all.**
+- **[V] The per-tile timer is ordinary save state.** `PlanetTile` is a
+  `readonly struct : IEquatable<PlanetTile>` with `GetHashCode`, a `ToString` of
+  `"{tileId},{layerId}"`, and a registered parser
+  (`Verse.ParseHelper.Parsers<PlanetTile>.Register(ParsePlanetTile)` to `PlanetTile.FromString`).
+  Vanilla already scribes one: `WorldObject.ExposeData` does
+  `Scribe_Values.Look(ref tile, "tile")`. A `Dictionary<PlanetTile,int>` on a
+  `WorldComponent` round-trips.
+- **[V] And it deserialises in the right order.** `RimWorld.Planet.World.ExposeData`
+  regenerates the grid (`WorldGenerator.GenerateFromScribe`) *before* `World.ExposeComponents`
+  scribes `components`. This matters: `PlanetTile.GetHashCode` dereferences
+  `Layer.IsRootSurface` for any `layerId >= 0`, so the dictionary cannot be hashed before
+  `Find.WorldGrid` exists.
+- **[V] Placement next to the finder is ours, and vanilla ships the primitive.**
+  `RimWorld.Planet.WorldComponent_LocationGenerator.GenerateLocationForLayer` is the three
+  steps: `WorldObjectMaker.MakeWorldObject(def)`, then `worldObject.Tile = tile`, then
+  `world.worldObjects.Add(worldObject)` — applying `INameableWorldObject`,
+  `IResourceWorldObject` and `IExpirableWorldObject` in between. Fed by
+  `TileFinder.TryFindNewSiteTile(out tile, nearTile, minDist, maxDist, ...)` — **the overload
+  that takes an explicit `nearTile`** — the find sits a declared number of tiles from the
+  caravan rather than from home. The same `WorldComponent` also supplies the timer idiom:
+  `WorldComponentTick()` gated on `GenTicks.IsTickInterval(offset, 90000)`.
+  **This route borrows the three steps; it does not register a `GeneratedLocationDef`** and
+  so takes no part in that def family's per-layer population budget — see *Constraints*.
+
+**What it cannot do**
+
+- It cannot distinguish a *foraging* caravan from a marching one. Tile entry is the event;
+  "moving and foraging" is not a state the seam reports. Vanilla's nearest reading is
+  `ForagedFoodPerDayCalculator.GetProgressPerTick(caravan.pather.MovingNow, caravan.NightResting)`,
+  which is a rate, not a flag.
+- It cannot reach the return pool, and must not — §5's reasoning stands: a caravan has
+  neither a cursor nor a declared band.
+- It cannot roll on a tile merely skirted. A path node is a tile *entered*; there is no
+  sub-tile position the engine reports.
+
+**Consequences**
+
+- It makes `WorldObject.PositionChanged` ours. **[V]** A both-roots `.dll` sweep returns
+  **zero mods** touching it — validated on the identical sweep form against `WorldObjectComp`
+  (29 mods) and against vanilla (1 hit). An unusually clean seam, and free today.
+- A ledger that remembers every tile ever entered grows without bound. Pruning is a build
+  question, not a capability one.
+
+#### Route B — a `WorldObjectComp` on the caravan defs
+
+- **[V]** `RimWorld.Planet.WorldObjectComp` exposes `CompTick()`, `CompTickInterval(int delta)`
+  and `PostExposeData()`; `WorldObject.ExposeData` calls `comps[i].PostExposeData()` and
+  `InitializeComps()` instantiates from `def.comps`. Per-caravan scribed state, no Harmony.
+- **[V] But the comp gets no position notification.** There is no `PositionChanged` hook on
+  `WorldObjectComp`, so the comp must scribe its own last tile and compare on tick — the exact
+  event Route A is handed.
+- **[V] It needs two def patches, not one.** Core ships `<defName>Caravan</defName>` /
+  `<worldObjectClass>Caravan</worldObjectClass>` with no `<comps>` node; Vehicle Framework
+  ships a separate `<defName>VehicleCaravan</defName>` /
+  `<worldObjectClass>Vehicles.World.VehicleCaravan</worldObjectClass>`
+  (`3014915404/1.6/Defs/WorldObjectDefs/WorldObjects.xml`).
+
+#### Route C — the `TryEnterNextPathTile` postfix (donor, not recommended)
+
+**[V]** `FactionTerritories.CaravanTerritoryIncidents.Caravan_PathFollower_TryEnterNextPathTile_Postfix`
+(`3626725895/Assemblies/FactionTerritories.dll` — a root `Assemblies/` with no version folder)
+gates on `IsPlayerControlled && Spawned`, checks a cooldown in a
+`private static readonly Dictionary<int,int>` keyed on `WorldObject.ID`, and rolls
+`Rand.Chance`.
+
+**Two faults, where §5 recorded one.** The cooldown dictionary is unscribed — stale across a
+reload, per-client under Multiplayer — *and* its length is
+`Mathf.Max(2500, settings.encounterCheckIntervalTicks)`, read off
+`FactionTerritoriesMod.Instance.Settings`. **That is a mod setting, T-18, per-installation.**
+A third reason not to copy it: it patches `Caravan_PathFollower` only, so vehicle caravans
+never roll.
+
+#### Route D — the outpost half
+
+**What it gets us** — every clause of *"the outpost decides"*, on shipped seams:
+
+- **[V] Whether a type searches at all** is the `WorldObjectDef`'s `worldObjectClass`.
+  `Outposts.Outpost.TickInterval` produces only when `TicksPerProduction > 0`, and
+  `TicksPerProduction`, `Produce()`, `ProducedThings()` and `Range` are all `public virtual`.
+  A mining camp that does not search is a type that does not subclass.
+- **[V] Distance per type already ships as a field.** `Outposts.OutpostExtension.Range`
+  (default `-1`), surfaced as `Outposts.Outpost.Range`, and already drawn on the world map by
+  `Outpost.DrawExtraSelectionOverlays` calling `GenDraw.DrawWorldRadiusRing(Tile, Range, null)`.
+  **[V]** `VOE.Outpost_Artillery`'s targeting predicate is the precedent for *acting* within
+  it: `Find.WorldGrid.ApproxDistanceInTiles(target.Tile, this.Tile) <= (float)Range`.
+- **[V] Chance per type** is a field on an extension. `VOE.OutpostExtension_Mining :
+  OutpostExtension_Choose` carrying `List<Resource> Resources`, paired with
+  `VOE.Outpost_Mining : Outpost_ChooseResult`, is the shipped per-type-data idiom, and
+  `Outpost.Ext` is `def.GetModExtension<OutpostExtension>()`, so a subclass returns unchanged.
+- **[V] "An outpost with an unresolved find finds nothing more"** is a scribed field on the
+  subclass. `Outpost.ExposeData` is `public override`; `VOE.Outpost_Artillery.ExposeData` is
+  the precedent, calling base then
+  `Scribe_Values.Look<int>(ref cooldownTicksLeft, "cooldown", 0, false)`. A reference works
+  equally well — `RimWorld.Planet.WorldObject : IExposable, ILoadReferenceable, ISelectable`,
+  so `Scribe_References.Look` takes the find itself.
+- **[V] The spawn** is `VOE.Outpost_Artillery.Fire`'s shape — `WorldObjectMaker.MakeWorldObject`
+  called from inside outpost code — combined with Route A's placement primitive.
+- **[V] Tenure needs no new state**: `Outposts.Outpost.TickInterval` counts
+  `ticksTillProduction` to zero and calls `Produce()`.
+
+**What it cannot do**
+
+- The *yield list* is still not extensible: `Outposts.ResultOption` has no `workerClass`. A
+  find is not a `ResultOption`; it is something `Produce()` does instead of, or alongside,
+  delivering things.
+- An outpost cannot search from a tile it is not on. `Range` measures from `WorldObject.Tile`.
+
+**Consequences — the Multiplayer work, and it is wider than T-18 records.**
+
+**[V]** `Outposts.OutpostsMod.Setup(Outpost)`, reached from `Outpost.SpawnSetup` via
+`OutpostsMod.Notify_Spawned`, reflects over every `[PostToSetings]` field on the outpost's
+type **and on `outpost.Ext`** and writes the player's mod-settings value onto it —
+`item2.SetValue(outpost.Ext, ...)`. `Ext` is the shared `DefModExtension` instance from the
+DefDatabase, so **this mutates the def**. The affected fields are precisely the ones this
+requirement wants declared per type: `Range`, `TicksPerProduction`, `TicksToPack`,
+`MinPawns`. Two clients with different Outposts settings run different search distances and
+different tenure cadences, and nothing on screen says so. §5 records
+`OutpostsMod.Settings.TimeMultiplier` under T-18; this is the same family, strictly wider.
+
+**The mitigation is XML-shaped.** `OutpostsMod`'s constructor enumerates only
+`GenTypes.AllSubclasses(typeof(Outpost))` and `GenTypes.AllSubclasses(typeof(OutpostExtension))`,
+so **a plain `DefModExtension` of our own is never touched by the settings writer**. Declare
+our chance and distance there rather than on an `OutpostExtension` subclass. **[I]** that this
+isolates us completely — it composes two verified facts.
+
+**[V] MP Compat does not cover the outpost tick, and does not need to.**
+`Multiplayer.Compat.VanillaOutpostsExpanded` (`[MpCompatFor("vanillaexpanded.outposts")]`)
+registers exactly two things, both *player commands*:
+`MP.RegisterSyncMethod(AccessTools.TypeByName("VOE.Outpost_Artillery"), "Fire")` and
+`MpCompat.RegisterLambdaDelegate("VOE.Outpost_Defensive", "GetGizmos", 3)`.
+`Multiplayer.Compat.VanillaExpandedFramework` contains no occurrence of "outpost" at all.
+`Outpost.Produce` and `TickInterval` run inside the synced world tick and need no sync.
+
+#### Route E — a near-tile quest node
+
+**This is where §4's premise gives way.** **[V]**
+`RimWorld.QuestGen.QuestNode_GetSiteTile.TryFindTile` computes its anchor as
+`slate.Get<Map>("map") ?? Find.RandomSurfacePlayerHomeMap` and then calls
+`TileFinder.TryFindNewSiteTile(out tile, nearTile, var.min, var.max, ...)`. **There is no
+slate key for a near tile.** A caravan in transit has no map, so `siteDistRange` on the
+vanilla node measures from home no matter what is written into it.
+
+**[V] Pre-setting the tile does not work either, and it fails loudly.** `RunInt`'s early-out
+is `slate.TryGet<int>(storeAs, out _)`, against a value the node stores as a `PlanetTile`.
+`Verse.ConvertHelper.CanConvert` recognises only instance-of, `string`,
+parseable-from-string, `IntRange`/`FloatRange`, collection unwrapping and
+`IConvertible`-to-primitive — **it does not consult implicit conversion operators**, and
+`PlanetTile` implements only `IEquatable<PlanetTile>`. So the conversion fails, `Slate.TryGet`
+logs `"Could not convert slate variable ..."`, and the node overwrites the tile it was handed.
+The guard can never see its own output.
+
+E is therefore a `QuestNode` subclass that reads a near tile off the slate and calls the same
+public `TileFinder` overload. Small, but it is code, not XML.
+
+### Constraints on every route
+
+- **[V] Nothing that loads under 1.6 ships per-tile colony presence state.** §5's negative
+  stands and is now version-exact. Case-insensitive both-root `.dll` sweeps returned
+  `ExploredTile` 0, `TileExplor` 0, `TilesVisited` 0, `TileDiscover` 0, `DiscoveredTile` 0,
+  and `VisitedTile` **4 files — all of them Rim War's `v1.2`–`v1.5` assemblies, none its
+  `v1.6`**. The identifiers there (`visitedTiles`, `visitedTilesCount`) were dropped from the
+  assembly the game actually loads. The UTF-16LE half ran with the null escapes typed
+  literally into the pattern, never through a command substitution, and returned 0. Both
+  halves were validated against strings known present from the same heaps — ASCII
+  `TicksPerProduction` gives 12 files, UTF-16 `ticksTillProduction` gives 8.
+  **Whatever records presence is ours.**
+- **[V] `GeneratedLocationDef` is NOT vanilla-only, and the corpus population is mostly a
+  mod's.** An earlier draft of this section claimed the opposite at [V], from a `.dll` sweep
+  that returned zero mods. **The sweep was correct and the conclusion was wrong**: a def
+  family is authored in XML, and a DLL sweep cannot see one
+  (`docs/agents/capability-research.md` § *Searching what the mods actually ship*). The metadata
+  hit count in `Assembly-CSharp.dll` proves only that the type exists. Re-run over `*.xml`
+  across both roots and `Data/`, the true population is:
+  **Odyssey ships one** — `Asteroids`, on the `Orbit` layer
+  (`Data/Odyssey/Defs/GeneratedLocationDefs/GeneratedLocations.xml`) — and **Vanilla Gravship
+  Expanded ships ten**, `VGE_IceAsteroids` through `VGE_DerelictStation`, all on `Orbit`
+  (`3609835606/1.6/Defs/GeneratedLocationDefs/GeneratedLocations.xml`). Counts cross-checked
+  two ways, open tags against `<defName>` elements, 1/1 and 10/10. No other file in either
+  root mentions the type, patches included.
+- **[V] What that does and does not change here.** Every such def in the corpus targets
+  **`Orbit`**; none targets the surface. `WorldComponent_LocationGenerator` budgets per layer
+  (`planetLayer.Def.generatedLocationFactor * worldLocationsTarget`), so the contention is
+  confined to the orbital layer and **belongs to `ORBIT.md`, not here** — flagged, not
+  re-scoped. **No route in this section is affected**, because none registers a
+  `GeneratedLocationDef`: Route A and Route D call `WorldObjectMaker.MakeWorldObject`
+  directly and set the tile themselves, taking `GenerateLocationForLayer` as a *donor shape*
+  rather than as a def type to enlist. Had a route enlisted one, this correction would have
+  changed it.
+- **[V] The `PositionChanged` zero stands, and for a reason the above does not undermine.**
+  That claim is about an overridden or patched **C# member**, whose name necessarily sits in
+  the overriding assembly's `#Strings` heap — a `.dll` sweep is the right instrument for it,
+  where it was the wrong one for a def family. The XML route to the same behaviour
+  (`<worldObjectClass>` pointing at a subclass) still puts the override in a DLL.
+- **[V] The world tick is one synchronised `Rand` stream, and this is the fact that makes the
+  whole section safe.** The general rule is already recorded — see
+  [`docs/engine/determinism.md`](../engine/determinism.md) § *Why `Rand` inside a synced tick
+  is safe*, and § *Settings are part of the sync surface* for the T-18 half. What follows is
+  the **world-tick** envelope specifically, which that file does not yet name:
+  `Multiplayer.Client.AsyncTime.AsyncWorldTimeComp.PreContext` does
+  `Rand.PushState(); Rand.StateCompressed = randState;` and `PostContext` does
+  `randState = Rand.StateCompressed; Rand.PopState();`, wrapping
+  `Find.TickManager.DoSingleTick()`. `randState` is scribed
+  (`Scribe_Custom.LookULong(ref randState, "randState", 2uL)`) and verified every tick through
+  `Multiplayer.game.sync.TryAddWorldRandomState`. A `Rand.Chance` on a caravan pather tick or
+  an outpost tick is deterministic across clients by default.
+- **[V] Where a world object is added from still matters.**
+  `Multiplayer.Client.Patches.WorldObjectAdd.Prefix` defers the add into a `[SyncMethod]` when
+  `Multiplayer.MapContext != null`, and lets it through inline otherwise. A find spawned from
+  the **world** tick takes the inline path; one spawned from inside a map tick becomes a synced
+  command. Natural discovery is world-tick work and sits on the cheap side of that line.
+- **T-18** applies twice over: to Outposts' `TimeMultiplier` (§5) and, more widely, to every
+  `[PostToSetings]` field it rewrites onto the def (Route D).
+
+### Status
+
+Evidence class **READ**. Established on
+[#146](https://github.com/cjd721/Rimworld-Archinity/issues/146); engine and hooks inherited
+from [#57](https://github.com/cjd721/Rimworld-Archinity/issues/57) and
+[#89](https://github.com/cjd721/Rimworld-Archinity/issues/89) and **re-read**, with two
+corrections: Faction Territories carries a second Multiplayer fault (its cooldown length is a
+mod setting), and the per-tile-state negative is narrowed to *no 1.6-loading assembly*.
+[#81](https://github.com/cjd721/Rimworld-Archinity/issues/81)'s carrier re-confirmed —
+`2023507013/1.6/Assemblies/Outposts.dll`, with `2688941031/1.6/Assemblies/VOE.dll` supplying
+the subclass donors.
+
+Every mechanism above is **[V]**. **Every route is [I] by construction** — nothing here has
+been compiled.
+
+### Open questions
+
+- **Requirement, to [#126](https://github.com/cjd721/Rimworld-Archinity/issues/126).** The
+  re-roll timer's length, and whether it is one global value, per outpost type, or per find
+  kind. All three are expressible; the number is balance.
+- **Requirement, to [#126](https://github.com/cjd721/Rimworld-Archinity/issues/126).**
+  *"Placed right next to whatever found it"* gives no distance. `TryFindNewSiteTile` takes a
+  min and a max in tiles and draws flat between them (§4), so "next to" is two integers nobody
+  has picked.
+- **Requirement, unowned.** Does a caravan find anything while *stationary* on a tile whose
+  timer has since expired? The requirement is silent, and vanilla's foraging analogue
+  explicitly **doubles** its rate when the caravan is not moving.
+- **Build, next map.** Whether the tile ledger prunes, and on what.
+- **Build, next map.** Whether the outpost's "unresolved find" latch holds a reference or a
+  counter. Both are verified available.

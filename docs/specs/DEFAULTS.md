@@ -14,6 +14,11 @@ Two surfaces, one mechanism:
 - **Kit presets are authored and shipped** — Cook, Farmer, Smith, Miner, Doctor, melee
   soldier, ranged soldier — instead of hand-built once per colony.
   [#28](https://github.com/cjd721/Rimworld-Archinity/issues/28).
+- **A kit covers the whole pawn, weapon included**, and the player can force a pawn to
+  re-equip to it or drop what it carries.
+  [#155](https://github.com/cjd721/Rimworld-Archinity/issues/155). This is the clause #28
+  could not reach; its answer is *The whole kit, weapon included*, below, and it
+  **corrects** one claim #28 left standing.
 
 They share a document because they share an answer. Vanilla builds both objects in C# with
 hardcoded field initialisers and exposes **no XML seam** to either; both therefore want the
@@ -36,6 +41,311 @@ one place vanilla hardcodes the value.* Neither may live in `ModSettings`.
   roster must obey.
 - **What the quality floor should be** is a requirement, not a mechanism. See
   *Outstanding decisions*.
+
+---
+
+## The whole kit, weapon included
+
+Answers `docs/requirements/COLONY.md` § *A pawn's gear can be assigned as a set* in
+full, where *Half two* below answers only its apparel clause. Established by
+[#155](https://github.com/cjd721/Rimworld-Archinity/issues/155), evidence class
+**READ**. This section follows the routes rule in `docs/specs/README.md`; the two
+halves below it predate that rule and lead with a build instead.
+
+### Verdict
+
+- **Possible?** **Yes**, and by more than one route — but **no single shipped mechanism
+  satisfies all five clauses of the requirement.** Vanilla splits it: the **apparel
+  policy** is the standing, fresh-colony-present, era-tolerant half and carries no
+  weapon; **Odyssey's outfit stand** carries the weapon and both "do it now" verbs and is
+  a one-shot physical swap. Composing the two covers every clause except a single
+  "drop it all" act, which has no vanilla verb at any price. One route covers all five,
+  at Hard.
+- **Multiplayer?** **Yes for every vanilla route.** Multiplayer registers
+  `Building_OutfitStand.TryDrop`, `Building_OutfitStand.SetAllowHauling`, a lambda inside
+  `Building_OutfitStand.GetGizmos`, `ITab_ContentsBase.OnDropThing`,
+  `ITab_Pawn_Gear.InterfaceDrop`, `Pawn_JobTracker.TryTakeOrderedJob` and
+  `Pawn_OutfitTracker.CurrentApparelPolicy` **[V]**. **No** for the Compositable Loadouts
+  route — MP Compat ships no compat class for it in 1.5 or 1.6 **[V]**.
+
+### The claim this corrects
+
+**#28 concluded that "weapons are not reachable by this layer at all", and half of that
+survives.** Re-read against 1.6.4871:
+
+- ✅ **The `Policy` layer reaches no weapons — confirmed [V].** `RimWorld.ApparelPolicy`
+  has exactly one field, `public ThingFilter filter`; `RimWorld.Policy` carries only
+  `id`/`label`/`RenamableLabel`; `RimWorld.Pawn_OutfitTracker` carries only
+  `curApparelPolicy` and `forcedHandler`; the family is
+  `ApparelPolicy`/`DrugPolicy`/`FoodPolicy`/`ReadingPolicy` and there is no fifth
+  subclass **[V]**.
+- ❌ **"Compositable Loadouts is the only thing in the corpus that reaches weapons from a
+  preset" — FALSE in 1.6 [V].** Vanilla Odyssey's `RimWorld.Building_OutfitStand` holds
+  apparel **and one weapon** and transfers both **[V]**, and it is the better carrier of
+  the two, because Multiplayer ships explicit sync for it and none for the mod. The
+  sentence in *Available mechanisms* below is corrected accordingly.
+
+The accurate statement is narrower: **weapons are unreachable from the policy layer;
+they are not unreachable from vanilla.**
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A** | Authored kits **including the weapon**, shipped as `ThingDef`s; one-click force-re-equip onto any colonist | vanilla (Odyssey) `Building_OutfitStand` | XML — one `ThingDef` per kit | **Easy** | **Yes** |
+| **B** | Standing, fresh-colony-present apparel sets that survive era drift — *Half two* below, **apparel only** | our code, donor `RimWorld.DrugPolicyDef` | C# | **Medium** | **Yes** |
+| **C** | Standing kits with weapon, inventory and quality filters, and two "do it now" gizmos | Compositable Loadouts (`Wiri.compositableloadouts`, `2679126859`) | dependency + C# reflection to seed | **Medium** | **No — not recommended** |
+| **D** | Every clause, standing and authored, with both verbs | our code, donors `JobDriver_UseOutfitStand` + `Inventory.ThinkNode_LoadoutRealisation` | C# | **Hard** | With work |
+| **E** | An authored kit incl. weapon on **generated** pawns — arrivals, quest pawns, starting colonists | vanilla `PawnKindDef` | XML | **Easy** | **Yes** |
+
+**Every route is [I] as a route.** The mechanisms each composes are [V] and cited in
+`docs/engine/equipment-and-kits.md`; the claim that they compose into the requirement is
+untested until something is compiled.
+
+**Clause coverage, because no single route is complete.**
+
+| Requirement clause | A (stand) | B (policy) | C (CL) | D (build) | E (kind) |
+|---|---|---|---|---|---|
+| Authored, shipped, present in a fresh colony | partial — the *def* ships; the player must build and stock the stand | **yes** | only if seeded | yes | yes |
+| Covers the weapon | **yes**, one | **no** | yes, but **never swaps an existing weapon** | yes | yes |
+| One act, then the pawn equips itself | one act, **one-shot** — not standing | standing, **not** one act | standing | yes | n/a |
+| Force re-equip | **yes** — re-target the stand | no | yes (gizmo, unsynced) | yes | no |
+| Force drop | partial — conflicting apparel only | no | **inventory only** | yes | no |
+| Unreached-era gear is not a failure | yes — the stand just stays empty | **yes** — a `ThingFilter` allows unreached defs and the pawn wears the best it can reach | yes | yes | n/a |
+
+#### Route A — Odyssey's outfit stand, one `ThingDef` per kit
+
+**What it gets us.**
+
+- **A weapon in an authored set, in vanilla, today.** The stand's contents are apparel
+  plus one weapon, and `JobDriver_UseOutfitStand.DoTransfer` moves both — including
+  `pawn.equipment.MakeRoomFor` + `AddEquipment`, putting the pawn's old weapon back on
+  the stand **[V]**.
+- **The set is authorable in pure XML, but the recipe has two silent traps in it.**
+  `Building_OutfitStand.PostMake` copies `def.building.defaultStorageSettings` **[V]**,
+  and `OutfitStandBase`'s `<fixedStorageSettings>` bounds any derived def to categories
+  `Apparel` and `Weapons` **[V]**. So a `ThingDef` per role ships a stand that already
+  asks for the Smith's kit the moment it is built, and haulers fill it **[V]**. Two
+  things the recipe must get right, **both of which fail with no error at all**:
+
+  1. **`ParentName="OutfitStandBase"` is not enough — the def must declare
+     `<thingClass>Building_OutfitStand</thingClass>` itself.** `OutfitStandBase` is
+     `ParentName="FurnitureBase" Abstract="True"` and declares **neither `<thingClass>`
+     nor `<storageGroupTag>`**; both sit on the concrete `Building_OutfitStand` def
+     **[V]**. The inherited class comes from `BuildingBase`, which declares
+     `<thingClass>Building</thingClass>` **[V]**, and `Verse.Building : ThingWithComps`
+     implements no `IStoreSettingsParent`, no `IThingHolder` and no `IApparelSource`
+     **[V]**. A base-derived def therefore loads cleanly as a **plain building**: no
+     *Swap outfit* gizmo, no contents, no storage settings applied to anything, and
+     **nothing logged**. The inherited `<inspectorTabs>` still name
+     `ITab_ContentsOutfitStand`, whose `SelThing as Building_OutfitStand` is then null
+     **[V]** — so the tab has no valid target either **[I]**.
+  2. **The shipped `<defaultStorageSettings>` disallows `Weapons` *and* `ApparelUtility`,
+     and a child def cannot un-disallow them by listing something else.**
+     `OutfitStandBase`'s default filter allows category `Apparel` and puts `ApparelUtility`
+     and `Weapons` under `<disallowedCategories>` **[V]** — so the shipped default admits
+     neither the weapon this route exists for nor the tool belts *Half two* exists for,
+     even though `fixedStorageSettings` permits both. And per
+     [`docs/engine/def-loading.md`](../engine/def-loading.md) § *Inheritance appends lists,
+     it does not replace them*, `XmlInheritance.RecursiveNodeCopyOverwriteElements`
+     **appends** list children **[V]**, so a child's `<disallowedCategories>` adds to the
+     parent's rather than replacing it. Admitting the weapon needs
+     `<disallowedCategories Inherit="False">`, or an authored filter that names
+     `<thingDefs>` instead of categories. Getting this wrong produces a kit stand that
+     silently never receives its weapon.
+
+  Neither is a blocker and neither changes the weight — this is still XML, still **Easy**
+  — but the recipe is *"derive, **declare `thingClass`**, and override the default filter
+  with `Inherit="False"`"*, not *"derive"*.
+- **"Force re-equip" is the gizmo.** *Swap outfit* on the stand targets a colonist and
+  issues `JobDefOf.UseOutfitStand` **[V]**. The pawn side offers the same through
+  `GetFloatMenuOptions`, plus per-item *Force wear* and *Equip* for the held weapon
+  **[V]**.
+- **The kit escapes the apparel policy.** `DoTransfer` calls
+  `forcedHandler.SetForced(item, forced: true)` on everything it puts on **[V]**, and
+  `JobGiver_OptimizeApparel` will not automatically drop a forced item — see *The gates
+  that can stop it anyway* below. This is the clean answer to "the policy keeps undoing
+  my kit".
+- **The kit's filter is copy-pasteable between stands.** `GetGizmos` yields
+  `StorageSettingsClipboard.CopyPasteGizmosFor(GetStoreSettings())` **[V]**, which needs
+  only the `thingClass` from trap 1 above. **Storage *groups* are a separate opt-in** —
+  `<storageGroupTag>OutfitStand</storageGroupTag>` sits on the concrete vanilla def, not
+  on `OutfitStandBase` **[V]**, so a derived kit def joins no group unless it declares the
+  tag, and `Building_OutfitStand.StoreSettings` then falls through to its own `settings`
+  **[V]**. For kit stands that is arguably the behaviour we want — two Smith stands
+  sharing one filter is useful, a Smith stand and a Cook stand sharing one is not — but it
+  is a decision the def has to make, not a default.
+
+**What it cannot do.** It is **not a standing assignment** — one transfer, then nothing;
+a pawn that loses its weapon does not go back. One stand is one kit for one pawn at a
+time, and the previous occupant's cast-offs are left on it. One weapon only
+(`TryAddHeldWeapon` refuses a second) **[V]**. It equips *things*, not defs, so "wear the
+best currently reachable" is the policy's property, not the stand's. **No full strip** —
+only apparel that *conflicts* with an incoming item comes off **[V]**.
+
+**Consequences.** Kits become *places*, not settings: the colony grows an armoury. That
+fits the campaign's "kits are assembled, not granted" line, but it forecloses "assign the
+Smith preset from the Assign tab" as the interaction, and it is visible to the player in a
+way a policy is not. Two drags: the stand is gated on research `ComplexFurniture`,
+techLevel **Medieval** **[V]** — **unavailable on a neolithic start until the second era**
+unless a kit-specific def patches the prerequisite off, which is pure XML — and a stand
+defaults to storage `priority: Important` **[V]**, so a kit stand competes with real
+stockpiles for the items it names. It also requires **Odyssey**: the `ThingDef` is under
+`Data/Odyssey` **[V]**, though the class and its hardcoded texture paths are in
+`Assembly-CSharp` **[V]**.
+
+#### Route B — the apparel presets (the floor this must beat)
+
+*Half two* below, unchanged and still correct. **It gets us the two clauses Route A
+cannot**: present in a fresh colony as a selectable list entry, and standing — with the
+era-tolerance clause free, because a `ThingFilter` allows defs the colony has not reached
+and `JobGiver_OptimizeApparel` takes the best that exists **[V]**. **It gets us no weapon
+and neither verb.**
+
+**A and B compose cleanly and do not fight.** The policy governs the wardrobe; the stand
+overrides it with force-worn items and hands over the weapon. That is the cheapest honest
+answer to the requirement, and **the one I would cost out first** — though a spec never
+selects, and #119 does.
+
+#### Route C — Compositable Loadouts, ruled out on Multiplayer
+
+The three things the ticket asked, answered.
+
+1. **The weapon seam is narrower than it looked.**
+   `Inventory.ThinkNode_LoadoutRealisation.FindItem` issues `JobDefOf.Equip` only when
+   `count == 1 && item2.def.IsWeapon && pawn.equipment.Primary == null` **[V]** — **it
+   never swaps a weapon the pawn is already holding**, which is the wrong half of "force a
+   pawn to re-equip to its set". `JobDefOf.Equip` itself is vanilla; the seam is not the
+   mod's to own.
+2. **Seeding its types does work, and buys less than it costs.** `Inventory.Tag` is fully
+   public (`public Tag(string name)`, `public List<Item> requiredItems`, `Add(ThingDef)`),
+   and `Inventory.LoadoutManager : GameComponent` exposes `public static void AddTag(Tag)`
+   and `GetNextTagId()` over `UniqueIDsManager.GetNextID` **[V]**. So the #28 seeding trick
+   reaches them through the `ArchinityMod.NeutraliseArchonEquipmentGate` reflection pattern
+   **[I] as a composition**. The cost is a hard dependency on a third party's internal class
+   shape with no API contract, on top of the two live **T-18** instances already recorded
+   below.
+3. **Both gizmos confirmed, and neither is what the requirement says.**
+   `Inventory.LoadoutComponent.CompGetGizmosExtra` yields exactly two `Command_Action`s,
+   gated on `!ModBase.settings.hideGizmo` **[V]**: *Satisfy loadout now* →
+   `Loadout.RequiresUpdate()`, which sets `needsUpdate`, a field `Loadout.ExposeData`
+   scribes **[V]**; and *Clear inventory now* → `Utility.EnqueueEmptyInventory(pawn)` →
+   `InvJobDefOf.CL_UnloadInventory` via `TryTakeOrderedJob` **[V]** — which **empties the
+   inventory only**, touching neither equipment nor worn apparel.
+
+**And Multiplayer Compatibility does not cover this mod in 1.6.**
+`Wiri.compositableloadouts`, `CompositableLoadouts`, `LoadoutManager`, `LoadoutComponent`
+and `Dialog_TagEditor` appear in exactly one file under `1629973374` —
+`1.4/Referenced/Multiplayer_Compat_Referenced.dll` — and nowhere in the 1.5 or 1.6
+`Assemblies/` or `Referenced/` binaries **[V]**; both sweep forms were validated on those
+same files. So *Satisfy loadout now* writes a scribed field on one client with no synced
+command behind it — **[V]** on the mechanism, **[I]** on the divergence — while *Clear inventory
+now* survives only because it terminates in a method MP registers **[V]**. Add the two
+simulation-path `ModSettings` reads and `SetPawnLastUpdated`'s `Rand.Range(10000, 15000)`
+inside the think node **[V]**, and this route means writing the compat ourselves. **Not
+recommended.** Whether the mod ships at all is
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.
+
+#### Route D — build the kit layer ourselves, no third-party dependency
+
+**Every seam is shipped and read.** `JobDefOf.Equip` and
+`Verse.Pawn_EquipmentTracker.{MakeRoomFor, AddEquipment, TryDropEquipment,
+DropAllEquipment}` for the weapon **[V]**; `JobDefOf.DropEquipment` via
+`FloatMenuOptionProvider_DropEquipment` and `ITab_Pawn_Gear.InterfaceDrop` for the drop
+verb, both already on MP's sync surface **[V]**; `OutfitForcedHandler.SetForced` to stop
+the apparel policy undoing the kit **[V]**; `ApparelPolicy.filter` for the apparel half,
+from Route B.
+
+**The donors are exact.** `JobDriver_UseOutfitStand.DoTransfer` is a complete, shipped
+"make this pawn's kit match this set, weapon included" routine, including the awkward
+parts — `CanWearTogether` conflict resolution, `IsLocked` refusal, biocode checks, and
+`PawnCanWieldWeapon`'s violent / shooting / manipulation / quest-lodger /
+`EquipmentUtility.CanEquip` gates **[V]**. The piece to replace is *where the set comes
+from*: a Def we author instead of a physical `ThingOwner`. For the standing half,
+`Inventory.ThinkNode_LoadoutRealisation` is the shipped shape of "a think node that
+periodically closes the gap between a pawn and its set" **[V]** — read it, do not depend
+on it.
+
+**What it drags in:** one synced command per verb, a per-pawn assignment stored somewhere,
+and a UI to pick a kit. Those three are why it is Hard rather than Medium, and all three
+are build questions for #119.
+
+#### Route E — `PawnKindDef`, for pawns that arrive rather than pawns that change
+
+`Verse.PawnKindDef` carries `apparelRequired`, `apparelTags`, `apparelDisallowTags`,
+`specificApparelRequirements`, `weaponTags`, `weaponMoney`, `weaponStuffOverride`,
+`forceWeaponQuality`, `techHediffsRequired`, `fixedInventory` and `inventoryOptions`
+**[V]** — a complete authored kit including the weapon, in pure XML, applied at
+generation. The right tool for *"the Waystone's acolytes arrive carrying this"*, the wrong
+one for *"re-kit my smith"*. Named because it is the cheapest thing here and a narrative
+session will want it.
+
+### Constraints on every route
+
+- **A standing colonist cannot be stripped.** `Verse.StrippableUtility.CanBeStrippedByColony`
+  returns true only for a downed pawn, a secure prisoner of the colony, or a non-pawn
+  `IStrippable` **[V]**, so `FloatMenuOptionProvider_Strip` never offers on a healthy
+  colonist **[V]**. **There is no vanilla "drop everything" verb.** Any route that wants
+  one writes it.
+- **The one-belt rule** (below) applies to a stand's contents exactly as it applies to a
+  preset: `Building_OutfitStand.HasRoomForApparelOfDef` runs `ApparelUtility.CanWearTogether`
+  against everything already on the stand and **refuses the second belt** **[V]**.
+- **Route A's XML recipe fails silently in two places** — a def derived from
+  `OutfitStandBase` without `<thingClass>` loads as a plain `Building`, and the inherited
+  `<defaultStorageSettings>` disallows `Weapons` and `ApparelUtility` in a list that
+  inheritance *appends to* rather than replaces. Both are set out under Route A above;
+  both produce a stand that builds, looks right and does nothing.
+- **Force-worn is sticky.** Everything the stand puts on is force-worn **[V]**, so the
+  apparel policy stops managing it until the player clears forced apparel —
+  `OutfitForcedHandler.Reset`, which MP registers **[V]**.
+- **No mod in the corpus defines an equipment-preset `Def`.** Enumerating every
+  `<Namespace.TypeDef>` tag across both roots and `Data/` gives 152 distinct tags, none of
+  them a kit or loadout def **[V]**; validators from the same table are
+  `<VFEC.Perks.PerkDef>` 152, `<VanillaPsycastsExpanded.PsycasterPathDef>` 88,
+  `<VSE.Expertise.ExpertiseDef>` 29. Compositable Loadouts is the only loadout mod in the
+  corpus; EdB Prepare Carefully's loadout strings exist only in its 1.2–1.4 assemblies
+  **[V]**.
+
+The full evidence — every method read, both sweep encodings, and who else names
+`Building_OutfitStand` — is in
+[`docs/engine/equipment-and-kits.md`](../engine/equipment-and-kits.md).
+
+### Open questions
+
+**Requirement gaps, handed to [#129](https://github.com/cjd721/Rimworld-Archinity/issues/129),
+which owns `docs/requirements/COLONY.md`.**
+
+1. **"Force it to drop what it is carrying" does not say what "carrying" means.**
+   Inventory, weapon, apparel, or all three? Each has a different shipped verb and a
+   different price — the weapon is one vanilla click, apparel is per-item, and "all three
+   at once" is new code on every route, because nothing strips a standing colonist.
+2. **"Assigning a set is one act, after which the pawn equips itself without further
+   instruction" does not say whether the assignment is standing.** One-shot (the stand)
+   and standing (a policy, a tag) are different features at different weights, and the
+   sentence reads either way. **This is the clause that decides between A+B and D.**
+
+**Unverified route claims.** Multiplayer's `Building_OutfitStand.GetGizmos` lambda index 1
+is the *Swap outfit* targeting callback **by declaration order** **[I]** — the
+registration itself is **[V]**. Whether the stand's textures load without Odyssey **[I]**.
+What VEF, MVCF, Worksites Expanded and Better Traders Guild do with `Building_OutfitStand`
+beyond placing it **[I]** — four metadata hits, none depth-read.
+
+**Build questions, deferred to #119.** Where a kit's per-pawn assignment lives if Route D
+is taken; whether Route A's kit stands ship with `ComplexFurniture` patched off; whether
+Route A's stand filters and Route B's presets are authored from one table or two; whether
+kit stands declare a `storageGroupTag`, and if so whether it is shared or per role.
+
+**And if Route A is selected, the first thing to demonstrate is the two silent traps in
+its recipe, not the feature.** A kit stand that omits `<thingClass>` and one that leaves
+`Weapons` in the inherited `<disallowedCategories>` both build, both look right, and
+neither works — so a selected Route A owes a check that a freshly built kit stand shows the
+*Swap outfit* gizmo and actually accepts its weapon, before any check about what a pawn
+does with it. Listing those checks is #119's act, not this document's.
+
+**Sibling.** [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157) — copying a
+bill's configuration — shares a mechanism after all:
+`StorageSettingsClipboard.CopyPasteGizmosFor` is vanilla's shipped "copy this
+configuration onto that one" gizmo pair, and the outfit stand already carries it **[V]**.
 
 ---
 
@@ -277,7 +587,9 @@ deliberately rather than by luck.
   policy, and `ApparelPolicy.filter` is an apparel filter. Vanilla's only weapon-acquisition
   AI is `JobGiver_PickUpOpportunisticWeapon`, an opportunistic 8-tile think node gated on
   `!AlreadySatisfiedWithCurrentWeapon` **[V]** — not a per-pawn preference and not something a
-  preset can drive.
+  preset can drive. **Re-verified by #155 and still true — but read it as written: it is a
+  statement about the *policy layer*, not about vanilla.** Odyssey's outfit stand reaches
+  weapons from an authored set; see *The whole kit, weapon included* above.
 
 #### The donor that makes this cheap
 
@@ -429,7 +741,17 @@ yet: #28's roster and #95's quality floor are both requirement-side and unset.
   inherited claims re-verified and confirmed; the fourth (the injection point) confirmed with
   a namespace correction and three collision hazards #87 did not see.
 - #28 — [#28](https://github.com/cjd721/Rimworld-Archinity/issues/28). The blocking question
-  is answered **yes** for apparel and utility items and **no** for weapons.
+  is answered **yes** for apparel and utility items and **no** for weapons *from the policy
+  layer*.
+- #155 — [#155](https://github.com/cjd721/Rimworld-Archinity/issues/155), **READ**, settled
+  against the same 1.6 assembly plus `Data/Odyssey`,
+  `2606448745/1.6/AssembliesCustom/Multiplayer.dll`,
+  `2679126859/1.6/Assemblies/Inventory.dll` and
+  `1629973374/{1.4,1.5,1.6}/**/Multiplayer_Compat*.dll`, with a two-encoding wide pass over
+  both corpus roots. It **corrects one claim #28 left standing** (see *The claim this
+  corrects*) and confirms the rest. Its routes are [I] by construction; the mechanisms they
+  compose are [V] and catalogued in
+  [`docs/engine/equipment-and-kits.md`](../engine/equipment-and-kits.md).
 
 **The proposed build is [I] by construction.** Every mechanism it composes is [V]; the claim
 that they compose into what we want is untested until something is compiled.
@@ -537,9 +859,17 @@ of our seams**:
 
 Its own loadouts are **not Defs** either — `Inventory.Loadout` and `Inventory.Tag` are
 `IExposable`, held by `Inventory.LoadoutManager : GameComponent`, built in `Dialog_TagEditor`
-**[V]**, and it ships no loadout XML. It *is* the only thing in the corpus that reaches weapons
-from a preset: `Inventory.ThinkNode_LoadoutRealisation` issues `JobDefOf.Equip` when
-`item.def.IsWeapon && pawn.equipment.Primary == null` **[V]**.
+**[V]**, and it ships no loadout XML. It is the only **mod** in the corpus that reaches weapons
+from a preset: `Inventory.ThinkNode_LoadoutRealisation.FindItem` issues `JobDefOf.Equip` when
+`count == 1 && item.def.IsWeapon && pawn.equipment.Primary == null` **[V]** — so it arms an
+empty hand and **never swaps a weapon the pawn is already holding**.
+
+**An earlier draft of this paragraph said it was the only thing in the corpus that reaches
+weapons from a preset. That is wrong, and the correction is load-bearing:** vanilla Odyssey's
+`RimWorld.Building_OutfitStand` holds apparel **and one weapon** and transfers both **[V]**,
+and unlike this mod it is covered by Multiplayer's sync surface **[V]**. See *The whole kit,
+weapon included* above, and
+[#155](https://github.com/cjd721/Rimworld-Archinity/issues/155).
 
 **So the relationship is a conditional incompatibility, not an optional bridge.** If
 Compositable Loadouts ships, either `onlyItemsFromLoadout` stays off on every client, or the
@@ -599,8 +929,27 @@ all**, and does not wait on #95. The proposed replacement text is on
 `ImprovedWorkbenches.Detours.BillUtility_MakeNewBill_Detour`, `ImprovedWorkbenches.Main.ShouldDropOnFloorByDefault`,
 `USH_GE.Patch_BillUtility_MakeNewBill`, `NiceBillTab.ITab_Bills_FillTab_Patch`,
 `NiceBillTab.TabBillsDrawer.{TryAddBillToQueue,SetMaterialToBill}`,
-`Inventory.{Loadout,Tag,Item,ThinkNode_LoadoutRealisation,OptimizeApparel_ApparelScoreGain_Patch,OptimizeApparel_TryGiveJob_Patch,MakeConfigFloatMenu_Patch}`,
+`Inventory.{Loadout,Tag,Item,LoadoutComponent,LoadoutManager,Utility,ThinkNode_LoadoutRealisation,OptimizeApparel_ApparelScoreGain_Patch,OptimizeApparel_TryGiveJob_Patch,MakeConfigFloatMenu_Patch}`,
 `Multiplayer.Client.{SyncMethods,SyncDelegates,SyncFields,Multiplayer}`.
+
+**Added by #155:** `RimWorld.Building_OutfitStand` (whole type, including `PostMake`,
+`GetGizmos`, `GetFloatMenuOptions`, `HasRoomForApparelOfDef`, `TryAddHeldWeapon`,
+`IHaulDestination.Accepts`, `ExposeData`), `RimWorld.JobDriver_UseOutfitStand`
+(`Notify_Starting`, `DoTransfer`, `PawnCanWieldWeapon`), `RimWorld.ITab_ContentsOutfitStand`,
+`RimWorld.ITab_Pawn_Gear.InterfaceDrop`, `RimWorld.FloatMenuOptionProvider_DropEquipment`,
+`RimWorld.FloatMenuOptionProvider_Strip`, `Verse.StrippableUtility.CanBeStrippedByColony`,
+`Verse.Pawn_EquipmentTracker`, `Verse.PawnKindDef`, `RimWorld.Policy`,
+`RimWorld.ApparelPolicy`, `RimWorld.Pawn_OutfitTracker`;
+`Data/Odyssey/Defs/ThingDefs_Buildings/Buildings_Furniture.xml`,
+`Data/Odyssey/Defs/JobDefs/Jobs_Misc.xml`,
+`Data/Core/Defs/ResearchProjectDefs/ResearchProjects_1.xml` (`ComplexFurniture`),
+`Data/Core/Defs/ThingDefs_Buildings/Buildings_Base.xml` (`BuildingBase`),
+`Data/Core/Defs/ThingDefs_Buildings/Buildings_Furniture.xml` (`FurnitureBase`).
+
+**#155 adds no observable checks.** It resolved at route depth and nobody has selected a
+route, so there is nothing built to observe. What a selected Route A would have to
+demonstrate is named as an open build question above, not priced as an acceptance list
+here.
 
 **Observable checks once built.**
 
@@ -694,11 +1043,14 @@ Three options:
 - **Treat the mod as excluded.** A sourcing decision, not ours —
   [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.
 
-**Whether the soldier presets get a weapon half.** Ship apparel-only (recommended, zero extra
-cost); or take the Compositable Loadouts bridge above, which supplies weapons as a side
-effect; or build a per-pawn weapon preference ourselves — ~150+ lines of new AI surface
-duplicating a mod already on disk, **not recommended**, and properly a separate behaviour with
-its own ticket.
+**Whether the soldier presets get a weapon half — answered by #155, and the answer is not
+the one this paragraph assumed.** It read as a two-way choice between apparel-only and a
+Compositable Loadouts bridge, with "build it ourselves" priced as duplicating a mod on disk.
+**There is a third carrier and it is vanilla**: Odyssey's outfit stand ships an authored set
+that includes the weapon, with a one-click force-re-equip gizmo, and Multiplayer syncs it —
+while the Compositable Loadouts bridge is **unsynced in 1.6** and arms only an empty hand.
+The routes, their clause coverage and their weights are in *The whole kit, weapon included*
+above; selection is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 **What `defaultOutfitTags` could do instead, and why it is not the build.** Patching
 `<defaultOutfitTags>` onto ThingDefs is pure XML and needs no code at all — but it can only

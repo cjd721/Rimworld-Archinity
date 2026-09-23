@@ -245,9 +245,16 @@ if (now.Valid && now != lastSettledTile) {
   rule 1's *"a short move does not grant a fresh safe window and permits rapid
   reacquisition."*
 
-`Find.WorldGrid.TraversalDistanceBetween(PlanetTile, PlanetTile)` is layer-aware and is
-the same function `GravshipUtility.TryGetPathFuelCost` uses **[V]**, so the number the
-player sees when launching and the number we test are the same number.
+`Find.WorldGrid.TraversalDistanceBetween(PlanetTile, PlanetTile)` is layer-aware **[V]**.
+
+> ~~*and is the same function `GravshipUtility.TryGetPathFuelCost` uses, so the number
+> the player sees when launching and the number we test are the same number.*~~
+> **Struck by [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150).** It is
+> the same function but not the same call: `TryGetPathFuelCost` **projects** a
+> cross-layer origin with `GetClosestTile_NewTemp` *before* measuring, and the launch UI
+> shows a chemfuel cost rather than a tile count **[V]**. See § *Planet↔orbit as a
+> qualifying relocation* → *Legibility*. Across a layer change the unprojected call here
+> returns `int.MaxValue`, which is what makes rule 1's last sentence hold for free.
 
 Rule 4 (*"Reducing Trace cannot undo progress already made"*) is structural rather
 than enforced: `searchProgress` is only ever written by `QuestPartTick` and by the
@@ -569,6 +576,269 @@ from `WorldComponentTick` and does its work inline (**T-21**).
 
 ---
 
+## Planet↔orbit as a qualifying relocation
+
+Answers [`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md) § *Glitterite
+pursuit* rule 1's last sentence and
+[`docs/requirements/SPACE.md`](../requirements/SPACE.md) § *Living in orbit* —
+*"a jump between the planet and orbit, in either direction, always qualifies"*.
+Established by [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150), which
+re-read [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)'s scribed-tile
+claim. Evidence class **READ**.
+
+**This section owns only whether the move counts.** Whether the pursuit's raid can
+reach an orbital home once it does is [`ORBIT.md`](ORBIT.md)
+([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148)) and the **T-48** row
+in § *Outstanding decisions*; ordinary life on an orbital home is
+[`GRAVSHIP.md`](GRAVSHIP.md) ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)).
+
+### Verdict
+
+- **Possible? Yes — and it already holds, by an argument default rather than by design.**
+  `RimWorld.Planet.WorldGrid.TraversalDistanceBetween(PlanetTile start, PlanetTile end,
+  bool passImpassable = true, int maxDist = int.MaxValue, bool canTraverseLayers = false)`
+  returns **`int.MaxValue`** when `start.Layer != end.Layer` and `canTraverseLayers` is
+  false **[V]**. **The escape rule** (inside § *The search meter and the pursuit*) calls
+  it with default arguments, so a planet↔orbit move already returns a distance no
+  `escapeDistanceTiles` can fail to clear.
+- **Multiplayer? Yes**, for every route but D. The comparison is on `WorldComponentTick`,
+  inside `DoSingleTick` and synced (`docs/engine/determinism.md`); the grid call draws no
+  `Rand`, its static cache is keyed on both `PlanetTile`s **including the layer**, and
+  routes A–C never call `PlanetLayer.GetClosestTile_NewTemp`.
+
+**#56's scribed-tile claim holds, and holds better than it was stated.**
+`RimWorld.Planet.PlanetTile` is a `readonly struct` carrying `public readonly int tileId`
+and `private readonly int layerId`, `ToString()` emits `"{tileId},{layerId}"`, and
+`Verse.ParseHelper.ParsePlanetTile` registers `PlanetTile.TryParse` as the reader
+**[V]**. `lastSettledTile` therefore
+round-trips its layer through a save, by the same mechanism
+`RimWorld.Planet.WorldObject.ExposeData` uses for `Scribe_Values.Look(ref tile, "tile")`
+**[V]**. And the orbital map really does carry an orbit-layer tile:
+`RimWorld.GravshipUtility.ArriveNewMap` sets `mapParent.Tile = destinationTile` and makes
+`destinationTile.LayerDef.DefaultWorldObject`, while `Verse.MapInfo.Tile => parent?.Tile`
+and `Verse.Map.IsPlayerHome` returns true outright for `wasSpawnedViaGravShipLanding`
+**[V]**.
+
+> **`PlanetTile.Equals` is not a plain both-fields compare, and the qualifier matters.**
+> It returns false immediately on differing `tileId`, true immediately on equal
+> `layerId` — and where the `layerId`s differ it returns true anyway **if both sides are
+> negative-or-root-surface** (`layerId < 0 || Layer.IsRootSurface`, on each side)
+> **[V]**. So two surface tiles with different `layerId` encodings still compare equal,
+> which is what makes the implicit `int` → `PlanetTile` conversion safe on the surface.
+> Surface-versus-orbit is unaffected, because `Orbit` is neither negative nor the root
+> surface **[V]** — but "`Equals` compares both fields" would be the wrong summary to
+> build anything else on.
+
+**The four cases are distinguishable from the return value — with one asymmetry.**
+A finite value rules a layer change out; `int.MaxValue` does **not** rule one in.
+
+| Move | `TraversalDistanceBetween` returns |
+|---|---|
+| No move | `0` — `start == end` short-circuits |
+| Ordinary tile move, same layer | a finite flood-fill distance |
+| Gravship hop, same layer | the same finite distance |
+| **Planet↔orbit, either direction** | **`int.MaxValue`** — the branch tests layer *inequality*, so it is symmetric |
+
+> **`int.MaxValue` has four sources and only one of them is a layer mismatch** **[V]**:
+> either tile invalid; `start.Layer != end.Layer && !canTraverseLayers`;
+> `!passImpassable && !Find.WorldReachability.CanReach(start, end)`; and a flood fill
+> that never reaches `end` (which also covers a `maxDist`-bounded call, since `finalDist`
+> is initialised to `int.MaxValue`). Three of the four are layer-independent. **The
+> escape rule** calls with `passImpassable` and `maxDist` at their defaults, which
+> retires the third — but not the first or the fourth. **Route A's guarantee is that a
+> layer change always produces `int.MaxValue`, never the converse.**
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A** | The guarantee, for nothing — the call § *The escape rule* already makes returns `int.MaxValue` across layers | vanilla — `WorldGrid.TraversalDistanceBetween` | already in the design | Easy (zero) | Yes |
+| **B** | The same guarantee **stated** — an explicit `from.Layer != to.Layer` branch ahead of the distance test | our code, reading `PlanetTile.Layer` / `.LayerDef` | C# | Easy | Yes |
+| **C** | A threshold that means the same thing on each layer, so orbit→orbit reads sensibly | `TraceDef` XML keyed by `PlanetLayerDef` | XML | Easy | Yes |
+| **D** | The move seen in the landing frame, both endpoints unprojected | `WorldComponent_GravshipController.takeoffTile` + `Gravship.destinationTile` | C#, Harmony | Medium | **With work** — **not recommended** |
+
+A, B and C are independent decisions rather than alternatives; B and C compose on A.
+**Recommended: A plus B plus C** — A is free, B makes the rule findable and removes
+Route A's two failure modes below, C is the only one that answers orbit→orbit.
+**Nothing is selected here.** Every route composes individually-**[V]** mechanisms; that
+they compose into the required behaviour is **[I]**.
+
+**Route A — what it gets us.** Rule 1's last sentence is satisfied today with no branch
+and no new field. In order, `TraversalDistanceBetween` short-circuits on `start == end`
+(→ `0`), then on either tile invalid (→ `int.MaxValue`), **then reads its static cache**,
+then on `start.Layer != end.Layer && !canTraverseLayers` (→ `int.MaxValue`), then on
+`!passImpassable && !CanReach`, and only then flood-fills inside the end layer **[V]**.
+
+**What it cannot do, and this is the part worth writing a beat around.**
+
+- **`int.MaxValue` does not mean "layer change".** Three of its four sources are
+  layer-independent — see the box above. No letter, tooltip or message can be worded
+  from the number.
+- **The cache is read *before* the layer guard, and a cross-layer entry can be finite.**
+  The hit condition is
+  `cachedTraversalDistanceForStart == start && cachedTraversalDistanceForEnd == end &&
+  cachedLayer == end.Layer && passImpassable && maxDist == int.MaxValue`, and on a
+  `canTraverseLayers: true` cross-layer call the function sets `cachedLayer = end.Layer`,
+  projects, and then writes the cache under the **original, unprojected** start
+  (`planetTile`, saved before the reassignment) **[V]**. So one such call on an ordered
+  pair leaves a **finite** cross-layer distance that every subsequent *default* call on
+  the same pair will return, ahead of the guard, until a different pair overwrites it.
+  **The sweep does not bound this:** `canTraverseLayers` returned zero mod hits, but a
+  positional `true` leaves no string in any metadata heap, so the negative is evidence
+  about the *identifier*, not about callers. No vanilla caller passing `true` was found —
+  `TryGetPathFuelCost` pre-projects instead **[V]** — which makes the path unarmed in
+  shipped code today and one mod away from armed. **Route B is immune, because its
+  branch runs before the call.**
+- **The guarantee is held by an optional argument nobody wrote.** Adding
+  `canTraverseLayers: true` — the obvious move if someone later wants a *readable*
+  number — silently inverts it: the function then projects `start` onto the end layer
+  with `GetClosestTile_NewTemp` and flood-fills from the projection **[V]**, so
+  surface→orbit measures a near-zero distance and **stops qualifying, with no error** —
+  and, per the bullet above, poisons the cache for the default callers too.
+  It is the same footgun that disqualified the `TravelTo` postfix, relocated into the
+  function this document kept. Proposed as a new trap on
+  [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150).
+- **`int.MaxValue` is arithmetic poison.** Safe under `>=`; any later `d - x`, `d * f`
+  or `SimpleCurve.Evaluate(d)` overflows or reads off the end of the curve.
+
+**Route B — an explicit layer branch.** Puts the rule where a reader finds it and makes
+it immune to any later change to the distance call. It also gives the story a *named
+event* — "we left the planet", distinct from "we moved far" — which is what a letter or a
+quest signal has to be worded from. `PlanetTile.Layer` and `.LayerDef` are public reads
+with no side effects **[V]**.
+
+> **Variant B′, because vanilla ships the case.** Branch on `LayerDef.isSpace` changing
+> rather than on layer identity. `PlanetLayerDef.isSpace` is a real field; Odyssey's
+> `Orbit` sets it `true` and `Surface` does not **[V]**. Odyssey also ships a
+> **commented-out `Moon` layer** in `Data/Odyssey/Defs/PlanetLayerDefs/PlanetLayers.xml`
+> and its settings file, `layerType SurfaceLayer` **[V]** — the shipped, XML-only
+> template for adding a layer. Under plain `Layer !=` a hop to a moon surface escapes
+> for the same reason orbit does; under `isSpace`, only entering or leaving space does.
+> **Which is right is a requirement, not a capability** — see § *Outstanding decisions*.
+
+**Route C — the per-layer threshold, and the answer to orbit→orbit.** Two orbital tiles
+are on the same layer, so the distance test behaves normally there — but **a "tile" is
+not the same size on the two layers**, so one `escapeDistanceTiles` cannot mean the same
+thing on both. Vanilla faces the same problem and solves it by division:
+`RimWorld.CompPilotConsole.GetMaxLaunchDistance(PlanetLayer layer)` is exactly
+`engine.MaxLaunchDistance / layer.Def.rangeDistanceFactor`, and Odyssey's `Orbit` sets
+`rangeDistanceFactor 20` **[V]**.
+
+> **Do not derive the threshold from that factor.** `rangeDistanceFactor 20` is Odyssey's
+> **fuel** calibration against Odyssey's orbit grid — `radius 130 / subdivisions 5`
+> **[V]** — and **we have already replaced that grid.**
+> `Archinity.Pacing/Patches/Orbit_LayerSize.xml` is a live `PatchOperationReplace` of
+> `PlanetLayerSettingsDef[defName="Orbit"]/settings/subdivisions` from `5` to `6`
+> **[V]**, which its own comment puts at 2,432 → 7,292 tiles. Orbit tiles therefore run
+> roughly √3 finer than the ones `20` was chosen for, and any threshold derived from
+> `rangeDistanceFactor` inherits that error silently. Worse, **T-45** makes our patch
+> worldgen-only — `PlanetLayer.InitializeLayer` rebuilds from scribed values — so *which*
+> grid a given save has depends on when its world was made. **A threshold derived from
+> grid geometry is not stable across our own saves.**
+>
+> So Route C is the **explicit** form: a `List` on `TraceDef` keyed by `PlanetLayerDef`,
+> authored per layer. Same weight, no derived constant, and it does not assume the fuel
+> ratio is the right ratio for a *pursuit*. The `÷ rangeDistanceFactor` shorthand is
+> recorded here as vanilla's precedent for the *shape* of the answer, not as the number.
+
+**Correcting my own wide pass.** The resolution comment on
+[#150](https://github.com/cjd721/Rimworld-Archinity/issues/150) said *"every planet layer
+in play is vanilla's."* **That is wrong.** The sweep was sound for what it covered — no
+mod in either Steam root adds a `PlanetLayerDef` or `PlanetLayerSettingsDef`, validator
+`<ThingDef` matching 4,351 mod files in the identical form **[V]** — but **Archinity is
+not in those roots**, and Archinity modifies the orbit layer. The corpus is the two Steam
+roots *plus this repo*.
+
+**Route D — observing the travel event, and why not.** Both endpoints are there and
+unprojected: `Verse.WorldComponent_GravshipController.takeoffTile` and
+`RimWorld.Planet.Gravship.destinationTile` are `PlanetTile`s carrying their layers, both
+survive the landing, both are `Scribe_Values`-persisted **[V]**. It is the only route
+that fires in the landing frame rather than on the next world tick. Three verified counts
+against it: **T-78** (`Multiplayer.Client.Patches.PatchGravshipTakeoffEnded` is a prefix
+calling `GravshipTravelUtils.StopFreeze()`, so code hung there runs unfrozen and unseeded
+**[V]**); the seam is contested — Vanilla Gravship Expanded patches `InitiateTakeoff`,
+`TakeoffEnded` and `LandingEnded`, RimPacts patches the landing, Multiplayer patches both
+ends, and MP Compat's `Multiplayer.Compat.VanillaGravshipExpanded` postfixes VGE's own
+prefix **[V]**; and `ScenPart.PostGravshipLanded(Map)` still takes only a `Map` **[V]**.
+
+> **A determinism hazard this route inherits, recorded because it bounds every future
+> route too.** `PlanetLayer.GetClosestTile_NewTemp` — the projection `TravelTo`,
+> `TryGetPathFuelCost` and `CompPilotConsole` all call on a cross-layer move — resolves
+> through `RimWorld.Planet.FastTileFinder.Closest`, a Burst-compiled parallel job.
+> `FastTileFinder.ComputeQueryJob.CheckClosest` keeps a per-thread minimum with a strict
+> `<`, and `FastTileFinder.TryGetClosest` reduces the thread slots with a strict `<`
+> **[V]**. Which index wins an exact squared-distance tie therefore depends on how the
+> job partitioned tiles across threads — a machine property. Exact ties on a symmetric
+> icosahedral grid are plausible **[I]**. **Routes A–C never call it.** Proposed as a
+> trap on [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150).
+
+### Legibility — and a correction to this document
+
+Requirements rule 1 asks that *"relocation distance requirements must be legible so a
+short hop is an informed risk."* § *The escape rule* and § *Failure and recovery* both
+justify that with *"`TraversalDistanceBetween` is the same function the gravship's own
+fuel cost uses, so the number the player sees when launching and the number we test are
+the same number."* **That is false across a layer change, and false hardest on exactly
+the case this section is about.**
+
+`RimWorld.GravshipUtility.TryGetPathFuelCost` **projects first and measures second**: on
+`from.Layer != to.Layer` it does `from = to.Layer.GetClosestTile_NewTemp(from);` and only
+then calls `Find.WorldGrid.TraversalDistanceBetween(from, to)` **[V]**. Same function,
+different call. For a surface→orbit launch the UI's `distance` is the projected
+same-layer hop — small — while the relocation test's unprojected call returns
+`int.MaxValue`.
+
+**And the player is shown no tile count at launch at all.**
+`RimWorld.CompPilotConsole.StartChoosingDestination_NewTemp`'s mouse-attached label
+prints `"Cost": "FuelAmount"(cost, Chemfuel)` plus at most a *beyond maximum range*
+clause, and `GenDraw.DrawWorldRadiusRing` draws the range rings around the **projected**
+tile when the selected layer differs **[V]**. The only tile number on screen is the pilot
+console's inspect line `"GravshipRange": GetMaxLaunchDistance(parent.Map.Tile.Layer)`
+**[V]**.
+
+**Consequence for D5.** `QuestPart_TraceSearch.ExpiryInfoPartTip` carrying a raw
+`escapeDistanceTiles` figure is comparable to nothing the player sees while choosing a
+destination. For a **same-layer** move the legibility argument survives in weaker form —
+the fuel cost is monotonic in the distance the test reads. For a **layer change** the
+tooltip must state the *rule* — leaving the planet always breaks contact — rather than a
+number, because there is no number on either side to compare.
+
+### Carriers, and what the corpus does not have
+
+- **No mod in either Steam root adds a `PlanetLayerDef` or `PlanetLayerSettingsDef`.**
+  An XML sweep for both tags across both roots returned zero; the validator `<ThingDef`
+  in the identical form matched 4,351 mod files **[V]**. **But the layers in play are not
+  all vanilla's:** `Archinity.Pacing/Patches/Orbit_LayerSize.xml` replaces the orbit
+  layer's `subdivisions` with `6` **[V]**, and this repo is outside the roots the sweep
+  covered. See Route C.
+- **`canTraverseLayers`, `IsRootSurface`, `ScenPart_PlanetLayer` and
+  `PostGravshipLanded` have zero mod hits** across both roots — `-a -g '*.dll'
+  -g '!**/obj/**' -g '!**/Referenced/**'`, ASCII plus a null-interleaved `#US` pass with
+  the `\x00` escapes typed literally, each negative validated against the same pattern
+  form run on `Assembly-CSharp.dll` **[V]**.
+- **VFE Deserters, the band ladder's donor, does not touch this half at all.**
+  `VisibilityLevelDef` lives in exactly one assembly, `3025493377/1.6/Assemblies/VFED.dll`,
+  and that assembly carries **zero** `PlanetLayer` and **zero** `Gravship` references
+  **[V]**. The ladder is worth copying; the relocation test has no donor to copy.
+- **No vanilla quest part fires on a layer change.**
+  `RimWorld.QuestPart_RequirementsToAcceptPlanetLayer` gates *acceptance* only, and
+  `WorldGrid.OnPlanetLayerAdded` / `OnPlanetLayerRemoved` are layer-lifecycle events, not
+  move events **[V]**.
+- **Multiplayer already treats gravship travel as a synced, tile-keyed session.**
+  `Multiplayer.Client.Persistent.GravshipTravelSession` holds a `PlanetTile InitialTile`;
+  the takeoff patch closes the session at `takeoffTile`, the landing patch at
+  `gravship.destinationTile` and restores `Rand` from `map.AsyncTime().randState` **[V]**.
+  Multiplayer's own `PlanetLayer` references are the cross-layer ping feature and world
+  draw layers — display, not travel **[V]**.
+- **Layer 0 is the Surface in every vanilla-derived scenario.**
+  `WorldGrid.CreateRequiredLayers` iterates `RimWorld.Scenario.AllParts`, which yields
+  `playerFaction`, then `surfaceLayer`, then `parts`, and `ScenarioBase` puts `Orbit` in
+  `parts` **[V]**. This matters because `PlanetTile`'s implicit `int` conversion produces
+  `layerId = 0`: **any tile that round-trips through a bare `int` silently lands on layer
+  0**, which is benign only because layer 0 happens to be the surface.
+
+---
+
 ## Failure and recovery
 
 | Failure | Detection | Recovery |
@@ -576,7 +846,7 @@ from `WorldComponentTick` and does its work inline (**T-21**).
 | A `TraceBandDef` leaves the load order, or its range is edited | **Loud on the next load** — the band walk finds no band whose `traceRange.max >= trace` | The walk must not leave `band` null. A startup validator asserting that the shipped `traceRange`s tile 0..100 with no gap and no overlap is ~15 lines and converts a null-band crash into a config error. **This is the one place the donor's design is genuinely fragile: its walk has no fallback** **[V]**. |
 | Trace and search disagree — search completes while Trace is 0 | Visible: a pursuit raid with no readout to explain it | Not a bug. Rule 4 is explicit that reducing Trace *"cannot undo progress already made"*, and rule 6 that *"reducing Trace after detection does not conceal the location."* The `ExpiryInfoPartTip` must say so. |
 | The pursuit quest ends (declined, failed, cleaned up) and search is orphaned | `searchProgress` lives on the quest part, so it dies with it | Correct by construction, but it means **the pursuit quest must not be dismissible**. Author it auto-accepted with no `QuestPart_Choice`; `Quest.dismissed` only hides a row, it does not end a quest **[V]**. |
-| A short relocation is mistaken for an escape | **Silent** — the player believes they got away | Prevented rather than recovered: the threshold is a `TraceDef` field, stated in `ExpiryInfoPartTip`, and `TraversalDistanceBetween` is the same function the gravship's own fuel cost uses **[V]**, so the number the player sees when launching and the number we test are the same number. |
+| A short relocation is mistaken for an escape | **Silent** — the player believes they got away | Prevented rather than recovered: the threshold is a `TraceDef` field, stated in `ExpiryInfoPartTip`. ~~and `TraversalDistanceBetween` is the same function the gravship's own fuel cost uses, so the number the player sees when launching and the number we test are the same number~~ — **struck by [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)**: the launch UI shows a chemfuel cost, not a tile count, and it **projects** a cross-layer origin before measuring **[V]**. For a same-layer move the fuel cost is still monotonic in the distance we test; for a layer change there is no comparable number and the tooltip must state the rule. See § *Planet↔orbit as a qualifying relocation* → *Legibility*. |
 | `GravshipUtility.TravelTo`'s signature changes on a RimWorld update | **Loud** — Harmony throws at startup on a missing target | Nothing else in this document is exposed to an update; every other seam is a virtual override or a `Def` field. |
 | Two clients hold different Trace | MP desync | Unreachable by design — see the writer table. No path originates at a button and no number comes from `ModSettings`. |
 
@@ -780,4 +1050,6 @@ Multiplayer's `PatchGravshipLandingEnded`, `PatchGravshipCutsceneToFreeze`,
 | **Does deep analysis raise Trace?** `GLITTERTECH.md` names *"deep analysis"* among the things that teach the Glitterites, but no mechanism reports an analysis. `CompUseEffect_GainCurrency` ([`CURRENCIES.md`](CURRENCIES.md) Credit B) is the obvious place to add a Trace field. | One extra field on a comp that is already in the budget, or the clause goes unimplemented. | **Requirements gap, no ticket** → [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) |
 | **Does the pursuit reach an orbital home?** `QuestPart_ThreatsGenerator` needs a `mapParent` with a map, and **T-48** narrows the legal `IncidentDef` set drastically on an orbit layer. The pursuit's own defs need `layerWhitelist`. | The late-Ultra act is where pursuit matters most, and it is exactly where incidents silently stop. | This document flags it; [`PRESSURE.md`](PRESSURE.md) § *Failure and recovery* owns the T-48 sweep, and [`ORBIT.md`](ORBIT.md) owns the layer |
 | **Which tile counts as "the colony's" when two player home maps exist.** `CurrentSettledTile()` reads the home map holding a grav engine, falling back to `Find.AnyPlayerHomeMap`. [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) settled one player faction and one colony, so this is inert until the gravship creates a second map — and the orbital act is exactly when it stops being inert. | A wrong answer makes a relocation read as an escape, or the reverse. | [`ORBIT.md`](ORBIT.md) owns the layer; flagged here. |
+| **Can an orbit→orbit move shake a pursuit, and at what distance?** `SPACE.md` § *Living in orbit* and `PRESSURE.md` rule 1 both settle planet↔orbit and say nothing about moving between two orbital tiles. Route C can express any answer; it cannot choose one. Note that an orbit "tile" is not a surface tile, and that the threshold must be **authored per layer rather than derived** — `Archinity.Pacing` already replaces the orbit grid Odyssey's own `rangeDistanceFactor 20` was calibrated against, and **T-45** makes that replacement worldgen-only. See § *Planet↔orbit as a qualifying relocation* → Route C. | The late-Ultra act is entirely in orbit, so this is the threshold that will actually be tested. | **Requirements gap** → [`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md) / [`SPACE.md`](../requirements/SPACE.md), [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127) |
+| **Layer identity, or `isSpace`?** If a second *surface* layer is ever added — Odyssey ships a `Moon` template commented out, XML-only **[V]** — does hopping to it qualify the way orbit does? The engine supports either reading at identical cost. | Decides whether "escape" means *left the planet* or *left this world*. Nothing structural depends on the answer. | **Requirements gap** → [`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md), [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127) |
 | **The pressure-stat name.** [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) leaves *Trace* as the working name with *Visibility* acceptable. | Naming only. **Recommend Trace**, because *Visibility* is the donor's word for a different fiction and reusing it invites the reader to assume the donor's behaviour. | Conrad |

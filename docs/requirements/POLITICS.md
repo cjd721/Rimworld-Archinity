@@ -114,9 +114,11 @@ pilgrim escorts, loaned specialists, tribute, intervention. Frequency and weight
 belong to [the storyteller](https://github.com/cjd721/Rimworld-Archinity/issues/60).
 
 Distinct enemy doctrines and non-raid hostility can change what the colony needs to
-build. Defeat needs a route back through peace, tribute or subordination.
-[#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) specifies vassalage and
-the tithe. Only a handful of hand-authored factions carry the campaign, so
+build. Defeat needs a route back through peace, tribute or subordination — **the colony
+paying a stronger faction**, which is the mirror of [territory](TERRITORY.md) and has no
+owner yet ([#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) states what the
+colony's own outposts, holdings and sworn factions must be, not what it owes others).
+Only a handful of hand-authored factions carry the campaign, so
 faction-generic selection is a fallback rather than the primary path.
 
 ## Player information and agency

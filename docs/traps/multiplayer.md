@@ -21,6 +21,23 @@ Compare **parsed values, not bytes**: `Scribe_Values.Look` omits values equal to
 their default, so a fresh config and an explicitly-defaulted one are byte-different
 with identical meaning.
 
+**The scope is wider than "settings reach runtime": a setting can be written back onto
+a shared `DefModExtension`.** Outposts (`2023507013`'s companion,
+`Outposts.OutpostsMod.Setup`) reflects over `[PostToSetings]` fields on the `Outpost`
+subclass **and on `outpost.Ext`**, and `SetValue`s the player's mod-settings value onto
+them at outpost spawn [V]. `Range`, `TicksPerProduction`, `TicksToPack` and `MinPawns`
+are therefore **per-installation, not per-save**, and the def in the `DefDatabase` is
+mutated. Nothing is logged. Two clients with different settings diverge on the def
+itself, not just on a behaviour branch — and `Outpost.Deliver` reads
+`OutpostsMod.Settings.DeliveryMethod` on the payout path, whose `PackAnimal` branch calls
+`PawnGenerator.GeneratePawn` **off the shared stream** [V], so the divergence is a
+different number of `Rand` draws at the same tick.
+
+**Mitigation:** declare per-type data on a plain `DefModExtension`, which
+`OutpostsMod`'s type enumeration never reaches.
+(*Added 2026-09-23 from [#146](https://github.com/cjd721/Rimworld-Archinity/issues/146)
+and [#166](https://github.com/cjd721/Rimworld-Archinity/issues/166).*)
+
 *`docs/engine/determinism.md`; T-19 and T-20 are the worked cases. MP 0.11.5.*
 
 ### T-19 — Medieval Overhaul forces a setting from a draw method
@@ -955,5 +972,83 @@ from a single-player save.
 *[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). `2606448745/1.6/AssembliesCustom/Multiplayer.dll`,
 `Multiplayer.Client.Factions.FactionCreator.CreateFaction` / `.InitNewGame` / `.PostGameStart` /
 `.InitLocalVisuals`; vanilla `Verse.Game.InitNewGame`. 1.6.4871.*
+
+---
+
+### T-120 — Map generation is lockstep and unchecked; any non-`Rand` divergence in a `GenStep` is a silent, delayed desync
+
+Under Multiplayer **both clients generate every map locally**; nothing is generated on the host
+and sent. Vanilla seeds `Verse.Rand` from the world seed and tile, so `Rand`-driven generation
+matches by construction — but **MP's desync checksum does not cover map generation at all**. A
+map that comes out different on the two clients starts ticking from a matched RNG state and
+fails later: within seconds on an inhabited map, with a stack trace naming a pawn, or
+permanently through `thingIDNumber` offsets on an empty one. There is no "divergent but
+playable".
+
+The RNG streams are covered: unseeded `System.Random` in KCSG is T-33, `UnityEngine.Random` is
+T-51 and the corpus sweep in `docs/engine/determinism.md`. **Divergence with no RNG in it is
+not.** A `GenStep` — ours or a mod's — that branches on a reference `GetHashCode()`, iterates a
+`HashSet`/`Dictionary` in hash order, or reads `DateTime.Now` / `Environment.TickCount` builds
+two different maps and nothing reports it.
+
+**Not swept.** No corpus pass has looked for these patterns on a map-generation path; the only
+case examined is `PlanetTile.GetHashCode()`, which is value-based and safe. Anything we author
+that runs during map generation must draw only on `Verse.Rand` and iterate only ordered
+collections; the corpus sweep is build-time work.
+
+*[#88](https://github.com/cjd721/Rimworld-Archinity/issues/88) (lockstep generation, checksum
+blind spot), [#94](https://github.com/cjd721/Rimworld-Archinity/issues/94) (the unswept seam),
+registered on [#104](https://github.com/cjd721/Rimworld-Archinity/issues/104). Mechanism verified
+against `Multiplayer.dll` 1.6 and vanilla `MapGenerator.GenerateMap`, 1.6.4871; the non-RNG
+instances are unverified.*
+
+### T-135 — `GetClosestTile_NewTemp`'s tie-break depends on thread partitioning
+
+`PlanetLayer.GetClosestTile_NewTemp` resolves through a Burst parallel job.
+`FastTileFinder.ComputeQueryJob.CheckClosest` and `FastTileFinder.TryGetClosest` both compare
+with a **strict `<`** [V], so on an exact squared-distance tie the winner is whichever partition
+reached it first. Thread partitioning is not a synchronised input.
+
+**Two Multiplayer clients can therefore pick different tiles for the same query**, and the
+divergence surfaces wherever the answer is stored or acted on — a projected cross-layer
+distance, a site anchor, a launch target. Nothing about the call reports that a tie occurred.
+
+The **code shape is [V]**; that ties actually arise often enough to diverge a live session is
+**[I]** — it was not measured, and reading cannot settle it.
+
+`GravshipUtility.TryGetPathFuelCost` projects through this method [V], so anything that measures
+across layers inherits the question. **T-134** is the same method's other hazard.
+
+**Fix:** do not let a projection's *identity* reach synchronised state. Compare distances, not
+tiles, or resolve the tile inside a synced command so one client's answer is the one that
+counts.
+
+*[#150](https://github.com/cjd721/Rimworld-Archinity/issues/150), `docs/specs/TRACE.md` §
+*Planet↔orbit as a qualifying relocation*. `RimWorld.Planet.PlanetLayer.GetClosestTile_NewTemp`,
+`RimWorld.Planet.FastTileFinder.ComputeQueryJob.CheckClosest`,
+`RimWorld.Planet.FastTileFinder.TryGetClosest`, `RimWorld.GravshipUtility.TryGetPathFuelCost`
+(`Assembly-CSharp.dll`). 1.6.4871.*
+
+### T-137 — Multiplayer's `OrderForceTarget` registration stops at the vanilla assembly
+
+`Multiplayer.Client.SyncMethods` registers `OrderForceTarget` for every `ITargetingSource`
+implementor **`where t.Assembly == typeof(Game).Assembly`** [V]. The filter is the assembly, not
+the interface.
+
+**A targeting source declared in our own assembly — a permit worker, an ability, anything
+implementing `ITargetingSource` — is silently outside that registration and must register its
+own.** There is no warning at startup and no error at use. The symptom is the targeted action
+firing on **one client only**: the player who clicked sees it work, the other sees nothing, and
+the session drifts from there.
+
+The same filter is why a modded implementor cannot inherit the coverage by subclassing a vanilla
+one: registration walked the type list once, at init.
+
+**Fix:** `MP.RegisterSyncMethod` on our own `OrderForceTarget` override, alongside whatever else
+the source writes.
+
+*[#166](https://github.com/cjd721/Rimworld-Archinity/issues/166), `docs/specs/TERRITORY.md`.
+`Multiplayer.Client.SyncMethods`, `Verse.ITargetingSource.OrderForceTarget`
+(`2606448745/1.6/AssembliesCustom/Multiplayer.dll`, MP 0.11.5). 1.6.4871.*
 
 ---

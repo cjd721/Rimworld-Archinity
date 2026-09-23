@@ -45,6 +45,308 @@ not own the pre-worldgen checklist it feeds — that is
 
 Established on [Deferred orbital instantiation](https://github.com/cjd721/Rimworld-Archinity/issues/70).
 
+## The reveal gate — what closes orbit, and what opens it
+
+> Established on [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148), answering
+> `docs/requirements/SPACE.md` § *The reveal*: **before the reveal there is no view of the
+> orbital map, no flight to it and no orbital sites of any kind.** Evidence class **READ**,
+> against decompiled 1.6 `Assembly-CSharp.dll`, Odyssey's defs, `Multiplayer.dll`, and
+> two-root corpus sweeps of all 155 mods in both metadata heaps.
+
+> ⚠️ **This section corrects § *The build* 2 below.** That section says the Orbit layer
+> "generates with tiles and zero world objects" and that vanilla "already draws the locked
+> door." **It does not.** Odyssey populates every planet layer at world creation, orbit
+> included, so the view-orbit gizmo is **enabled from the first tick of a fresh world**. The
+> *settlement* half of § *The build* 2 stands exactly as written — hidden factions still get
+> neither the freebie nor a lottery slot — but the display conclusion drawn from it does not.
+>
+> **Three claims elsewhere in this document are struck or corrected in place**, so that no stale
+> [V] survives behind this banner: § *The build* 2's "zero world objects", § *The build* 2's
+> "six shipped `QuestScriptDef`s… the bound on them is a research gate", and § *Verification*'s
+> RUN item expecting an empty orbit layer. Each carries a dated note pointing here.
+
+### Verdict
+
+- **Possible?** **Partly.** Every surface can be shut and the reveal is one synced call — but
+  three of the four things that put an object into orbit before the reveal are **ours to
+  switch off by content decision**, not vanilla gates, and the gate this document previously
+  relied on is already open in a fresh Odyssey world.
+- **Multiplayer?** **Yes.** The reveal is a `[SyncMethod]` on a `WorldComponent`; MP ships a
+  `WorldComponent` sync worker and already treats gravship travel as a pausing session. Layer
+  *selection* is client-local UI and needs no sync at all.
+
+### Routes
+
+Not exclusive. **A is the floor; B or C is the lid.**
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — Empty the layer** | Nothing can appear in orbit before the reveal, so vanilla's `OrbitLayer.CanSelectLayer` is the door, in Odyssey's own shipped string | vanilla/Odyssey defs + our patches | XML · patch | **Easy** | Yes — no runtime state |
+| **B — Gated layer class** | A hard floor under A: view, flight-path and render all refuse until the flag flips, whatever content leaks onto the layer | our code via `PlanetLayerDef.layerType` | C# subclass, no Harmony | **Medium** | Yes |
+| **C — Selection chokepoint patch** | The same lid as B, retro-fittable to a world that already exists | our code, Harmony on `WorldSelector.set_SelectedLayer` | C# patch | **Medium** | Yes |
+
+Each route composes verified mechanisms; **the claim that they compose into a closed curtain
+is [I]** until something is built.
+
+**Route A — what it gets us.** Orbit **unpopulated, and the view-orbit gizmo greyed** with the
+player *told so* in Odyssey's own **"No discovered orbital locations."**, shipped in eighteen
+languages. Zero runtime state, zero Harmony, nothing frozen at worldgen. The reveal then costs
+what § *The build* 3 already prices, because `CanSelectLayer` reads `AnyWorldObjectOnLayer`
+live with no cache and no invalidation call [V].
+
+⚠️ **Route A does not make orbit unreachable, and a beat must not be written as if it does.**
+It removes the *destinations* and it greys the *button*. It does not touch the flight path: with
+the zoom bypass closed and the layer empty, a player has no in-game reason to fly to orbit and no
+way to aim at it through the UI — but `CanReachLayer` is still true, `TryGetPath` still returns a
+route, the layer hop still costs **nothing**, and a launch straight up still costs **50
+chemfuel** [V]. Nothing in `CompPilotConsole`'s validator or `CompLaunchable.ChoseWorldTarget`
+asks whether the reveal has happened [V]. **"Unreachable" is Route B or C.** Route A is "nothing
+there, and the door is greyed."
+
+**What it cannot do:** it cannot stop a mod, a DLC or an unread quest from putting an object on
+the layer — the test is "is the layer empty", and every content source in the game votes. And it
+places no guard whatever on the flight path, before or after anything lands there.
+**Consequences:** Odyssey's whole mid-game orbital loop — asteroid mining, the scanner, two
+gravcore leads — is off the table for the Industrial→Spacer stretch, which is most of the
+campaign.
+
+**Route B — what it gets us.** A subclass of `OrbitLayer` overriding three virtuals covers
+three surfaces at once: `CanSelectLayer()` (the gizmo), `CanReachLayer` (**the engine's
+cross-layer flight gate, shipped and unused** — `PlanetLayer.TryGetPath` is its only consumer
+and `OrbitLayer` does not override it), and `Visible` (so orbit does not render as a bare
+sphere if something selects it anyway).
+**What it cannot do:** **it is a pre-world-creation decision.** `WorldGrid.ExposeData` scribes
+the layer dictionary with `LookMode.Deep`, which writes the concrete class into the save; a
+later `layerType` patch is a silent no-op on an existing world. Treat it as **T-07**-class and
+put it on [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18). It also does not cover
+the zoom path — see *Constraints*.
+
+**Route C — what it gets us.** `WorldSelector.selectedLayer` is private and written at exactly
+one site; `PlanetLayer.Selected`'s setter delegates straight to it. Every path into orbit —
+the gizmo, the zoom switch, `CameraJumper`'s tile jump, tile selection, world-object selection
+— funnels through that one setter. One prefix closes all of them, on a save that already
+exists.
+**What it cannot do:** it is a *display* gate. Flight still needs `CanReachLayer` or a second
+patch, because launching at an orbit tile does not require the layer to have been selected.
+**Consequences:** rejecting a selection silently reads as a bug; the greyed gizmo with
+Odyssey's own reason string is the right surface, which is why A or B is the floor.
+
+**Recommended, not selected: A + B**, with B decided *before world creation*. C is the answer
+if the decision arrives after a world exists.
+
+### What the player obtains
+
+The requirement wants the unlock to be a thing the player earns. Every candidate, priced:
+
+| Carrier | Kind | Weight | Permanent once obtained? |
+|---|---|---|---|
+| A world flag on the reveal `WorldComponent` | C# | Easy — one bool on the component § *The build* 5 already owns | **Yes, by construction** |
+| A research project (ours, or `OrbitalTech` repointed) | XML + hook | Easy–Medium | **Yes** — no un-complete path; a techprint reduces to this |
+| A quest reward or one-off event | XML | Easy | **Yes if it writes the flag**; the reward item itself is losable |
+| The orbital scanner | XML | Easy | **No** — a building. Lose it and no *new* scanner quests arrive |
+| The signal jammer | XML | Easy | **No** — `Building_GravEngine.HasSignalJammer` reads the *live* ship, so a destroyed jammer re-closes every jammer-gated destination |
+
+**The rule that falls out:** make the *carrier* whatever the fiction wants; make the *state* a
+world flag written once by the synced reveal. Only the flag survives losing the object.
+
+**Keep the jammer for a different job.** `WorldObjectDef.requiresSignalJammerToReach` is a
+**per-destination** gate — in vanilla Odyssey only `Mechhive` carries it. On the Glitterite
+`SpaceSettlement`s it gives exactly what `docs/requirements/SPACE.md` asks for: the player can
+see what not to touch, and cannot fly there. That is a post-reveal lever, not a reveal gate.
+
+### Constraints
+
+**Odyssey fills every layer at world creation.** `WorldComponent_LocationGenerator.FinalizeInit`
+(`fromLoad: false`) runs `GenerateUntilTarget()` over every layer in `Find.WorldGrid.PlanetLayers`,
+and `WorldComponentTick` tops each layer back to target every 90,000 ticks [V]. Odyssey's
+`GeneratedLocationDef Asteroids` places `AsteroidBasic` with `layerDefs [Orbit]` [V].
+
+**The count is band-dependent, and the bottom band matters.** `worldLocationsTarget` is fixed in
+the component's constructor from `world.PlanetCoverage`, times
+`PlanetLayerDef.generatedLocationFactor`, which Orbit does not override (default `1f`) [V]:
+
+| Planet coverage | Asteroids in orbit at creation |
+|---|---|
+| < 5.1% | **3** |
+| 5.1% – 30.0% | **8** |
+| 30.1% – 50.0% | **12** |
+| ≥ 50.1% | **20** |
+
+**So a fresh world holds 3–20 claimable asteroids in orbit before a tick is spent** — 8–20 at any
+ordinary coverage, and **3 even at the 5% floor.** The floor is the number that matters: no
+coverage setting produces an empty layer, so no world-creation choice makes § *The build* 2's
+assumption true. `AnyWorldObjectOnLayer` applies no filter of any kind [V], so one asteroid is as
+good as twenty for opening the gizmo. Vanilla Gravship Expanded – Ch.1 ships four more orbital
+`GeneratedLocationDef`s [V]. This is a def-patch fix, not a worldgen irreversible — the generator
+reads the `DefDatabase` live.
+
+**Scrolling out bypasses `CanSelectLayer`, and it is on by default.** `PrefsData.zoomSwitchWorldLayer`
+defaults to `true`; `WorldCameraDriver`'s scroll handler assigns `PlanetLayer.Selected = …zoomOutToLayer`
+past altitude 1100 with **no `CanSelectLayer` and no `Visible` check** [V]. `zoomOutToLayer` comes
+from `LayerConnection.zoomMode` in `WorldGrid.CreateRequiredLayers`, and `ScenarioBase` declares
+`Surface → Orbit` as `ZoomOut` [V]; `Archinity_SeedOfArchinity` inherits it and declares no layer
+parts of its own [V]. The fix is XML — `zoomMode` is parsed from the connection node's children by
+`XmlHelper.ParseElements` [V], so removing it leaves `ZoomMode.None`. **Mind T-05:** `<connections>`
+is a list and a child ScenarioDef *appends*, so this wants a `PatchOperation` against `ScenarioBase`
+or `Inherit="False"`. `Scenario.ExposeData` and `ScenarioMaker.MakeNewScen` re-inject a zoom pair
+**only when no part is tagged `"Orbit"`** [V] — `ScenarioBase` declares one, so the patch is not
+undone.
+
+**`CanSelectLayer` has exactly one caller**, `WorldGrid.GetGizmos` [V]. It is the gizmo's gate, not
+the layer's.
+
+**Flight is cheap and nothing about it is reveal-aware.** `CompPilotConsole.StartChoosingDestination_NewTemp`'s
+validator runs five checks — path/fuel via `GravshipUtility.TryGetPathFuelCost`, the jammer check
+*only if a `MapParent` sits on the tile*, total fuel, distance against `MaxLaunchDistance / rangeDistanceFactor`,
+and `TileFinder.IsValidTileForNewSettlement(forGravship: true)` [V]. None asks about the reveal.
+`LayerConnection.fuelCost` defaults to `0f` and the scenario-declared pair sets none, so **the layer
+hop is free** [V]; `TryGetPathFuelCost` projects the origin onto the destination layer before
+measuring, so straight up is distance 0 and the cost floors at `Mathf.Max(cost, 50f)` — **50
+chemfuel** [V]. `IsValidTileForNewSettlement` passes on an empty orbit tile: `BiomeDef.canBuildBase`
+defaults true and Odyssey's `Space` biome, which `Orbit` inherits, does not set it [V]. The only real
+friction is `PlanetLayerDef.rangeDistanceFactor = 20` for Orbit [V], and it does not bite at distance 0.
+
+**Ten quest scripts place on Orbit, not six.** Six scanner-given `OpportunitySite_*`
+(`randomlySelectable false`, `<givenBy>OrbitalScanner</givenBy>`) [V]; **three gravcore subquests** —
+`Gravcore_OrbitalAncientPlatform` (`requiredSubquestsGiven 3`), `Gravcore_OrbitalMechanoidPlatform`
+(`5`), `Gravcore_Mechhive` — all `autoAccept true`, driven by `QuestPart_SubquestGenerator_Gravcores`,
+whose `CanGenerateSubquest` asks only that some map hold a colonist-owned `GravEngine` [V]; and
+**`OrbitalFugitive`**, `rootSelectionWeight 1`, `minRefireDays 30`, storyteller-selectable, placing a
+`ClaimableSpaceSite` via `QuestNode_Root_Site` with `layerWhitelist [Orbit]` [V]. **Four of the ten
+need no scanner and no `OrbitalTech`.** § *Failure and recovery*'s "the real gate is when `OrbitalTech`
+becomes reachable" does not hold.
+
+**How a quest is *fired* decides whether it can reach orbit at all — and the two paths differ by
+almost an order of magnitude.** This is the hardest constraint in this section, and it binds on both
+sides of the reveal. 1.6 ships **two different `CanQuestOccurOnTile` methods with different rules**
+[V]:
+
+| Path | Method | Extra rules | Quests that can reach an Orbit tile |
+|---|---|---|---|
+| The storyteller's natural quest roll | `IncidentWorker_GiveQuest.CanQuestOccurOnTile(PlanetTile, QuestScriptDef)` — private static | adds `!canOccurOnAllPlanetLayers && onlyAllowWhitelistedIncidents`; **no `autoAccept` exemption**; requires `everAcceptableInSpace` | **2 of 139** — `OrbitalFugitive`, `SurveySite` [V] |
+| `CanRun` paths — subquest generators, decrees, scripted givers | `QuestScriptDef.CanQuestOccurOnTile(PlanetTile)` — private | whitelist, blacklist, `!autoAccept && !everAcceptableInSpace && isSpace`, `neverPossibleInSpace` | **66 of 139** on Orbit; **18** clear the layer-whitelisting clause [V] |
+
+**`autoAccept` is a blanket exemption from the space gate in the second and not the first** [V] —
+an `autoAccept` quest is never asked whether it is acceptable in space. **Nine of the ten carry
+`autoAccept true`**, including both families that reach orbit without a scanner.
+
+Two consequences, and they pull in opposite directions:
+
+- **Before the reveal, the storyteller is nearly harmless and the scripted givers are the threat.**
+  Only `OrbitalFugitive` can arrive by natural roll. Everything else that opens orbit — the six
+  scanner quests, the three gravcore subquests — arrives through a `CanRun` path that exempts
+  `autoAccept` entirely. **Closing orbit means closing givers, not tuning storyteller weights**,
+  which is why Route A's list is a list of `givenBy` tags and `subquestDefs` entries and not a
+  single incident-weight patch.
+- **After the reveal, the ceiling is 18 and the storyteller delivers 2 of them.** An orbital colony
+  fed by the ordinary quest flow gets `OrbitalFugitive` and `SurveySite` and nothing else; the other
+  sixteen need a giver to exist. That is a constraint on *living in orbit*, which is
+  [`GRAVSHIP.md`](GRAVSHIP.md)'s and [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)'s
+  — named here because the same two methods produce both numbers, and a reader who takes 18 as the
+  post-reveal quest budget will be wrong by a factor of nine.
+
+#### Ten, or eighteen? — reconciling with `GRAVSHIP.md`
+
+[`GRAVSHIP.md`](GRAVSHIP.md) ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)) reports
+**18 of 139** quests clearing the orbit layer's whitelisting clause, which is also **T-48**'s figure.
+**Both numbers are right, and this section's ten are a strict subset of that eighteen** [V].
+
+**The 18 reproduces exactly**, and the clause is the whole of it: a `QuestScriptDef` clears Orbit's
+`onlyAllowWhitelistedIncidents` when it sets `canOccurOnAllPlanetLayers true` **or** whitelists Orbit.
+Eighteen of the 139 concrete defs do, and none whitelists Orbit — they all take the blanket flag [V].
+The same clause over `IncidentDef` gives **18 of 91**, so T-48's incident half is right too [V].
+The eight in the 18 that are not in the ten are `Gravcore_AncientReactor`, `_AncientStockpile`,
+`_CrashedMechanoidPlatform`, `_FrozenTerraformer`, `_InsectLair`, `_MechanoidRelay`,
+`GravshipWreckage` and `SurveySite` — all surface-placing, exactly as #147 says [V].
+
+The two counts still answer different questions, and that part stands:
+
+| | This section's **ten** | #147 / T-48's **eighteen** |
+|---|---|---|
+| Question | which quest scripts **put a world object onto** the Orbit layer | which quests **clear the layer's whitelisting clause** for a tile on Orbit |
+| Where the layer appears | in the quest's `QuestNode_Root_*` — `<layerDef>Orbit</layerDef>`, `layerWhitelist [Orbit]` | in the def's `canOccurOnAllPlanetLayers` / `layerWhitelist`, tested against the *receiving* tile |
+| Matters | **before** the reveal — this is what opens the gate | **after** the reveal — this is the ceiling on colony life in orbit |
+| Owner | this document | [`GRAVSHIP.md`](GRAVSHIP.md), #147 |
+
+A quest can place in orbit while the colony sits on the surface — all six scanner quests do — and a
+quest can clear the clause while placing nothing at all (`GravshipWreckage`, `SurveySite`). **A placing
+set and a receiving gate are different questions.** That the ten nest inside the eighteen is a fact
+about how Odyssey authored its orbital family, not a structural necessity: placement layer comes from
+the root node and the clause reads the target tile, so a quest *could* place on Orbit without the flag.
+None ships that way [V].
+
+**`OrbitalTech` gates nothing this section is about** — the scanner, two other orbital buildings and
+vacsuit/rebreather apparel, at Industrial behind `MicroelectronicsBasics` [V]. Not the view, not the
+layer, not the gravship.
+
+**The orbital trade beacon and comms console never touch the layer.** `IncidentWorker_OrbitalTraderArrival`
+builds a `TradeShip` into `map.passingShipManager`, creates no `WorldObject` and names no `PlanetLayer`
+[V]. Both buildings sit behind `MicroelectronicsBasics`. Orbital traders cannot open the view — but they
+*are* voices from orbit, which is a fiction call for `docs/requirements/SPACE.md`, not a capability
+problem.
+
+**No `WorldObject` can hide — re-read and confirmed** [V], with the scope correction that it was never
+load-bearing: `AnyWorldObjectOnLayer` consults no visibility concept at all.
+
+### Available mechanisms
+
+| Mechanism | What it gives | Limitation |
+|---|---|---|
+| `OrbitLayer.CanSelectLayer` | the greyed, explained view-orbit button [V] | one caller; triggers on *any* world object, including worldgen asteroids [V] |
+| `PlanetLayer.CanReachLayer` | **the shipped, unused cross-layer flight gate**; `TryGetPath` is its only consumer [V] | virtual on `PlanetLayer`, so it needs a subclass — i.e. `layerType`, i.e. pre-worldgen |
+| `PlanetLayerDef.layerType` | XML-settable layer class, instantiated by `WorldGrid.RegisterPlanetLayer` via `Activator.CreateInstance` [V] | pinned into the save by `LookMode.Deep`; a later patch is a silent no-op |
+| `PlanetLayer.Visible` | suppresses the layer's draw pass in `WorldRenderer` [V] | render only; does not gate selection or targeting |
+| `WorldSelector.set_SelectedLayer` | sole writer of the selected layer — the single chokepoint for every selection path [V] | a hot UI path; silent rejection reads as a bug |
+| `LayerConnection.zoomMode` | scenario-declared; omitting it removes the scroll-to-orbit shortcut [V] | list inheritance appends (**T-05**); wants a patch or `Inherit="False"` |
+| `WorldObjectDef.requiresSignalJammerToReach` | per-destination flight gate, honoured by both the pilot console and `CompLaunchable` [V] | gates a destination, never the layer; the jammer is losable |
+| `WorldComponent_LocationGenerator` | **the nearest donor for the reveal itself**: a `WorldComponent` that reads a def list, tests a per-layer condition on an interval and places `WorldObject`s [V] | replace the condition with the flag and the placement with § *The build* 3's block |
+
+**The corpus carries no gate and no donor.** Two roots, 155 mods, both heaps, validated:
+`CanSelectLayer`, `AnyWorldObjectOnLayer`, `CanReachLayer` and `GeneratedLocationDef` return **zero**
+in every mod assembly, and **no mod ships a `<PlanetLayerDef>`** [V]. `zoomInToLayer` hits Multiplayer
+only; `TryGetPathFuelCost` hits VGE; `RequiresSignalJammerToReach` hits BTG, VGE and Vehicle Framework
+[I — metadata]. VGE is the only mod adding orbital `GeneratedLocationDef`s [V].
+
+**Multiplayer, read not assumed** [V]: `SyncDelegate.Lambda(typeof(CompPilotConsole),
+"StartChoosingDestination_NewTemp", 4)` and `…, 5)` sync the tile-chosen and confirm callbacks while the
+*validator* stays client-local — correct, and why a gate inside it needs no sync so long as it reads world
+state. `GravshipTravelUtils.OpenSessionAt` opens a pausing `GravshipTravelSession` for the duration of tile
+picking. `SyncMethod.Register(typeof(WorldComponent_GravshipController), "PlaceGravship")` and
+`"AbortLanding"` cover landing. `SyncDictRimWorld` registers a `WorldComponent` sync worker and
+`CompSerialization.worldCompTypes` hashes world-component types into the join handshake — so a custom
+`WorldComponent` is a first-class `[SyncMethod]` target, and the reveal is **one synced call, one moment,
+one world, both founders**.
+
+### Open questions
+
+- **Build, next map (unowned):** whether the gate lives on `CanSelectLayer` alone, the layer class or the
+  selection setter; whether the reveal component removes pre-existing asteroids or the defs are simply
+  never enabled.
+- **Requirement, [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127):**
+  `docs/requirements/SPACE.md` says orbit holds "no orbital sites of any kind" before the reveal *and*
+  that the campaign adopts Odyssey's gravship arc "as shipped." **Those conflict.** The gravcore chain
+  places orbital sites by design from the moment a grav engine exists. Closing orbit costs three of its
+  nine leads plus `OrbitalFugitive`. Whether that price is acceptable is a design call.
+- **Requirement, #127 or `GLITTERTECH.md`:** whether orbital traders may hail the colony before the reveal.
+- **[#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)** decides how the six scanner quests get
+  held shut, since it decides what `OrbitalScanner` is for.
+- **[#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)** no longer bounds the reveal; the
+  `OrbitalTech` gate covers six of ten orbit-placing quests and nothing else.
+- **[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18)** gains a pre-worldgen line if route B is
+  taken.
+- **Unverified number, RUN, one client.** Start a fresh Odyssey world on the Archinity scenario and open
+  the gizmo bar. Expected: view-orbit **enabled**, orbit holding named asteroids — **3 at the 5% coverage
+  floor, 8 / 12 / 20 as coverage crosses 5.1% / 30.1% / 50.1%.** This replaces the struck RUN item under
+  § *Verification*, which expected the opposite. It confirms a count; the mechanism is read end to end and
+  the verdict does not depend on the number. **The floor is the interesting reading** — if 5% coverage
+  still shows asteroids, no world-creation setting can produce an empty layer.
+- **Settled, not open — [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147) / T-48's
+  "18 of 139" reproduces exactly**, and so does the "18 of 91" incident half; this section's ten are a
+  strict subset. An earlier draft of this section called the 18 irreproducible — that was wrong, and
+  wrong in an avoidable way: it tested the two `CanQuestOccurOnTile` methods *whole* instead of
+  isolating the layer-whitelisting clause the figure actually names. Both documents agree. See
+  § *Constraints → Ten, or eighteen?*.
+
 ## The build
 
 **Generate the orbital factions at worldgen, hidden. Defer the settlements.**
@@ -81,8 +383,14 @@ layer:
 | The one free settlement per faction, in `FactionGenerator.NewGeneratedFaction` | `if (!faction.Hidden && !factionDef.isPlayer)` |
 | The bulk lottery, in `GenerateFactionsIntoWorldLayer` | local `Validator`: `!x.def.isPlayer && !x.Hidden && !x.temporary && CanExistOnLayer(...)` |
 
-Both [V]. With no non-hidden orbit faction, `source.Any()` is false, the lottery loop never
-runs, and **the Orbit layer generates with tiles and zero world objects** [V].
+Both [V]. With no non-hidden orbit faction, `source.Any()` is false and the lottery loop never
+runs, so **the Orbit layer generates with no *settlements***.
+
+> ~~**the Orbit layer generates with tiles and zero world objects** [V]~~ — **struck, 2026-09-23,
+> [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148).** The settlement half above
+> is correct and stands. The "zero world objects" conclusion drawn from it is **false**:
+> `WorldComponent_LocationGenerator` places 3–20 asteroids on the layer at world creation,
+> outside the worldgen step list entirely. See § *The reveal gate → Constraints*.
 
 The factions themselves are fully built: `loadID`, name, colour, ideo, leader and initial
 relations against every other faction, all rolled at worldgen inside worldgen's seeded
@@ -105,9 +413,16 @@ So the pre-reveal state is a visible, greyed, explained button. That is the disp
 this spec and it costs nothing.
 
 ⚠️ It costs nothing **and it is not exclusively ours**. `AnyWorldObjectOnLayer` counts any
-world object, including Odyssey's own orbital quest sites. Six shipped `QuestScriptDef`s can
+world object, including Odyssey's own orbital quest sites. ~~Six shipped `QuestScriptDef`s can
 open the gate before the politics do; the bound on them is a research gate, not a design
-guarantee. See *Failure and recovery*.
+guarantee.~~ See *Failure and recovery*.
+
+> **Corrected, 2026-09-23, [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148).**
+> **Ten** shipped `QuestScriptDef`s place on Orbit, and **four of them are behind no research
+> gate at all** — three `autoAccept` gravcore subquests that need only a `GravEngine` on the
+> map, plus storyteller-selectable `OrbitalFugitive`. And the gate is open before any of them
+> fire, because worldgen already put asteroids on the layer. "The bound is a research gate" is
+> withdrawn. See § *The reveal gate → Constraints*.
 
 **`viewGizmoOnlyVisibleWithDirectConnection` is a different and much weaker gate**, and we
 have been reading it as this one. It tests
@@ -916,11 +1231,18 @@ sweep having run, not of its completeness.
 1. **The one RUN item — empty orbit at worldgen, under the real load order.** Generate a
    world with every orbit-whitelisted faction hidden and confirm three things in the same
    run:
-   - `Find.WorldObjects.AllWorldObjectsOnLayer(Find.WorldGrid.Orbit)` is empty, and the
+   - ~~`Find.WorldObjects.AllWorldObjectsOnLayer(Find.WorldGrid.Orbit)` is empty, and the
      view-orbit gizmo is present, greyed, and reads *"No discovered orbital locations."*
      The mechanism is read end to end; what a run confirms is that no other gen step or mod
      places a world object on Orbit, which no grep can prove. Orbit's `worldGenSteps` are
-     only `Tiles` and `Factions` [V], so the expected answer is yes.
+     only `Tiles` and `Factions` [V], so the expected answer is yes.~~
+
+     > **Struck, 2026-09-23, [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148).
+     > The expected answer is no.** The reasoning was right and the premise was too narrow:
+     > the layer's `worldGenSteps` really are only `Tiles` and `Factions`, but
+     > `WorldComponent_LocationGenerator` populates layers from `FinalizeInit`, which is not a
+     > gen step and is not in that list. Expect the gizmo **enabled** and the layer holding
+     > 3–20 asteroids. The replacement RUN item is in § *The reveal gate → Open questions*.
    - **With World Tech Level active and the world tech level set to Neolithic**, whether
      `Current.CreatingWorld.info.factions` still contains all four orbital factions, and
      whether adding them to `Settings.FactionsExcluded` restores them if it does not. This is

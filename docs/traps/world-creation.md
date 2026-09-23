@@ -301,6 +301,12 @@ Three shipped consumers, all in namespace `RimWorld.QuestGen` (not `RimWorld`):
   `Find.RandomSurfacePlayerHomeMap != null`. False means the quest is never
   generated. Nothing is logged, and a quest that is never offered looks like
   ordinary storyteller variance.
+  **⚠ Corrected 2026-09-23 ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)):
+  this property is *not* what takes the joiner quests down in 1.6.** It appears only in
+  the `CanBeSpace == true` branch, and `CanBeSpace` is `false` on **all five** shipped
+  subclasses [V], so that branch is unreachable. The live path is
+  `QuestGen_Get.GetMap(canBeSpace: false)` — see **T-128**. T-49's mechanism is unchanged
+  and its other two consumers stand; only this consumer was mis-blamed.
 - `QuestNode_GetSiteTile.TryFindTile` — with `canSelectSpace` false, the anchor tile
   degrades to `PlanetTile.Invalid`, so site placement loses its "near the colony"
   reference entirely and either fails or lands anywhere.
@@ -689,11 +695,23 @@ The same prune fires on a null `askerFaction`, which happens when
 `fixedQuestGiverFaction` is unset and `FixedQuestGiverFaction` falls through to
 `Find.FactionManager.RandomAlliedFaction(...)` with no allies.
 
+**The prune is broader than the flag, and this is the clause that bites an item shop.**
+`QuestInfo`'s constructor populates `quest_Part_choice` / `choice` only if `onlyOneChoice` is
+true **and** the generated quest actually contains a `QuestPart_Choice` [V]. So **even with
+`onlyOneReward: true`, any entry whose script builds no choice part is silently discarded on
+the next read of `AvailableQuests`.** An item entry must therefore go through
+`QuestNode_AddItemsReward` — whose `RunInt` constructs a `QuestPart_Choice` holding a single
+`Reward_Items` and adds the `QuestPart_DropPods` that `Reward_Items.GenerateQuestParts` yields
+[V] — or another node that builds a choice part. A bare delivery node produces an entry that
+generates, looks correct, and is gone before it is ever drawn.
+(*Added 2026-09-23 from [#144](https://github.com/cjd721/Rimworld-Archinity/issues/144).*)
+
 **Fix:** author `onlyOneReward: true` and set `fixedQuestGiverFaction` explicitly. A
 startup validator over `DefDatabase<QuestGiverDef>` asserting both is ~10 lines and turns
 a silent empty shop into a config error.
 
-*[#106](https://github.com/cjd721/Rimworld-Archinity/issues/106), `docs/specs/CURRENCIES.md` §
+*[#106](https://github.com/cjd721/Rimworld-Archinity/issues/106),
+[#144](https://github.com/cjd721/Rimworld-Archinity/issues/144), `docs/specs/CURRENCIES.md` §
 *The purchasable quest catalogue*. `VEF.Storyteller.QuestGiverManager.AvailableQuests`,
 `VEF.Storyteller.QuestInfo..ctor`, `VEF.Storyteller.QuestGiverDef.onlyOneReward` from `VEF.dll`
 (`2023507013/1.6/Assemblies/`). 1.6.4871.*
@@ -1020,5 +1038,91 @@ that does not key on biome. A per-biome value of our own is also where frequency
 *Settlements meet passing caravans*. `RimWorld.StorytellerComp_CategoryIndividualMTBByBiome.MakeIntervalIncidents`
 (`Assembly-CSharp.dll`); `Data/Core/Defs/Storyteller/Incidents_Caravan_All.xml`,
 `Data/Core/Defs/Storyteller/Storytellers.xml`. 1.6.4871.*
+
+### T-124 — A shelved offer whose expiry clock has run can be bought for nothing
+
+`Quest.Accept(Pawn)` is `if (State == QuestState.NotYetAccepted) { … }` and **silently does
+nothing otherwise** [V]. `Quest.State` is *computed*: it returns `EndedOfferExpired` as soon as
+`TicksUntilExpiry == 0 && acceptanceTick < 0`, and `TicksUntilExpiry` derives from
+`acceptanceExpireTick`, which `QuestGen.InitializeQuestGen` sets from
+`QuestScriptDef.expireDaysRange` **at generation** [V]. So the clock is live on an offer VEF
+holds outside `Find.QuestManager` and never ticks (`docs/engine/quests.md` § *Offers*).
+
+`VEF.Storyteller.QuestGiverManager.ActivateQuest` then runs `Add` → `Accept` (**no-op**) →
+`SendLetterQuestAvailable` → `currencyInfo?.Buy` → `Remove` [V], and its only guard —
+`QuestUtility.CanAcceptQuest`, called from `Window_Contracts.AcceptQuestByInterface` — **does
+not test `State`** [V].
+
+**Result: the currency is debited, a "quest available" letter arrives, and no quest is
+accepted. Nothing logs.** The player has paid for an entry that was already dead on the shelf,
+and the shop's own accounting shows a successful sale.
+
+**Fix:** test `Quest.State == QuestState.NotYetAccepted` in the shop's own affordability and
+eligibility guard, or prune expired entries on the tick. Either is cheap; neither is there.
+
+*[#144](https://github.com/cjd721/Rimworld-Archinity/issues/144), `docs/specs/CURRENCIES.md` §
+*Shop entries*. `RimWorld.Quest.Accept`, `RimWorld.Quest.State`,
+`RimWorld.QuestGen.QuestGen.InitializeQuestGen`, `RimWorld.QuestUtility.CanAcceptQuest`
+(`Assembly-CSharp.dll`); `VEF.Storyteller.QuestGiverManager.ActivateQuest`,
+`VEF.Storyteller.Window_Contracts.AcceptQuestByInterface` (`2023507013/1.6/Assemblies/VEF.dll`).
+1.6.4871.*
+
+### T-125 — Two quest-giver comps sharing a `questManagerID` silently share one shelf
+
+`VEF.CompProperties_QuestGiver.questManagerID` is a **bare `int`** keying
+`StorytellerWatcher.questGiverManagers` [V]. There is no uniqueness check and no warning.
+
+Two comps that happen to declare the same id resolve to **one** `QuestGiverManager`, built from
+whichever `QuestGiverDef` was used first. The second building opens the first building's shop:
+the same catalogue, the same currency, the same stock. Nothing distinguishes it from a shop that
+was simply authored that way.
+
+**Fix:** allocate `questManagerID` from one place and assert uniqueness across
+`DefDatabase<ThingDef>` at startup. Treat a colliding id as a config error, because the game
+will not.
+
+*[#144](https://github.com/cjd721/Rimworld-Archinity/issues/144), `docs/specs/CURRENCIES.md` §
+*Shop entries*. `VEF.CompProperties_QuestGiver.questManagerID`,
+`VEF.Storyteller.StorytellerWatcher.questGiverManagers`
+(`2023507013/1.6/Assemblies/VEF.dll`). 1.6.4871.*
+
+### T-126 — `generateOnce: true` fills the shelf twice
+
+`VEF.Storyteller.StorytellerWatcher.AddQuestGiverManager` fills the shelf, and
+`VEF.CompQuestGiver.Use` then calls `Init()`, **filling it a second time** [V]. Nothing dedupes
+and nothing logs.
+
+It is harmless only when `maximumAvailableQuestCount` is set, because `QuestWorker.GenerateQuests`
+otherwise takes a budget of **100** [V] — so an unbounded giver generates a hundred offers,
+throws a hundred generator runs at the storyteller, and then does it again on first use.
+
+**Fix:** set `maximumAvailableQuestCount` on every authored `QuestGiverDef`, and treat
+`generateOnce` as meaning "generated at least once", not "generated exactly once".
+
+*[#144](https://github.com/cjd721/Rimworld-Archinity/issues/144), `docs/specs/CURRENCIES.md` §
+*Shop entries*. `VEF.Storyteller.StorytellerWatcher.AddQuestGiverManager`,
+`VEF.CompQuestGiver.Use`, `VEF.Storyteller.QuestWorker.GenerateQuests`
+(`2023507013/1.6/Assemblies/VEF.dll`). 1.6.4871.*
+
+### T-127 — `QuestNode_GetSiteTile`'s early-out guard is typed against the wrong type, so it can never fire
+
+`QuestNode_GetSiteTile.RunInt` guards with `slate.TryGet<int>(storeAs, …)` for a value it stores
+as a **`PlanetTile`** [V]. `Verse.ConvertHelper` does not consult implicit operators [V], so the
+`int` lookup never matches the `PlanetTile` that is actually there and **the guard can never
+fire**.
+
+Two consequences, and only one of them is loud. A caller that pre-sets the key gets a red
+*"Could not convert slate variable"* — and its tile is **silently overwritten anyway**. And
+because the node always re-derives the tile rather than honouring one it was given,
+**`siteDistRange` is measured from a map and never from a caravan**, whatever the XML says. No
+def field reaches that decision.
+
+**Fix:** anything that needs a site placed relative to a caravan has to supply the anchor in
+C#; there is no XML route. See also **T-49**, which is the other half of how this node loses its
+"near the colony" reference.
+
+*[#146](https://github.com/cjd721/Rimworld-Archinity/issues/146), `docs/specs/CHARTING.md`.
+`RimWorld.QuestGen.QuestNode_GetSiteTile.RunInt` / `.TryFindTile`, `Verse.ConvertHelper`,
+`RimWorld.QuestGen.Slate.TryGet` (`Assembly-CSharp.dll`). 1.6.4871.*
 
 ---

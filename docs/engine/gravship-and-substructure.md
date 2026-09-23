@@ -227,9 +227,41 @@ reads the projection, not the origin.
 
 **The whole path is frame-driven, and Multiplayer protects only half of it — T-78.**
 
-**Distance:** `Find.WorldGrid.TraversalDistanceBetween(PlanetTile, PlanetTile)` is
-layer-aware and is what `GravshipUtility.TryGetPathFuelCost` uses [V], so it is the number
-the player already sees when launching.
+**Distance:**
+`TraversalDistanceBetween(start, end, passImpassable = true, maxDist = int.MaxValue, canTraverseLayers = false)`
+returns `int.MaxValue` across layers by default [V]. `TryGetPathFuelCost` does **not** rely
+on that: it projects with `GetClosestTile_NewTemp` first and measures on one layer [V], so
+the launch UI's distance and an unprojected call return different numbers for the same
+move. The launch UI shows a chemfuel cost, not a tile count [V].
+*(Corrected from [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150); the
+previous text claimed the method was layer-aware and was what the player sees. See **T-134**
+for the `canTraverseLayers: true` inversion and its cache-poisoning path, and **T-135** for
+the projection's Multiplayer tie-break.)*
+
+**Four sources of `int.MaxValue`, and only one is a layer mismatch** [V]: either tile
+invalid; `start.Layer != end.Layer && !canTraverseLayers`; `!passImpassable &&
+!Find.WorldReachability.CanReach(start, end)`; and a flood fill that never reaches `end`
+(which also covers a `maxDist`-bounded call, since `finalDist` initialises to
+`int.MaxValue`). **A finite value rules a layer change out; `int.MaxValue` does not rule
+one in.** ([#150](https://github.com/cjd721/Rimworld-Archinity/issues/150))
+
+**`PlanetTile.Equals` is not a plain both-fields compare.** `tileId` is `public readonly`;
+`layerId` is **`private readonly`** [V]. `Equals` returns false on differing `tileId`, true
+on equal `layerId`, and **where the `layerId`s differ it still returns true if both sides
+are negative-or-root-surface** (`layerId < 0 || Layer.IsRootSurface`, evaluated per side)
+[V]. Surface-versus-orbit is unaffected — `Orbit` is neither — but "compares both fields"
+is the wrong summary to build on.
+([#150](https://github.com/cjd721/Rimworld-Archinity/issues/150))
+
+**Home follows the gravship without code.** `Verse.Map.IsPlayerHome` is true when
+`wasSpawnedViaGravShipLanding`, **or** the parent is a player-faction `MapParent` with
+`def.canBePlayerHome`, **or** `GravshipUtility.PlayerHasGravEngine(this)` [V]. Every
+shipped delivery and "where is home" path asks this one property, so an orbital map the
+ship landed on satisfies it by construction — and a grav-engine test on it is satisfied by
+the first clause alone. (**T-49** is the counter-case: it is the *layer* test in
+`Find.RandomSurfacePlayerHomeMap` that fails, not this one.)
+([#166](https://github.com/cjd721/Rimworld-Archinity/issues/166),
+[#150](https://github.com/cjd721/Rimworld-Archinity/issues/150))
 
 Established on [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56); the system built on
 it is `docs/specs/TRACE.md` § *The escape rule*. 1.6.4871.

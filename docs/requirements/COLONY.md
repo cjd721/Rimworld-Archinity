@@ -98,6 +98,31 @@ The defaults half is already verified: [#95](https://github.com/cjd721/Rimworld-
 established the mechanism in `docs/specs/DEFAULTS.md`, and what it lacked was this document
 saying which values belong on which row. **Copy-paste is new ground.**
 
+### The add-bill menu shows what matters now
+
+- **A bench's add-bill list foregrounds the recipes that matter in the colony's current
+  era**, rather than every recipe the bench has ever carried in one unsorted list.
+- **This is presentation, never a content gate.** What the colony can make is gated by
+  research alone ([era](ERA.md) § *The acquisition gate*); nothing below the era ceiling is
+  ever made unreachable by a menu. Older recipes stay available, only less prominent.
+- **The research tab is settled:** one tab per era, and the whole tree visible from the start
+  ([era](ERA.md) § *Player information and agency*).
+
+Established on [#96](https://github.com/cjd721/Rimworld-Archinity/issues/96). Whether this is
+a filter, a grouping, era-limited benches or search alone waits for the routes.
+
+### Recreation follows a pawn's passions
+
+- **A pawn at recreation prefers recreation that trains a skill it is passionate about**,
+  major passion first. A deeply passionate shooter who goes to relax goes and shoots.
+- **Recreation that trains a skill exists** and is not the new part: vanilla already carries
+  it in XML. The requirement is the preference.
+- How much experience recreation grants, whether room quality multiplies it, and which
+  recreation trains which skill are balance and content, not this document's.
+
+Established on [#76](https://github.com/cjd721/Rimworld-Archinity/issues/76), from
+`docs/playtest-notes.md`.
+
 ### Obsolete gear goes back to the material it was made of
 
 - **Reclaiming returns the material itself**, at a bench, with no intermediate resource.
@@ -174,6 +199,10 @@ displayed somewhere that does not actually govern the outcome is worse.
   bounded-posts fallback and whether generated pawns can arrive specialised.
 - **Copying a bill's configuration onto another bill** —
   [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157).
+- **The add-bill menu, filtered or grouped by era** —
+  [#161](https://github.com/cjd721/Rimworld-Archinity/issues/161).
+- **A pawn favouring recreation that trains its passions** —
+  [#159](https://github.com/cjd721/Rimworld-Archinity/issues/159).
 - **The quality and durability floor values**, and whether they vary by era, are balance.
   They belong to [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)
   and an era-varying floor additionally waits on progression grids that do not yet exist.
