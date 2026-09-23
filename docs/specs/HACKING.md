@@ -2,11 +2,6 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** Glitterites themselves are never hackable.
-> Research may unlock attacks on their doors, defenses, reactors, command systems and
-> mechanoids, but not on Glitterite android persons. The “eventually androids” target
-> class and the proposed injector gap below are deleted requirements, not missing builds.
-
 Implements the hacking half of
 [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) §*Hacking Becomes a
 Second Technology Front* — tiered targets, remote operation, a reward curve that keeps
@@ -16,7 +11,9 @@ Established by
 
 **This document owns** the intrusion loop: what a hackable target is, how a hack is
 started and resolved, what a completed or detected intrusion reports, what gates which
-classes of target, and the hacking-specific readout.
+classes of target, and the hacking-specific readout. Glitterites are never hack targets
+(`GLITTERTECH.md` § *Trace*): research may open their doors, defenses, reactors, command
+systems and mechanoids, never a Glitterite person.
 
 **Adjacent systems take over at four boundaries.**
 
@@ -29,11 +26,13 @@ classes of target, and the hacking-specific readout.
   exemplar and receiving an Instruction item after Intel exchange are independent gates;
   neither prices a research project in Intel.
 - **Cross-cutting campaign UI** —
-  [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61). A main tab, a political
-  surface or a shared pressure readout is theirs. A per-target or per-hacker hacking
-  readout is here.
-- **Intel as a currency** — [`CURRENCIES.md`](CURRENCIES.md). Hacking *produces* data
-  items; what they are worth and what spends them is not settled here.
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map); every
+  surface has a route ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)). A
+  main tab, a political surface or a shared pressure readout is the build map's. A
+  per-target or per-hacker hacking readout is here.
+- **Intel as a currency** — [`CURRENCIES.md`](CURRENCIES.md). Hacking yields Ushanka data
+  items: research points ([`RESEARCH.md`](RESEARCH.md) § *Bypasses — the build*, Class C)
+  and ExecData verbs (§ *New verbs*). None yields Intel; Intel is CURRENCIES'.
 
 ---
 
@@ -121,7 +120,7 @@ the shipped roll below an authored threshold) is ~15 lines.
 
 ### Gating target classes by research *(new)*
 
-The corrected requirement is that *research* opens classes of target — defenses, then reactors,
+The requirement is that *research* opens classes of target — defenses, then reactors,
 then low-tier mechs, then strong mechs. Ushanka gates on **target
 hardness only**; nothing reads the research state **[V]**. This is the second patch.
 
@@ -131,7 +130,7 @@ hardness only**; nothing reads the research state **[V]**. This is the second pa
 > drone `PawnKindDef` (`race.race.IsMechanoid || IsDrone`)*. Androids are **humanlike**:
 > `PawnKindDef VREA_AndroidBasic` declares `<race>Human</race>` and is a Biotech xenotype,
 > with nothing mechanoid-adjacent about it **[V, [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78),
-> `docs/specs/ANDROIDS.md` § *What an android is, mechanically*]**. So
+> `docs/specs/ANDROIDS.md` § *Purpose and scope*]**. So
 > `USH_HE.Patch_DefOfHelper_RebindAllDefOfs` never gives an android `CompHackable`, and the
 > research gate below has nothing to gate — a `HackTargetClass` mapped to androids would
 > refuse a hack that was never offerable in the first place.
@@ -165,8 +164,10 @@ hack work and, at `learningPoints`, removes itself and calls
 `CompAbilities.GiveAbility(ext.abilityDef)` with a letter **[V]**. The hediff is installed
 by a `USH_ExecData_*` item recovered from a protected data source.
 
-**That is the requirement's "named campaign artifacts unlock qualitative hacking research"
-already built.** Our Ultra rung re-gates the eight shipped verbs behind Glitterite
+**ExecData items are the shipped verb carrier.** The requirement's protocol-artifact chain
+(destructive analysis → Intel → Instruction, `GLITTERTECH.md` § *Hacking Becomes a Second
+Technology Front*) gates the Ultra hacking research that re-gates them (§ *Cost*;
+[`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange*). Our Ultra rung re-gates the eight shipped verbs behind Glitterite
 ExecData items and Ultra research — **new verbs at zero code cost**. A genuinely novel
 verb (disable a facility's defence grid as one act) is a new `Ability_Cyber` subclass at
 ~30–60 lines each; none is required for the ladder to work.
@@ -217,6 +218,10 @@ What exists **[V]**:
 
 **The gap is exactly one word: map.** On a Charting away-site the home hacker cannot
 participate, because `MapComponent_CyberpodManager`'s `map` is the pod's own.
+The relay's requirement is `GLITTERTECH.md` § *Hacking Becomes a Second Technology Front*:
+*"Field pawns can carry remote-hacking equipment that allows skilled hackers at home to operate
+through them."* That an intrusion at a Charting away-site is itself a beat activity is covered
+by its *"remote intrusion capability"* **[I]**.
 
 **The build moves the statistics, not the job.** The field pawn performs the hack — it is
 on the target's map, so every reservation, path, job and tick stays local and stays
@@ -282,22 +287,22 @@ must be read later or not at all.
 | Which hackset guards this target, active or dormant, which outcomes an ICE breaker disabled | `USH_HE.CompDataSourceProtected.CompInspectStringExtra` **[V]** — nothing to build |
 | Full outcome probability table on the info card | `HacksetDef.SpecialDisplayStats` + `GetOutcomesDescription` **[V]** — nothing to build |
 | Why this target refuses to be hacked | `AcceptanceReport.Reason`, three surfaces **[V]** — free, and it carries our research gate |
-| **What this intrusion will cost in Trace, before it starts** | the same `CanHackNow` postfix plus `CompHackable`'s inspect string — **~10 lines**, counted in [`TRACE.md`](TRACE.md) § D3, not below |
+| **What this intrusion will cost in Trace, before it starts** — optional; no requirement names it | the same `CanHackNow` postfix plus `CompHackable`'s inspect string — **~10 lines**, counted in [`TRACE.md`](TRACE.md) § D3, not below |
 | Remote reach, and whether a relay is live | the `USH_RemoteHackingDistance` stat row plus our `StatPart` explanations — free |
 | **Intrusion history** — the last N reports: target, depth, detected | **ours**, `ITab_Cyberpod_Intrusions` on `Building_Cyberpod`, ~60 lines |
 
 The intrusion history is deliberately an `ITab` and not a main tab. A main tab is
-cross-cutting campaign UI and belongs to
-[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61); a readout attached to the
-hacking apparatus is ours. If #61 later claims a pressure surface, the zero-cost fallback
-is a letter on each `Network`/`Command` intrusion and the `ITab` can go.
+cross-cutting campaign UI and its shape is the build map's
+([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)); a readout attached to the
+hacking apparatus is ours. If #119 folds the readout into a campaign tab, the `ITab` can go;
+the zero-cost fallback is a letter on each `Network`/`Command` intrusion.
 
 ### Cost
 
 | Piece | XML / patch / new C# | Estimate | Lands in |
 |---|---|---|---|
 | Two Ultra `HacksetDef`s and their `HackingOutcomeDef`s (reusing shipped `workerClass`es) | XML | ~120 | `Archinity.Glitterites/Defs/Hacking/Hacksets_Ultra.xml` |
-| Ultra hacking research, gated by `requiredAnalyzed` on surviving Glitterite exemplars (#67's mechanism) and, where authored, an Instruction item obtained through Intel exchange | XML plus the exchange mechanism owned by #54 | `Archinity.Glitterites/Defs/Hacking/Research_Hacking.xml`, `Patches/Analysis_Hacking.xml` |
+| Ultra hacking research, gated by `requiredAnalyzed` on surviving Glitterite exemplars (#67's mechanism) and, where authored, an Instruction item obtained through Intel exchange | XML plus the exchange mechanism, [`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange* (#54, closed) | `Archinity.Glitterites/Defs/Hacking/Research_Hacking.xml`, `Patches/Analysis_Hacking.xml` |
 | ExecData items re-granting the eight shipped verbs at Ultra | XML | ~100 | `Archinity.Glitterites/Defs/Hacking/ExecData_Ultra.xml` |
 | `Arch_HackTargetClassExtension` on target defs; `StatPart` registration on two stats | XML patch | ~70 | `Archinity.Glitterites/Patches/Hacking_*.xml` |
 | Hackset selector → highest qualifying band | Harmony postfix on `CyberUtils.GetHacksetDef` | ~15 | `ArchinityAltar.dll` |
@@ -306,7 +311,7 @@ is a letter on each `Network`/`Command` intrusion and the `ITab` can go.
 | `HackIntrusionLog` + `CompHackIntrusion` + `LockOut` postfix | new C# | ~70 | same |
 | `ITab_Cyberpod_Intrusions` | new C# | ~60 | same |
 | Multiplayer sync registrations (six delegates — five of Ushanka's, one of ours) | new C#, `Multiplayer.API` | ~30 | same |
-| **Total** | | **~370 XML, ~295 C#** — plus two Harmony postfixes if Analysis is priced | one assembly, per `CODING_STANDARDS.md` |
+| **Total** | | **~370 XML, ~295 C#** | one assembly, per `CODING_STANDARDS.md` |
 
 ---
 
@@ -371,9 +376,8 @@ the intrusion history readout, which is mine, so the `Local` ones must exist.
 > authored number rather than a special case in either document, and neither spec
 > hardcodes which depths count. `detected` is consumed as it stands; nothing new rolls it.
 
-**6. One thing #56 asks back, and it is ten lines.**
-[`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) requires the player
-to *"see the risk before committing to an intrusion"*. The
+**6. One optional readout #56 can use, and it is ten lines.** No requirement names a
+pre-intrusion risk readout; it is available if the build wants one. The
 `CompHackable.CanHackNow(Pawn)` postfix in § *Gating target classes by research* is
 already the seam vanilla renders in three places **[V]**, and `CompHackable`'s inspect
 string is already in this document's display table. **The target's authored
@@ -547,7 +551,7 @@ searched** — see § *Available mechanisms*, *Residual gap*.
 - `ThingComp.Notify_Hacked` as the completion broadcast — **verified**.
 - `requiredAnalyzed` as the artifact → research gate, from
   [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) — **verified and selected
-  there**, at zero C# **conditional on Analysis staying unpriced**.
+  there**, at zero C#.
 - The `StatPart` relay, the research-class gate and the intrusion log — **proposed**,
   **[I]** as compositions; each mechanism they use is **[V]**.
 
@@ -685,9 +689,6 @@ this design depends on it, but a hackable Anomaly def would not have been seen.
 | Question | Consequence | Owner |
 |---|---|---|
 | Does Ushanka's Hacking Expansion ship? | if not, ~1,500 lines of new C# and the requirement is re-scoped | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
-| The `HackTargetClass` catalogue and its research map — which classes exist, in what order | authoring; the mechanism does not depend on the answer | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) authoring, against a requirements line that does not yet exist |
-| `defence` values for the Ultra bands, `minDefense` thresholds, ExecData learning costs | balance | map [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) *Not yet specified* |
-| ~~The function from `IntrusionReport` to a Trace increment, and whether `Local` contributes at all~~ | **Answered.** `TraceDef.intrusionRows`, keyed on `depth`, scaled by a curve on `defence`; `Local` is authored zero. The contract above is unchanged — this document still emits everything and flags it. | **Closed** by [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md) |
-| **Resolved: Ultra research does not debit Intel directly.** A branch may require a surviving Exemplar and an Instruction item acquired by exchanging accumulated Intel; destructive analysis is the activity that produces Intel and Trace | keep the three acts mechanically and narratively distinct | [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115) and [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) |
-| **How far `docs/requirements/CHARTING.md` carries the protocol artifact.** It **does** name *"unique protocols"* among the deterministic core rewards of a Charting beat — an earlier draft of this spec said it did not, and that was wrong. What it does not carry is hacking, intrusion, or an away-site hack as a beat activity; `GLITTERTECH.md` supplies those with *"Campaign-critical Charting sites can contain unique protocol artifacts that must be brought home"* | the artifact itself has a requirements home; the relay and the away-site intrusion still do not | **no open ticket owns this**; the gap is stated here rather than handed anywhere. Raised on [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) |
-| Whether the intrusion readout stays an `ITab` or folds into a campaign pressure surface | display only; the letter fallback costs nothing | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) |
+| The `HackTargetClass` catalogue and its research map — which classes exist, in what order | authoring; the mechanism does not depend on the answer | The order is `GLITTERTECH.md` § *Hacking Becomes a Second Technology Front*; the def list is [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) authoring |
+| `defence` values for the Ultra bands, `minDefense` thresholds, ExecData learning costs | balance | Balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
+| Whether the intrusion readout stays an `ITab` or folds into a campaign pressure surface | display only; the letter fallback costs nothing | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map); every surface has a route ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)) |

@@ -2,19 +2,11 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** “Android” is a body/person category;
-> “Glitterite” is a civilization and origin. Other androids can be sincere believers and
-> can be essentially ordinary people. Glitterites deliberately removed emotion, fervor
-> and the faculties needed to connect to the channel; they run on anima-rich
-> neutroamine, cannot receive psylinks and are not hackable. The VRE donor's psylink block is a
-> carrier constraint, not permission to generalize the Glitterite condition to every android in
-> the fiction. *(#141: nor is that block unconditional — it is two XML-reachable gates. See
-> **Psylinks — verdict and routes**.)*
-
-> **Premise reopened 2026-09-16, answered 2026-09-23.** The psylink block is **not** unconditional,
-> and #78's statement of it was wrong in both halves. [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)
-> settled it; the answer is *Psylinks — verdict and routes* below, and §2, *Status*, *Verification*
-> and decision 3 are corrected in place.
+“Android” is a body; “Glitterite” is a civilization — see *A captured Glitterite*. Other
+androids can be sincere believers and ordinary people. Glitterites removed the faculties needed to
+connect to the channel, cannot receive psylinks and are not hackable
+(`docs/requirements/GLITTERTECH.md`). VRE – Android's psylink block is a carrier constraint — two
+XML-reachable gates, *Psylinks — verdict and routes* — not the Glitterite condition.
 
 This document owns **player-manufactured android bodies as a production capability** —
 what an android is mechanically, what builds one, what gates it, and how the campaign's
@@ -27,7 +19,7 @@ distinction is essential to the final cosmology."* The ending's argument in
 is only legible if the player can build androids and suffer no penalty for it. That makes
 this document load-bearing on the ending, not on a side system.
 
-**Where adjacent systems take over.** The Analysis research gate itself is
+**Where adjacent systems take over.** The Exemplar gate itself (vanilla `requiredAnalyzed`) is
 `docs/specs/RESEARCH.md`'s; the spendable Intel balance is `docs/specs/CURRENCIES.md`'s;
 whether an android can hold Devotion is a consequence stated here and owned by
 `docs/specs/RELIGION.md`. Player-made androids may hold an ideology and be sincere
@@ -47,9 +39,10 @@ see *Jailbreaking a captured Glitterite into an android colonist*.
 
 ## Psylinks — verdict and routes
 
-*Answers `docs/requirements/GLITTERTECH.md`: "**Whether an android can hold a psylink is open.**
-If a route lets it, the campaign may take it; if none does, the asymmetry stands."
-Established by [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141).*
+*Answers `docs/requirements/GLITTERTECH.md` § The Glitterite Loop on whether an android can hold a
+psylink. Established by [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141). What the
+routes leave open, by kind of android, is
+[#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).*
 
 ### Verdict
 
@@ -135,6 +128,15 @@ not patch.
 | **Psylink neuroformer** | `CompUseEffect_InstallImplant.DoEffect`: `AddHediff` when absent, else `ChangeLevel(1)` **[V]** | First use works; **every upgrade stays blocked** by the one-arg prefix. No XML reaches it — that is route D's unique job |
 | **Anima tree linking** | `CompPsylinkable.FinishLinkingRitual` → `ChangePsylinkLevel(1)` **[V]** | Still closed — see route C |
 
+These are the grant routes as they ship. The requirement is that psychic rank comes only from the
+altar's rite, authored breakthroughs included, and that Church titles never grant psylinks
+([`docs/requirements/ALTAR.md`](../requirements/ALTAR.md),
+[`docs/requirements/RELIGION.md`](../requirements/RELIGION.md)).
+[`PSYCHIC.md`](PSYCHIC.md) § *What raises psylink rank besides the altar* lays out routes that close bestowing, blinding, the neuroformer and the anima
+tree for every pawn ([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)). Whether the
+altar's rite and authored breakthroughs can reach an android, and whether that can be permitted or
+refused by kind of android, is [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+
 ### Route A — global lift
 
 Two operations against VRE – Android's own declared compatibility seam; the `AndroidSettings` def's
@@ -189,9 +191,9 @@ depend on an era, an altar, a quest or a pawn's history (that is route D). Nor c
 hediff `AndroidCanCatch` was filtering — diseases, addictions, toxic buildup, `Carcinoma`. **[V]**
 
 **Consequences.** Androids that arrive rather than get built (recruits, awakened NPCs, gifts) carry
-both genes from the xenotype. Stripping them afterwards is the behaviorist station's
-`Window_AndroidModification`, which extends the same base and shares its removal predicate — so it
-should follow, **[I]**, not read end to end.
+both genes from the xenotype. The behaviorist station can strip them from a non-awakened colonist,
+slave or prisoner; it refuses awakened colonists (§ *Jailbreaking* › *J2*, **[V]**), so an awakened
+arrival keeps both genes under route B.
 
 **A lever worth knowing.** VRE – Android adopts as an android gene **any `GeneDef` in the database**
 whose `displayCategory` is `VREA_Hardware` or `VREA_Subroutine`:
@@ -253,8 +255,8 @@ vanilla's and applies to any pawn. **[V]**
 > is swallowed by gate 1, `Psycasts()` returns `null` — it is
 > `hediffSet.GetFirstHediffOfDef(VPE_PsycastAbilityImplant)` **[V]** — and the next line NREs inside
 > a ritual outcome. **Zeroing `maxPsylinkLevel` on the title does not avoid it**: the null branch runs
-> before any level arithmetic. **[V]** This bears on [`RELIGION.md`](RELIGION.md) §4's Church-title
-> design wherever an android could be the honoree.
+> before any level arithmetic. **[V]** This bears on [`RELIGION.md`](RELIGION.md) § *The build —
+> Exaltation* › *4. Exaltation, and the rite* wherever an android could be the honoree.
 
 **VPE replaces psylink levelling wholesale.** `VanillaPsycastsExpanded.Hediff_Psylink_ChangeLevel`
 prefixes `ChangeLevel(int, bool)` and returns `false`, routing the level into
@@ -275,36 +277,34 @@ everything a psycasting android would then do.
 
 ### Corrections this section makes to #78
 
-1. *"The prefix is the whole block, and it is unconditional"* — **wrong.** The prefix is not the
-   block; it catches only the one-argument `ChangeLevel` overload, which no ritual grant path uses.
-2. *"`VREA_PsychicallyDeaf` … a player can deselect it when designing an android"* — **wrong.** It
-   inherits `isCoreComponent true` from `VREA_HardwareBase`, and neither
-   `CanBeRemovedFromAndroid()` nor `CanBeRemovedFromAndroidAwakened()` is true for a hardware gene
-   without `removeWhenAwakened`, so the creation window will not un-toggle it. **[V]** #78's
-   *conclusion* (deselecting buys nothing) was right; both halves of its reason were wrong, and the
-   corrected mechanism is exactly what makes routes A and B possible.
+#78's "unconditional prefix" and "deselectable" claims were wrong; see
+[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141).
 
 ### Open questions
 
-1. **Requirement gap, handed to `docs/requirements/GLITTERTECH.md`'s owner.** It says the question
-   is open and the campaign may take a route if one exists. Routes exist. What no document states:
-   **which** androids — all of them (A) or a chosen build (B) — and whether route B's price (the
-   android that hears the channel is the android that can fall ill) is one the campaign wants
-   visible. Fiction, not capability.
-2. **`docs/COSMOLOGY.md`'s *"no Glitterite can form a psylink or open a channel"* is untouched** —
-   it is about Glitterites, and the 2026-09-13 authority correction above already separates
-   Glitterite from android. But under route A the distinction stops being mechanical and becomes
-   purely authorial. Unowned.
+1. **Which androids can hold a psylink.** Capability: every android (A), a chosen build (B),
+   awakened androids at the anima tree (C), any pawn a condition that is not a gene picks (D), or
+   none, as shipped (E) — routes above. Route B's price is that the android that hears the channel
+   is the android that can fall ill. What the routes leave open — the altar's rite and authored
+   breakthroughs reaching an android, and permitting, forbidding or restricting psylinks by kind
+   (built, awakened, arrived, jailbroken) — is
+   [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+2. **Glitterite deafness.** A marked Glitterite is never on the player's side (*A captured
+   Glitterite*), so no grant path reaches one under any route. Deafness is a separate matter: route A
+   lifts gate 2 by editing the `VREA_PsychicallyDeaf` def itself, so every carrier loses its
+   deafness, a Glitterite built as a VRE android included, and `Psycast.CanApplyPsycastTo` then
+   accepts it as a target **[V]**. Whether Glitterite deafness can be kept under each route is on
+   [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
 3. **Build questions, deferred to the next map:** the exact operations and their `expect:` counts;
    list-removal versus mod extension for the `PsychicAmplifier` lift; whether route B's sensitive
    android gets an authored Archinity hardware gene of its own; whether route C's `Natural` grant
    hangs off `VREA_Reactor` or a new hediff.
-4. **The behaviorist-station path is [I]** — that an existing android can have a de-cored
-   `VREA_PsychicallyDeaf` stripped at `VREA_AndroidBehavioristStation` follows from
-   `Window_AndroidModification` extending `Window_CreateAndroidBase`, but its accept path was not
-   read end to end. *#143 has since read the station's accept path for prisoners and the gene
-   rules it enforces — see § Jailbreaking a captured Glitterite (J2/J3a) and T-163 — and this
-   item should be re-graded against that reading, not re-run.*
+4. **The behaviorist-station path.** `Building_AndroidBehavioristStation.CanAcceptPawn` takes any
+   android colonist, slave or prisoner of the colony and refuses only awakened non-prisoner
+   colonists, and `Window_AndroidModification` shares the creation window's removal predicate
+   (§ *Jailbreaking a captured Glitterite* › *J2*, *J3a*; T-163) **[V]**. So a de-cored gene can be
+   stripped at the station from a non-awakened android or from a prisoner, and not from an
+   awakened colonist.
 
 ---
 
@@ -611,16 +611,16 @@ answer.
    - Where the slaver filter sits.
    - Whether C's refusals log.
    - Whether `hideIfNotRecruitable` is patched globally or B's tab postfix does it per pawn.
-2. **Story — Conrad.**
-   - Should the prisoner tab explain *why*? B can reuse vanilla's *"Non-recruitable"* or add its
-     own line.
-   - May a Glitterite be **sold**? A sale takes it off the player's side and is not forbidden by
-     the requirement, but it sets its faction to null (`PreTraded(PlayerSells)`).
+2. **What the player sees and can do.**
+   - The prisoner tab can explain *why*: B can reuse vanilla's *"Non-recruitable"* or add its own
+     line.
+   - A Glitterite can be **sold** as shipped. The requirement does not forbid it; a sale takes it
+     off the player's side and sets its faction to null (`PreTraded(PlayerSells)`).
 3. **#143.**
    - `SetFaction(OfPlayer)` resets the kind (T-112), so the jailbroken android gets a fallback faith
      on the next load unless #143 gives it one deliberately.
    - The behaviorist station already takes prisoners.
-4. **Unowned.**
+4. **Unverified.**
    - Android upkeep in a cell (reactor and neutroamine) — **[I]**.
    - Ushanka's gamma serum sends a success letter on a Glitterite it cannot affect under B —
      **[I]**.
@@ -927,18 +927,20 @@ shipped pattern for that.
 
 ### Open questions
 
-1. **Story — Conrad.**
-   - *Turn* or *open*? J1/J2 hand the player a colonist; J3 hands the player a prisoner who can now
-     be recruited, enslaved or converted.
-   - Can a jailbreak fail? As shipped it cannot (T-164).
-   - Which faith does it wake into: the colony's, its operator's, or none until load?
-   - Does a jailbroken Glitterite stay recognisable to the story — to TRACE's pursuit, or to later
-     beats? The marker is gone by construction, so that needs a second, non-gating record.
-2. **Requirement — `docs/requirements/GLITTERTECH.md`'s owner.** The requirement says "may become an
-   ordinary android colonist" but not whether it arrives **awakened** (traits, joy, mental breaks,
-   skill gain) or **basic** (VRE's player-built default). "Given back the persona and free will"
-   reads as awakened.
-3. **Build — #119.**
+1. **What a jailbreak can be — answered at route depth.**
+   - *Turn or open:* J1 or J2 make a colonist; J3a or J3b only unlock the prisoner, who can then be
+     recruited, enslaved or converted.
+   - *Awakened or basic:* J1 calls `Awaken`; J2 does it through the window once patched; J3 leaves it
+     basic, though mood can still awaken it (*Constraints*).
+   - *Able to fail:* not as shipped (T-164); a roll inside our own `ApplyOnPawn` makes it so.
+   - *Which faith:* the player's primary, the operator's, or none until the load-time fallback
+     (*Faith*). A faith the player picks needs a synced choice, on the awakening letter's
+     `MakeChoices` pattern.
+   - *Recognisable afterwards:* the marker is gone by construction, so staying recognisable to
+     TRACE's pursuit or to later beats needs a second, non-gating record.
+
+   Which shape ships is the build map's.
+2. **Build — #119.**
    - Which of #142's marker shapes, now constrained by T-163.
    - Awaken before or after the join.
    - `Recruit` versus a bare `SetFaction`.
@@ -951,7 +953,7 @@ shipped pattern for that.
 
 ## The build
 
-**We ship VRE – Android and gate its research project behind an Analysis exemplar. The
+**We ship VRE – Android and gate its research project behind the Exemplar gate. The
 manufacture capability already exists, end to end, and is already multiplayer-safe.**
 
 The ticket's framing asked whether VRE – Android offers player-side manufacture at all,
@@ -1017,22 +1019,9 @@ that lets the campaign make its argument, because the argument is precisely that
 android is a person; a mechanoid-adjacent android would concede the Glitterite position in
 the mechanics while the text denied it.
 
-**Psycasts: androids cannot hold a psylink *as shipped*, and the block is two XML-reachable gates,
-not one unconditional prefix.** Corrected by
-[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141); the mechanism, the routes and the
-weights are in *Psylinks — verdict and routes* above.
-
-> **Superseded — the two sentences #78 left here were wrong in both halves.** It said
-> `VREAndroids.Hediff_Psylink_ChangeLevel_Patch` was "the whole block, and it is unconditional",
-> and that `VREA_PsychicallyDeaf` was deselectable. The prefix is declared on
-> `Hediff_Psylink.ChangeLevel(**int**)` only — the one-argument override, which no ritual grant
-> path calls — and `VREA_PsychicallyDeaf` inherits `isCoreComponent true` from `VREA_HardwareBase`,
-> so the creation window refuses to un-toggle it. **[V]** The real gates are
-> `Pawn_HealthTracker_AddHediff_Patch` reading an XML list behind `VREA_SyntheticImmunity`, and
-> vanilla's own
-> `PsychicSensitivity` test — the first keyed on `VREA_SyntheticImmunity`, the second on
-> `VREA_PsychicallyDeaf`, and neither gene appears in the other's path. **There is an XML edit that
-> buys an android a psylink; there are two, and you need both.**
+**Psycasts: androids cannot hold a psylink *as shipped*, and the block is two XML-reachable gates.**
+The mechanism, the routes and the weights are in *Psylinks — verdict and routes* above
+([#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)).
 
 **Devotion: no blocker found.** The 1.6 assembly contains **no `Ritual*` metadata string at
 all**, so VRE – Android patches no ritual participation path; androids are humanlike pawns
@@ -1079,10 +1068,10 @@ on the work toil via `ToilEffects.WithProgressBar`; `UnfinishedAndroid.GetInspec
 reporting work left; the subcore polyanalyzer's own four-segment progress bars. **There is
 no display half to build.** **[V]**
 
-### 5. The Intel gate
+### 5. The Exemplar gate
 
 Manufacture must hang off the exemplar loop rather than be a research project the player
-simply reaches. Two layers were surveyed; **the first ships and the second is struck.**
+simply reaches. **The Exemplar gate on the research project does it; Intel does not price it.**
 
 **Layer 1 — the research gate. Pure XML, and it is [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)'s shipped mechanism.**
 `VREA_AndroidTech` is a `ResearchProjectDef` like any other, so
@@ -1102,11 +1091,12 @@ mechanism is needed **for the gate itself**.
 >
 > **The one condition that still binds is `PrerequisitesCompleted`:** the bypass opens once
 > `HighMechtech` is done, not from the start of a save. That is still a gate bypass, because the
-> Analysis exemplar and the research prerequisite are independent locks.
+> Exemplar gate and the research prerequisite are independent locks.
 >
 > **This gate holds only if RESEARCH.md's `usesHiddenProjects` one-liner and the relevant Class-A
-> shutoffs ship with it** — [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83) owns that
-> remedy, so it costs us nothing extra. A dependency, not a defect in the patch above.
+> shutoffs ship with it** — [`RESEARCH.md`](RESEARCH.md) § *Bypasses — the build* carries that
+> remedy ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83), closed), so it costs us
+> nothing extra. A dependency, not a defect in the patch above.
 >
 > **Of RESEARCH.md's three Class-A bypasses, only two can reach this project, and on different
 > terms — not "the same terms".**
@@ -1128,11 +1118,9 @@ it exists.
 > `modDependencies`, so the gate cannot silently evaporate while the capability exists —
 > the two stand or fall together. **T-40** applies to the general case, not to this one.
 
-**Layer 2 — a per-unit Intel debit. Struck.** An earlier draft priced each android through
-`WorldComponent_Currencies.TrySpend` — a Harmony prefix on `Window_AndroidCreation.AcceptInner`
-refusing the order when the balance is short, plus the debit. **That is withdrawn.**
-[`CURRENCIES.md`](CURRENCIES.md) § *What changes it* names exactly two Intel debit sites — the
-Intel exchange and #106's quest catalogue — and a per-android debit would be a third. If
+**Layer 2 — no per-unit Intel debit.** [`CURRENCIES.md`](CURRENCIES.md) § *What changes it*
+names exactly two Intel debit sites — the Intel exchange and #106's quest catalogue — and a
+per-android debit would be a third. If
 manufacture should cost Intel at all, the shape is a one-time **exchange for an Instruction
 item**: a `CurrencyPurchaseDef` at [`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange*
 delivering a techprint for `VREA_AndroidTech` (which must then declare `techprintCount`), priced by
@@ -1141,7 +1129,7 @@ cannot carry Intel either way: it takes a `ThingFilter` and consumes only a phys
 **If any per-android price is ever expressed as an ingredient, it must be appended in a postfix on
 `OnGenesChanged` — T-93.**
 
-**Recommendation: ship Layer 1 only.** It costs nothing, it is the mechanism the rest of the
+**Recommendation: the Exemplar gate alone.** It costs nothing, it is the mechanism the rest of the
 Glittertech tree already uses, and it puts manufacture behind the exemplar loop as the ticket
 requires.
 
@@ -1172,11 +1160,15 @@ under `PatchOperationFindMod` Royalty — to `FactionDef[defName="Empire"]`. **[
 
 What the bleed *does* reach is vanilla's outlander and pirate children (Core, Ideology and
 Biotech all declare some) and other mods' factions — 20 `ParentName` declarations across 12
-files in both corpus roots plus vanilla. The remaining question is therefore **fictional, not
-structural**: should awakened androids appear at 2% in ordinary outlander and pirate
-populations from game start, in a campaign that introduces androids at Ultra?
+files in both corpus roots plus vanilla — and the Church (Royalty's `Empire`). Left alone, it gives outlander, pirate and
+Church populations awakened androids at 2% from game start. `docs/requirements/ERA.md` § *The
+arrival band* rules that out ([#128](https://github.com/cjd721/Rimworld-Archinity/issues/128)):
+*"Everything that arrives at the player is the player's era or one below. Never above."* No
+awakened android arrives before Ultra.
 
-**If the answer is no, the scoping patch is two operations and no C#:**
+**One route is removal: three operations and no C#.** It also removes them at Ultra. An era-scoped
+removal is another route; which ships is the build map's
+([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
 
 ```xml
 <!-- expect: 1 -->
@@ -1187,13 +1179,20 @@ populations from game start, in a campaign that introduces androids at Ultra?
 <Operation Class="PatchOperationRemove">
   <xpath>/Defs/FactionDef[@Name="PirateBandBase"]/xenotypeSet/xenotypeChances/VREA_AndroidAwakened</xpath>
 </Operation>
+<!-- expect: 1 -->
+<Operation Class="PatchOperationFindMod">
+  <mods><li>Royalty</li></mods>
+  <match Class="PatchOperationRemove">
+    <xpath>/Defs/FactionDef[defName="Empire"]/xenotypeSet/xenotypeChances/VREA_AndroidAwakened</xpath>
+  </match>
+</Operation>
 ```
 
 It must load **after** VRE – Android, which Archinity's mods already do. The annotations
 above are written as expectations to be checked by `tools/patch_check.py`, not copied from it.
 
-**Cost of the bleed if left alone: zero to us, and a fiction leak.** It cannot break T-07 —
-it adds a xenotype chance to an existing faction, not a faction to the roster.
+**The bleed cannot break T-07** — it adds a xenotype chance to an existing faction, not a faction
+to the roster.
 
 ### Cost
 
@@ -1201,9 +1200,8 @@ it adds a xenotype chance to an existing faction, not a faction to the roster.
 |---|---|---|---|
 | The whole manufacture capability | **none — shipped** | 0 | VRE – Android (`2975771801`) |
 | Multiplayer safety | **none — shipped** | 0 | Multiplayer Compatibility (`1629973374`) |
-| Analysis gate on `VREA_AndroidTech` | XML patch | ~6 lines | `Archinity.Glitterites/Patches/Analysis_GlittertechGate.xml` (exists per #67) |
-| Bleed scoping *(optional, fiction call)* | XML patch | ~10 lines | `Archinity.Glitterites/Patches/VREAndroid_Scope.xml` (new) |
-| ~~Per-unit Intel debit~~ *(struck — Intel is exchanged for Instruction items, see §5)* | — | 0 | — |
+| Exemplar gate on `VREA_AndroidTech` | XML patch | ~6 lines | `Archinity.Glitterites/Patches/Analysis_GlittertechGate.xml` (exists per #67) |
+| Bleed removal *(a route; #119)* | XML patch | ~16 lines | `Archinity.Glitterites/Patches/VREAndroid_Scope.xml` (new) |
 
 **Total for the recommended build: ~6 lines of XML.** The capability itself is a sourcing
 decision, not an implementation one — it belongs to
@@ -1234,9 +1232,9 @@ component and no global state, so nothing has to migrate.
 > classes. They do not collide (different `IExposable`s), but it is a readability trap for
 > anyone debugging a save.
 
-**Multiplayer is covered, and my first reading of this was wrong.**
+**Multiplayer is covered.**
 
-The shape looked like a textbook desync: `Window_AndroidCreation.AcceptInner()` writes four
+The shape resembles a textbook desync: `Window_AndroidCreation.AcceptInner()` writes four
 **scribed** fields on the station directly from a `Window`, with no `SyncMethod` of its own —
 the same shape as **T-61** and **T-85**. It is not one, because
 **Multiplayer Compatibility carries a dedicated compat class for this mod.** **[V]**
@@ -1286,8 +1284,8 @@ apply.** **[V]**
 | Station destroyed mid-project | MP Compat patches `Window_CreateAndroidBase:DoWindowContents` with `CloseDialogIfStationDestroyed` | Window closes; `UnfinishedAndroid` holds the hauled resources and is recoverable |
 | Project abandoned | Player gizmo | `UnfinishedAndroid.CancelProject`, synced |
 | `VREA_UnfinishedAndroid` left outdoors | `DeteriorationRate 2` — it rots | Materials lost; no campaign state touched |
-| Analysis gate never satisfied | Vanilla research UI shows the study requirement and the locked reason | The gate is the design; there is no softlock, because the exemplar is a Glitterite drop the campaign already supplies |
-| **Analysis gate bypassed — player reaches Ultra androids early** | **Nothing reports it — T-92** | **Not recoverable after the fact, and not fixable here.** Ship RESEARCH.md's `usesHiddenProjects` one-liner alongside this capability, plus the VPE and RimPacts shutoffs (**not** MTW's — it cannot reach this project) — [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83) |
+| Exemplar gate never satisfied | Vanilla research UI shows the study requirement and the locked reason | The gate is the design; there is no softlock, because the exemplar is a Glitterite drop the campaign already supplies |
+| **Exemplar gate bypassed — player reaches Ultra androids early** | **Nothing reports it — T-92** | **Not recoverable after the fact, and not fixable here.** Ship RESEARCH.md's `usesHiddenProjects` one-liner alongside this capability, plus the VPE and RimPacts shutoffs (**not** MTW's — it cannot reach this project) — [`RESEARCH.md`](RESEARCH.md) § *Bypasses — the build* ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83), closed) |
 | Android awakens | `ChoiceLetter_AndroidAwakened`, synced by MP Compat | Authored transition, not a fault |
 
 **No campaign softlock exists here.** Manufacture is a capability, not a plot beat: the
@@ -1305,19 +1303,23 @@ argument is a **penalty** applied to android colonists — see *Outstanding deci
   Compatibility's loaded 1.6 assembly. **[V]**
 - **Verified** — androids are a Biotech xenotype on race `Human`; they are colonists and they
   hold an `Ideo`. **[V]**
-- **Verified, and it replaces #78's claim** — androids cannot hold a psylink *as shipped*, and the
-  refusal is two **independent** gates keyed on two different genes: `VREA_SyntheticImmunity` gates
+- **Verified** — androids cannot hold a psylink *as shipped*, and the refusal is two
+  **independent** gates keyed on two different genes: `VREA_SyntheticImmunity` gates
   `Pawn_HealthTracker_AddHediff_Patch`'s deferral to `AndroidCanCatch`, which reads the
   `androidsShouldNotReceiveHediffs` list; `VREA_PsychicallyDeaf`'s `PsychicSensitivity` factor of 0
   meets vanilla's own `< float.Epsilon` tests. Both are reachable from XML; neither gene appears in
-  the other's path. #78's "unconditional prefix" was wrong. **[V]** —
-  [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141).
+  the other's path. **[V]** — [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141).
 - **Proposed** — routes A–D for lifting that refusal. The mechanisms each composes are **[V]**;
-  that they compose into a psycasting android is **[I]** until built.
-- **Proposed** — the Analysis gate on `VREA_AndroidTech`. The mechanism is #67's and is
+  that they compose into a psycasting android is **[I]** until built. What they leave open by kind
+  of android is [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+- **Proposed** — the Exemplar gate on `VREA_AndroidTech`. The mechanism is #67's and is
   **[V]**; its application here is **[I]**.
-- **Proposed, and a fiction call** — scoping the outlander/pirate xenotype bleed.
-- **Struck** — the per-unit Intel debit (§5; [`CURRENCIES.md`](CURRENCIES.md) § *What changes it*).
+- **Proposed** — removing the outlander, pirate and Church xenotype bleed, one route to ERA's
+  arrival band (§6).
+- **No per-unit Intel debit** — Intel is exchanged for Instruction items (§5;
+  [`CURRENCIES.md`](CURRENCIES.md) § *What changes it*). Whether `VREA_AndroidTech` also requires an
+  Instruction item bought with Intel is exchange-catalogue authoring,
+  [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117).
 
 Evidence class **READ**: settled by the 1.6 defs of `2975771801`, its decompiled
 `1.6/Assemblies/VREAndroids.dll`, the decompiled
@@ -1434,13 +1436,11 @@ A validated wide pass over both roots found **no second carrier** for player-sid
 manufacture. `AndroidCrafter`, `Building_AndroidCreator` and `Recipe_MakePawn` return zero in
 every assembly in either root **in both encodings** — plain ASCII and literal-escape UTF-16.
 
-**`CompAndroid` is not a zero, and saying it was would have been the exact error this
-document's own method finding describes.** It returns **ASCII 0, UTF-16 8** — all eight in
+**`CompAndroid` is not a zero.** It returns **ASCII 0, UTF-16 8** — all eight in
 `Multiplayer_Compat.dll`, versions 1.3 through 1.6, mirrored across both roots. The string is
 `MOARANDROIDS.CompAndroidState`, a type-name literal belonging to **Android Tiers**, which is
 **not on disk**. So it is an artifact of a compat layer for an absent mod, and it is filed with
-the Android Tiers references below rather than counted as a carrier. **The conclusion is
-unchanged; the evidence for it was wrong and is corrected here.** **[V]**
+the Android Tiers references below rather than counted as a carrier. **[V]**
 
 **Android Tiers / ATReforged, Chj Android, Misc. Robots and Robotic Surrogates are not on
 disk** — Android Tiers appears only as *type-name and packageId literals inside* Multiplayer
@@ -1457,16 +1457,15 @@ are the wrong shape for this requirement. They are recorded as a real but reject
 
 **Settled by reading** — the manufacture chain, the xenotype shape, the persistence, the MP Compat
 coverage, the hardcoded ingredient list, the faction-patch bleed and our own factions' immunity to
-it. The **psylink block is settled by reading too, and differently from what #78 recorded**: two
-independent gates keyed on two different genes — `VREA_SyntheticImmunity` on the hediff,
+it. The **psylink block is settled by reading too**: two independent gates keyed on two different genes — `VREA_SyntheticImmunity` on the hediff,
 `VREA_PsychicallyDeaf` on the stat — both XML-reachable, anchored in
 *Psylinks — verdict and routes*. Paths and anchors are cited above.
 
 **Observable checks that would demonstrate the requirement is satisfied**, if someone wants
 them in-game rather than on paper:
 
-1. With the Analysis patch in, `VREA_AndroidTech` shows a **"Study requirements"** block and
-   cannot be started until the Glitterite exemplar is analysed. (Vanilla UI, per #67.)
+1. With the Exemplar-gate patch in, `VREA_AndroidTech` shows a **"Study requirements"** block and
+   cannot be started until the Glitterite exemplar is studied. (Vanilla UI, per #67.)
 2. After research, a `VREA_AndroidCreationStation` offers **"Create android"**; building one
    yields a pawn in the colonist bar with no join quest and no recruitment.
 3. The android's Health tab shows `VREA_NeutroLoss`; its Character tab shows the custom
@@ -1480,47 +1479,39 @@ them in-game rather than on paper:
    worker rather than any def — but the registration is read and cited, so a failure here would
    be a bug in a third-party mod, not a gap in this design.
 
-`tools/patch_check.py` holds the two annotated scoping operations to their expected counts if
+`tools/patch_check.py` holds the three annotated removal operations to their expected counts if
 that patch is written.
 
 ---
 
 ## Outstanding decisions
 
-1. **Should awakened androids appear at 2% in outlander and pirate populations from game
-   start?** A fiction call, not a structural one — our own factions are unaffected. If no, the
-   scoping patch above is ~10 lines of XML. **Owner: the era/progression fiction, not a
-   capability ticket.** No ticket currently owns it.
+1. **The 2% awakened-android bleed.** ERA's arrival band answers it
+   ([#128](https://github.com/cjd721/Rimworld-Archinity/issues/128)): no awakened android arrives
+   before Ultra. Removal (§6) is one route, and it also removes them at Ultra; an era-scoped
+   removal is another. Our own factions are unaffected. Which ships is the build map's.
 
-2. **Does an android colonist hold Devotion, and does the campaign want it to?** Nothing in
-   VRE – Android blocks it **[V]**, and `docs/specs/RELIGION.md` does not currently say whether
-   Devotion alignment has a personhood predicate at all. **This is a requirements gap, not a
-   mechanism gap** — it is handed back rather than settled here. It interacts with
-   `RELIGION.md`'s open question 12 (whether Devotion alignment is reference equality on `Ideo`
-   or doctrinal equivalence), because an android colonist shares the colony's `Ideo` by
-   construction.
+2. **Android Devotion.** Capability: permitted by default — an android on the human-xenotype shape
+   holds an `Ideo`, so Devotion works with no new code (§2; the sweep is **[V]**, a rite run with an
+   android in a role is **[I]**). Forbidden for a pawn with no faith, which includes a captured
+   Glitterite (*A captured Glitterite*). Restricted by kind at the altar's acceptance check, which
+   can test any pawn predicate ([`ALTAR.md`](ALTAR.md) § *Four clauses in `CanAcceptPawn`*) **[I]**.
+   `docs/requirements/GLITTERTECH.md` and `docs/COSMOLOGY.md` already say non-Glitterite androids
+   can be sincere believers. An android colonist shares the colony's `Ideo` by construction; whether
+   its Devotion is aligned is `docs/plot/ENDING.md` § *The Alignment Rule*'s test, as for any
+   believer.
 
-3. **Whether androids take psycasts is now a choice, not an engine fact.** *(Rewritten by
-   [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141); #78's "permanently, and cannot
-   be patched away" is struck.)* The refusal is two independent gates — `VREA_SyntheticImmunity`
-   on the hediff, `VREA_PsychicallyDeaf` on the stat — both XML-reachable, and four routes lift
-   them — see *Psylinks — verdict and routes*. What the campaign must decide is no longer *can we*
-   but **which androids, and at what price**: route A makes every android sensitive and makes the
-   gene's own description a lie; route B makes it a per-unit build that costs synthetic immunity.
-   Leaving it alone (route E) keeps the asymmetry as a *stated* cost of an artificial body, which
-   remains a defensible reading — but it is now an authorial choice against
-   *"the campaign does not treat artificial bodies as inherently inferior,"* not a constraint the
-   engine imposes. Handed to `docs/requirements/GLITTERTECH.md`'s owner. It still has implications
-   for `docs/specs/TRANSCENDENCE.md` if the endgame assumes any colonist can be a psycaster —
-   those implications are now satisfiable.
+3. **Android psycasts are a capability, not an engine fact.** The refusal is two independent
+   gates — `VREA_SyntheticImmunity` on the hediff, `VREA_PsychicallyDeaf` on the stat — both
+   XML-reachable; four routes lift them and route E leaves them (*Psylinks — verdict and routes*).
+   Route A makes every android sensitive and makes the gene's own description a lie; route B makes
+   it a per-unit build that costs synthetic immunity; route E keeps the asymmetry as a *stated*
+   cost of an artificial body, set against *"the campaign does not treat artificial bodies as
+   inherently inferior."* What the routes leave open — the altar's rite and authored breakthroughs
+   reaching an android, by kind — is [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+   If the endgame assumes any colonist can be a psycaster, `docs/specs/TRANSCENDENCE.md`'s
+   implications are satisfiable.
 
-4. **Resolved: an android costs no Intel per unit.** Intel is exchanged for Instruction items,
-   and [`CURRENCIES.md`](CURRENCIES.md) admits no other debit (§5). Whether `VREA_AndroidTech`
-   also requires an Instruction item bought with Intel is exchange-catalogue authoring, owned by
-   [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117).
-
-5. **Does the campaign want the per-android material cost changed?** It cannot be done in XML
-   (the list is a C# literal). If Ultra manufacture should cost a Glitterite material rather
-   than Uranium, that is a ~15-line Harmony postfix on
-   `Window_AndroidCreation.OnGenesChanged` and should be decided before the Ultra chapter is
-   priced.
+4. **The per-android material cost.** It cannot be changed in XML (the list is a C# literal).
+   A ~15-line Harmony postfix on `Window_AndroidCreation.OnGenesChanged` can change it — for
+   example to a Glitterite material in place of Uranium.

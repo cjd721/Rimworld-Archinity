@@ -347,8 +347,8 @@ Every one of our arrival actions must override `StillValid` with the target's `S
 and tile checks:
 
 - the #92 / `TERRITORY.md` §1 attend option;
-- #154 RC-1, RC-4 and RT-1 (C1, C4 and T1 in `WORLD-INFRASTRUCTURE.md` § *The player's two verbs on
-  a route*);
+- #154 RC-1 and RC-4 (C1 and C4 in `WORLD-INFRASTRUCTURE.md` § *The player's verb on a route —
+  contribute*);
 - #171 OU-A1 and OU-A3 (attend);
 - #172 H-T1 (attend) and every H-L release option that is an arrival action;
 - #167's advance option, if it is built as an arrival action rather than a direct float-menu

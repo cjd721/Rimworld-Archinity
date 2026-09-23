@@ -20,7 +20,7 @@ Outposts, allies and subordinate territories must provide meaningful resources, 
 
 ## Roads and Mobility
 
-The world physically becomes connected. The vanilla map should not begin covered in modern paved roads. Neolithic travel uses paths and dirt tracks; Medieval powers begin maintaining routes; Industrial civilization paves and expands them. The player can finance, protect, capture and benefit from infrastructure while other factions also build it.
+The world physically becomes connected. The vanilla map should not begin covered in modern paved roads. Neolithic travel uses paths and dirt tracks; Medieval powers begin maintaining routes; Industrial civilization paves and expands them. The player can finance, capture and benefit from infrastructure while other factions also build it.
 
 Early vehicles change local and regional travel.
 

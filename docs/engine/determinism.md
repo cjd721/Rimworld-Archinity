@@ -435,6 +435,21 @@ Also synced as shipped: `TradeRequestComp.Fulfill`, and `CompLaunchable.TryLaunc
 
 ---
 
+## Every `IRenameable` label setter is a sync method
+
+`Multiplayer.Client.SyncMethods` registers, in a `LongEventHandler.ExecuteWhenFinished` block, the
+declared `RenamableLabel` property **setter** of every type in
+`typeof(IRenameable).AllImplementing()` that its serializer can handle — enumerated from
+`GenTypes.AllTypes`, so mod assemblies are included with no cooperation from the mod [V,
+`2606448745/1.6/AssembliesCustom/Multiplayer.dll`]. A `HediffComp` subclass qualifies, because
+`HediffComp` is in MP's sync dictionary with `isImplicit: true`. So a rename that goes through
+`Dialog_Rename<T>` is synced for free — but only the setter: `OnRenamed`, on the next line, runs
+on the clicking client alone (**T-52**). MP's dev action *Dump IRenameable types* lists which
+types were registered. Used by [`TRANSCENDENCE.md`](../specs/TRANSCENDENCE.md) §2
+([#50](https://github.com/cjd721/Rimworld-Archinity/issues/50)).
+
+---
+
 ## Multiplayer does not intercept sync methods inside a long event
 
 `Multiplayer.Client.Multiplayer.ShouldSync` is `InInterface && !dontSync`, and `InInterface` is

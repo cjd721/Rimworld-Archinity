@@ -11,7 +11,8 @@ This document owns:
 
 - the storyteller we ship and why it is ours rather than a patch on Cassandra;
 - the single seam where threat **strength** is composed, and what may and may not feed it;
-- the **frequency** levers and the cadence comp that reads campaign state;
+- the **frequency** levers and the cadence comp that reads campaign state, including the arrival
+  cadence of faction demands and other faction-interaction quests;
 - the **composition** levers — points-band gating, faction selection, and the pawn-cost curve
   that turns points into quality instead of quantity;
 - the **positive half** — arrivals, aid and volunteers that scale with Reverence;
@@ -26,13 +27,13 @@ pursuit raid is and how it is authored, #56 says what starts one and when; **the
 faction demand** ([#91](https://github.com/cjd721/Rimworld-Archinity/issues/91), whose spec is
 [`POLITICS.md`](POLITICS.md)) — #91 says what a refusal fires, this document says how big it is;
 **Reverence itself** ([`RELIGION.md`](RELIGION.md)); **the window the readout is drawn in**
-([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)); **the ordered Archon beats
+([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (surface choice), per
+[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s routes); **the ordered Archon beats
 themselves** ([`CHARTING.md`](CHARTING.md)).
 
 **Every number in this document is an open parameter.** Weights, curve points, band thresholds,
-cadences and magnitudes are **Balance**, held as fog on
-[#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) — *"costs, durations, threat
-magnitudes and progression rates. Last, after the structure is concrete."* The structure below is
+cadences and magnitudes are **Balance**:
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (balance). The structure below is
 what Balance will be given numbers for.
 
 ## The build
@@ -71,6 +72,10 @@ silently re-rolls its entire pre-computed hit schedule. The runtime list is also
 `StorytellerCompProperties.Enabled` [V], so a change to the active mod set moves the same indices.
 That is **T-66**. A storyteller we own has a list we control and append to.
 
+Comp-list obligations from other specs, if their routes are selected
+([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)): [`ENCOUNTERS.md`](ENCOUNTERS.md)'s
+timer comp (T1/T2/T4; appended last, T-66) and vanilla's `AnimaTreeSpawn` comp (V2).
+
 Four `StorytellerDef` curve fields are ours for free and need no code:
 
 - `pointsFactorFromDaysPassed` — a global multiplier on threat points, evaluated on
@@ -97,19 +102,14 @@ final = Clamp( (vanillaResult + Σ additive_i(target)) × Π factor_j(target),
 Every term, factor, floor and ceiling is a `SimpleCurve` read from one new `PressureDef` instance.
 The postfix itself contains no numbers.
 
-**Why this seam, and a correction to what this ticket inherited.**
-[#7](https://github.com/cjd721/Rimworld-Archinity/issues/7) §6 and the superseded comments on
-[#9](https://github.com/cjd721/Rimworld-Archinity/issues/9) put the postfix on
-`RimWorld.Planet.MapParent.PlayerWealthForStoryteller`. **That member does not exist.**
-`RimWorld.Planet.MapParent` is `WorldObject, IThingHolder` and is **not** an `IIncidentTarget` [V].
-`PlayerWealthForStoryteller` is declared on **`RimWorld.IIncidentTarget`** and implemented by
-`Verse.Map`, `RimWorld.Planet.Caravan` and `RimWorld.Planet.World` [V] — three implementors, none
-of them `MapParent`. So the inherited seam was not merely wrong for the settled requirement that
-**wealth remains a real, bounded contributor**; it was unpatchable as written.
+The threat multiplier is how much bigger the campaign makes each raid than vanilla would:
+vanilla's raid size, plus and times our terms (time in the era, military strength, Reverence,
+number of enemy factions), kept between a floor and a ceiling.
 
-Restated against the type that actually declares the property: patching `IIncidentTarget`'s
-implementors is still the wrong seam, because the number they return is consumed by **two distinct
-reading methods** [V]:
+**Why this seam.** `PlayerWealthForStoryteller` is declared on **`RimWorld.IIncidentTarget`** and
+implemented by `Verse.Map`, `RimWorld.Planet.Caravan` and `RimWorld.Planet.World` [V];
+`RimWorld.Planet.MapParent` is not an `IIncidentTarget` [V]. Patching those implementors is the
+wrong seam, because the number they return is consumed by **two distinct reading methods** [V]:
 
 - **`StorytellerUtility.DefaultThreatPointsNow`**, which evaluates four `private static readonly`
   curves against it — `PointsPerWealthCurve`, `PointsPerColonistByWealthCurve`,
@@ -119,14 +119,12 @@ reading methods** [V]:
   `QuestScriptDef.rootMinProgressScore` and is itself read downstream by
   `StorytellerComp_OnOffCycle.acceptPercentFactorPerProgressScoreCurve`.
 
-**The earlier "eight consumers" count was wrong twice.** Two of the eight never touch the property
-at all: `StorytellerComp_RefiringUniqueQuest.minColonyWealth` is compared against
-`WealthUtility.PlayerWealth`, and `StorytellerComp_FactionInteraction.minWealth` against
-`map.wealthWatcher.WealthTotal` [V]. Of the six that remain, four are the curve evaluations above.
-The load-bearing half survives: writing a synthetic number into the property still moves quest
-gating as well as threat points, invisibly. Composing *above* the aggregation leaves wealth
-genuinely wealth and makes its share a function of how large the other terms are — which is exactly
-the 10–20% the requirement describes as illustrative.
+Writing a synthetic number into the property would move quest gating as well as threat points,
+invisibly. Composing *above* the aggregation, in `DefaultThreatPointsNow`, leaves quest gating
+untouched, leaves wealth genuinely wealth and makes its share a function of how large the other
+terms are — which is exactly the 10–20% the requirement describes as illustrative.
+[`docs/engine/storyteller-and-incidents.md`](../engine/storyteller-and-incidents.md) §
+*`DefaultThreatPointsNow` is the composition point, and `MapParent` is not* records the evidence.
 
 **Consequence to hand back:** [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) §1 asks
 whether `MapParent` is the only implementation of `PlayerWealthForStoryteller`, because a postfix
@@ -152,9 +150,9 @@ A single `EraStartTick` resets at every boundary; `cappedCurve` over the retaine
 within an era, flattens at that era's ceiling, and **adds** at the seam — which is also #7 § 6's
 *"no reset and no spike at a boundary."* [`ERA.md`](ERA.md) exists so this term has a
 read-only source: `CurrentEra`, `CurrentEraStartTick`, `TicksInCurrentEra`,
-`StartTickOf(TechLevel)` and `Boundaries`. **Note the unit change:** the term's ceiling is now
-six era-caps rather than one, so each era's cap must be authored at roughly a sixth of what the
-single-stamp reading implied. That factor is Balance's.
+`StartTickOf(TechLevel)` and `Boundaries`. **Note the unit:** the term's ceiling is five
+era-caps rather than one, so each era's cap must be authored at roughly a fifth of what a
+single-stamp reading would imply. That factor is Balance's.
 
 **Trace is deliberately absent from this list.** See §4; it never touches the global scalar, which
 is the structural reason Reverence and Trace cannot silently multiply.
@@ -206,8 +204,9 @@ therefore changes the mix and the cadence unless those curves are re-authored. B
 storyteller is ours, they are ours to author — the price of independence is three curves, paid
 once.
 
-**The cadence comp — `StorytellerComp_Pressure`.** Diplomacy, era and Reverence must be able to
-change *how often*, not only *which*. Nothing in XML reaches the accept fraction from campaign
+**The cadence comp — `StorytellerComp_Pressure`.** Diplomacy and era change how often threats
+come; Reverence changes how often welcome arrivals come (§5) and which threats are chosen (§4.3).
+Nothing in XML reaches the accept fraction from campaign
 state, but `IncidentCycleUtility.IncidentCountThisInterval` is `public static` and takes
 `acceptFraction` as its last argument [V]. (`IncidentCycleUtility` itself is **not** a static class
 [V] — the method is what is static, and we call it rather than extending the type.) One comp class,
@@ -321,8 +320,9 @@ They survive because we do not substitute wealth. All [V]:
   `populationIntentFactorFromPopCurve` on our storyteller def — which is why §1 lists it.
 - `IncidentWorker.CanFireNow`'s `minPopulation` gate counts
   `PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_FreeColonists` — **global across
-  maps** [V]. With one player faction and one colony that is inert; it becomes live during the
-  gravship and orbital acts, when a second map exists.
+  maps** [V]. With one player faction and two colonies
+  ([#23](https://github.com/cjd721/Rimworld-Archinity/issues/23)) it is live from the second
+  colony's founding, when a second home map exists.
 
 Adaptation stays in the formula rather than being replaced: `TotalThreatPointsFactor` is applied as
 `Mathf.Lerp(1, factor, difficulty.adaptationEffectFactor)` inside the vanilla computation and is
@@ -604,11 +604,12 @@ already shipped.
 #### Which objectives, and what is not ours
 
 The behaviours the playtest correction named — *"the stockpile, the animals, the fields and the
-colonists"* — are all expressible, and the survey above says at what price. **Which of them the
-campaign actually authors, at which era, and with what weights is not a capability answer.**
-`docs/requirements/PRESSURE.md` § *Difficulty contributors* requires only that *"enemy quality,
-equipment, composition and numbers produce an appropriate challenge"* and never names an
-objective; it lists #77 under *Open questions*. That is the gap, and it is handed back there.
+colonists"* — are all expressible, and the survey above says at what price.
+[`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md) § *Raid objectives* fixes three —
+people, livestock and stores — era-gated; fields are a want. The opportunistic kidnapping and
+looting vanilla performs on ordinary raids stays on, as the requirement says. Which era, what
+weights and the `damageFraction` are
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 ### Cost
 
@@ -621,8 +622,8 @@ objective; it lists #77 under *Open questions*. That is the gap, and it is hande
 | `IncidentChanceFinal` postfix (diplomacy / Reverence weight) | C# | ~25 |
 | Authored raids — `IncidentWorker_RaidEnemySpecial` + `IncidentDefExtension` | XML | per raid, ~15 lines |
 | `maxPawnCostPerTotalPointsCurve` patches on band factions | XML patch, annotated | ~10 per faction |
-| Pressure readout supplied to [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s surface | C# | ~40 |
-| `layerWhitelist` patches for the orbital act (**T-48**) | XML patch, annotated | ~40 lines |
+| Pressure readout supplied to the political surface ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (surface choice), per [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s routes) | C# | ~40 |
+| `layerWhitelist` on our own pursuit/threat defs (**T-48**); the general orbital pack is [`GRAVSHIP.md`](GRAVSHIP.md) § *Ordinary colony life on an orbital home* Route A | XML patch, annotated | ~40 lines |
 | **§8** `RaidObjectiveExtension : DefModExtension` (target class, lord flags, era band) | C# Def class | ~35 |
 | **§8** `RaidStrategyWorker_Objective` — `MakeLordJob` + target selector + `CanUseWith` era gate | C# | ~110 |
 | **§8** one `RaidStrategyDef` per objective, with `letterLabelEnemy` and `arrivalTextEnemy` | XML | ~35 each |
@@ -822,8 +823,8 @@ it returns immediately — resetting `naturalGoodwillTimer` to 0 — whenever ba
 one step only at `naturalGoodwillTimer >= 3000000`, of magnitude
 `Mathf.Min(10, distance to the band edge)`, then resets the timer. So: **one step of at most 10 per
 50 in-game days, and the drift halts at the band edge, not at the natural value and not at the −100
-clamp.** This matches `docs/engine/factions-and-worldgen.md` § *Alliance hysteresis*, which already
-states the gate.
+clamp.** This matches `docs/engine/factions-and-worldgen.md` § *Hidden factions, alliances, and what
+holds a relation*, which already states the gate.
 
 **The consequence for the donor this section cites.** `GoodwillSituationWorker_NaturalEnemy`'s flat
 `-130` offset puts the band at `[-180, -80]`. A faction starting at neutral drifts down **10 per 50
@@ -874,8 +875,7 @@ permanent enemy.
 > gated on ideo membership [V]. A def authored without a `workerClass` loads cleanly, is walked
 > every 1000 ticks, contributes nothing, and is not even listed in `GetExplanation`, because
 > `Recalculate` records a situation only when `maxGoodwill < 100 || naturalGoodwillOffset != 0` [V].
-> No error, no warning. Proposed for `docs/TRAPS.md` on
-> [#169](https://github.com/cjd721/Rimworld-Archinity/issues/169); not yet assigned a T-ID.
+> No error, no warning. This is **T-83**.
 
 #### E — a named per-faction magnitude past the floor
 
@@ -1039,7 +1039,7 @@ cited here.
    it halts at `NaturalGoodwill + 50` rather than at `NaturalGoodwill` or at −100 [V]. Any route
    that expects the world to *become* hostile on a story-relevant timescale must use a
    `GetMaxGoodwill` cap or a direct `TryAffectGoodwillWith` call, not the drift. This is also
-   `docs/engine/factions-and-worldgen.md` § *Alliance hysteresis*.
+   `docs/engine/factions-and-worldgen.md` § *Hidden factions, alliances, and what holds a relation*.
 5. **`parms.forced` disables the whole def-level gate block** in `IncidentWorker.CanFireNow`,
    including the `preventIncidents` quiet window and the layer whitelist [V]. Route C sets it.
 6. **T-17 stands.** Raid faction selection is fail-open and fail-quiet: any gate added to
@@ -1101,11 +1101,11 @@ nothing has been built.
 
 ### Open questions for this section
 
-- **Requirement gap — nobody owns whether hostility is legible.**
-  `docs/requirements/TERRITORY.md` states the behaviour and deliberately leaves the mechanism open,
-  which is right. What no requirements document states is whether the player can **see** how much a
-  faction hates them, or whether hatred can be **bought back down**. Handed to the owning
-  requirements ticket for `TERRITORY.md`.
+- **Seeing and lowering hostility.** Capability: hatred is Goodwill under A–D/F/G (gifts, prisoners
+  and quests raise it; a D cap holds it down while its cause stands); a separate value only under
+  E, lowered by our own write. Legibility: D's faction-card reason;
+  [`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md) § *Player information and agency*.
+  Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **Requirement coordination.** `docs/requirements/PRESSURE.md` § *Difficulty contributors* frames
   diplomacy as the **count** of enemy factions; the per-faction **degree** requirement lives only in
   `TERRITORY.md`. They are compatible — count and degree are separate terms — but a reader of
@@ -1120,16 +1120,15 @@ nothing has been built.
 
 **Nothing in this build is new saved state.** Threat points are computed on demand from a fresh
 `IncidentParms` per call with no maintained snapshot [V]; every tunable is a `Def`; the terms read
-state other systems already scribe — WTL's `GameComponent_TechLevel` and the era-start stamp,
+state other systems already scribe — `GameComponent_Era`'s boundary log ([`ERA.md`](ERA.md)),
 `WorldComponent_Reverence`, `Find.ResearchManager`, `Find.FactionManager`, `map.wealthWatcher`.
 Adding this to a save that predates it changes behaviour on the next storyteller interval and
 scribes nothing, so there is no migration and no version gate. `StorytellerComp_Pressure` holds no
 fields; its schedule is derived, not stored.
 
 **Session shape.** [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) resolved to
-**shared: one player faction, one colony, Async Time on**. The per-colony instancing concerns that
-the earlier two-colony comments handed this ticket are therefore moot for the base case and become
-live only when the gravship creates a second map.
+**shared: one player faction, two colonies, Async Time on**. Per-colony instancing concerns are
+live from the second colony's founding, when a second home map exists.
 
 **What Multiplayer does to the storyteller**, verified against `Multiplayer.dll` 1.6 under
 `AssembliesCustom/` (**T-22** — confirm the copy you read):
@@ -1176,10 +1175,13 @@ reach. Its async-time behaviour is unverified; treat the feature as off until so
 - **A beat's raid arrives at zero points.** **T-65** — the `forcedPointsRange` sentinel above. A startup
   validator over every `IncidentDef` whose `workerClass` is `IncidentWorker_RaidEnemySpecial`,
   asserting an explicit `forcedPointsRange`, converts a silent failure into a loud one.
-- **The orbital act goes quiet.** **T-48**: on an orbit layer only 18 of 91 `IncidentDef`s and 18
-  of 139 `QuestScriptDef`s are legal, and nothing reports the narrowing. Every def the campaign
-  needs in orbit — **including ours** — needs `layerWhitelist` or `canOccurOnAllPlanetLayers`, and
-  the count must be re-taken after every mod addition.
+- **The orbital act goes quiet.** **T-48**: on an orbit layer only 18 of 91 `IncidentDef`s are
+  legal, and the storyteller's quest reader leaves 2 of 139; quests to an orbital home are
+  gated by `GetMap(canBeSpace)`, not the whitelist ([`GRAVSHIP.md`](GRAVSHIP.md) § *Quests are
+  gated somewhere else entirely*). Nothing reports the narrowing. Every def of ours the campaign
+  needs in orbit needs `layerWhitelist` or `canOccurOnAllPlanetLayers`; the general orbital pack is
+  [`GRAVSHIP.md`](GRAVSHIP.md) § *Ordinary colony life on an orbital home* Route A. The count must
+  be re-taken after every mod addition.
 - **A comp insertion re-rolls the schedule.** **T-66**, §1. If cadence changes for no reason anyone
   authored, check whether the comp list or the active mod set moved.
 - **An objective raid does nothing and lingers.** **T-88**, §8. `attackTargets` populated with a **factionless**
@@ -1229,8 +1231,8 @@ assembly or a shipped def and is marked [V] where it is claimed.
 **Selected:** nothing. This is a proposed design. The composition of verified mechanisms into the
 intended campaign feel is **[I]** and stays [I] until something is built and played.
 
-**Not ours:** the numbers. Every weight, curve point, threshold and cadence is **Balance**, fog on
-[#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).
+**Not ours:** the numbers. Every weight, curve point, threshold and cadence is **Balance**:
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (balance).
 
 ## Available mechanisms
 
@@ -1354,16 +1356,14 @@ objective against the stockpile, the herd or the fields** — the three that def
 all define it against pawns (`LordJob_KillRoyalty`, `LordJob_ArchonRaid`).
 
 **Nothing in the corpus composes threat strength from *campaign state*.** That negative survives a
-tier-4 read and is the reason §2 owes a build. It is narrower than it first looked:
+tier-4 read and is the reason §2 owes a build. One mod does compose at the seam:
 
 - **Mechanoids: Total Warfare** (`nyar.nclvstw`, workshop `3555799437`,
   `1.6/Assemblies/NCL_Storyteller.dll`) **does** compose — `NCL_Storyteller.Patch_StorytellerUtility`
   transpiles `DefaultThreatPointsNow`, injecting an additive term and replacing the hardcoded
-  `10000f` ceiling [V]. So "the mods that touch the seam consume the number rather than compose it"
-  is **false** and has been struck. What it injects is not campaign state in the sense this document
-  means — it is that mod's own escalation counter, not era, capability, religion or diplomacy — so
-  the headline negative holds while the generalisation about *how* the seam is touched does not.
-  It is also the collision risk recorded in §2.
+  `10000f` ceiling [V]. It composes its own escalation counter into the method, not campaign state
+  (era, capability, religion or diplomacy); the headline negative holds. It is also the collision
+  risk recorded in §2.
 
 The nearest prior art for a rival scheduler is Rim War, which built a rival
 generator and then had to blanket-block vanilla `RaidEnemy`, `RaidFriendly` and
@@ -1425,11 +1425,6 @@ for two demigod founders is not a reading question.
 
 ## Outstanding decisions
 
-- **The era clock is owned.** [`ERA.md`](ERA.md)
-  ([#109](https://github.com/cjd721/Rimworld-Archinity/issues/109)) holds `GameComponent_Era` and
-  the boundary log, and states the read contract this document's era term uses. Note the
-  correction it carries: **`AdvanceEra()` did not exist** when this document was written — #7
-  designed it and nothing built it.
 - **What "military capability" measures.** The requirement says *"practical broad indicators,
   potentially including research and wealth"* and *"research must establish useful measurements"*.
   Three are available and cheap (§2); which of them, and in what proportion, is Balance's.
@@ -1437,20 +1432,6 @@ for two demigod founders is not a reading question.
   the vanilla clamp have not been enumerated.
 - **Whether the stock storytellers stay in the list.** `listVisible` makes it a one-line decision
   either way; it is a design call, not a capability one.
-- **Alliance effects have no owner.** `docs/requirements/PRESSURE.md` leaves the precise effect of
-  alliances to be designed. The mechanism is in hand — `AllyIncidentFraction` for the friendly
-  stream, the §4 postfix for the weight — but the direction and magnitude are not this document's,
-  and **the ticket this was previously handed to,
-  [#13](https://github.com/cjd721/Rimworld-Archinity/issues/13), is closed.** This is a stated gap,
-  not a hand-back: nothing currently owns the political behaviour that would settle it.
-- **Which objectives the campaign authors.** §8 settles what is *expressible* and at what price.
-  Which objectives exist, at which era, against which faction, and with what `damageFraction` and
-  selection weights is a **requirement**, and `docs/requirements/PRESSURE.md` does not state one —
-  it lists #77 under *Open questions* and its *Difficulty contributors* section names quality,
-  equipment, composition and numbers but never an objective. Handed back to that document; the
-  numbers are Balance's, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).
-- **Whether the opportunistic kidnap and steal branches stay on for ordinary raids.** §8 declares
-  objectives up front on authored strategies; vanilla's `Trigger_KidnapVictimPresent` and
-  `Trigger_HighValueThingsAround` branches remain live on every other raid unless a worker turns
-  them off [V]. Leaving both on is the default and costs nothing; turning them off is a design
-  call, not a capability one.
+- **Alliance effects.** Capability: §4 (the `IncidentChanceFinal` weight, build (b)) and §5
+  (`AllyIncidentFraction`, the welcome cadence). Choice:
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).

@@ -16,10 +16,11 @@ several eras is visibly worth more than a better payout from a stranger.
 Settled on [#13](https://github.com/cjd721/Rimworld-Archinity/issues/13). **How
 much of it ships is not decided here.** The scope of faction involvement follows
 capability and ease of implementation. The rules below are what the system must do
-wherever it appears; how far it extends is set once
+wherever it appears.
 [#90](https://github.com/cjd721/Rimworld-Archinity/issues/90)–[#93](https://github.com/cjd721/Rimworld-Archinity/issues/93)
-report what each piece costs. Cheap levers are used generously; expensive ones are
-cut rather than scaled down.
+have reported what each piece costs; how far it extends is
+[the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s selection.
+Cheap levers are used generously; expensive ones are cut rather than scaled down.
 
 ## Meaning
 
@@ -38,7 +39,8 @@ and a tile the player can travel to. Wars exist once the player has been told ab
 them; there is no background model of conflicts they never see.
 
 **Standing** is what accumulated Goodwill has bought. It unlocks relationships —
-access, people, knowledge — never discounts.
+access, people, knowledge. There is no bespoke discount system; a faction's trade
+prices may follow its Goodwill (Conrad, #118, 2026-09-23).
 
 **Safe passage** is not being attacked by a faction's settlements when a caravan passes
 them. Every faction that is not hostile gives it; nothing buys it separately.
@@ -69,6 +71,8 @@ different edges of the relationship graph:
 - **Along alliances** — wronging a faction costs standing with those allied to it.
   Kidnapping a visiting pawn, harming a neutral, or fouling the ground beside a
   settlement reaches that faction's friends as well. Gossip spreads.
+  Capability: [`docs/specs/POLITICS.md`](../specs/POLITICS.md) § *The build*. Whether
+  it ships: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 
 Magnitudes are balance work. The requirement is that the second-order consequence
 exists, is legible, and is attributed to the act that caused it.
@@ -79,8 +83,9 @@ one fails the other and the player is told so before choosing. The #13 prototype
 found this carried more than simulated warfare did, for far less. Prefer it wherever
 a choice between factions is wanted.
 
-**Standing buys relationships, never discounts.** Tech transfer, a loaned specialist,
-a granted site, candour about who a faction hates. Where the world map
+**Standing buys relationships.** Tech transfer, a loaned specialist, a granted site,
+candour about who a faction hates. There is no bespoke discount system; a faction's
+trade prices may follow its Goodwill (Conrad, #118, 2026-09-23). Where the world map
 expresses standing, it does so through which factions thrive.
 
 **Settlements meet passing caravans.** A caravan that travels within a few tiles of a
@@ -112,13 +117,17 @@ owns the route predicates and tie rules.
 
 Faction involvement should be common rather than occasional — hosting requests,
 pilgrim escorts, loaned specialists, tribute, intervention. Frequency and weighting
-belong to [the storyteller](https://github.com/cjd721/Rimworld-Archinity/issues/60).
+belong to the storyteller, [`docs/specs/PRESSURE.md`](../specs/PRESSURE.md) § *3.
+Frequency* (established on [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60);
+numbers are [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s).
 
 Distinct enemy doctrines and non-raid hostility can change what the colony needs to
 build. Defeat needs a route back through peace, tribute or subordination — **the colony
-paying a stronger faction**, which is the mirror of [territory](TERRITORY.md) and has no
-owner yet ([#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) states what the
-colony's own outposts, holdings and sworn factions must be, not what it owes others).
+paying a stronger faction**, which is the mirror of [territory](TERRITORY.md)
+([#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) states what the colony's
+own outposts, holdings and sworn factions must be, not what it owes others). Capability:
+[#189](https://github.com/cjd721/Rimworld-Archinity/issues/189). Choice:
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 Only a handful of hand-authored factions carry the campaign, so
 faction-generic selection is a fallback rather than the primary path.
 
@@ -126,8 +135,10 @@ faction-generic selection is a fallback rather than the primary path.
 
 The player must be able to see a second-order consequence and attribute it to the act
 that caused it. A goodwill change that arrives unexplained is noise. This makes the
-[political UI](https://github.com/cjd721/Rimworld-Archinity/issues/61) load-bearing
-rather than decorative: none of the rules above matter if the effect is invisible.
+political UI load-bearing rather than decorative: none of the rules above matter if the
+effect is invisible. Every surface it needs has a route
+([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)); which surfaces ship is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 Standing shows the carrot before the player reaches it — a locked row with its
 threshold, not an absent one.
@@ -145,21 +156,19 @@ A manageable number of live diplomatic situations prevents notification fatigue.
   implementation constraint, not a balance knob.
 - Multiplayer: one shared player faction means one goodwill number per NPC faction,
   seen by both players and actionable by either — accepted as design, not arbitrated
-  ([Quests](QUESTS.md#player-information-and-agency)). Every write is a synced command and
-  every tunable ships as a Def rather than a mod setting.
+  ([Quests](QUESTS.md#player-information-and-agency)). Every player act on a relationship
+  is a synced command, and every tunable ships as a Def rather than a mod setting.
 
 ## Open questions
 
-- [Multi-faction goodwill writes and the political ripple](https://github.com/cjd721/Rimworld-Archinity/issues/90)
-  — what carries NPC↔NPC writes and the two propagations.
-- [The faction demand](https://github.com/cjd721/Rimworld-Archinity/issues/91) — the
-  ask, the deadline, the consequence, and moving a second faction on resolution.
-- [The ally-aid battle at a world tile](https://github.com/cjd721/Rimworld-Archinity/issues/92)
-  — the world object, resolution in absentia, and the attendance path.
-- [Standing as a content gate](https://github.com/cjd721/Rimworld-Archinity/issues/93)
-  — whether standing can gate content at all, and on which surfaces.
-- [A caravan near a settlement meets it](https://github.com/cjd721/Rimworld-Archinity/issues/136)
-  — proximity encounters, attack or trade by relation.
+- **The ripple, the demand, the ally-aid battle, the standing gate and caravan
+  encounters are answered** ([#90](https://github.com/cjd721/Rimworld-Archinity/issues/90),
+  [#91](https://github.com/cjd721/Rimworld-Archinity/issues/91),
+  [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92),
+  [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93),
+  [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136)) in
+  [`docs/specs/POLITICS.md`](../specs/POLITICS.md) and
+  [`docs/specs/TERRITORY.md`](../specs/TERRITORY.md) § *The build* › 1.
 - Threat pressure — raid strength, composition and frequency — is
   [difficulty and pursuit](PRESSURE.md), not this document. Glitterites use
   [Trace](GLITTERTECH.md#trace--the-glitterites-learn-you-back).

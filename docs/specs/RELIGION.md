@@ -2,32 +2,17 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** In this project, **the Church** means the
-> Roman-Catholic-like external faction produced by transforming the vanilla Empire
-> wholesale. **The player faith** is the colony's player-chosen ideology with campaign
-> roles and precepts baked in. They are not the same ideology or institution. The prior
-> selections that create a second Church faction, make the player faith become the
-> Church's doctrine, give one founder a Church leader seat, or store separate Church
-> tolerance/threat state are superseded. Global Reverence drives the Church's political
-> reaction. The capability evidence below remains useful, but those builds must be
-> reselected against the corrected requirements.
-
-> **Correction — 2026-09-16, [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123).**
-> **There is no Church suspicion.** The requirement withdrew it: before betrayal the Church's
-> hostility is ordinary Goodwill, and betrayal is an authored, final act at a Global Reverence
-> threshold. Its latch keeps a route [#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)
-> route A already named: one stored bit, read by a `GoodwillSituationWorker` that caps Church goodwill
-> at −100 once set — §6's verified engine facts, without the Reverence curves — or VFED's latch if VFED
-> ships. Every mention below of the suspicion worker, its cap or its curves, wherever it appears, is
-> withdrawn evidence, kept for its engine facts. Do not build it.
-
 How the religious systems in [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md)
-will be built. This document owns six behaviours end to end:
+will be built. The Church is the transformed Empire; the player faith is the colony's own
+ideology; they never merge. Global Reverence drives the Church's political reaction only through
+betrayal's threshold: before betrayal the Church's hostility is ordinary Goodwill, and there is no
+suspicion, tolerance or threat state ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)).
+This document owns six behaviours end to end:
 
 - **Reverence** — the number, the events that move it, the decay that pulls it back, the bands,
   and the surfaces the player reads it on.
 - **Exaltation and the sacred titles** — the Church (Royalty's Empire, transformed in place), its
-  rising scale, the thresholds that confer permanent titles by rite, the privileges those titles
+  rising scale, the thresholds that confer permanent titles by the bestowing ceremony, the privileges those titles
   unlock, and the Church's permanent hostility at betrayal
   ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53)).
 - **The player faith's role hierarchy** — founder-special seats, several core-disciple
@@ -51,24 +36,23 @@ refuses the founding action until Reverence is high enough, and draws the thresh
 reached, is [`POLITICS.md`](POLITICS.md) § *Standing as a content gate* — **this document consumes
 that gate and does not restate it**, for every Reverence- and Exaltation-gated action alike.
 
-It does not own **Reverence as a storyteller attention
-weight** ([#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)), **vassalage and
-revolt** ([#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)), or the **shape of
-the political surface** ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)) —
-this document says what must be drawn and where the draw call goes, #61 decides what window
-it lives in. It does not own **Influence and Intel**
+It does not own **Reverence as a storyteller attention weight** ([`PRESSURE.md`](PRESSURE.md)
+§ *The build*) or **what a vassal is** ([`TERRITORY.md`](TERRITORY.md)); revolt is § *Revolt*
+here. The **shape of the political surface** is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s
+(routes on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)) — this document says
+what must be drawn and where the draw call goes. It does not own **Influence and Intel**
 ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), whose spec is
 [`CURRENCIES.md`](CURRENCIES.md)) or **Glitterite Trace**
 ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)).
 
 Goodwill and the political ripple are [`POLITICS.md`](POLITICS.md)'s. The two systems are
-separate axes by requirement; whether they couple is an open decision, below.
+separate axes by requirement; how Reverence scales Goodwill is § *Reverence scales the Goodwill a
+faction gains*.
 
 It does not own the **Devotion alignment rule** — what makes a willing sacrifice count as
-aligned with the founder's claimed Self — nor **which pawns are founders**. Both are
-requirements, and [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) owns the
-first by its own body — its routes are § *Founders*. This document states what the commitment build needs from each and
-nothing more.
+aligned with the founder's claimed Self — nor **which pawns are founders**. The alignment rule is
+[`plot/ENDING.md`](../plot/ENDING.md) § *The Alignment Rule*, and what makes a giver willing is
+#119's; the founder routes are § *Founders*.
 
 ## The build — Reverence
 
@@ -103,13 +87,13 @@ ever had a non-zero value:
 | `float value` | the number the requirement calls "57 out of 100" |
 | `float sustain` | institutional resistance to decay — **written by *[The build — religious institutions inside foreign factions](#the-build--religious-institutions-inside-foreign-factions)* below, read here**. That section also nests a `List<Institution>` beside it and recomputes this field from it; nothing else about this record or the decay changes |
 | `int decayTimer` | the neglect counter, on `Faction.naturalGoodwillTimer`'s pattern [V] |
-| `ReverenceBandDef lastBand` | the band as of the last crossing, so a change can be announced once |
+| `ReverenceBandDef lastBand` | the Reverence band as of the last crossing, so a change can be announced once |
 
 **A list, not a `Dictionary<Faction, float>`, and the reason is determinism.** Vanilla does
 ship the dictionary form — `HistoryEventsManager` holds
 `Dictionary<Faction, DefMap<HistoryEventDef, HistoryEventRecords>>` and scribes it with
 `Scribe_Collections.Look(…, LookMode.Reference, LookMode.Deep, …)` [V], which is a better
-precedent than the VFED `Dictionary<Site, …>` the earlier draft cited. But vanilla only ever
+precedent than VFED's `Dictionary<Site, …>`. But vanilla only ever
 iterates it to prune. Our decay pass iterates to *simulate* and can send letters, and
 [`POLITICS.md`](POLITICS.md) § *Persistence and multiplayer* already forbids iterating a
 `Dictionary` or `HashSet` of factions to drive simulation. A list is insertion-ordered and
@@ -117,7 +101,7 @@ costs nothing at this scale.
 
 **Global Reverence is derived, never stored.** It is a function of the records — planetary
 adoption weighted however the requirement eventually says — computed when it is drawn or when
-the global band is checked. No second number to keep in sync, no second thing to scribe.
+the global Reverence band is checked. No second number to keep in sync, no second thing to scribe.
 
 ### 2. Persistence
 
@@ -132,10 +116,10 @@ contain [V]. The component initialises with an empty record list, which is the c
 starting state.
 
 `FinalizeInit(fromLoad: true)` prunes records whose `faction` resolved to null — a faction
-removed through `FactionManager.toRemove`. **What *should* happen to a removed faction's
-Reverence is a requirements question**, handed to
-[#97](https://github.com/cjd721/Rimworld-Archinity/issues/97); pruning is the safe default
-until it answers.
+removed through `FactionManager.toRemove`; nothing can read such a record afterwards.
+Capability: a permanently hostile faction's record simply persists; keep and zero are field
+writes; a removed faction's record is pruned. Choice:
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 
 ### 3. What changes it
 
@@ -184,8 +168,8 @@ the map raises the same hook), and respect
 `member.mindState.AvailableForGoodwillReward` — `Find.TickManager.TicksGame >= noAidRelationsGainUntilTick`
 — which is vanilla's existing anti-farming gate applied inside this very method.
 
-**There is no caravan escape path.** An earlier draft claimed a converted pawn leaving inside a
-player caravan bypasses the hook. It does not [V]: both caravan branches re-enter with the flag
+**There is no caravan escape path.** A converted pawn leaving inside a player caravan still
+reaches the hook [V]: both caravan branches re-enter with the flag
 off — `ExitMapAndJoinOrCreateCaravan` does `caravan.AddPawn(pawn, true); pawn.ExitMap(false, exitDir)`,
 and `ExitMapAndCreateCaravan` passes `addToWorldPawnsIfNotAlready: false` — so `IsWorldPawn()`
 is false on re-entry and the full body runs through to `Notify_MemberExitedMap`. The only branch
@@ -257,7 +241,7 @@ polymorphic `List<VisibilityEffect> specialEffects` resolved in `PostLoad`. `Rev
 is the same object with a `FloatRange`, a label, a description of what the band enables and
 risks, and a `List<ReverenceEffect>`. The ladder is data; only the effect workers are C#.
 
-A band crossing announces itself with a `ChoiceLetter` subclass — VFED's
+A Reverence band crossing announces itself with a `ChoiceLetter` subclass — VFED's
 `Letter_VisibilityChange` is the shipped precedent [V], and its
 `Utilities.ChangeVisibility` → `Notify_VisibilityChanged` → recompute band → send letter
 sequence is the whole pipeline in one method.
@@ -271,7 +255,7 @@ This is the in-game Factions tab row — icon, name, leader, info-card button, i
 goodwill number with its relation-kind label, the natural-goodwill column, the enemy-faction
 strip [V]. Full geometry is in
 [`docs/engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md) § *Two faction UIs*.
-Three facts govern the design, and an earlier draft of this section had two of them backwards:
+Three facts govern the design:
 
 - **There is no vertical slack in the goodwill columns.** The two labels are drawn into 80px
   rects at `rowY - 10` and `rowY + 10` with `TextAnchor.MiddleCenter`, so their glyphs land at
@@ -288,15 +272,15 @@ Three facts govern the design, and an earlier draft of this section had two of t
   replicate the `ModsConfig.IdeologyActive && !Find.IdeoManager.classicMode` branch that zeroes
   the ideo column.
 
-**So D1 is a real but crowded option, not the free win it was written as.** It ships Reverence
+**So D1 is a real but crowded option, not a free win.** It ships Reverence
 on vanilla's own surface with no new window, at the price of negotiating a strip with up to
 three other patches and re-checking geometry each RimWorld update. The tooltip, built in the
 same method, is uncontested and can carry the band and recent contributions cheaply.
 
-**This strengthens rather than weakens the case for
-[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61).** A political tab of our own owns
-its layout, has no conflict surface and no update tax. D1 is the interim display; #61's surface
-is the destination, and the choice is now a real trade rather than a formality.
+**A political tab of our own is the other side of that trade.** It owns its layout, has no
+conflict surface and no update tax. The choice between D1 and a surface of our own is a real
+trade rather than a formality; the surface is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s
+(routes on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)).
 
 **The faction info card is not an option** [V]. `StatsReportUtility.StatsToDraw(Faction)` yields
 exactly one description entry, and the rest comes from
@@ -332,8 +316,8 @@ building against from the start.
 
 **D3 — the Global Reverence view.** The number is derived (above) and the band letter (§5) is
 the change announcement. The *view* — one political tab or several surfaces, and where it hangs
-— is [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s to decide; it is a live
-ticket with this exact question in its body. The donor for a global meter reached from the comms
+— is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s (routes on
+[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)). The donor for a global meter reached from the comms
 console is VFED's `WorldComponent_Deserters`, which implements `ICommunicable` and pairs with a
 `Dialog_NodeTreeWithFactionInfoAndVisibility` [V].
 
@@ -341,15 +325,15 @@ console is VFED's `WorldComponent_Deserters`, which implements `ICommunicable` a
 
 | Piece | Cost |
 |---|---|
-| Store, decay, band lookup, query API | **New C#** — one `WorldComponent`, ~120 lines |
+| Store, decay, Reverence band lookup, query API | **New C#** — one `WorldComponent`, ~120 lines |
 | Band ladder, per-event amounts, decay rate | **XML** — two new Def types |
 | Apostle hook | **Patch** — 1 Harmony postfix, ~25 lines |
 | Quest / deed route | **New C#** — `QuestPart` + `QuestNode` (+ `Reward`), ~70 lines |
 | Reverence beside Goodwill | **Patch** — 1 Harmony postfix, ~50 lines, and a contested row (D1) |
 | Visible diplomatic gate | **Patch** — 1 Harmony postfix, ~40 lines |
 | Band-change letter | **New C#** — one `ChoiceLetter` subclass, ~20 lines |
-| Global Reverence view | **#61** — the surface, not the number |
-| Storyteller attention weight | **#60** — one `StorytellerComp` subclass per behaviour |
+| Global Reverence view | **#119** — the surface, not the number (routes on #61) |
+| Storyteller attention weight | **`PRESSURE.md`** § *The build* — one `StorytellerComp` subclass per behaviour |
 
 **Aggregate: two new Def types, three Harmony postfixes, one `WorldComponent`, one
 `QuestPart`/`QuestNode` pair, ~300–350 lines of C# in the existing `ArchinityAltar.dll`.** No
@@ -361,7 +345,7 @@ new assembly — `Archinity.Altar` already ships a Harmony instance and referenc
 applying its own hardcoded lerp, with every endpoint constant compiled in [V]. There is no
 generic "Def field = weight curve keyed on a custom stat" mechanism to borrow. Budget one
 subclass per storyteller behaviour Reverence is meant to move; that is
-[#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)'s to price.
+[`PRESSURE.md`](PRESSURE.md) § *The build*'s to price.
 
 ## Reverence scales the Goodwill a faction gains
 
@@ -369,23 +353,24 @@ subclass per storyteller behaviour Reverence is meant to move; that is
 
 This section answers the last paragraph of [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md) § *Reverence — Religious Penetration, Not Goodwill++*. Goodwill gain is not independent of Reverence:
 
-- At low Goodwill and substantial Reverence, positive changes are **reduced**.
-- At extreme Reverence, positive changes **accelerate sharply**.
+- At low Goodwill and substantial Reverence, positive changes are **reduced** and negative ones deepen.
+- At extreme Reverence, positive changes **accelerate sharply** and negative ones soften.
+- **Losses scale as well as gains**, and a faction the colony cannot hold Reverence with is exempt, the Church among them ([#176](https://github.com/cjd721/Rimworld-Archinity/issues/176)). Scaling losses moves the comms-console ask prices.
 
-The section lives here because the input is the Reverence ledger (§ *The build — Reverence* §1). The goodwill pipeline it acts on is [`POLITICS.md`](POLITICS.md)'s, which this section cites rather than restates. The curve is balance and belongs to [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). Which gains count is a requirement (#97 open questions 1–3). This section keeps that choice open and does not make it. Capability: [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160).
+The section lives here because the input is the Reverence ledger (§ *The build — Reverence* §1). The goodwill pipeline it acts on is [`POLITICS.md`](POLITICS.md)'s, which this section cites rather than restates. The curve is balance and belongs to [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). Which reasons count, and whether the player sees the scaling as its own line (A vs A2), are #119's, per the requirement (#176). Capability: [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160).
 
 ### Verdict
 
-- **Possible? Yes.** Every goodwill change during play passes one method, with its reason in scope. Scaling positive gains per faction is one Harmony prefix there, a shape a shipped mod already uses.
+- **Possible? Yes.** Every goodwill change during play passes one method, with its reason and its sign in scope. Scaling gains and losses per faction is one Harmony prefix there, a shape a shipped mod already uses (it rewrites both signs).
 - **Multiplayer? Yes.** Multiplayer syncs no goodwill. The scaler runs inside the simulated action that caused the change, on both clients. It must read only scribed state (Reverence, Goodwill), with no `Rand`, no `ModSettings` (T-18) and no draw-time cache (T-20).
 
 ### Routes
 
 | Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
 |---|---|---|---|---|---|
-| A — reason-aware scaler at the choke point | Every positive gain from any source is scaled per faction; which reasons count is XML; the landed number is reported | our code, prefix on `Faction.TryAffectGoodwillWith` (seam proven by RimPacts `Patch_RptGoodwill`) | C# patch + XML | Medium | Yes |
+| A — reason-aware scaler at the choke point | Every gain and loss from any source is scaled per faction; which reasons count is XML; the landed number is reported | our code, prefix on `Faction.TryAffectGoodwillWith` (seam proven by RimPacts `Patch_RptGoodwill`) | C# patch + XML | Medium | Yes |
 | A2 — A, with the difference paid as its own named change | As A, plus a per-change reason line in the message and in the Recent-events tooltip | our code, A plus a guarded second write | C# patch + XML | Medium | Yes |
-| B — scale vanilla's adjuster | Every positive player-pair gain is scaled; two previews agree for free; **reason-blind** | our code, postfix on `Faction.CalculateAdjustedGoodwillChange` | C# patch | Medium | Yes, if pure |
+| B — scale vanilla's adjuster | Every player-pair change is scaled; the release preview and the comms-console ask labels agree for free; **reason-blind** | our code, postfix on `Faction.CalculateAdjustedGoodwillChange` | C# patch | Medium | Yes, if pure |
 | C — scale at each source | Only opted-in gains are scaled; preview equals payment | our code, at our own quest parts / VEF `DoImpact` override, plus per-source postfixes on vanilla calculators | C# (+ patches) | Medium → Hard | Yes, if pure |
 | D — Reverence as natural goodwill — *partial, not recommended alone* | Drift toward a Reverence baseline; gains toward it get at most ×1.25; **cannot reduce a gain** | our `GoodwillSituationWorker` | C# worker + XML | Medium | Yes |
 | E — a ceiling in place of damping — *partial* | The wary band is a hard cap, not a reduction; no acceleration | our `GoodwillSituationWorker.GetMaxGoodwill` | C# worker + XML | Medium | Yes |
@@ -394,7 +379,7 @@ The section lives here because the input is the Reverence ledger (§ *The build 
 
 **What it gets us:**
 
-- Positive gains scaled by a curve on (Reverence, Goodwill), per faction, from every source that crosses `TryAffectGoodwillWith`: quests, gifts, released prisoners, trade, peace talks, rituals, drift, and our own ripple and demand writes.
+- Gains and losses scaled by a curve on (Reverence, Goodwill), per faction, from every source that crosses `TryAffectGoodwillWith`: quests, gifts, released prisoners, trade, peace talks, rituals, drift, comms-console asks, and our own ripple and demand writes.
 - An XML list (or a `DefModExtension` on each `HistoryEventDef`) of the reasons that count. Exempting drift, the ripple or particular factions is a data change.
 - The message *"changed from A to B (reason)"* and the goodwill tooltip's *Recent events* both report the landed number.
 
@@ -403,7 +388,7 @@ The section lives here because the input is the Reverence ledger (§ *The build 
 - See writes that bypass the method. During play, those are RimPacts `SetGoodwillDirect`, Rim War's war and alliance declarations, and Faction Customizer's editor.
 - Identify null-reason changes. These include FT&V's invasion reward, its vassalisation refund, and VEF's "set goodwill to X" deltas.
 - Explain why a gain was scaled.
-- Correct the previews that show the requested amount: gift dialog, quest reward stack, PeaceTalks letter, VEF's delayed-impact letter. These are already off today by vanilla's 25% rule.
+- Correct the previews that show the requested amount: gift dialog, quest reward stack, PeaceTalks letter, VEF's delayed-impact letter, and — once losses scale — the comms-console ask labels. The first four are already off today by vanilla's 25% rule.
 
 **Consequences:**
 
@@ -411,7 +396,7 @@ The section lives here because the input is the Reverence ledger (§ *The build 
 - A null-reason policy is owed.
 - It coexists with RimPacts' own prefix by Harmony priority, if RimPacts ships.
 - `POLITICS.md`'s *do not postfix `TryAffectGoodwillWith`* warning does not bite, because a prefix that only rewrites the amount does not re-enter.
-- [V] on the seam, the reason argument and the RimPacts precedent (which rewrites amounts but does not scale gains by reason); [I] that they compose.
+- [V] on the seam (it sees both signs), the reason argument and the RimPacts precedent (which rewrites amounts of both signs but does not scale gains by reason); [I] that they compose, including the scaling of losses.
 
 #### A2 — the difference as its own named change
 
@@ -423,20 +408,20 @@ The section lives here because the input is the Reverence ledger (§ *The build 
 
 - Two messages per affected gain.
 - The second write re-enters `TryAffectGoodwillWith` and needs a guard on its own reason.
-- The choice between A and A2 is a requirement for Conrad, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (first asked as #97's question 5; #97 is closed).
+- The choice between A and A2 is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s, per the requirement (#176).
 
 #### B — scale vanilla's adjuster
 
 **What it gets us:**
 
 - The lightest seam: `CalculateAdjustedGoodwillChange` is vanilla's own magnitude step, and nothing in the corpus patches it.
-- The prisoner-release preview (`ITab_Pawn_Visitor`) already calls it, so it agrees automatically. The comms-console ask costs (`FactionDialogMaker`) call it too, but they are negative changes, which no route here scales.
+- The prisoner-release preview (`ITab_Pawn_Visitor`) already calls it, so it agrees automatically. The comms-console ask costs (`FactionDialogMaker`) call it too: once losses scale (#176), B keeps the ask labels right, while A and A2 leave them stale, like the gift and reward previews.
 
 **What it cannot do:** see the reason. It knows only the sign, the faction and current goodwill.
 
 **Consequences:**
 
-- **It forecloses #119's choice of which gains count.** Not recommended unless #119 selects "every positive change".
+- **It forecloses #119's choice of which reasons count.** Not recommended unless #119 selects "every change".
 - It runs from draw code, so it must be a pure function.
 
 #### C — scale at each source
@@ -469,7 +454,7 @@ The section lives here because the input is the Reverence ledger (§ *The build 
 - Reduce a positive gain.
 - Accelerate one "sharply".
 
-**Consequences:** **T-115** discards it under any VEF storyteller that sets `storytellerThreat`. This is the mechanism the specs named before #160; it moves the baseline, as #97 found.
+**Consequences:** **T-115** discards it under any VEF storyteller that sets `storytellerThreat`. This is the mechanism the specs named before #160; it moves the baseline, as #97 (closed; answered by #160/#176) found.
 
 #### E — a ceiling in place of damping (partial)
 
@@ -481,9 +466,9 @@ The section lives here because the input is the Reverence ledger (§ *The build 
 
 #### Recommendation — not a selection
 
-**A.** It is the only route that covers every source and keeps #119's choice of which gains count as data.
+**A.** It is the only route that covers every source and keeps #119's choice of which reasons count as data.
 
-- Add **A2** if Conrad rules that per-change attribution is required.
+- Add **A2** if #119 wants per-change attribution.
 - **C's** calculators can later make particular previews tell the truth, for sources excluded from A.
 
 ### Constraints
@@ -497,7 +482,7 @@ The section lives here because the input is the Reverence ledger (§ *The build 
   - VFED's Deserters postfix on `CanChangeGoodwillFor`.
 - **The landed amount can differ from the requested one.** It is ×1.25 on the part moving toward natural (a change moving away, or between NPCs, is untouched), × any scaler, clamped to ±100. The Recent-events record stores it before the clamp.
 - **Orientation.** The player may be either operand, and NPC↔NPC changes cross the same method. A scaler filters to player pairs.
-- **Refunds and set-to deltas are positive changes with a null reason.** Examples are FT&V's vassalisation rollback and VEF's scenario and new-faction goodwill. A positive-gain scaler turns a refund into a net change.
+- **Refunds and set-to deltas are positive changes with a null reason.** Examples are FT&V's vassalisation rollback and VEF's scenario and new-faction goodwill. A scaled cost with a separately scaled refund leaves a net change in either direction.
 - **T-115** (D), **T-83** (D, E) and **T-84** (`PreceptComp_GoodwillSituation` is inert, so it is not a route).
 
 ### Available mechanisms
@@ -535,19 +520,19 @@ The section lives here because the input is the Reverence ledger (§ *The build 
 - Every route's composition is [I].
 - **Two claims are superseded:**
   - The old "no verified route" (#97).
-  - § *Three corrections* 2's pointer to the situation worker as the coupling mechanism. That mechanism is route D, which is partial.
+  - § *Two corrections to inherited claims* 2's pointer to the situation worker as the coupling mechanism. That mechanism is route D, which is partial.
 
 ### Open questions
 
 | Question | Owner |
 |---|---|
 | Route selection; the curve and band numbers | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
-| Which positive changes count; whether negatives are touched | Conrad, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (first asked as #97's questions 1–2; #97 is closed) |
-| Per-change attribution required (A vs A2) | Conrad, via #2 (#97 question 5); the surface is unowned (#61 is closed) |
-| Exempt factions: the Church before betrayal, the Schism, same-faith factions, Glitterites | Conrad, via #2 (#97 questions 2–3) |
-| Null-reason policy; exempting refunds and set-to deltas | build, next map |
+| Whether negatives are touched | answered — losses scale ([#176](https://github.com/cjd721/Rimworld-Archinity/issues/176)) |
+| Which reasons count; per-change attribution (A vs A2) and its surface | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119), per the requirement (#176) |
+| Exempt factions | answered — a faction the colony cannot hold Reverence with, the Church among them (#176); residual cases (the Schism; Glitterites hold no Reverence) are #119's |
+| Null-reason policy; exempting refunds and set-to deltas | build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
 | Harmony ordering against RimPacts' prefix | only if RimPacts ships ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)) |
-| Whether RimPacts' and Rim War's direct writes ever touch the player pair [I] | unowned; matters only if either ships |
+| Whether RimPacts' and Rim War's direct writes ever touch the player pair [I] | a check, only if either ships ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)) |
 | Two-client smoke test | [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16) |
 
 ## The build — Exaltation: the Empire becomes the Church in place
@@ -556,15 +541,14 @@ The section lives here because the input is the Reverence ledger (§ *The build 
 reads, what the faction believes, and how it feels about the founders.** The Church keeps defName
 `Empire`, `categoryTag Empire` and `royalTitleTags EmpireTitle`, and every `RoyalTitleDef`,
 `RoyalTitlePermitDef`, `PawnKindDef` and `TraderKindDef` keeps its defName. What changes is labels,
-names, doctrine and appearance, plus one ~30-line `GoodwillSituationWorker` that makes the Church's
-temper a function of Global Reverence.
+names, doctrine and appearance, plus betrayal's permanent-hostility latch (§6). Before betrayal
+the Church's temper is ordinary Goodwill.
 
-**Cost: XML, ~30 lines of C#, zero Harmony patches, no new saved state, no new Def type**
-([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), reopened and re-resolved
-2026-09-15). The earlier build instanced a second Church faction beside an untouched Empire. The
-campaign has withdrawn it (§ *Authority correction*), and its §-numbered pieces are gone from this
-document. The two patches it needed, the permits-card seed and the bestowing-quest suppressor, are
-**deleted**, not ported (§4, §7).
+**Cost: XML, one small `GoodwillSituationWorker` and one saved bit for betrayal, zero Harmony
+patches, no new Def type** ([#53](https://github.com/cjd721/Rimworld-Archinity/issues/53),
+reopened and re-resolved 2026-09-15; [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)).
+Because the Church is the Empire transformed, no permits-card seed and no bestowing-quest
+suppressor is needed (§4, §7).
 
 ### 1. Why every identifier stays — the transformation is a presentation layer
 
@@ -597,8 +581,8 @@ breakage.
 - **Doctrine — the Church's Roman-Catholic-like creed.** `requiredMemes`, `allowedMemes`,
   `disallowedPrecepts` and `structureMemeWeights` are replaced; `fixedIdeo` / `ideoName` /
   `deityPresets` are added if the creed is to be authored rather than generated. These are NPC-only
-  fields funnelled through `FactionGenerator.CreateFactionAndAddToManager` (§ *Superseded build —
-  replacing the player faith* §1 [V]). ⚠ Vanilla Ideology Expanded — Memes and Structures
+  fields funnelled through `FactionGenerator.CreateFactionAndAddToManager`
+  ([`docs/engine/ideology.md`](../engine/ideology.md) § *Moving a pawn's ideology* [V]). ⚠ Vanilla Ideology Expanded — Memes and Structures
   **appends** to `allowedMemes` and `structureMemeWeights` [V]. A Replace discards those additions,
   which is intended here, but only if our patch runs after theirs (**T-02**, **T-05**). The other
   non-list patchers: Vanilla Psycasts Expanded **replaces `pawnGroupMakers`** to add `Empire_Caster_*`
@@ -680,26 +664,27 @@ directly, and the 37,500-tick scan re-arms it [V]. `QuestNode_Root_BestowingCere
 Its `RitualOutcomeEffectWorker_Bestowing.Apply` calls `TryUpdateTitle` and adds `honorFromQuality`
 favour for spectators [V].
 
-Under the second-faction build this was imperial content firing on a Church ladder, and it needed a
-suppressor. **Under this build it is literally the requirement** — *"at Exaltation thresholds, the
+**It is literally the requirement** — *"at Exaltation thresholds, the
 founders perform a rite and receive the next sacred title"* — with a Church bestower and a Church
 honour guard. **Zero code.**
 
 ⚠ **But the same `Apply` grants psylinks, and the requirement forbids it.** It loops
 `target.ChangePsylinkLevel(1)` from the current level up to `GetMaxPsylinkLevelByTitle()` [V].
 `maxPsylinkLevel` is 1–6 on Yeoman → Count, and 6 on the abstract `BaseEmpireTitleNPC`, which the
-four non-awardable titles inherit [V]. `docs/requirements/ALTAR.md`
-says the psychic ladder is measured *"independently of Church titles"*, and RELIGION's requirement
-says titles are *"institutional standing, not psychic power"*. **Set `maxPsylinkLevel` to 0 on every
-Church title** — seven XML replaces: six concrete titles and the NPC base. Left alone, the ceremony silently hands out psylinks as title
+four non-awardable titles inherit [V]. The requirement says **Church titles never grant
+psylinks** ([`requirements/RELIGION.md`](../requirements/RELIGION.md) § *Saved state and remaining
+work*). **Set `maxPsylinkLevel` to 0 on every Church title** — seven XML replaces: six concrete titles and the NPC base. Left alone, the ceremony silently hands out psylinks as title
 perks. The same field makes `PawnGenerator` give NPC title-holders psylinks [V], so zeroing it also
 makes generated Church nobles non-casters; see § *Outstanding decisions* 20. Vanilla Psycasts
 Expanded transpiles `RitualOutcomeEffectWorker_Bestowing.Apply` to call its own
 `ApplyTitlePsylink`, which also reads `newTitle.maxPsylinkLevel` [V] — so zeroing the field covers the
 VPE path too; only its `pawn.Psycasts() == null` branch still grants one base level via
-`ChangePsylinkLevel(pawn, 1)` before adding `max − old` (0) [V], which the STUB below must check.
+`ChangePsylinkLevel(pawn, 1)` before adding `max − old` (0) [V], which the STUB below must check —
+including an android honoree, where the same branch throws a `NullReferenceException` and zeroing
+`maxPsylinkLevel` does not avoid it ([`ANDROIDS.md`](ANDROIDS.md) § *Psylinks* › *Constraints*;
+[`PSYCHIC.md`](PSYCHIC.md) R9).
 
-**The alternative, if the fiction rejects an arriving bestower.** The founders run their own rite:
+**The alternative, if the fiction rejects an arriving bestower.** The founders run their own title ceremony:
 a `RitualOutcomeEffectWorker` calling `TryUpdateTitle` (~20 lines), plus a prefix on
 `RoyalTitleUtility.GenerateBestowingCeremonyQuest` that refuses (~15 lines — the one chokepoint both
 callers reach [V]). What separates the two is fiction alone: a Medieval-presented Church arriving
@@ -713,12 +698,12 @@ multiplayer*).
 
 This answers the requirement in [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md) § *The Church Path*: *"Credit is chosen when the quest is accepted."* When the player accepts a public deed, they choose who gets the credit: the Church (Exaltation), the founders (Reverence) or, once the founders work with the Schism, the Schism (Influence). Some options mix rewards. The answer comes from [Credit for a deed, chosen with the quest's reward](https://github.com/cjd721/Rimworld-Archinity/issues/135).
 
-This section owns the **choice**: how options are offered, drawn, resolved and synced. It does not own the numbers the rewards move. Reverence is *The build — Reverence* §3B. Influence is [`CURRENCIES.md`](CURRENCIES.md) *Credit A*, and spending it is [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132). Exaltation is §4 above. What each player sees is [#125](https://github.com/cjd721/Rimworld-Archinity/issues/125).
+This section owns the **choice**: how options are offered, drawn, resolved and synced. It does not own the numbers the rewards move. Reverence is *The build — Reverence* §3B. Influence is [`CURRENCIES.md`](CURRENCIES.md) *Credit A*, and spending it is [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132). Exaltation is §4 above. What each player sees is Multiplayer's and playtesting's ([#125](https://github.com/cjd721/Rimworld-Archinity/issues/125), closed).
 
 ##### Verdict
 
 - **Possible? Yes.** Vanilla's quest window already makes choosing the reward the act of accepting [V]. Custom rewards inside an option, several rewards in one option, and options that appear only under a condition are all shipped by corpus mods or by vanilla [V]. **Limit:** the condition is read when the quest is **generated**, not when it is accepted [V].
-- **Multiplayer? Yes.** `Quest.Accept` and Multiplayer's `PatchQuestChoices.Choose` are registered sync methods [V]. **Unknown:** two players clicking different options almost at once. The code path is [V]; the outcome needs a RUN, handed to [#125](https://github.com/cjd721/Rimworld-Archinity/issues/125).
+- **Multiplayer? Yes.** `Quest.Accept` and Multiplayer's `PatchQuestChoices.Choose` are registered sync methods [V]. **Unknown:** two players clicking different options almost at once. The code path is [V]; the outcome needs a RUN, owned by [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16).
 
 ##### Routes
 
@@ -746,8 +731,8 @@ This section owns the **choice**: how options are offered, drawn, resolved and s
 
 *Consequences*
 - The same shape serves `POLITICS.md`'s paired rival demands [I].
-- **For [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134):** a requirement-to-accept inside one option gates every option (Constraints).
-- **Commitment timing moves to [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132).** Reward parts fire on the quest's completion signal [V], so choosing the Schism option commits nothing until the deed is done, unless a part listens for acceptance [I].
+- **For founder gates** (§ *Founders* › *Constraints*): a requirement-to-accept inside one option gates every option (Constraints).
+- **Commitment timing.** The commitment act is answered: the first Influence gained ([#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)). Reward parts fire on the quest's completion signal [V], so choosing the Schism option commits nothing until the deed is done, unless a part listens for acceptance [I]; whether the payment lands at acceptance or completion is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 **B — patch the reward generator**
 
@@ -763,7 +748,7 @@ This section owns the **choice**: how options are offered, drawn, resolved and s
 *Consequences*
 - **It runs on third-party quests** and must be ordered against VFE Empire's and VFE Classical's `DoGenerate` patches [I].
 
-**Recommendation (not a selection).** **Route A** answers the requirement as written, on a shape two corpus mods ship. **B** is additive, worth taking only if every faction quest, not just authored deeds, must offer founder credit. That scope is an open requirement below. **C** is the free baseline.
+**Recommendation (not a selection).** **Route A** answers the requirement as written, on a shape two corpus mods ship. **B** is additive, worth taking only if every faction quest, not just authored deeds, must offer founder credit. **C** is the free baseline.
 
 ##### Constraints
 
@@ -798,10 +783,10 @@ READ. The mechanisms are [V]; the claim that they compose into the credit choice
 
 ##### Open questions
 
-- **Requirement, for [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132):** is "working with the Schism" judged when the offer is generated (what the engine does), or live until acceptance? And does choosing the Schism option commit the founders, or completing the deed?
-- **Requirement, for [#125](https://github.com/cjd721/Rimworld-Archinity/issues/125):** who chooses in co-op. **RUN:** two clients click different "Accept for:" rows on one quest within one tick window. Observe which option survives, whether the log shows an exception, and whether a desync is reported.
-- **Requirement, for [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134):** founder attendance tied to one credit option cannot use a quest-wide acceptance requirement.
-- **Requirement, unowned (Conrad):** are public deeds authored quests only (A), or every faction quest (A + B)?
+- **"Working with the Schism"** is judged at generation (engine, [V] *Constraints*); a live option is a build item for [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). **The commitment act** is answered ([#132](https://github.com/cjd721/Rimworld-Archinity/issues/132): the first Influence gained); whether the payment lands at acceptance or completion is #119's.
+- **RUN, [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16):** two clients click different "Accept for:" rows on one quest within one tick window. Observe which option survives, whether the log shows an exception, and whether a desync is reported. (Either player may accept for both — [#125](https://github.com/cjd721/Rimworld-Archinity/issues/125).)
+- **Founder attendance** tied to one credit option cannot use a quest-wide acceptance requirement (§ *Founders* › *Constraints*).
+- **How far founder credit reaches.** Capability: route A reaches every deed written for it; A + B also reaches every quest whose rewards come from `QuestGen_Rewards.GiveRewards`.
 - **Build, next map:** the node's XML surface; `Reward_Reverence` / `Reward_Currency` pricing and stack elements; a live Schism option; B's rule for which option gains credit and its ordering against VFE Empire and VFE Classical; paying Exaltation to the Church from a non-Church deed.
 
 #### Decrees — what failing one costs, set per decree
@@ -839,7 +824,7 @@ This answers [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md) § *
 - **Resize vanilla's ramp in XML.** The curve is a `private static readonly` field of `Thought_DecreeUnmet` [V].
 
 *Consequences*
-- **A Goodwill cost can make the Church hostile without betrayal.** `TryAffectGoodwillWith` flips Hostile at ≤ −75, and B then halts decrees. The requirement says only betrayal is final (Open questions).
+- **A Goodwill cost can make the Church hostile without betrayal.** `TryAffectGoodwillWith` flips Hostile at ≤ −75, and B then halts decrees (requirement: decrees stop while the Church is hostile).
 - **The four vanilla decrees keep their mood-only cost** unless patched the same way. That is a `PatchOperation` on each `Decree_*` script, same nodes.
 
 **B — decrees end with the Church**
@@ -892,9 +877,9 @@ READ. The mechanisms are [V]; that they compose into per-decree costs and a host
 
 ##### Open questions
 
-- **Requirement, unowned (Conrad):** *"the Church lays obligations on titled colonists"* — vanilla's decree is the titled colonist's demand on the colony, raised by their own breakdown. Is that the fiction, or must the Church issue them (route D)?
-- **Requirement, unowned (Conrad):** may a decree's Goodwill cost push the Church hostile short of betrayal, and if so do decrees pause or end?
-- **Requirement, balance:** which cost each decree carries, and its size; whether the deadline becomes a hard failure.
+- **Who issues decrees** (*"the Church lays obligations on titled colonists"*). Capability: a titled colonist's breakdown (vanilla), or route D — `decreeMtbDays` on Church titles (XML) or our trigger calling `IssueDecree` (C#). Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+- **Decrees under hostility.** Stated by the requirement ([`requirements/RELIGION.md`](../requirements/RELIGION.md) § *The Church Path — Exaltation and Titles*): no decree while the Church is hostile, and running decrees stop when it turns hostile — route B. Capability for what follows: B alone lets decrees return with peace [I]; gating the same `QuestNode_CannotRun` on a stored flag ends them for good [I].
+- **Balance:** which cost each decree carries, and its size, are numbers. A hard-failure deadline is route A's.
 - **Build, next map:** a Church decree catalogue; the `decreeTags` value; whether the four vanilla decrees are re-costed or withheld from Church titles; how a pending bestowing ceremony behaves when favour drops back below its rung [unverified].
 
 ### 5. Privileges — native now, and trade is already one of them
@@ -903,12 +888,11 @@ READ. The mechanisms are [V]; that they compose into per-decree costs and a host
   become Church privileges by relabelling. New privileges are `RoyalTitlePermitDef`s with
   `<faction>Empire</faction>` and a `minTitle` in the existing ladder — a native fit, where the old
   build needed a copy. **VFE Empire's 29 `VFEI_` permits are usable as-is** if VFE Empire ships.
-  The earlier draft said they could only be imitated, which was true of a second faction only.
   `RoyalAid`'s fields are `favorCost`, `points`, `overrideAcceptableTemperatureRange`, `pawnCount`,
   `pawnKindDef`, `targetingRange`, `targetingRequireLOS`, `aidDurationDays`, `radius`,
   `intervalTicks`, `explosionCount`, `warmupTicks`, `explosionRadiusRange` and `itemsToDrop` [V,
   #168].
-- **Title-gated trade already exists, and an earlier draft called it inert.** All three Empire trader
+- **Title-gated trade already exists.** All three Empire trader
   kinds carry `permitRequiredForTrading` — `Base_Empire_Standard → TradeSettlement`,
   `Empire_Caravan_TraderGeneral → TradeCaravan`, `Orbital_Empire → TradeOrbital` [V].
   `TraderKindDef.TitleRequiredToTrade` resolves that to the lowest title granting the permit —
@@ -921,400 +905,76 @@ READ. The mechanisms are [V]; that they compose into per-decree costs and a host
   rejects any faction `HostileTo` the pawn's** [V]. **So Church trade — including the trader half of
   every Empire techprint route — is title-gated for free, and closed outright when the Church is
   hostile.** That is the
-  requirement's *"titles unlock acquisition routes"*. The earlier claim that those three permits are
-  inert (no `<faction>`, no worker) was true only of a Church *copy*.
+  requirement's *"titles unlock acquisition routes"*.
 - **Safe passage and political privileges — answered by the requirement
   ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)).** Political privileges are
   the permits above, authored for flavour; nothing more is asked. Safe passage is not a title perk
   but every faction's settlement encounter — [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136),
   landing in `POLITICS.md`.
 
-### 6. Suspicion and hostility — derived from Global Reverence, never stored
+### 6. Betrayal — the permanent-hostility latch
 
-> **Withdrawn — [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123).** The requirement
-> has no suspicion; see the correction at the top of this document. Kept for the reasoning and its
-> engine facts — don't act on it.
+Betrayal is an authored, final act at a Global Reverence threshold; before it, the Church's
+hostility is ordinary Goodwill, and there is no suspicion stat
+([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)). The latch that makes betrayal
+permanent has two routes, both named on #123; selection is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s:
 
-**Mechanism.** One `GoodwillSituationDef` in XML, whose `workerClass` is a new
-`GoodwillSituationWorker_ChurchSuspicion : GoodwillSituationWorker`. It overrides
-`GetMaxGoodwill(Faction other)` and `GetNaturalGoodwillOffset(Faction other)` [V — both `virtual`,
-defaults 100 and 0], and returns non-defaults only when `other == Faction.OfEmpire`. Both values
-come from **derived** Global Reverence (*The build — Reverence* §1) through two `SimpleCurve`s on
-the def's mod extension (**T-18**: never a setting).
+- **One stored bit, read by a goodwill worker** ([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)
+  route A). One `GoodwillSituationDef` in XML whose `workerClass` is our
+  `GoodwillSituationWorker` subclass. It overrides `GetMaxGoodwill(Faction other)` [V — `virtual`,
+  default 100] and returns −100 when `other == Faction.OfEmpire` and the betrayal bit is set.
+- **VFED's latch**, if VFED ships.
 
-**Why that produces hostility** [V]:
+**Why the cap produces hostility** [V]:
 
 - `GoodwillSituationManager.GoodwillManagerTick` runs `RecalculateAll` every 1,000 ticks.
 - Each recalculation calls `Faction.OfPlayer.Notify_GoodwillSituationsChanged(other, canSendHostilityLetter: true)`,
   which runs `FactionRelation.CheckKindThresholds`.
 - `Faction.GoodwillWith` returns `Mathf.Min(baseGoodwill, GetMaxGoodwill(…))` for the player pair.
-- So a cap at or below −75 **makes the Church hostile** (`CheckKindThresholds`: `goodwill <= -75`), with vanilla's hostility letter. It returns to neutral only when effective goodwill reaches **≥ 0** [V].
-- `NaturalGoodwill` meanwhile moves the ±50 drift band `CheckReachNaturalGoodwill` pulls toward.
+- So a cap at or below −75 **makes the Church hostile** (`CheckKindThresholds`: `goodwill <= -75`),
+  with vanilla's hostility letter. A −100 cap sits below that threshold, so while the bit is set the
+  flip is permanent by construction.
+- Ordinary hostility returns to neutral when effective goodwill reaches **≥ 0** [V] — which is why
+  betrayal needs the stored bit: without it, gifts and peace talks would undo it.
 
-Broad penetration therefore makes the Church progressively colder, then hostile — the requirement's
-*"progressively more hostile until betrayal or open attack"*. Betrayal and open attack as *authored
-scenes* are plot content, not this build.
+**State: one bit.** `GoodwillSituationManager.cachedData` is an unscribed cache [V]; the bit is the
+only saved state.
 
-**State: none.** `GoodwillSituationManager.cachedData` is an unscribed cache [V], and Global
-Reverence is derived.
-
-⚠ **Every Reverence write must call `Find.GoodwillSituationManager.RecalculateAll(canSendHostilityChangedLetter: true)`.**
+⚠ **The write that sets the betrayal bit must call `Find.GoodwillSituationManager.RecalculateAll(canSendHostilityChangedLetter: true)`.**
 The cache is refreshed by `RecalculateAll` only from the 1,000-tick `GoodwillManagerTick`,
 `GravshipUtility` and `SettlementUtility` [V]; otherwise `GetSituations` fills a missing entry lazily —
 including from `FactionUIUtility`'s draw — and then runs `CheckHostilityChanged` [V]. So the host's
-cached cap can lag live Reverence by up to 1,000 ticks, while a client that joins inside that window
-builds its cache from live Reverence and computes a different `GoodwillWith` (mechanism [V]; desync
-[I]). Recalculating on write keeps the cache a pure function of synced state. ~2 lines in the
-Reverence component's setter; still no saved state. **Display: free.** `FactionUIUtility` lists every situation from `GetSituations`
-in the faction row [V], and overriding `GetPostProcessedLabel` names the reason.
+cached cap can lag the bit by up to 1,000 ticks, while a client that joins inside that window
+builds its cache from the live bit and computes a different `GoodwillWith` (mechanism [V]; desync
+[I]). Recalculating on write keeps the cache a pure function of synced state. **Display: free.**
+`FactionUIUtility` lists every situation from `GetSituations` in the faction row [V], and
+overriding `GetPostProcessedLabel` names the reason.
 
 ⚠ **Do not use `GoodwillSituationDef.baseMaxGoodwill`** — nothing reads it (**T-83**). The worker
 override is the only route.
-
-⚠ **The cap is not memory.** `baseGoodwill` keeps accumulating under the clamp [V]. If Global
-Reverence falls, the cap lifts and the Church is instantly as warm as its base allows. Whether
-suspicion ratchets is a requirement, and a ratchet needs one stored high-water mark;
-§ *Outstanding decisions* 11.
 
 ### 7. Cost
 
 | Piece | Cost |
 |---|---|
 | Church presentation and doctrine on `FactionDef[defName="Empire"]` | **XML** — ~15 field operations + 2 `RulePackDef`s |
-| `permanentEnemyToEveryoneExcept` | **XML** — `PatchOperationAdd` only; entries are a fiction call (decision 19) |
+| `permanentEnemyToEveryoneExcept` | **XML** — `PatchOperationAdd` only; entries per decision 19 |
 | Title, permit and pawn-kind relabels | **XML** — 11 titles, 16 vanilla permits (+29 `VFEI_` if shipped), the `Empire_*` kinds |
 | Keyed strings hardcoding "honor" | **XML** — 6 keys; backstories optional |
 | `maxPsylinkLevel` → 0 on Church titles | **XML** — 7 replaces (§4) |
 | WTL roster exemption | **XML** — ~8 lines, unconditional (§3) |
-| Exaltation, quest rewards, the rite, gizmo, character card | **Nothing** — vanilla |
+| Exaltation, quest rewards, the bestowing ceremony, gizmo, character card | **Nothing** — vanilla |
 | Title-gated trade | **Nothing** — vanilla (§5) |
-| Church suspicion | **Withdrawn** ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)) — was one `GoodwillSituationWorker`, ~30 lines |
-| Betrayal's permanent hostility | **New C# + one saved bit** — a `GoodwillSituationWorker` capping at −100 once betrayed (§6's facts; #130 route A), or VFED's latch if VFED ships. Unpriced in lines |
+| Betrayal's permanent hostility | **New C# + one saved bit** — a `GoodwillSituationWorker` capping at −100 once betrayed (§6; #130 route A), or VFED's latch if VFED ships; selection #119. Unpriced in lines |
 | Permits-card seed (**T-35**) | **Deleted** — `Faction.OfEmpire` always exists |
-| Bestowing-quest suppressor | **Deleted** — the ceremony is the Church's rite (alternative in §4: ~35 lines) |
-| Royal Ascent ending | **XML** — strip the storyteller comp (decision 18, [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)) |
+| Bestowing-quest suppressor | **Deleted** — the bestowing ceremony is the Church's title ceremony (alternative in §4: ~35 lines) |
+| The Church's ending | **XML** — Royal Ascent's own shape: a T2 refiring quest (`StorytellerComp_RefiringUniqueQuest`, [`ENCOUNTERS.md`](ENCOUNTERS.md) T2, Multiplayer "with work") gated on the top title (`QuestNode_HasRoyalTitleInCurrentFaction`) and on not-betrayed / not-revealed, closing on the betrayal bit or `faction.BecameHostileToPlayer` → `QuestNode_End`; vanilla's Royal Ascent comp stripped ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123); decision 18). Selection #119 |
 | Safe passage, political privileges | **Answered** — privileges are §5's permits; safe passage is [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136) (decision 10) |
 
 **Aggregate: zero Harmony patches, one small goodwill-situation worker and one saved bit for
 betrayal (#123), no new Def type.** Decrees are XML plus the Church-faction node — §4 *Decrees* ([#137](https://github.com/cjd721/Rimworld-Archinity/issues/137)). The XML is mostly *authoring* — names, creed, catalogue — and none of it waits on
 mechanism.
-
-## Superseded build — replacing the player faith with Church doctrine
-
-**Mid-game ideology conversion of the player faction is not merely possible — it is what
-vanilla does on its own.** `RimWorld.FactionIdeosTracker.RecalculateIdeosBasedOnPlayerPawns`
-recomputes the player faction's `primaryIdeo` from live free-colonist ideo counts, on every
-member gain or loss and on every colonist ideo change [V]. So the campaign does not need a
-mechanism that *moves* the ideology. It needs a rite that moves it **deliberately**, and a
-record saying it did.
-
-The build is one ritual outcome worker, one `RoleRequirement` subclass, two `PreceptDef`s
-and three scribed fields. No Harmony patch, no new Def type, no new saved collection.
-
-### 1. The rite — one `RitualOutcomeEffectWorker` subclass
-
-On a good outcome the worker does three things, in order:
-
-1. `pawn.ideo.SetIdeo(churchFaction.ideos.PrimaryIdeo)` for each founder in the rite's roles.
-   `RimWorld.Pawn_IdeoTracker.SetIdeo(Ideo)` is public and accepts **any** `Ideo` — it performs
-   no `IdeoManager` membership check of its own, so passing an unregistered `Ideo` is our
-   responsibility, not the engine's. Its one refusal is a **baby early-return** [V], which is
-   irrelevant to a founder but would matter if the rite were ever opened to the colony at large.
-2. Writes the commitment record (§2).
-3. `Precept_Role.Assign(founder, addThoughts: true)` for the leader and preacher rungs.
-   `RimWorld.Precept_Role.Assign(Pawn, bool)` is public abstract, concrete on
-   `Precept_RoleSingle` [V].
-
-**Everything downstream of step 1 is vanilla's, unpatched** [V]:
-
-- `SetIdeo` calls `pawn.Faction.ideos.Notify_ColonistChangedIdeo()` for a player-faction
-  member, which calls `RecalculateIdeosBasedOnPlayerPawns()`.
-- That method promotes the new plurality, sends `LetterLabelNewPrimaryIdeo` /
-  `LetterNewPrimaryIdeo`, calls `Ideo.Notify_NotPrimaryAnymore` on the old primary, and
-  rebuilds `ideosMinor` from scratch.
-- `SetIdeo` itself already unclaims an ideologically forbidden bed, strips forbidden
-  bonds with a letter, dirties situational thoughts, re-evaluates needs, apparel and
-  temporary abilities, and files a `HistoryEventDefOf.ChangedIdeo` event.
-
-**A colonist holding an NPC faction's `Ideo` is an ordinary state, not an exotic one.**
-`RimWorld.InteractionWorker_ConvertIdeoAttempt.ConversionSelectionFactor` weights an
-`NPC_Free → Colonist` conversion at 0.5 [V] — vanilla preachers do this to colonies every
-playthrough.
-
-**The nearest shipped donor performs this exact sequence mid-game, inside a synced command.**
-`Multiplayer.Client.Factions.FactionCreator.CreateFaction` is a `[SyncMethod]` that runs
-while a game is in progress and calls `IdeoGenerator.GenerateIdeo(…)`,
-`Find.IdeoManager.Add(ideo)`, `faction.ideos.SetPrimary(ideo)` and then
-`startingPawn.ideo.SetIdeo(faction.ideos.PrimaryIdeo)` for every pawn [V]. The mechanism is
-not theoretical; a mod we already ship drives it.
-
-⚠ **State the precedent's limit with it.** `CreateFaction` runs that sequence on a **brand-new
-faction with freshly generated pawns**, not on an established colony changing its mind [V]. What
-it proves is that the four calls compose and survive `[SyncMethod]` serialisation mid-game. What
-it does not prove is the part our rite actually does: `SetIdeo` onto founders who already hold an
-ideology, already have beds, bonds, apparel and thoughts bound to it, inside a colony whose
-believer counts then drive `RecalculateIdeosBasedOnPlayerPawns`. That composition is the [I] this
-capability carries, and § *Verification* names the observation that closes it.
-
-**The Church's doctrine is authored in XML and costs nothing.** `FactionDef` carries
-`fixedIdeo`, `ideoName`, `ideoDescription`, `forcedMemes`, `requiredMemes`,
-`disallowedMemes`, `deityPresets`, `styles`, `hiddenIdeo` and `requiredPreceptsOnly`, and
-`RimWorld.FactionGenerator.CreateFactionAndAddToManager` funnels all of them into
-`IdeoGenerationParms(fixedIdeo: true)` → `FactionIdeosTracker.ChooseOrGenerateIdeo` →
-`IdeoGenerator.MakeFixedIdeo` [V]. Those fields are **NPC-only** — `Page_ChooseIdeoPreset.PostOpen`
-applies them inside `if (allFaction != Faction.OfPlayer && …)` [V] — which is exactly why the
-*player's* starting ideology needs the `.rid` route and the Church's does not.
-
-### 2. State and persistence — three fields, and why none of it is derivable
-
-⚠ **`founder.Ideo == churchFaction.ideos.PrimaryIdeo` is not proof of a commitment.**
-`InteractionWorker_ConvertIdeoAttempt.Interacted` → `Pawn_IdeoTracker.IdeoConversionAttempt`
-converts any colonist whose `Certainty` reaches zero, and certainty decays on
-`ConversionTuning.CertaintyPerDayByMoodCurve` [V]. A visiting Church preacher can walk a
-founder through the one-way door by accident. Vanilla *does* announce it —
-`LetterLabelConvertIdeoAttempt_Success` [V] — so it is loud, but the **resulting state is
-identical to the deliberate act**, and no campaign gate may read it as consent.
-
-Three fields on the religion `WorldComponent` (§ *The build — Reverence* §1's component;
-if that component is ever split, these follow religion state):
-
-| Field | Purpose |
-|---|---|
-| `Ideo committedIdeo` | `Scribe_References.Look` — `Ideo` is `ILoadReferenceable`, `GetUniqueLoadID() => "Ideo_" + id` [V] |
-| `int commitmentTick` | when the rite completed; `-1` means never |
-| `List<Pawn> committedFounders` | `Scribe_References.Look`, `LookMode.Reference` |
-
-**The ideology itself needs no new persistence at all.** `Pawn_IdeoTracker.ideo` and
-`FactionIdeosTracker.primaryIdeo` are both already `Scribe_References.Look` [V]. Adding the
-three fields to a save that predates them is a no-op: they read as null, `-1` and empty,
-which is the correct "not committed" state, on the backfill path already verified in
-§ *The build — Reverence* §2.
-
-### 3. What changes it — the rite, and one thing vanilla will undo behind you
-
-The rite is the only writer.
-
-⚠ **Do not also call `FactionIdeosTracker.SetPrimary` to force the promotion.** It is a bare
-field write with no guard [V], and on the *player* faction the value is recomputed by
-`RecalculateIdeosBasedOnPlayerPawns` on the next colonist gain, loss, death or conversion —
-so a forced primary with fewer believers than the standing plurality is silently overwritten.
-On **NPC** factions the same call is durable, because `Notify_MemberGainedOrLost` early-returns
-unless `faction.IsPlayer` [V]. Vanilla's own use in `Page_ChooseIdeoPreset.AssignIdeoToPlayer`
-is safe only because it runs at worldgen, where the recalculation early-returns on
-`Current.ProgramState != ProgramState.Playing` [V].
-
-**This is a design constraint, not a trap, and the distinction was audited.** An earlier draft
-proposed it for `docs/TRAPS.md`. It does not qualify: the revert is **not silent**.
-`RecalculateIdeosBasedOnPlayerPawns` sends `LetterLabelNewPrimaryIdeo` /
-`LetterNewPrimaryIdeo` whenever it promotes an ideo that differs from the standing
-`primaryIdeo` [V] — and a forced primary being overwritten by the standing plurality is exactly
-that case, so the overwrite announces itself in a letter. It fails the register's silent-failure
-bar and no ID is allocated. The behaviour stays documented **here**, because it still forbids a
-call the build would otherwise be tempted to make.
-
-⚠ **The plurality gate is real, and it is the design's price rather than a defect.**
-The promotion test is `num > tmpPlayerIdeos.TryGetValue(primaryIdeo, 0)` — **strictly
-greater** free-colonist believer count [V]. Two founders in a two-pawn colony flip the
-primary; two founders in a ten-colonist colony do not.
-[`ENDING.md`](../plot/ENDING.md) § *The Alignment Rule* already states that the Church route
-costs the player their own religion, and the plurality gate is that sentence expressed as
-arithmetic. **Do not engineer around it.**
-
-### 4. The roles — and the requirement is wrong twice
-
-> **Superseded selection.** These roles belong to the **player faith**, not the Church.
-> The required shape is one or two founder-specific seats, several multi-holder
-> preacher/converter seats for core disciples, at least one production specialist, and
-> campaign-time role unlocks. The role mechanics collected below are inputs to the new
-> capability ticket [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114); the
-> single-leader/single-preacher build is not selected.
-
-[`docs/requirements/RELIGION.md`](../requirements/RELIGION.md) asserts *"the two founding
-pawns are mechanically forced into the ideology's defining leader/preacher roles."*
-Neither half holds as written.
-
-**A. The preacher role cannot activate in a two-founder colony.** Vanilla's moral guide,
-`IdeoRole_Moralist`, inherits `activationBelieverCount: 3` / `deactivationBelieverCount: 1`
-from the abstract `PreceptRoleSingleBase` in
-`common/RimWorld/Data/Ideology/Defs/PreceptDefs/Precepts_Role.xml` [V].
-`Precept_RoleSingle.RecacheActivity` gates on
-`colonistBelieverCountCached >= def.activationBelieverCount || def.leaderRole`, and
-`Ideo.RecacheColonistBelieverCount` counts **free colonists only**, excluding slaves, quest
-lodgers **and pawns in cryptosleep** [V] — the last of which matters for a campaign that will
-put founders under for a transit. There is **no primary-ideo escape hatch**: three lines away in the same
-class, `Ideo.ObligationsActive` *does* have one (`return Faction.OfPlayer.ideos.IsPrimary(this);`)
-[V], and the role path deliberately does not. With two believers the preacher role is
-inactive, and if assigned it is unassigned on the next recache.
-
-The leader role is fine. `IdeoRole_Leader` carries `leaderRole: true`, which short-circuits
-the count on **both** the activation and the deactivation branch [V]. `Precept_RoleSingle.Assign`
-additionally sets `Faction.OfPlayer.leader = p` and unassigns every other leader role across
-`Faction.OfPlayer.ideos.AllIdeos` [V] — so seating a founder as the Church ideology's leader
-also makes them the colony's diplomatic face, for free.
-
-**Fix: ship our own two `PreceptDef`s** with `activationBelieverCount: 1`. **Do not
-`PatchOperation` vanilla's `IdeoRole_Moralist`** — it is the moral guide for every ideology in
-the game, NPC ones included.
-
-⚠ **And the two roles do not take the same class.** The leader precept is
-`ParentName="PreceptRoleSingleBase"`: one shared player faction has exactly one
-`Faction.OfPlayer.leader`, `leaderRole: true` is what sets it, and one holder is the right
-answer. **The preacher precept is `Precept_RoleMulti`**, and this reverses an earlier draft.
-Under one shared player faction (`docs/engine/determinism.md` § *Presentational separation*) there are two colonies; a `Precept_RoleSingle` preacher
-seats exactly one founder and leaves the other colony without one, permanently.
-`Precept_RoleMulti.Assign` is uncapped [V], which is the whole reason closed #10 recommended
-authoring our own role precepts as `RoleMulti` in the first place — a recommendation this
-document previously recorded as *falsified*, and then built against its opposite.
-
-**A `RoleMulti` preacher has no activation gate** [V, [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114)].
-`Precept_RoleMulti.Init` sets `active = true` and `RecacheActivity` never reads
-`activationBelieverCount`; the field on a `RoleMulti` def is inert and misleads the tooltip, so
-leave it unset.
-
-**B. "Forced" has no vanilla mechanism, but it has a cheap XML-shaped one.**
-`Precept_Role.Assign` is a free player action from the ideo UI and nothing pins a pawn.
-`RimWorld.RoleRequirement` is a **four**-member abstract — an earlier draft said three — with
-`abstract bool Met(Pawn p, Precept_Role role)` and a `virtual GetLabel(Precept_Role)` [V, #114], selected per role in XML as
-`<li Class="…">` [V].
-`VanillaMemesExpanded` ships five subclasses of it in its 1.6 assembly —
-`RoleRequirement_BestCrafter`, `_BestPsycaster`, `_HighestTitle`, `_NoTitles`,
-`_BestFighter` [V] — so it is a live 1.6 extension point; `RoleRequirement_BestCrafter.Met`
-is eight lines.
-
-One `RoleRequirement_Founder` makes the founders the **only eligible pawns**, and the rite
-seats them. That is the honest reading of "forced": the player may leave the seat empty but
-cannot give it to anyone else.
-
-> **Rejected: a Harmony prefix on `Precept_RoleSingle.Assign` refusing `null`.** It makes a
-> visible UI button silently do nothing, which is precisely what `CODING_STANDARDS.md`
-> § *Silent failures* exists to prevent.
-
-**Founder identity is an open parameter, not a blank — and it now has a carrier.**
-[`TRANSCENDENCE.md`](TRANSCENDENCE.md) § *The store* rule 1 makes `CompFounderRecord`, on the
-`Archinity_FounderRecord` hediff, **the** store for founder state, and forbids a second one;
-[`ALTAR.md`](ALTAR.md) already extends that comp with a field of its own. So
-`RoleRequirement_Founder.Met` should read `CompFounderRecord` — one `TryGetComp` on a comp that
-already travels with the pawn, is already scribed and is already MP-serialisable — rather than
-introducing a private `GeneDef` / `XenotypeDef` predicate here. **This document does not edit
-either of those specs and claims nothing in them**; it states where the answer lives.
-
-Archinity expresses founder-ness genetically today —
-`Archinity.Altar/Defs/GenePoolDefs/GenePool_Archite.xml`'s `<founderOnlyGenes>` is `Deathless`
-and `Ageless`, and the founders are the `Archinity_ArchonianSanguophage` xenotype in
-`Archinity.Origins/Defs/XenotypeDefs/Xenotypes_Archinity.xml`. That is an implementation
-accident standing in for a requirement. **Which predicate defines a founder is still a
-requirement and no open ticket owns it** — *Outstanding decisions* 13; what has changed is that
-the mechanism no longer has to wait on it, because the comp is the carrier whatever the
-predicate turns out to be.
-
-⚠ **A ritual role may gate on any `PreceptDef`, and an earlier draft of this section turned
-vanilla's habit into an engine constraint.**
-
-What vanilla *does* is narrow, and that part holds: the only role precepts any shipped ritual
-behaviour references are `IdeoRole_Moralist` and `IdeoRole_Leader`, and both derive from
-`PreceptRoleSingleBase` [V]. The count was wrong — **`<precept>` appears 11 times** in
-`Ideology/Defs/Rituals/Ritual_Behaviors.xml`, five naming `IdeoRole_Moralist` and six naming
-`IdeoRole_Leader` [V], not the "exactly twice" an earlier draft asserted and marked [V]. The
-roster of two is right; the count of two was a miscount.
-
-**What vanilla does is not what the engine allows.** `RitualRole.precept` is a bare
-`PreceptDef` field, and `AppliesToRole` tests `p.Ideo.GetRole(p).def == precept` [V]. Nothing
-on that path restricts the precept to `Precept_RoleSingle`, so a ritual role gating on a
-`Precept_RoleMulti` we author is ordinary, not exotic. Vanilla's choice of two single-holder
-roles is content, not a rule we inherit.
-
-**So the final altar rite inherits neither the single-holder constraint nor §4A's three-believer
-threshold.** (The Exaltation rite is now vanilla's bestowing ceremony — § *The build — Exaltation*
-§4. Its participants are the quest's bestower and title-holder, not role precepts, so neither
-constraint reaches it either [I].) The altar rite inherits whatever our own role precepts say — which, for the preacher rung, is `Precept_RoleMulti` with
-`activationBelieverCount: 1` (§4A). Wherever this document previously propagated the
-single-holder constraint to those rites, it was importing a claim that had already been
-withdrawn; see § *Status* → *The commitment*.
-
-### 5. Where the player sees it — almost entirely vanilla's
-
-| Surface | Source | Evidence |
-|---|---|---|
-| "Your colony's primary ideoligion is now X" | `RecalculateIdeosBasedOnPlayerPawns` → `LetterLabelNewPrimaryIdeo` | [V] — free |
-| "X is now the Y", with a sound, per role seated | `Precept_Role.Notify_PawnAssigned` → `Messages.Message("MessageRoleAssigned"…)` + `SoundDefOf.Quest_Succeded` | [V] — free |
-| The colony's ideoligions, precepts and role slots with their holders | `MainTabWindow_Ideos` / `IdeoUIUtility` | [V] — free |
-| The founder's ideo plate on the character card | `CharacterCardUtility.DoTopStack` | [V] — free. MP's `CharacterCardUtilityDontDrawIdeoPlate` suppresses it **only** when `Multiplayer.Client != null && generating`, i.e. on the pawn-config page, never in play [V] |
-| The rite's outcome letter | our worker, on `RitualOutcomeEffectWorker_RoleChange`'s shape — it composes the outcome letter, then calls `Unassign`/`Assign` on a good result [V] | [V] on the donor |
-| The door *before* it is walked through | the Church quest chain, or the `FactionDialogMaker` gate already specified for Reverence (D2) | — |
-
-**This capability needs nothing from [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61).**
-Every readout above is a vanilla surface we do not patch, which is the opposite of Reverence's
-position and worth saying plainly.
-
-### 6. The alternative build, and the one line of vanilla that separates them
-
-`RimWorld.IdeoDevelopmentUtility.ApplyChangesToIdeo(Ideo ideo, Ideo newIdeo)` is **public
-static** and overwrites `ideo` **in place** from `newIdeo` — foundation, culture, memes, the
-whole precept list rebuilt through `PreceptMaker.MakePrecept` + `Precept.CopyTo`, plus `name`,
-`memberName`, `leaderTitleMale`/`Female`, icon, colour and styles [V]. It preserves the `Ideo`
-**instance**, so every scribed reference on every pawn and faction stays valid, and it has no
-`Fluid` check of its own — `Fluid` gates `Dialog_ReformIdeo`, not the utility.
-`Multiplayer.Client.SyncMethods` already registers it with `.ExposeParameter(1)`, serialising
-the entire replacement ideology across the wire [V].
-
-That is a second, near-zero-code route: the colony's own ideology *becomes* the Church's
-doctrine with no pawn changing `Ideo` reference.
-
-**What separates the two is one line.** `RoleRequirement_SameIdeo.Met` is `p.Ideo == role.ideo`
-— **reference equality** [V]. Under `SetIdeo` the founders and the Church's NPC believers
-share one `Ideo` object and any "aligned" test is free. Under `ApplyChangesToIdeo` they hold
-two doctrinally identical but distinct objects, and the Devotion alignment rule then needs a
-doctrinal comparison nobody has specified.
-
-**Selected: nothing.** § *Status* says nothing in this document is an implementation
-commitment, and this section must say the same thing (`README.md` § *Verified is not
-selected*). An earlier draft wrote "Selected: `SetIdeo`" three screens below a Status section
-that contradicted it.
-
-**The build above is written against `SetIdeo`, and these are the reasons it is:** it is what
-[`ENDING.md`](../plot/ENDING.md) literally asks (*"become what the Church says they are"*), it
-makes Devotion alignment reference equality, it is what Multiplayer's own `FactionCreator`
-does mid-game, and it is what vanilla preachers already do to colonists.
-`ApplyChangesToIdeo` is the recorded alternative, taken **if**
-[#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) rules alignment doctrinal —
-*Outstanding decisions* 12. The commitment between the two is #49's to make, not this
-document's.
-
-⚠ **The selected route moves Reverence's referent.**
-`docs/requirements/RELIGION.md` says *"Reverence is tied to the player's actual ideology."*
-After the rite the player's primary ideology **is** the Church's, which the Church faction
-already follows completely — so a naive reading pins Church Reverence to its ceiling the
-instant the rite completes. Owner: [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97),
-whose existing question ("per (faction × ideo), or per faction against the player's current
-primary") is the same question. *Outstanding decisions* 14.
-
-**And the pin does not stay inside this document.** [`PRESSURE.md`](PRESSURE.md) § *The build*
-feeds **global Reverence** into the global threat scalar as one bounded contributor, and again
-into the `StorytellerComp.IncidentChanceFinal` selection weight — it names the Reverence term
-but not this event. So if the rite pins Church Reverence to its ceiling, it also moves raid
-magnitude and incident selection on the tick the rite completes, campaign-wide. That seam is
-named here so it is visible from this side; the direction and size of the response are
-[#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)'s, and what the pin itself should
-be is #97's.
-
-### Cost
-
-| Piece | Cost |
-|---|---|
-| The consecration rite | **New C#** — one `RitualOutcomeEffectWorker`, ~40 lines, plus the `RitualPatternDef` / `RitualBehaviorDef` / `RitualOutcomeEffectDef` trio in XML |
-| Founder-only role eligibility | **New C#** — one `RoleRequirement` subclass, ~10 lines, reading `CompFounderRecord` ([`TRANSCENDENCE.md`](TRANSCENDENCE.md)) rather than a predicate of its own |
-| The founders' leader role | **XML** — one `PreceptDef`, `ParentName="PreceptRoleSingleBase"`, `leaderRole: true`, `activationBelieverCount: 1` |
-| The founders' preacher role | **XML** — one `PreceptDef` on `Precept_RoleMulti`, so both colonies get a holder under one shared faction (§4A). No activation fields: a `RoleMulti` has no believer gate [V, #114] |
-| Commitment record | **New C#** — 3 fields and 3 `Scribe_*` lines on the religion `WorldComponent` |
-| The Church's doctrine | **XML** — `FactionDef.fixedIdeo` and companions, no code |
-| Announcement, role messages, ideo tab, character card | **Nothing** |
-| Multiplayer | **Nothing** — the rite is inside simulation and `Precept_Ritual.ShowRitualBeginWindow` is already registered [V] |
-| The alignment predicate | **[#49](https://github.com/cjd721/Rimworld-Archinity/issues/49)** — a requirement, not a mechanism |
-
-**Aggregate: ~55 lines of C# in the existing `ArchinityAltar.dll`, two `PreceptDef`s and one
-ritual def trio. No new saved collection, no new Def type, no Harmony patch.** This is
-cheaper than Exaltation, and for the same reason: we are not building a system, we are
-invoking one the DLC already ships.
 
 ## The player faith's role hierarchy — what the role system holds and how a seat arrives mid-campaign
 
@@ -1332,12 +992,8 @@ Penetration, Not Goodwill++*. That requirement asks for:
 Capability: [Player-faith role architecture and progressive unlocks](https://github.com/cjd721/Rimworld-Archinity/issues/114).
 The catalogue, names and milestones are
 [the role hierarchy](https://github.com/cjd721/Rimworld-Archinity/issues/116)'s. Who counts as a
-founder is [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)'s. The seats belong to
-the **player faith**, never the Church.
-
-§4 of the superseded build above collected role mechanics for a two-seat Church build. **Where
-§4 and this section disagree, this section is current.** In particular, `Precept_RoleMulti`
-has no believer-count gate (*Constraints*).
+founder is § *Founders* (selection [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
+The seats belong to the **player faith**, never the Church.
 
 ### Verdict
 
@@ -1507,7 +1163,7 @@ These bound every route. Each is [V] against `Assembly-CSharp.dll` 1.6.4871 unle
 - **Removing a role def later** drops the precept on load with *"Some ideoligion precepts were
   null after loading"* (`Ideo.ExposeData`).
 - **Never patch vanilla's `IdeoRole_Moralist` / `IdeoRole_Leader`**. They are in every ideology
-  on the planet (§4, above).
+  on the planet, NPC ones included.
 
 ### Available mechanisms
 
@@ -1546,14 +1202,14 @@ same-heap hits. It is recorded in the resolution comment on #114.
 
 ### Open questions
 
-- **Requirements, owner [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116):**
-  - Is a locked seat visible before it opens, or absent until then? (A against B.)
-  - Are unlocks campaign-driven or player-paced? (A/B against C.)
-  - May the player remove a seat, or leave a single-holder seat empty at a mood cost?
-  - A founder cannot hold a second seat's effects. Should founders count among the preachers
-    through the founder seat itself?
-  - One multi-holder founder seat, or two single-holder seats? Only a `leaderRole`
-    single-holder seat makes a founder the faction's diplomatic leader.
+- **The catalogue and its milestones** are
+  [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116)'s. Capability for each shape it
+  may take: a seat visible and locked before it opens (A) or absent until then (B); unlocks on the
+  campaign's schedule (A, B) or the player's (C); removal stopped by `canRemoveInUI false`, and an
+  empty single-holder seat costing mood unless the def turns `IdeoRoleEmpty` off; founder seats as
+  one multi-holder role or single-holder roles, where only a `leaderRole` single-holder seat makes a
+  founder the diplomatic leader. A founder holds one role only (*Constraints*), so preaching through
+  the founder seat means giving that seat the converter effects (`convertPowerFactor` is XML) [I].
 - **Build questions, owner: the next map
   ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)):**
   - where unlock state lives, and what reads it;
@@ -1742,9 +1398,8 @@ prisoner-status sweep and its attack-target-cache block run for any pair. Read `
 faction whose institutions move. This is the same discipline the apostle hook needs (*The build —
 Reverence* §3A) and for the same reason.
 
-⚠ **Guard on `Current.ProgramState == ProgramState.Playing`** — but not for the reason an earlier
-draft of this section gave. **It does *not* fire during world generation**, and saying so sent an
-implementer hunting a bug that cannot happen [V]:
+⚠ **Guard on `Current.ProgramState == ProgramState.Playing`** — but not because of world
+generation. **The hook does *not* fire during world generation** [V]:
 
 - `FactionGenerator.NewGeneratedFactionWithRelations` reaches `Faction.SetRelation(FactionRelation)`,
   which mutates `relations` directly.
@@ -1763,8 +1418,7 @@ is the window in which the component may not yet hold its records.
 
 ⚠ **And the vanilla body consults `ProgramState` three times, not once.** The first occurrence
 suppresses letters; a second brackets the prisoner-status sweep; a third `return`s before the
-attack-target-cache and lord block [V]. An earlier draft said the method used it *"only to suppress
-letters"*, which is true of the first line and false of the method.
+attack-target-cache and lord block [V].
 
 ### 5. Where the player sees it
 
@@ -1775,7 +1429,7 @@ Four surfaces, three of them free:
   [`requirements/RELIGION.md`](../requirements/RELIGION.md) § *Reverence — Religious Penetration,
   Not Goodwill++*, satisfied on vanilla's own surface.
 - **The founding and the suppression** — `ChoiceLetter`s, on the shapes above and on *The build —
-  Reverence* §5's band-change letter (VFED's `Letter_VisibilityChange` is the shipped precedent
+  Reverence* §5's Reverence band-change letter (VFED's `Letter_VisibilityChange` is the shipped precedent
   [V]).
 - **The standing state** — the faction row tooltip that *The build — Reverence* D1 already builds.
   Institutions belong in the tooltip rather than in the row: *"3 institutions, 2 suppressed;
@@ -1808,8 +1462,9 @@ Reverence decay"* — and the decay it counteracts is per faction.
 **So the recommendation is the ledger, with the comp available as a pure display adapter**: if the
 map presence is wanted, add the comp holding *nothing but a lookup* — read the ledger for
 `comp.parent.Faction`, print a line — and the ledger stays the single authority. That is the
-version to build if [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) or playtest says
-the institution needs to be somewhere the player can point at.
+version to build if the political surface ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s;
+routes on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)) or playtest says the
+institution needs to be somewhere the player can point at.
 
 ### Cost
 
@@ -1821,11 +1476,11 @@ the institution needs to be somewhere the player can point at.
 | The decay subtraction that consumes it | **Free** — [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) already built it |
 | The Reverence gate and the Goodwill price, shown before reached | **Free** — [`POLITICS.md`](POLITICS.md) § *Standing as a content gate* §3, on the postfix D2 already costs |
 | The founding action | **New C#**, ~35 lines, hosted on an MP-whitelisted type |
-| Suppression and restoration | **Patch** — 1 Harmony postfix on `Faction.Notify_RelationKindChanged`, **~55–60 lines** including both letters. The `…Multi` letter builder this transcribes is ~25 lines on its own and there are two edges; an earlier estimate of ~40 did not account for that |
+| Suppression and restoration | **Patch** — 1 Harmony postfix on `Faction.Notify_RelationKindChanged`, **~55–60 lines** including both letters. The `…Multi` letter builder this transcribes is ~25 lines on its own and there are two edges |
 | Institutions in the faction tooltip | **New C#**, ~10 lines, inside D1's existing tooltip |
 | World-map presence (§6) | **XML** — one `PatchOperationAdd` — plus ~25 lines, **only if taken** |
 | Multiplayer | **Free** — the comms click is already a synced command |
-| Every number | **Requirements / balance** — see *Outstanding decisions* |
+| Every number | **#119 (balance)** — see *Outstanding decisions* |
 
 **Aggregate: one new Def type, one Harmony postfix, ~125–130 lines of C# in the existing
 `ArchinityAltar.dll`, and no new component, no new world object and no new saved collection.** No
@@ -1851,12 +1506,13 @@ for it three times:
 This section owns **the mechanism that changes an NPC faction's faith and what happens to its people**.
 Everything else belongs elsewhere:
 
-- what Reverence then measures: [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97);
+- what Reverence then measures: capability in § B's Reverence bullets (per faction, or a fresh key
+  per faction and faith); choice [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119);
 - the revolt's outcome: [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131);
 - the Schism's reveal and ground: [#130](https://github.com/cjd721/Rimworld-Archinity/issues/130);
 - the trigger clock: [`WORLD-INFRASTRUCTURE.md`](WORLD-INFRASTRUCTURE.md) §3a and [`ERA.md`](ERA.md);
-- the player faction's own faith: § *Superseded build — replacing the player faith with Church
-  doctrine* §3, which still forbids `SetPrimary` on the player faction.
+- the player faction's own faith: [`docs/engine/ideology.md`](../engine/ideology.md) § *One field,
+  two lifecycles*, which forbids `SetPrimary` on the player faction.
 
 ### Verdict
 
@@ -1954,8 +1610,8 @@ Mechanisms [V]; that they compose into each route [I].
 - Move natural goodwill, which reads only the primary [V].
 
 **Consequences**
-- The share is **a second penetration measure beside Reverence**, the sharpest form of #97's question
-  [I].
+- The share is **a second penetration measure beside Reverence**, the sharpest form of the question
+  what Reverence measures after a faith change [I].
 
 #### D — rewrite in place (not recommended)
 
@@ -1981,7 +1637,7 @@ expresses a proportional revolt.
 
 ### Constraints
 
-- ⚠ **The orphaned faith** (proposed for `docs/TRAPS.md`). `IdeoManager.CanRemoveIdeo` is true when no
+- ⚠ **The orphaned faith** (**T-109**). `IdeoManager.CanRemoveIdeo` is true when no
   faction lists the `Ideo` and **no pawn on a map** holds it. World pawns and caravans do not count
   [V]. A holder's `Pawn.ExitMap` or `Pawn.Kill` queues the removal, and the next
   `IdeoManagerTick` → `IdeoManager.Remove` moves **every** holder in
@@ -2001,7 +1657,7 @@ expresses a proportional revolt.
   `IdeoGenerator.MakeFixedIdeo` sets `solid = true` and worldgen reuse skips solid faiths [V]. A
   generated Church faith is reusable by later compatible factions and by every hidden one. The same fact
   means the Schism never *reuses* a fixed Church faith and needs an explicit `SetPrimary` [V].
-- **Never `SetPrimary` the player faction** (§ *Superseded build* §3, `docs/engine/ideology.md`).
+- **Never `SetPrimary` the player faction** ([`docs/engine/ideology.md`](../engine/ideology.md) § *One field, two lifecycles*).
 
 ### Available mechanisms
 
@@ -2039,11 +1695,11 @@ Wide pass and validators are recorded on [#133](https://github.com/cjd721/Rimwor
 
 ### Open questions
 
-- **Requirement, unowned:** whether a converted faction's existing people believe differently, for the
-  Church's spread and the Schism. The statement came from closed
-  [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122).
-- **Requirement → [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97):** what Reverence
-  measures after a faith change, per route above.
+- **Whether a converted faction's existing people believe differently**, for the Church's spread and
+  the Schism. Capability: routes A (label only), B (label and people), C (mixed). Choice:
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+- **What Reverence measures after a faith change.** Capability: § B's Reverence bullets (per faction,
+  or a fresh key per faction and faith). Choice: #119.
 - **Build, next map:**
   - who counts as a member (`Faction` vs `HomeFaction`, the colony's prisoners and slaves, guests);
   - where each trigger lives;
@@ -2168,7 +1824,7 @@ Shapes A–C and deciders D–G combine; "both" is a fight route plus G.
 - the share that turns as a lever.
 
 **Cannot:**
-- **Use vanilla's part unchanged.** It generates a `temporary` second faction, so swap that piece or settle the requirement question below.
+- **Use vanilla's part unchanged.** It generates a `temporary` second faction, so swap that piece for an existing faction (*Open questions* 1).
 
 **Consequences:** copy Worksites' move, not its unscribed static gate and bare `Rand`.
 
@@ -2241,12 +1897,18 @@ Shapes A–C and deciders D–G combine; "both" is a fight route plus G.
 
 ### Open questions
 
-**Requirements**, to Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (§ *Revolt*'s owner #122 is closed):
-1. Does a quest-lifetime temporary faction break the no-new-faction rule?
-2. Are `permanentEnemy` factions eligible?
-3. What is "declined" when vanilla offers cannot be declined?
-4. Is the cooldown per faction or per revolt?
-5. "How much follows" divides only by settlements.
+**Capability, where the requirement's words meet the engine:**
+1. **The no-new-faction rule and temporary factions.** Every route here uses factions the world
+   already has; only F's vanilla part generates a `temporary` faction, and it can be swapped for an
+   existing one (F, *Constraints*).
+2. **`permanentEnemy` factions.** Either way is buildable: eligibility can exclude them by def, and
+   if included, O3 cannot apply and O2 needs a def swap (O1–O7).
+3. **"Declined".** Vanilla offers have no decline and *dismiss* only hides them; a decline control
+   is a build item (A, *Build*).
+4. **The thirty-day cooldown.** Per faction or per revolt are both buildable, from quest history or a
+   stored tick (A › *Consequences*).
+5. **"How much follows".** O4 divides by settlements; the people who follow divide by #133's C
+   (a share converts).
 
 **Build, next map:**
 - the hostile-settlement finder; the Goodwill-ceiling predicate; a decline control;
@@ -2272,7 +1934,7 @@ This section answers three linked requirements in
 - **§ *Revolt*, "A founder can never be given away"**: if founders cannot be reliably excluded, a revolt takes no pawns at all.
 - **[`CHARTING.md`](../requirements/CHARTING.md) § *Constraints*:** a beat that needs a founder present must declare that burden before the player commits.
 
-Both rest on a prior question this document's *Outstanding decisions* 13 left open: **by what routes the game can tell a founder from any other pawn, from the first day.**
+Both rest on a prior question this document's *Outstanding decisions* 13 recorded: **by what routes the game can tell a founder from any other pawn, from the first day.**
 
 This section owns the routes to all three. What it does **not** own:
 - **The founder's state.** That is [`TRANSCENDENCE.md`](TRANSCENDENCE.md) § *The store* (`CompFounderRecord`).
@@ -2326,7 +1988,7 @@ C4 is **not recommended**: gifting calls `SetFaction` after the trade has comple
 - **Identity from tick 0.** The scenario forces exactly two adult archonians among the starting pawns: `ScenPart_ConfigPage_ConfigureStartingPawns_Xenotypes.PostIdeoChosen` feeds `startingXenotypesRequired`, and `Page_ConfigureStartingPawns.ExtraCanDoNextReport` refuses any other count. [V] No convert exists at tick 0, so the xenotype is unambiguous then. The stamp freezes it. [I]
 - **Two hooks** run after the map exists in `Game.InitNewGame`: `Scenario.PostGameStart` → `ScenPart.PostGameStart` and `GameComponentUtility.StartedNewGame`. [V]
 - **A backfill source for existing saves.** Vanilla saves the pawns that actually started, in `GameInfo.startingAndOptionalPawns` (by reference, trimmed by `GameInitData.PrepForMapGen`), and reads it in play (`Pawn_InfectionVectorTracker`). [V] The xenotype read at backfill is safe only while no founder has been re-xenotyped. [I]
-- **One check for everything** — B1, B2, C1, C2, C3, `RoleRequirement_Founder` (§4B) and the altar — on a component `TRANSCENDENCE.md` already makes saved and MP-serialisable.
+- **One check for everything** — B1, B2, C1, C2, C3, a founder-only `RoleRequirement` (§ *The player faith's role hierarchy* › A) and the altar — on a component `TRANSCENDENCE.md` already makes saved and MP-serialisable.
 
 **What it cannot do**
 - **Be XML-only.** `ScenPart_ForcedHediff` tags every `PlayerStarter` pawn and has no xenotype filter. [V]
@@ -2372,7 +2034,7 @@ C4 is **not recommended**: gifting calls `SetFaction` after the trade has comple
 - **Change the refusal text.** It is fixed. [V]
 - **Enforce attendance after acceptance.**
 
-**Consequence — the Exaltation rite already has this shape.** The bestowing ceremony (§ *The build — Exaltation* §4) is generated for whichever pawn crossed the favour threshold: `Pawn_RoyaltyTracker` → `RoyalTitleUtility.GenerateBestowingCeremonyQuest(pawn, …)`, which sets slate `titleHolder`. [V] If only founders can hold titles (decision 9), every rite is already a founder-required beat, declared before acceptance.
+**Consequence — the bestowing ceremony already has this shape.** The ceremony (§ *The build — Exaltation* §4) is generated for whichever pawn crossed the favour threshold: `Pawn_RoyaltyTracker` → `RoyalTitleUtility.GenerateBestowingCeremonyQuest(pawn, …)`, which sets slate `titleHolder`. [V] If only founders hold titles (decision 9), every ceremony is already a founder-required beat, declared before acceptance.
 
 #### B2 — the founder as the accepter
 
@@ -2388,7 +2050,7 @@ C4 is **not recommended**: gifting calls `SetFaction` after the trade has comple
 
 **Consequences**
 - **Only `Quest.Accept` is synced.** The menu is client-local, and `Multiplayer.Client.SyncMethods` registers `Quest.Accept`. [V]
-- **Either player can accept "with" either founder**, which is `docs/requirements/QUESTS.md`'s open quest-board ownership question.
+- **Either player can accept "with" either founder.** [#125](https://github.com/cjd721/Rimworld-Archinity/issues/125) settled it: either player may accept for both.
 
 #### B3 — attendance by quest shuttle
 
@@ -2449,7 +2111,7 @@ A postfix that refuses founders unless `IsRequired` keeps B3 working. [I]
 
 **What it cannot do.** Cover banishment, prisoner release or kidnapping.
 
-**Consequence.** Worth building only if "given away" includes arrest-then-sale, which is an open requirement below.
+**Consequence.** Worth building only if "given away" includes arrest-then-sale, which is #119's (Open questions).
 
 #### Recommendation — not a selection
 
@@ -2487,15 +2149,15 @@ A postfix that refuses founders unless `IsRequired` keeps B3 working. [I]
 
 ### Open questions
 
-- **Requirement — what "attend" means.** At the colony at acceptance, aboard the transport, present at the site, or taking part in the deed. **Gap:** stated on [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122), which is closed; no open owner.
-- **Requirement — what "given away" covers** beyond lending and revolt contribution: arrest-then-sale or gift, banishment, prisoner release, kidnapping. **Gap**, same owner situation.
+- **What "attend" means** — at the colony at acceptance, aboard the transport, present at the site, or taking part in the deed. Capability: B1–B4 cover colony, accepter, transport and site. Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+- **What "given away" covers** beyond lending and revolt contribution. Capability: C1–C3 answer revolt, lending, sale and gift. Banishment, prisoner release and kidnapping → [#183](https://github.com/cjd721/Rimworld-Archinity/issues/183). Choice: #119.
 - **Build questions for the next map:**
   - A1's hook (`StartedNewGame` or a `ScenPart` subclass), backfill trigger, and whether the record's existence or a field is the identity;
   - whether A2 is layered on;
   - the founder QuestNode's slate shape and its TestRun behaviour (T-71);
   - C2's scope (quest shuttles only, or player shuttles and gravships too) and refusal wording;
   - B4's timing with a founder in a later caravan.
-- **Optional RUN:** a Prepare Carefully start with this scenario — does it still enforce exactly two archonians? Unowned.
+- **Optional RUN:** a Prepare Carefully start with this scenario — does it still enforce exactly two archonians?
 
 ---
 
@@ -2562,11 +2224,11 @@ What this section does not own:
   - The last Church base falling sets `Faction.defeated` in `SettlementDefeatUtility.CheckDefeated`.
   - The same call grants +20 to every visible faction hostile to the Church. That includes the Schism, because `Empire`'s `permanentEnemyToEveryoneExcept` does not list it [V].
 - **The remnant latch.** Either shape works:
-  - one stored bit read by §6's suspicion worker, returning a cap of −100
+  - one stored bit read by §6's latch worker, returning a cap of −100
   - VFED's latch, if VFED ships (Constraints)
 
 **What it cannot do**
-- **Give the ally the Church's institutional machinery.** Titles, permits, the `categoryTag Empire` techprint supply and VFE Empire's hierarchy stay with the hostile Church [V, §1]. Hostile trade is closed by `FactionUtility.CanTradeWith` [V, §5]. Techprints move to #132's catalogue.
+- **Give the ally the Church's institutional machinery.** Titles, permits, the `categoryTag Empire` techprint supply and VFE Empire's hierarchy stay with the hostile Church [V, §1]. Hostile trade is closed by `FactionUtility.CanTradeWith` [V, §5]. Techprints move to the Schism shop ([#132](https://github.com/cjd721/Rimworld-Archinity/issues/132); [`requirements/QUESTS.md`](../requirements/QUESTS.md) § *Shops*).
 - **Defeat the Church by transferring its ground.** `SettlementDefeatUtility.CheckDefeated` is the only vanilla write of `Faction.defeated` [V]. A fully converted Church stays a landless, undefeated, hostile faction unless the finale defeats or hides it.
 - **Pay goodwill to the Schism before it is revealed** (Constraints). This bears on #132 and [#135](https://github.com/cjd721/Rimworld-Archinity/issues/135).
 
@@ -2575,7 +2237,7 @@ What this section does not own:
   - repaint the pin (**T-12**)
   - pawns on a settlement map that already exists keep their faction
   - stock carries over
-- **It collides with era movement.** A settlement the Schism has taken can be one an era rite later moves. #8 made post-Medieval movement contingent on play, so whatever authors era movement must read current ownership.
+- **It meets any other settlement mover.** A settlement the Schism has taken can be one another system later moves, so whatever moves settlements must read current ownership.
 - **`VFEE_Deserters` as the carrier brings VFE Empire's code with it:**
   - **T-14** and **T-91**.
   - `VFEEmpire.GameComponent_Empire.GameComponentTick` rewrites the player↔Deserters relation through `SetRelationDirect` every 6,000 ticks [V]. Inert while hidden; once revealed it is a `Log.Error` per call whenever its conditions hold.
@@ -2596,7 +2258,7 @@ What this section does not own:
 
 **What it cannot do**
 - **Swap the Church's def** (**T-98**, **T-36**). The successor keeps every def-level string and the def's enemy list. Per instance there is only `Faction.name` [V], its ideo (#133) and its colour.
-- **Keep Church hostility one-way.** The latch must clear at the finale and at nothing else, and §6's Reverence cap must stop applying just when Reverence peaks.
+- **Keep Church hostility one-way.** The betrayal latch (§6) must clear at the finale and at nothing else.
 
 **Consequences**
 - **Three factions from worldgen** (**T-07**).
@@ -2633,7 +2295,7 @@ What this section does not own:
   - It fails against a faith carrying `Supremacist` or `Raider` (natural goodwill ≤ −50), proximity penalties or VFED's visibility effects.
   - After an attack it heals only to natural − 50.
 - **H2 — a worker overriding `GetNaturalGoodwillOffset`.**
-  - The override is virtual, and `GoodwillSituationManager.GetNaturalGoodwill` sums it [V]. It is §6's seam.
+  - The override is virtual, and `GoodwillSituationManager.GetNaturalGoodwill` sums it [V]. It is the seam of route D in § *Reverence scales the Goodwill a faction gains*.
   - It cannot stop direct `TryAffectGoodwillWith` losses: proximity, VFED.
   - VEF can replace it silently (Constraints).
 - **H3 — a stored latch.**
@@ -2645,9 +2307,9 @@ What this section does not own:
   - It conflicts with VFE Classical if that mod ships.
 
 **Recommendation, not a selection.**
-- **Route A with H2** is the smaller build: every seam is vanilla's, the Church's hostility becomes one bit on the worker #123 is already designing, and nothing reverses at the finale.
+- **Route A with H2** is the smaller build: every seam is vanilla's, the Church's hostility is the one bit of §7's betrayal latch (§6), and nothing reverses at the finale.
 - **Route B** gives the successor the Church's whole institutional machinery, at the cost of three worldgen factions, a hostility that must reverse, and a successor that still reads as the Church in every def-level string.
-- **Carrier.** An authored Schism def avoids VFE Empire's relation tick and raid traps; that trade depends on whether #132 takes VFED's shop.
+- **Carrier.** An authored Schism def avoids VFE Empire's relation tick and raid traps; that trade depends on the shop's carrier, which [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) selects.
 
 ### Constraints
 
@@ -2671,11 +2333,11 @@ What this section does not own:
   - Proximity: −30/−20/−10 every 900,000 ticks for a player settlement within 2/3/4 tiles [V].
 - ⚠ **VEF overrides every faction's natural goodwill once any active storyteller carries `storytellerThreat`.**
   - `VanillaExpandedFramework_Faction_NaturalGoodwill_Patch` postfixes the `Faction.NaturalGoodwill` getter to `naturallGoodwillForAllFactions.Average`, which defaults to 0 [V].
-  - Drift, change scaling and the Factions tab all read that getter. H2, §6's natural offset, `NaturalEnemy` and the meme situations are silently discarded.
+  - Drift, change scaling and the Factions tab all read that getter. H2, route D of § *Reverence scales the Goodwill a faction gains*, `NaturalEnemy` and the meme situations are silently discarded.
   - No corpus XML sets it today [V]. Our storytellers ([`PRESSURE.md`](PRESSURE.md)) must not.
 - **`QuestPart_SetFactionHidden` does not scribe `hidden`.** A hide armed before a save becomes a reveal after load [V]. Vanilla only ever reveals with it.
 - **`WorldObject.SetFaction` notifies nothing** (T-12). **Never swap the Church's def** (**T-98**, **T-36**).
-- **Nothing in the engine ties ownership changes to eras.** #8's *"only at era transitions"* is a design ruling, and [`TERRITORY.md`](TERRITORY.md) §1 already departs from it.
+- **Nothing in the engine ties ownership changes to eras**, and [`requirements/ERA.md`](../requirements/ERA.md) treats the Schism's transfers, revolt and conquest as happening outside the advance ([`TERRITORY.md`](TERRITORY.md) §1 moves ground in battle).
 
 ### Available mechanisms
 
@@ -2709,12 +2371,14 @@ What this section does not own:
 
 ### Open questions
 
-- **Requirement gaps — to [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122)** (closed; the orchestrator decides whether to reopen):
-  - Does an alliance broken by an attack heal, re-form through play, or stay broken?
-  - What is the revealed Schism's relation to the colony between commitment and the finale?
-  - Route A or route B as the reading of *"turns the Church into the Schism"*?
-- **Requirement gap — to [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2):** record an exception to #8's era-only movement rule for plot-driven and battle-driven transfers.
-- **Build questions for the next map** (unowned):
+- **Healing, the pre-finale relation, and the reading of *"turns the Church into the Schism"*.**
+  Capability: H1–H3 (whether an alliance broken by an attack heals, re-forms or stays broken); the
+  goodwill seed at reveal (the revealed Schism's relation to the colony between commitment and the
+  finale); routes A/B (the reading). Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+- **Plot-driven and battle-driven transfers are not bound to the era advance.**
+  [`requirements/ERA.md`](../requirements/ERA.md) already treats the Schism's transfers, a revolt and
+  ordinary conquest as happening outside it.
+- **Build questions for the next map** (#119):
   - The Schism's def: `VFEE_Deserters` or authored.
   - Where the latch lives.
   - The finale's conversion weighting.
@@ -2741,28 +2405,28 @@ What this section does not own:
   `Faction.ideos` [V]). **The Church's name, clergy and creed therefore exist only in a world
   generated after the patch.** Before the freeze ([#18](https://github.com/cjd721/Rimworld-Archinity/issues/18))
   that costs nothing; after it, it is a new world.
-- **No new saved state anywhere in this build.** Exaltation, titles and permits live on
-  `Pawn_RoyaltyTracker` inside `Pawn.ExposeData`. The suspicion worker's output lives in
+- **One saved bit in this build: betrayal's latch.** Exaltation, titles and permits live on
+  `Pawn_RoyaltyTracker` inside `Pawn.ExposeData`. The latch worker's output lives in
   `GoodwillSituationManager.cachedData`, an unscribed cache rebuilt every 1,000 ticks [V].
 - **Player-initiated royalty writes are already synced.** `Multiplayer.Client.SyncMethods` registers
   `Pawn_RoyaltyTracker.AddPermit`, `RefundPermits`, `SetTitle` and `ResetPermitsAndPoints`, plus the
   two caravan permit calls. `GainFavor` / `SetFavor` / `TryUpdateTitle` are deliberately not synced,
   because every caller is already in simulation. **[I] this pass** — verified by #53's first
   resolution and not re-read after the reopen.
-- **The rite is simulation.** The bestowing ceremony is a `LordJob_Ritual`, and its
+- **The bestowing ceremony is simulation.** It is a `LordJob_Ritual`, and its
   `RitualOutcomeEffectWorker_Bestowing.Apply` runs in the synced tick [V].
   `AssembliesCustom/Multiplayer.dll` names `LordJob_BestowingCeremony` and
   `LordToil_BestowingCeremony_Wait` [I — metadata hit]. The two-client check is under
   § *Verification*.
-- **The suspicion worker is simulation — but its cache is not only filled from simulation.**
+- **The latch worker is simulation — but its cache is not only filled from simulation.**
   `GoodwillManagerTick` runs inside the world tick on both clients [V], and the worker may read only
-  factions, defs and the Reverence records. But `GoodwillSituationManager.cachedData` is unscribed,
+  factions, defs and the betrayal bit. But `GoodwillSituationManager.cachedData` is unscribed,
   `RecalculateAll` runs only from that 1,000-tick tick, `GravshipUtility` and `SettlementUtility`, and
   `GetSituations` fills a missing entry lazily, including from `FactionUIUtility`, then runs
-  `CheckHostilityChanged` [V]. A client joining after a Reverence change but before the next
-  boundary computes the cap from live Reverence while the host's cache is stale, so `GoodwillWith`
-  can differ (mechanism [V]; desync [I]). **Fix: every Reverence write calls
-  `Find.GoodwillSituationManager.RecalculateAll`** (§6). No saved state.
+  `CheckHostilityChanged` [V]. A client joining after the bit is set but before the next
+  boundary computes the cap from the live bit while the host's cache is stale, so `GoodwillWith`
+  can differ (mechanism [V]; desync [I]). **Fix: the betrayal-bit write calls
+  `Find.GoodwillSituationManager.RecalculateAll`** (§6).
 - **Titles are per pawn**, so **T-21** does not bite: both players see the same founders holding the
   same titles.
 - **T-18 surfaces now belong to the Church.**
@@ -2801,7 +2465,9 @@ What this section does not own:
   plain-object path, which also throws. Both failures are loud and both happen at load. Full
   list and messages: [`docs/engine/determinism.md`](../engine/determinism.md).
 - **The player-initiated writes are the ones that need synced commands** — establishing an
-  institution, calling a revolt. A UI click is not a simulated event, and that is the case the
+  institution, calling a revolt — already met for comms-console options by Multiplayer's
+  `NodeTreeDialogSync` / `PersistentDialog` ([`POLITICS.md`](POLITICS.md) § *Persistence and
+  multiplayer (the gate)*; T-82, T-97). A UI click is not a simulated event, and that is the case the
   "wrap every write" rule is actually about. ⚠ **The rule stands; both named instances turn out to
   be covered already.** A `DiaOption` click on the comms console is synced by Multiplayer itself
   [V] — see *Institutions*, below, and
@@ -2812,55 +2478,6 @@ What this section does not own:
 - If Reverence ever hooks faction-ideo recalculation, Multiplayer already brackets
   `FactionIdeosTracker.RecalculateIdeosBasedOnPlayerPawns` with a `FactionContext` push/pop [V].
 
-### The commitment
-
-- **The whole capability costs nothing in multiplayer, and the reason is structural.** The
-  rite is a `LordJob_Ritual`; its outcome worker runs inside the synced tick on both clients,
-  on the same reasoning the Exaltation rite inherits above. The one player-initiated act —
-  opening the ritual window — is already covered:
-  `Multiplayer.Client.SyncMethods` registers
-  `SyncMethod.Register(typeof(Precept_Ritual), "ShowRitualBeginWindow")` [V]. **No
-  `[SyncMethod]` of ours and no `Multiplayer.API` reference is needed for this capability**,
-  unlike [`CURRENCIES.md`](CURRENCIES.md)'s `TryPurchase`.
-- ⚠ **`Pawn_IdeoTracker.SetIdeo` draws `Rand`** —
-  `Certainty = Mathf.Clamp01(ConversionTuning.InitialCertaintyRange.RandomInRange)` [V].
-  Inside the ritual outcome that is safe by the standing rule
-  ([`determinism.md`](../engine/determinism.md) § *Why `Rand` inside a synced tick is safe*),
-  because both clients call it the same number of times in the same order. It would **not**
-  be safe from a gizmo or a `DiaOption` action, and that is the reason the rite is a rite
-  rather than a button.
-- **Multiplayer already brackets the recalculation this build depends on.**
-  `Multiplayer.Client.Factions.RecalculateFactionIdeosContext` is a Harmony prefix/finalizer on
-  `FactionIdeosTracker.RecalculateIdeosBasedOnPlayerPawns` that pushes and pops
-  `FactionContext` around it [V] — noted for Reverence above as a contingency, and load-bearing
-  here.
-- ⚠ **If the alternative route (§6) is ever taken, both ideos must be `Fluid`.**
-  `Multiplayer.Client.SyncMethods.FixIdeoAfterCopy` is `[MpPostfix(typeof(Ideo), "CopyTo")]`
-  and ends with `ideo.development.ideo = ideo; ideo.style.ideo = ideo;` with **no null check**
-  [V]. `Ideo.development` is non-null only for a fluid ideo — `Ideo.Fluid`'s setter,
-  `ExposeData`'s `if (fluid && development == null)`, and `CopyTo`'s own `if (ideo.fluid)`
-  branch are its only writers, and the field has no initialiser [V]. Vanilla never reaches it
-  because `Dialog_ReformIdeo` is only open for a fluid ideo. Calling `ApplyChangesToIdeo` on a
-  non-fluid ideo throws a `NullReferenceException` on `ideo.development.Notify_PreReform`
-  **before** `CopyTo`, with nothing mutated, identically on every client [V, #114]; `FixIdeoAfterCopy`
-  needs a `CopyTo` target with null `development` inside a command, which `ApplyChangesToIdeo` on
-  a fluid ideo does not produce. The rule stands: never on a non-fluid ideo.
-- **`Page_ChooseIdeoPreset` is not the one-way door, and the ticket's "assume host-only" was
-  the wrong premise** [V]. Under Multiplayer the page is not host-only: MP wraps it in
-  `Multiplayer.Client.Factions.Page_ChooseIdeo_Multifaction`, shown to a player *creating* a
-  faction, whose result is a `Multiplayer.Client.Factions.IdeologyData : ISyncSimple` record
-  carried into `[SyncMethod] FactionCreator.CreateFaction`. But Archinity runs one shared
-  player faction (`docs/engine/determinism.md` § *Presentational separation*), and joining an existing faction runs through
-  `Multiplayer.Client.Factions.FactionsWindow` → `ClientSetFactionPacket` with no ideo page
-  anywhere on the path [V]. The page runs once, on the host, at worldgen — before anyone
-  joins, and the campaign ships a `.rid` for that anyway. The real door is the rite, which is
-  inside simulation and therefore symmetric by construction.
-- **One shared player faction means one commitment.** The record is world-scoped and both
-  players see the same founders in the same roles (`docs/engine/determinism.md` § *Presentational separation*). **That is also why the preacher
-  precept is `Precept_RoleMulti` and the leader precept is not** (§4A): under one faction a
-  `RoleSingle` seat is one seat for two colonies, so the preacher rung would be permanently
-  held by one founder and permanently empty for the other, while one leader is the correct
-  answer because there is one `Faction.OfPlayer.leader` to set.
 ### Institutions
 
 - **Nothing new is persisted.** The institution list nests inside the `FactionReverence` record
@@ -2931,22 +2548,20 @@ What this section does not own:
   are NPC-only for exactly this reason.
 - **Never set `awardWorkerClass` to `RoyalTitleAwardWorker_Instant` on a Church title.** The default
   no-op is what leaves the ceremony as the conferral event. `_Instant` calls `TryUpdateTitle` from
-  inside `OnFavorChanged` [V, #53 close-out], so the title is conferred without the rite.
-- **A new rung needs `kindForHierarchy` wherever VFE Empire ships.** The earlier warning *"never
-  give a Church title the `EmpireTitle` tag"* is **inverted**: Church titles *are* `EmpireTitle`
-  titles. `WorldComponent_Hierarchy`'s static constructor collects every `RoyalTitleDef` with
+  inside `OnFavorChanged` [V, #53 close-out], so the title is conferred without the ceremony.
+- **A new rung needs `kindForHierarchy` wherever VFE Empire ships.** Church titles *are*
+  `EmpireTitle` titles. `WorldComponent_Hierarchy`'s static constructor collects every `RoyalTitleDef` with
   `seniority > 0` sharing that tag, and `MakePawnFor` dereferences
   `GetModExtension<RoyalTitleDefExtension>().kindForHierarchy` with **no null check** [V]. That is an
   NRE on the daily refresh — loud, so not a trap, but a one-element omission.
-- **The suspicion cap is not memory** (§6). A drop in Global Reverence lifts the cap at the next
-  recalculation, and `CheckKindThresholds` turns the Church from hostile back to neutral with a
-  vanilla letter once effective goodwill is **≥ 0** [V] — which the accumulated `baseGoodwill` may
-  already be.
+- **Betrayal without the bit is reversible** (§6). The −100 cap holds only while the betrayal bit
+  is set; without it, `CheckKindThresholds` turns the Church from hostile back to neutral with a
+  vanilla letter once effective goodwill is **≥ 0** [V].
 - ⚠ **Church hostility closes the Empire-only techprint trader route** (§ *Verification*):
   `FactionUtility.CanTradeWith` rejects a hostile faction and `IncidentWorker_TraderCaravanArrival`
-  refuses to execute for one [V]. So §6 working as designed silently removes supply the
-  reopen comment says must not be lost silently. That is correct if suspicion is meant to track the present, and
-  a silent design miss if it was meant to ratchet (§ *Outstanding decisions* 11).
+  refuses to execute for one [V]. After betrayal the closure is permanent — the accepted consequence
+  ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123); § *Outstanding decisions* ›
+  *Settled*, 21).
 - **The Permits tab is no longer at risk.** **T-35** fires only when `Faction.OfEmpire` is null; under
   this build the Empire *is* the Church, so the tab seeds itself. Its failure mode collapses into the
   two above: a renamed defName, or a WTL strip.
@@ -2959,7 +2574,8 @@ What this section does not own:
 - **Reverence is keyed by `Faction`, so it inherits T-07** — the faction roster must be final
   before world creation. A faction added later cannot acquire a Reverence history.
 - **The component must tolerate a `Faction` key resolving to null on load.** `FinalizeInit`
-  prunes; whether pruning is the *right* answer is [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s.
+  prunes. Capability: keep and zero are field writes; pruning is the default (§2). Choice:
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **The apostle hook fails open, not loud.** Every ordinary departure reaches it, caravans
   included (§3A), but if it is ever missed — a pawn teleported out, a mod short-circuiting
   `Pawn.ExitMap` — Reverence simply does not move and nothing is logged. Any acceptance check
@@ -2980,45 +2596,6 @@ What this section does not own:
   late-bound by string through MP-Compat's `AccessTools.TypeByName`. That mod is not on disk and
   its Reverence is a per-pawn gene resource, not a donor [V]. The names are taken.
 
-### The commitment
-
-- ⚠ **A founder can be converted to the Church's ideology by accident, and the resulting state
-  is indistinguishable from the rite's.** `InteractionWorker_ConvertIdeoAttempt` on a visiting
-  Church preacher converts any colonist whose `Certainty` reaches zero [V]. Vanilla announces
-  it with `LetterLabelConvertIdeoAttempt_Success`, so it is loud — but the campaign must gate
-  on `commitmentTick`, never on `founder.Ideo`. **This is the entire reason §2 stores anything.**
-  An acceptance check that reads the ideo reference will pass on an accident.
-- ⚠ **A forced primary reverts — loudly, which is why it is not a trap.**
-  `FactionIdeosTracker.SetPrimary` on the player faction is undone by the next
-  `RecalculateIdeosBasedOnPlayerPawns` (§3). An earlier draft claimed the revert is silent and
-  proposed it for the register; that is wrong. The recalculation sends
-  `LetterLabelNewPrimaryIdeo` / `LetterNewPrimaryIdeo` whenever the promoted ideo differs from
-  the standing `primaryIdeo` [V], and the revert case is precisely a promotion **over** a
-  different primary — so the player gets a letter announcing the ideology they did not choose.
-  No trap ID is allocated. The recovery-relevant point survives: **do not call `SetPrimary` on
-  the player faction at all**; let the believer counts do the promotion.
-- **A single-holder role fails quiet in the direction that matters — `Precept_RoleMulti` cannot**
-  [V, [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114)]. Below
-  `activationBelieverCount`, `Precept_RoleSingle.RecacheActivity` deactivates the role and
-  nulls its holder. It *does* send `LetterLabelRoleLost` / `LetterLabelRoleInactive` when the
-  player faction holds the ideo — but a role that has **never** activated sends nothing at all,
-  because the deactivation branch requires `active` to have been true. A non-leader `RoleSingle`
-  with activation ≤ deactivation instead flaps off and on every world tick (loud). The preacher,
-  a `RoleMulti`, is always active (§4A).
-- **Losing a founder unseats them, and vanilla handles it.**
-  `Precept_RoleSingle.Notify_MemberChangedFaction` calls `Assign(null, addThoughts: false)`
-  when the holder leaves the player faction, and `RecacheActivity` nulls the holder whenever
-  `ValidatePawn` fails — dead, destroyed, no longer a free non-slave colonist, or no longer
-  meeting a `RoleRequirement` [V]. `committedFounders` keeps the historical record; the seat
-  does not.
-- **The commitment record tolerates dangling references.** `committedIdeo` can resolve to null if the ideology is ever removed. `IdeoManager.Remove` is reachable through `TryQueueIdeoRemoval` when no faction lists it and **no pawn on a map** holds it. World pawns and caravan members do not count, and removal then moves every holder anywhere to its faction's primary (§ *An NPC faction's faith changes* § *Constraints*) [V] — and a dead founder's
-  `Pawn` reference can resolve to null. Both read as "no commitment on record", which is the
-  wrong answer for a campaign gate; the component must treat a non-null `commitmentTick` as
-  authoritative and the references as decoration.
-- ⚠ **Setting `awardWorkerClass`-style shortcuts has an analogue here: never give the founders'
-  role precepts vanilla's `IdeoRole_Moralist` or `IdeoRole_Leader` `defName`s, and never patch
-  vanilla's.** Both are conferred on *every* ideology in the game, NPC factions included, and a
-  `PatchOperation` on them changes the moral guide for the whole planet with no error (§4A).
 ### Institutions
 
 - ⚠ **A `sustain` that is stored rather than recomputed drifts, and nothing detects it.** Two
@@ -3045,16 +2622,15 @@ What this section does not own:
   `TryMakeInitialRelationsWith`, which appends both `FactionRelation` objects itself) [V]. The real
   early window is map generation and load, through `SettlementUtility.AffectRelationsOnAttacked`
   and `GoodwillSituationManager.RecalculateAll`. Guard on
-  `Current.ProgramState == ProgramState.Playing` (*The build* §4) — an earlier draft gave the right
-  guard with the wrong justification, which would send an implementer hunting a worldgen bug that
-  cannot happen.
+  `Current.ProgramState == ProgramState.Playing` (*The build* §4); there is no worldgen case to
+  hunt.
 - **Institutions are keyed by `Faction`, so they inherit T-07** — the faction roster must be final
   before world creation. A faction added later can never host one.
 - **A faction removed mid-campaign takes its institutions with it.** They nest inside the
   `FactionReverence` record, which *The build — Reverence* §2 prunes on a null `Faction` reference.
-  Whether pruning is right is [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s
-  question for Reverence, and the institutions inherit whatever it decides — they do not need a
-  second ruling.
+  Whether pruning is right is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s
+  choice for Reverence (capability: § *The build — Reverence* §2), and the institutions inherit
+  whatever it chooses — they do not need a second ruling.
 - **A `sustain` exceeding the decay step would turn decay into growth**, and nothing in #98's step
   prevents it on its own. The build clamps at `Max(0, step − sustain)` behind
   `allowNegativeDecay: false` (*The build* §3); **shipping without the clamp is the silent failure**
@@ -3091,13 +2667,13 @@ this pass:
 Inherited claims not re-read are marked **[I]** where they are used.
 
 **The mechanisms are [V]; the claim that they compose into the Church is [I]** until something is
-built. The specific untried composition is the ceremony with `maxPsylinkLevel` 0, and the suspicion
-worker's cap driving `CheckKindThresholds` from Reverence.
+built. The specific untried composition is the ceremony with `maxPsylinkLevel` 0, and the betrayal
+latch's cap driving `CheckKindThresholds`.
 
-**Selected, pending Conrad's fiction calls:** the in-place transformation (§1–§3), the vanilla
-bestowing ceremony as the rite (§4, alternative priced), and the Reverence-derived suspicion worker
-(§6). **Deleted from the build:** the second Church faction, the permits-card seed and the
-bestowing-quest suppressor.
+**Required:** the in-place transformation (§1–§3) — the requirement says the Empire becomes the
+Church wholesale. **Recommended, not selected:** the vanilla bestowing ceremony (§4, alternative
+priced). **Betrayal:** the latch (§6; §7 row). **Deleted from the build:** the second Church
+faction, the permits-card seed and the bestowing-quest suppressor.
 
 **Verdict for the sourcing ledger ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)):**
 
@@ -3107,7 +2683,7 @@ bestowing-quest suppressor.
 | Royalty's `Empire` FactionDef and its content | **transform in place, in XML; rename nothing** — every identifier is load-bearing (§1) |
 | VFE Empire honour / hierarchy / ceremonies / `VFEI_` permits | **follows the Church automatically if shipped** — all of it resolves `Faction.OfEmpire`. It brings the `WorldComponent_Hierarchy` **T-18** defect with it |
 | VFE Deserters | **follows the Church automatically if shipped** — its 49 `OfEmpire` sites now point at the Church, which is what the Schism donor reading in [`CURRENCIES.md`](CURRENCIES.md) needs |
-| Church suspicion | **author** — one `GoodwillSituationWorker`, ~30 lines |
+| Betrayal latch | **author** — one worker + one bit |
 
 ### Reverence
 
@@ -3135,42 +2711,6 @@ still happened — **and the wide form it prescribes is itself broken**
 ([#103](https://github.com/cjd721/Rimworld-Archinity/issues/103)), so running the pass as written
 would not reliably have caught it either.
 
-### The commitment
-
-Established by
-[Mid-game ideology commitment for the founders](https://github.com/cjd721/Rimworld-Archinity/issues/75),
-evidence class **READ** — vanilla `Assembly-CSharp.dll`, the Ideology DLC's shipped defs under
-`common/RimWorld/Data/Ideology/Defs/`, `Multiplayer.dll`
-(`2606448745/1.6/AssembliesCustom/`) and `VanillaMemesExpanded.dll`
-(`2636329500/1.6/Assemblies/`), all decompiled with `ilspycmd` at the versions pinned in
-`docs/data/MOD-SNAPSHOT.md`. `corpus.py --check` clean at the start and the end of that session.
-
-**This is the one section of this document whose headline is a positive.** The mechanisms are
-[V]; the claim that a rite composing three public calls delivers the campaign's commitment is
-[I], as every build is until something is built. The untried part is small: `SetIdeo` onto an
-NPC faction's `Ideo` from inside a ritual outcome worker, which is a combination of two things
-each of which vanilla does separately.
-
-**Three claims this ticket inherited were re-derived. One is half wrong, one holds — and the
-third was never the claim this document said it was:**
-
-| Inherited claim | Verdict |
-|---|---|
-| Closed #8 — *"`Faction.ideos` is generated once from the worldgen def and never regenerated"* | ⚠ **Half false, and the halves must be kept apart.** The player faction's **`primaryIdeo` pointer** is recomputed from live free-colonist believer counts on every member gain, loss and conversion [V] — so "never regenerated" is wrong about *which* `Ideo` the faction points at, and that is the half this capability runs on. But #8's actual claim was about **doctrine**: that a later def's `fixedIdeo` / `forcedMemes` never re-apply to a faction that already exists. **That half stands** — the doctrine is built once on the `CreateFactionAndAddToManager` → `ChooseOrGenerateIdeo` → `MakeFixedIdeo` path and nothing re-runs it on a live faction [V]. A recomputed pointer is not a regenerated ideology, and this document previously reported #8 as flatly false without that qualifier. |
-| *"Forcing a specific ideology is not possible in XML; `FactionDef.fixedIdeo` / `ideoName` / `forcedMemes` are NPC-only"* | ✅ **Confirmed [V]** — `Page_ChooseIdeoPreset.PostOpen` applies them inside `if (allFaction != Faction.OfPlayer && …)`. |
-
-⚠ **Withdrawn: the "#10 claimed role-gated rites use `Precept_RoleMulti`" falsification.** #10
-made no such claim, so there was nothing to falsify and the row asserting it has been removed.
-What #10 actually said was that **we should author our own role precepts as `Precept_RoleMulti`**,
-so that under one shared player faction each of the two colonies gets a holder, and that
-`Precept_RoleMulti.Assign` is uncapped. **Both are true** [V]. The damage was downstream: having
-recorded #10 as falsified, this document then reimported the **single-holder constraint** as
-fact and propagated it to the Exaltation and altar rites. That constraint is deleted (§4), the
-preacher precept is `RoleMulti` (§4A), and `RitualRole.precept` accepts any `PreceptDef`
-regardless (§4).
-
-**And one framing premise was wrong:** the ticket's *"Assume host-only"* for
-`Page_ChooseIdeoPreset`. See *Persistence and multiplayer* § *The commitment*.
 ### Institutions
 
 **Verified available mechanism. Not an implementation commitment.**
@@ -3240,12 +2780,12 @@ Read from `Assembly-CSharp.dll` at `common/RimWorld/RimWorldWin64_Data/Managed/`
 | `Pawn_RoyaltyTracker` — `favor`, `titles`, `factionPermits`, `highestTitles` | Exaltation, the title, the privileges, the high-water mark; per pawn, per faction, scribed | [V, #53] |
 | `FactionDef.royalTitleTags` × `RoyalTitleDef.tags`; `RoyalTitlesAwardableInSeniorityOrderForReading` | the ladder, filtered on `Awardable` (`favorCost > 0`, **T-28**) | [V, #53] |
 | `FactionDef.royalFavorLabel` / `royalFavorIconPath` | the word "exaltation" wherever the engine prints the scale — except six hardcoded Keyed strings (§2) | [V] |
-| `Pawn_RoyaltyTracker.OnFavorChanged` → `RoyalTitleUtility.GenerateBestowingCeremonyQuest` → `QuestNode_Root_BestowingCeremony` → `QuestPart_BestowingCeremony` → `LordJob_BestowingCeremony : LordJob_Ritual` → `RitualOutcomeEffectWorker_Bestowing.Apply` | **the rite**: bestower and honour guard arrive, `TryUpdateTitle`, spectator favour, and a psylink loop to `GetMaxPsylinkLevelByTitle` | [V] |
+| `Pawn_RoyaltyTracker.OnFavorChanged` → `RoyalTitleUtility.GenerateBestowingCeremonyQuest` → `QuestNode_Root_BestowingCeremony` → `QuestPart_BestowingCeremony` → `LordJob_BestowingCeremony : LordJob_Ritual` → `RitualOutcomeEffectWorker_Bestowing.Apply` | **the bestowing ceremony**: bestower and honour guard arrive, `TryUpdateTitle`, spectator favour, and a psylink loop to `GetMaxPsylinkLevelByTitle` | [V] |
 | `RoyalTitleDef.maxPsylinkLevel` | read by the ceremony's psylink loop, `PawnUtility.GetMaxPsylinkLevelByTitle` and `PawnGenerator`'s NPC title psylinks | [V] |
 | `Reward_RoyalFavor` / `QuestPart_GiveRoyalFavor`; `RewardsGenerator` | Exaltation as an automatic quest reward; `flag5` suppresses items-only stacks for the Church | [V] |
 | `RoyalTitlePermitDef` + the five delivery workers | privileges as data; workers take the faction as a parameter | [V, #53] |
 | `TraderKindDef.permitRequiredForTrading` → `TitleRequiredToTrade`; refused in `IncidentWorker_TraderCaravanArrival`, `CaravanVisitUtility`, `IncidentWorker_CaravanMeeting`, `FactionDialogMaker`, `FactionUtility.CanTradeWith` (which also rejects hostility); shown by `Settlement` | **title-gated trade**, on all three Empire trader kinds | [V] |
-| `GoodwillSituationWorker.GetMaxGoodwill` / `GetNaturalGoodwillOffset`; `GoodwillSituationManager` (1,000-tick recalc → `Notify_GoodwillSituationsChanged`); `Faction.GoodwillWith` clamp | Reverence-derived suspicion that turns into hostility, with no stored value | [V] |
+| `GoodwillSituationWorker.GetMaxGoodwill` / `GetNaturalGoodwillOffset`; `GoodwillSituationManager` (1,000-tick recalc → `Notify_GoodwillSituationsChanged`); `Faction.GoodwillWith` clamp | betrayal's permanent-hostility latch: a −100 cap once the bit is set (§6) | [V] |
 | `CharacterCardUtility.GetTitleTipString` + `RoyalTitleUtility.GetTitleProgressionInfo` | the "see the carrot" readout — current Exaltation, next title and price, whole ladder | [V, #53] |
 | `TechprintUtility.GetResearchProjectsNeedingTechprintsNow` | the one techprint tag test: `heldByFactionCategoryTags.Contains(faction.def.categoryTag)`, **no tech-level test** | [V] |
 
@@ -3321,9 +2861,7 @@ runs.
 
 ### Exaltation — corrections, cumulative
 
-1. **The second-faction verdict is withdrawn by requirement, not by evidence.** Its mechanism claims
-   — faction-parameterised titles, techprint tags, VFE Empire hardwiring — were sound and are
-   reused above.
+1. **The second-faction verdict is withdrawn by requirement, not by evidence**; its mechanism claims are reused above.
 2. **Vanilla's three trade permits are not inert.** They were inert only as a *copy*.
    `TraderKindDef.permitRequiredForTrading` names them on all three Empire trader kinds, and the
    permit gates trade in five places (§5) [V]. The earlier survey searched
@@ -3334,16 +2872,16 @@ runs.
 4. **"Never give a Church title the `EmpireTitle` tag" is inverted** — they are the same titles now.
 5. **VFE Empire's count, restated on a named basis:** 138 sites in 58 files for `OfEmpire` + `FactionDefOf.Empire`; #53's 136 in 57 is `OfEmpire` alone. Both reproduce [V]; neither is an error.
 6. **The imperial-ceremony hazard is gone, not fixed.** The chokepoint analysis stands:
-   `OnFavorChanged` calls the generator directly [V]. It now describes the Church's own rite.
+   `OnFavorChanged` calls the generator directly [V]. It now describes the Church's own title ceremony.
 7. **Carried from #53 and still true:** **T-28** is `favorCost > 0` with four silent no-ops. The
    honour scale is vanilla `favor`, not VFE Empire `Honor`. The readout is vanilla's character card.
    `MostSeniorTitle` does not drive the displayed name.
 
-### Exaltation — hostility and the techprint supply, measured against vanilla
+### Exaltation — what survives the Church's hostility
 
-**A [V] finding that narrows decision 21; it does not answer it.** What it establishes is that the
-in-place Church reproduces **vanilla's own behaviour exactly**, so decision 21 is only a *loss*
-under one specific condition, stated at the end.
+Before betrayal, the in-place Church's hostility reproduces **vanilla's own behaviour exactly** [V],
+and it is recoverable. Betrayal makes it permanent (§6), and that loss is accepted (decision 21,
+§ *Outstanding decisions* › *Settled*).
 
 **13 Empire-locked projects in vanilla + Royalty — 12 Empire-only.** `BrainWiring`,
 `SpecializedLimbs`, `CompactWeaponry`, `VenomSynthesis`, `ArtificialMetabolism`,
@@ -3376,7 +2914,7 @@ as defaults-bearing records; see `docs/agents/capability-research.md` § *Known 
 - **Books are never a route**, hostile or not: `ReadingOutcomeDoerGainResearch.IsValid` returns
   false when `project.TechprintCount == 0`, and `CanStartNow` requires `TechprintRequirementMet`.
 
-**And the loss is recoverable in vanilla, which is the part decision 21 turns on** [V]:
+**Before betrayal the loss is recoverable, as in vanilla** [V]:
 
 - The Empire is **not** `permanentEnemy`, and its `permanentEnemyToEveryoneExcept` lists
   `PlayerColony` and `PlayerTribe`, so `CanChangeGoodwillFor` passes. Hostile at **≤ −75**, neutral
@@ -3392,11 +2930,6 @@ as defaults-bearing records; see `docs/agents/capability-research.md` § *Known 
   goodwill reaches neutral the Knight/Baron trade route reopens with the same pawns.
 - **Already-applied techprints persist.** `ResearchManager`'s applied count is not faction state.
   **This is supply closure, not confiscation.**
-
-**Therefore:** the in-place Church reproduces vanilla's behaviour exactly, and **decision 21 is
-live — i.e. strictly worse than vanilla — only if Reverence-driven hostility is made one-way**:
-goodwill pinned so gifts and peace talks cannot move it, or the Church marked `permanentEnemy`.
-Restated in those terms under *Outstanding decisions* 21.
 
 ### Reverence — there is no donor for the measure itself
 
@@ -3460,7 +2993,7 @@ place to keep a number that must survive a months-long save.
   queue with letters [V]. Not needed for Reverence, which applies immediately, but it is the
   shape if a delay is ever wanted.
 
-### Three corrections to inherited claims
+### Two corrections to inherited claims
 
 1. **`WorldFactionsUIUtility` is the wrong utility, and `docs/specs/RELIGION.md` previously
    pointed the display work at it.** `RimWorld.Planet.WorldFactionsUIUtility` is the
@@ -3476,13 +3009,10 @@ place to keep a number that must survive a months-long save.
    `naturalGoodwillOffset != 0`, and `GetOngoingEvents` only those whose `maxGoodwill < 100`
    [V]. A `GoodwillSituationWorker_Reverence` is visible **exactly when, and only when, it moves
    goodwill** — which is the coupling
-   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97) asked about. The
-   requirement has since said yes, and the situation worker cannot implement it: it moves the
-   baseline and cannot reduce a gain. It is route D (partial) of § *Reverence scales the Goodwill a
-   faction gains*, and it is not the answer to requirement 5.
-3. **"The UI is a separate ticket" now names one.** It is
-   [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61), *The political and campaign UI
-   surfaces*, and it exists.
+   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97) (closed; answered by #160/#176)
+   asked about. The requirement has since said yes, and the situation worker cannot implement it:
+   it moves the baseline and cannot reduce a gain. It is route D (partial) of § *Reverence scales
+   the Goodwill a faction gains*, and it is not the answer to requirement 5.
 
 Re-derived and confirmed correct: the vanilla ideology negatives above; `WorldComponent`
 construction and the `FillComponents` backfill; the `VisibilityLevelDef` band pattern; VFED's
@@ -3490,42 +3020,6 @@ construction and the `FillComponents` backfill; the `VisibilityLevelDef` band pa
 objects with no running total and no decay, and Deserters Visibility being a single global
 `int`.
 
-### The commitment — the donor is the Ideology DLC, and Multiplayer proves it works mid-game
-
-| Mechanism | What it gives the commitment | Evidence |
-|---|---|---|
-| `Pawn_IdeoTracker.SetIdeo(Ideo)` | public; accepts **any** `Ideo` with no `IdeoManager` membership check of its own (registration is the caller's job) and one early-return, on babies; handles beds, bonds, thoughts, needs, apparel, abilities and the `ChangedIdeo` history event | [V] |
-| `FactionIdeosTracker.RecalculateIdeosBasedOnPlayerPawns` | promotes the player faction's primary from live free-colonist counts, on every member gain/loss and every colonist ideo change, with a vanilla letter | [V] |
-| `FactionIdeosTracker.Notify_ColonistChangedIdeo` / `Notify_MemberGainedOrLost` | the two entry points; the latter early-returns unless `faction.IsPlayer` | [V] |
-| `FactionDef.fixedIdeo` + `ideoName` + `forcedMemes` + `requiredMemes` + `deityPresets` + `styles` → `FactionGenerator.CreateFactionAndAddToManager` → `IdeoGenerator.MakeFixedIdeo` | the Church's authored doctrine, pure XML, NPC-only and therefore ours to use | [V] |
-| `InteractionWorker_ConvertIdeoAttempt` | proves a colonist holding an NPC faction's `Ideo` is an ordinary vanilla state (`NPC_Free → Colonist` weight 0.5) | [V] |
-| `Precept_Role.Assign(Pawn, bool)` / `Unassign` / `RequirementsMet` / `ValidatePawn` | seating a pawn in a role, with vanilla's own message, sound and side effects; `leaderRole` also sets `Faction.OfPlayer.leader` | [V] |
-| `RimWorld.RoleRequirement` — abstract, one `Met(Pawn, Precept_Role)` override, XML-selected per role | founder-only eligibility as data plus ten lines | [V] |
-| `RitualOutcomeEffectWorker_RoleChange` | the shipped shape for "a rite seats a pawn in a role": compose the outcome letter, then `Unassign`/`Assign` on a good result | [V] |
-| `Precept_Ritual.ShowRitualBeginWindow`, registered in `Multiplayer.Client.SyncMethods` | the only player-initiated act, already synced | [V] |
-| `IdeoDevelopmentUtility.ApplyChangesToIdeo(Ideo, Ideo)` — public static, in-place, no `Fluid` check, already MP-synced with `.ExposeParameter(1)` | the alternative build (§6): wholesale doctrine replacement preserving the `Ideo` instance and every reference to it | [V] |
-| `Multiplayer.Client.Factions.FactionCreator.CreateFaction` | the shipped proof that `GenerateIdeo` → `IdeoManager.Add` → `SetPrimary` → `SetIdeo` runs correctly **mid-game inside a synced command** | [V] |
-| `VanillaMemesExpanded.RoleRequirement_BestCrafter` and four siblings | the shipped 1.6 precedent that a custom `RoleRequirement` works | [V] |
-
-**What does not exist, and where it shaped the build:**
-
-- **No lock on a role.** Nothing in vanilla pins a pawn to a `Precept_Role`; `Assign` is a free
-  UI action. Hence the eligibility-narrowing approach in §4B rather than a refusal patch.
-- **No primary-ideo exemption for role activation.** `Ideo.ObligationsActive` has one and
-  `Precept_RoleSingle.RecacheActivity` does not [V]. Hence our own `PreceptDef`s rather than
-  vanilla's.
-- **No public installer.** `Page_ChooseIdeoPreset.AssignIdeoToPlayer` — the three lines that set
-  the primary, clear every other `Ideo.initialPlayerIdeo` and add to the manager — is `private`
-  [V]. Trivially reimplemented; recorded because it looks callable.
-- **Nothing in the corpus carries a mid-game commitment mechanism**, and nothing needs to. A wide
-  pass over both roots plus `common/RimWorld/Data/`, ASCII and null-interleaved UTF-16,
-  `-g '*.dll' -g '!**/obj/**'`, returned: `SetIdeo` → VFE Medieval 2 only; `RoleRequirement_` →
-  VIE Memes and Structures only; `Precept_RoleSingle` → VIE M&S and RimPacts; `ApplyChangesToIdeo`
-  → Multiplayer only; `Precept_RoleMulti`, `ChosenPawnValue` and `Dialog_ReformIdeo` → nothing.
-  The sweep was validated first: `ApplyChangesToIdeo` returns zero ASCII hits and hits
-  `Multiplayer.dll` in UTF-16, the correct signature for a name existing only as a
-  `SyncMethod.Register` string literal. **The `--encoding utf-16le` form
-  ([#103](https://github.com/cjd721/Rimworld-Archinity/issues/103)) was not used.**
 ### Institutions — nothing carries it, and the near misses each miss differently
 
 **The corpus negative, stated with its construction.** Both roots plus vanilla and the DLC, `.cs`,
@@ -3540,7 +3034,7 @@ against `GoodwillSituationWorker` and `TryAffectGoodwillWith` before any negativ
 | Vocabulary | Result |
 |---|---|
 | `Embassy`, `ChapterHouse`, `Diocese`, `Chapel` | **zero** — corpus-wide, across `.cs`, `.xml` and both assembly heaps |
-| `Monaster`, `Congregation`, `Persecut` | **zero in the assembly heaps**, which is the claim that matters. ⚠ **Not zero corpus-wide** — an earlier draft said "both heaps" under a heading claiming a `.cs`/`.xml`/`.dll` pass, which overstated its own evidence. They hit vanilla backstory and meme **XML**, Sepulchral Reliquary, VFED's `PlotMission.xml` and a cultists mod. **None is an institution**, so the negative survives; the sentence did not |
+| `Monaster`, `Congregation`, `Persecut` | **zero in the assembly heaps**, which is the claim that matters. ⚠ **Not zero corpus-wide**: they hit vanilla backstory and meme **XML**, Sepulchral Reliquary, VFED's `PlotMission.xml` and a cultists mod. **None is an institution**, so the negative survives |
 | `Missionar` | RimPacts only, in both heaps |
 | `Church`, `Shrine`, `Institution`, `Suppression` | vanilla Ideology's `Need_Suppression`, `VPE_Shrineshield_*`, `NatureShrine_*` — decoration and abilities, no institution |
 | `Temple`, `Estate`, `Holding`, `Gated` | `AncientTemple` genstep, Anomaly's `Building_HoldingPlatform`, Rim War's transient `AttemptDiplomatMission`, vanilla's `Mission_BanditCamp` quest |
@@ -3577,7 +3071,7 @@ vassal** — the only non-debug removal is the Royalty tab's *Release all* butto
 requirement's entire third clause has no precedent here; and `WorldComponent_Vassals.DoDay()`
 writes directly from a tick and a UI callback with no Multiplayer sync in the assembly itself —
 **MP Compat syncs it from outside** (`Multiplayer.Compat.VanillaFactionsEmpire`), with one [I]
-ordering hazard. Corrected on [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120);
+ordering hazard ([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120));
 `TERRITORY.md` §3 has every vassal route.
 
 #### Faction Territories — the closest structural precedent in the corpus
@@ -3665,9 +3159,9 @@ level** [V]. Re-counted this pass over vanilla and the 1.6 mod folders [V]:
   (`CaravanVisitUtility`) [V].
 - **Church quest rewards** (`ThingSetMaker_Techprints` via `parms.makingFaction` [V]) — Church quests
   presumably stop while it is hostile [I].
-- **Once §6 makes the Church hostile**, `FactionUtility.CanTradeWith` rejects it and
-  `IncidentWorker_TraderCaravanArrival` refuses to execute [V], so **the trader route closes for all
-  14** — by this build's own worker.
+- **Once the Church is hostile** — by ordinary Goodwill, or for good at betrayal (§6) —
+  `FactionUtility.CanTradeWith` rejects it and `IncidentWorker_TraderCaravanArrival` refuses to
+  execute [V], so **the trader route closes for all 14**.
 
 **What survives hostility** [V unless marked]:
 
@@ -3682,16 +3176,16 @@ level** [V]. Re-counted this pass over vanilla and the 1.6 mod folders [V]:
   `IncidentWorker_OrbitalTraderArrival.CanSpawn` passes a trader with no faction unconditionally but,
   for one naming a faction, requires that faction to exist and a free colonist to pass `CanTradeWith`
   against it [V]. Needs a comms console and orbital beacon, i.e. it is era-gated; its draw is weighted,
-  not steerable; and it is gone for the campaign if [`ORBIT.md`](ORBIT.md) zeroes the guild's worldgen
-  count;
+  not steerable;
 - **if VFE Deserters ships**: `VFED.QuestNode_BetrayalRewards` draws
   `TechprintUtility.TryGetTechprintDefToGenerate_NewTemp` with the slate's `"empire"` faction —
   tag-based, not hostility-gated [V; quest reachability [I]] — and `VFED.GenStep_FlagshipRuins`
   places every project whose tags contain `FactionDefOf.Empire.categoryTag` [V]. **VFED is the
   hostile-branch carrier.**
 
-**No techprint requirement is removed, but without VFED the steerable supply ends when the Church
-turns hostile** — § *Outstanding decisions* 21, owed to Conrad by the reopen's "no silent loss" clause. Whether
+**No techprint requirement is removed, but without VFED the steerable Church supply ends at
+betrayal, as accepted** ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123);
+§ *Outstanding decisions* › *Settled*, 21). Whether
 Spacer and Ultra implant techprints should come *from the Church at all* is a progression question
 ([`docs/progression/`](../progression/)), not a loss.
 
@@ -3715,14 +3209,13 @@ Spacer and Ultra implant techprints should come *from the Church at all* is a pr
   - **no psylink level is gained** — with Vanilla Psycasts Expanded loaded as well, since its
     `ApplyTitlePsylink` grants one base level when the pawn has no psycast hediff;
   - the Permits tab opens on the Church.
-- **RUN** — force Global Reverence past the cap threshold and advance to the next 1,000-tick
-  boundary. The Church turns hostile with vanilla's letter, and the faction row lists the suspicion
-  situation.
+- **RUN** — set the betrayal bit and advance to the next 1,000-tick boundary. The Church turns
+  hostile with vanilla's letter, and the faction row lists the betrayal situation.
 - **RUN** on [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16)'s two-client regime: the
   ceremony's title and the hostility flip land on the same tick on both clients.
-- **RUN** — a client **joins mid-window**, after a Reverence change and before the next 1,000-tick
-  boundary; `Faction.OfEmpire.GoodwillWith(Faction.OfPlayer)` matches on host and joiner. Run it
-  once without and once with the `RecalculateAll`-on-write fix.
+- **RUN** — a client **joins mid-window**, after the betrayal bit is set and before the next
+  1,000-tick boundary; `Faction.OfEmpire.GoodwillWith(Faction.OfPlayer)` matches on host and joiner.
+  Run it once without and once with the `RecalculateAll`-on-write fix.
 - **RUN** — Church hostile, no VFED: confirm no Church caravan arrives and that `Orbital_Exotic` can
   still stock an Empire-only techprint.
 
@@ -3763,35 +3256,6 @@ apostle hook belong to the two-client regime on
 [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16), as one observation: that a guest
 departing produces the same Reverence delta on both clients on the same tick.
 
-### The commitment
-
-READ-class throughout, from decompiled 1.6 assemblies and the Ideology DLC's shipped XML at
-the pinned versions. The headline is a **positive**, so by
-`docs/agents/capability-research.md`'s asymmetry the wide pass was owed only for the two
-negative sub-claims — that nothing locks a pawn into a role, and that no mod carries a
-commitment mechanism — and it was run in both encodings and validated against a control
-before either negative was trusted (*Available mechanisms*).
-
-**What still needs the game: one observation, and it is narrow.** It belongs to the two-client
-regime on [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16):
-
-> The commitment rite completing produces the **same** `Faction.OfPlayer.ideos.PrimaryIdeo`,
-> the same seated role-holders and the same `LetterLabelNewPrimaryIdeo` on both clients on the
-> same tick.
-
-That is the one place `SetIdeo`'s `Rand` draw could diverge — if the rite's participant set
-were ever resolved client-side rather than from the `LordJob_Ritual`'s assignments.
-
-A cheaper **STUB**-class confirmation of §4A is available first and does not need two clients:
-ship the leader `PreceptDef` on `PreceptRoleSingleBase` with `activationBelieverCount: 1` and a
-`deactivationBelieverCount` below it, start a two-colonist game, and check that the role is
-assignable. With vanilla's value it will not be, and nothing will say why. The preacher half is
-settled by reading: `Precept_RoleMulti` has no believer gate [V, [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114)].
-
-**Residual gap, stated:** a mod expressing a commitment as a chain of existing def types — a
-`QuestScriptDef` chain reaching `SetIdeo` through a generically named quest part — would be
-invisible to a name sweep. Bounded but not excluded; it would not be a better donor than
-`Pawn_IdeoTracker.SetIdeo` itself.
 ### Institutions
 
 READ-class throughout, from decompiled 1.6 assemblies at the pinned versions. Every mechanism claim
@@ -3837,196 +3301,144 @@ unlikely.
 
 ### Reverence
 
-1. **Is Reverence per (faction × ideo), or per faction against the player's current primary
-   ideo?** If the player reforms a fluid ideo mid-campaign, the stored value either follows or
-   resets. The one-key form is much cheaper. Owner:
-   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97).
+1. **Is Reverence per (faction × ideo), or per faction?** Answered by the requirement: Reverence
+   is per faction ([`requirements/RELIGION.md`](../requirements/RELIGION.md) § *Saved state and
+   remaining work*). A fluid reform keeps the `Ideo` instance
+   ([`docs/engine/ideology.md`](../engine/ideology.md) § *Moving a pawn's ideology*).
 2. **What happens to a faction's Reverence when the faction is removed or goes permanently
-   hostile** — persist, zero, or drop. T-07 and the `FactionManager.toRemove` path make this a
-   real load-time case. Owner: [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97).
-   The build prunes, as the safe default.
-3. **Whether Reverence modulates the Goodwill ripple — resolved** by the requirement text
-   (2026-09-15) and by [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160): see § *Reverence scales the Goodwill a faction gains*. Which
-   gains count, exemptions and per-change attribution are Conrad's, via
-   [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (#97, where they were asked, is closed); the route and numbers are
-   [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
-4. **The numbers.** Decay rate and its deadband, band thresholds and their count, per-event
-   amounts, and what "sincerely converted" means as a `Certainty` threshold. All are XML Def
-   fields by construction, so the build does not wait on them — **but no open ticket owns them.**
-   `docs/requirements/RELIGION.md` says only that they "still need design or tuning", and #97's
-   scope is the coupling. **This is a gap, not a hand-off**, and it belongs on the map.
-5. **The shape of the political surface** — one tab or several, and where it hangs. Owner:
-   [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61). Until it rules, D1 and D2 above
-   are the shipping display and they patch vanilla's own surfaces.
+   hostile.** T-07 and the `FactionManager.toRemove` path make this a real load-time case.
+   Capability: keep and zero are field writes; a removed faction's record is pruned (§2). Choice:
+   [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+4. **The numbers.** Decay rate and its deadband, Reverence band thresholds and their count,
+   per-event amounts, and what "sincerely converted" means as a `Certainty` threshold. All are XML
+   Def fields by construction, so the build does not wait on them. Owner: #119 (balance).
+5. **The shape of the political surface** — one tab or several, and where it hangs. The surface is
+   #119's (routes on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)). Until it is
+   chosen, D1 and D2 above are the shipping display and they patch vanilla's own surfaces.
 
 ### Exaltation
 
-**Most of these are fiction and requirements calls, not mechanisms.** Where an item names a ticket
+**These record capability and numbers; none waits on a mechanism.** Where an item names a ticket
 that is *closed* ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7),
 [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10),
 [#21](https://github.com/cjd721/Rimworld-Archinity/issues/21)), it is context, never the owner.
 
-6. **Resolved: the Empire becomes the Church wholesale, in place, renaming nothing** (§1). Every
-   Empire-tagged techprint route is kept by identifier; the trader route is conditional on
-   non-hostility and a Knight (§ *Verification*, decision 21).
-7. **The `seniority` bands, and how the godhood ladder interleaves. Gap, no owner.**
-   `Pawn_RoyaltyTracker`'s aggregate accessors — `MostSeniorTitle`, `MainTitle()`, `HasTitle`, the
-   throne and bedroom checks, `UpdateAvailableAbilities()`, `IssueDecree()` — span every ladder a pawn
-   holds [V, #53]. `titles` holds one `RoyalTitle` per (pawn, faction), so if the tiers of godhood
-   are `RoyalTitleDef`s they must sit on a faction **other than the Church**, or they overwrite the
-   Church title silently [V, #53]. #21 is closed.
-8. **The numbers and the catalogue. Gap, no owner.** Relabel vanilla's 7-rung ladder or re-cut it;
+7. **The `seniority` bands, and how the godhood ladder interleaves.** The seniority bands are
+   numbers, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (balance). `Pawn_RoyaltyTracker`'s aggregate accessors — `MostSeniorTitle`, `MainTitle()`,
+   `HasTitle`, the throne and bedroom checks, `UpdateAvailableAbilities()`, `IssueDecree()` — span
+   every ladder a pawn holds [V, #53]. `titles` holds one `RoyalTitle` per (pawn, faction), so if
+   the tiers of godhood are `RoyalTitleDef`s they must sit on a faction **other than the Church**,
+   or they overwrite the Church title silently [V, #53]. Whether psychic ranks are titles at all,
+   and their carrier, is [`PSYCHIC.md`](PSYCHIC.md) § *Open questions* (#31 / #119).
+8. **The numbers and the catalogue.** Relabel vanilla's 7-rung ladder or re-cut it;
    `favorCost` per rung; the permit-point curve; which privileges each rung unlocks; which title
    unlocks trade — **default is vanilla's: Knight for settlement and caravan trade, Baron for orbital**
-   [V]; the Exaltation-vs-Reverence split per mission. All XML.
+   [V]; the Exaltation-vs-Reverence split per mission. All XML. Owner:
+   [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (balance).
 9. **Whether ordinary colonists can hold Church titles, or only the founders.** Vanilla imposes no
-   limit, and `Reward_RoyalFavor` lets a quest ask which colonist is exalted [V, #53]. It is a
-   requirement that `docs/requirements/RELIGION.md` does not state.
-10. **Resolved ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)): safe passage and
-    political privileges.** Privileges are vanilla-kind title permits (§5). Safe passage is every
-    non-hostile faction's, through the settlement encounter —
-    [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136).
-11. **Resolved ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)): there is no
-    suspicion.** §6 is withdrawn. Betrayal at a Global Reverence threshold is authored and final.
+   limit, and `Reward_RoyalFavor` lets a quest ask which colonist is exalted [V, #53]; the
+   bestowing ceremony also pays `honorFromQuality` favour to spectators (§4 [V]). Capability →
+   [#184](https://github.com/cjd721/Rimworld-Archinity/issues/184); choice #119.
+13. **Which predicate defines a founder — routes exist; the choice is #119's.** § *Founders* (from [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)) gives three:
+    - **A1:** a founder record stamped at tick 0 from the scenario's two required archonians. **Recommended.**
+    - **A2:** a scenario pawn kind. Not recommended as the identity of record.
+    - **A3:** genes or xenotype, today's stand-in. **Not recommended.** `ReimplantXenogerm` gives converts the founders' xenotype, vanilla sanguophages carry both `founderOnlyGenes`, and `ImplantXenogermItem` strips a founder's xenotype and xenogenes.
+
+    **The store is settled:** [`TRANSCENDENCE.md`](TRANSCENDENCE.md) rule 1 makes `CompFounderRecord` the only founder store. Under A1 that record is created at game start instead of lazily. A founder-only `RoleRequirement` (§ *The player faith's role hierarchy* › A) reads it whichever predicate is chosen. **This is a pointer, not a claim on TRANSCENDENCE.md** — it is not edited here. Selection: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 17. **The Church's per-era presentation and first contact.** An Ultra-tech Church is contactable
     from the Neolithic, because Ignorance Is Bliss's `empireIsAlwaysEligible` defaults true [I]. The
     plot introduces it in Medieval. The band configuration is
     [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)'s (open). **Presenting it
-    era-appropriately cannot use a `Faction.def` swap** (§ *Failure and recovery*); `techLevel`, pawn
-    kinds and gear are the levers. #7 is closed, so the presentation half is a gap.
+    era-appropriately cannot use a `Faction.def` swap** (§ *Failure and recovery*). Capability:
+    `techLevel` (§2), pawn kinds and gear are the levers, and first contact is the contact band.
 18. **Which Empire-fiction content the Church keeps.** None of it breaks, and all of it will appear
     unless cut:
-    - the **Royal Ascent ending** — a `StorytellerCompProperties_RefiringUniqueQuest` on every vanilla
-      storyteller, day 35, refiring every 22 days [V], which competes with the campaign's own ending.
-      **Resolved ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)): stripped**; the
-      Church's own ending recurs from the top title and closes at betrayal or the orbital reveal;
+    - the **Royal Ascent ending** — stripped (§ *Settled*, 18);
     - shuttle arrivals — the bestower, the tribute collector, shuttle-crash rescues, lend-colonists;
     - landing pads and throne rooms in Church settlements (`GenStep_Settlement`);
     - Royalty's Empire intro quests;
     - VFE Empire's vassals and ceremonies, and VFE Deserters as the Schism
       ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) context).
 
-    A fiction call per item; gap, no owner.
+    Keeping any of it costs nothing (§1).
 19. **The Church's enemy roster.** It is currently a permanent enemy of everyone except 9 vanilla
     factions plus eleven mods' additions [V]. Glitterites and Free Companies are unwritable forever
-    ([`POLITICS.md`](POLITICS.md) gate C). Whether a Medieval Church is born at war with every
-    Medieval kingdom is fiction. The mechanism is `PatchOperationAdd`. Gap.
-20. **Psylinks and Church clergy.** Zeroing `maxPsylinkLevel` is required by
-    `docs/requirements/ALTAR.md` for the *founders*. It also strips `PawnGenerator`'s psylinks from
-    generated Church nobles [V]. Whether the Church's own clergy cast is fiction, and whether *"early
-    Church titles and early psychic states may share language"* wants any title-linked psychic
-    effect is a requirement. Gap.
-
-21. **Resolved ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)): the loss is
-    accepted.** Betrayal is one-way, so Church techprints close for good; the Schism's catalogue
-    replaces them, and a run that declines the Schism keeps only vanilla's other sources — the
-    intended consequence. The reasoning that led here follows; its open question and "gap, no
-    owner" are answered by this banner.
-
-    **Techprint supply after the Church turns hostile — owed to Conrad under "no silent loss", and
-    now narrowed to one question.** §6 makes the Church hostile from Global Reverence, which closes
-    the Church trader route for the 14 Empire-only projects (§ *Verification*); the route also needs
-    a Knight while it is open. What survives is the map-gen lottery, the Traders Guild's orbital
-    traders (era-gated, unsteerable, and dependent on the guild existing —
-    [`ORBIT.md`](ORBIT.md)'s hide-versus-zero row) and — only if VFE Deserters ships — VFED's
-    betrayal rewards and flagship ruins.
-
-    **What narrows it:** all of that is *exactly what vanilla does* when the Empire turns hostile,
-    and vanilla's closure is **recoverable** — gifts and peace talks both reopen it, titles and
-    permits are never stripped, and applied techprints persist
-    (§ *Available mechanisms* § *Exaltation — hostility and the techprint supply*, [V]).
-    **So the decision is not "does hostility cost us techprints" but:**
-
-    > **Is Reverence-driven hostility one-way?** If the suspicion worker merely pins goodwill low
-    > while leaving gifts and peace talks live, the campaign is at vanilla parity and there is no
-    > loss to accept. If it pins goodwill so nothing can move it, or the Church is marked
-    > `permanentEnemy`, the supply closes **permanently** and that is strictly worse than vanilla.
-
-    Only in the second case is the rest of this item live: accept the loss, require VFED, add a
-    Schism or other supplier (for example `heldByFactionCategoryTags` matching a Schism faction's
-    `categoryTag` — XML), or remove those techprint requirements deliberately. Gap, no owner.
-
-    **On the Schism route this is now decided by requirement** ([#122](https://github.com/cjd721/Rimworld-Archinity/issues/122)):
-    committing to the Schism makes the Church permanently hostile, and the Schism's Influence
-    catalogue supplies techprints — [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)'s
-    routes. The Church and independent routes remain
-    [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)'s.
-
-### The commitment
-
-12. **Is Devotion alignment reference equality on `Ideo`, or doctrinal equivalence?** This is
-    the single question that chooses between §1's build and §6's alternative, and it changes
-    nothing else. Owner: [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) — its
-    body already claims *"what the founders' commitment to the Church must mean, what it must
-    gate, and what it must never measure."* The build assumes reference equality, which is the
-    cheaper and more literal reading of [`ENDING.md`](../plot/ENDING.md).
-13. **Which predicate defines a founder — routes now exist; the choice is open.** § *Founders* (from [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)) gives three:
-    - **A1:** a founder record stamped at tick 0 from the scenario's two required archonians. **Recommended.**
-    - **A2:** a scenario pawn kind. Not recommended as the identity of record.
-    - **A3:** genes or xenotype, today's stand-in. **Not recommended.** `ReimplantXenogerm` gives converts the founders' xenotype, vanilla sanguophages carry both `founderOnlyGenes`, and `ImplantXenogermItem` strips a founder's xenotype and xenogenes.
-
-    **The store is settled:** [`TRANSCENDENCE.md`](TRANSCENDENCE.md) rule 1 makes `CompFounderRecord` the only founder store. Under A1 that record is created at game start instead of lazily. `RoleRequirement_Founder` (§4B) reads it whichever predicate is chosen. **This is a pointer, not a claim on TRANSCENDENCE.md** — it is not edited here. Selection: next map.
-
-14. **What Reverence measures after the commitment.** The player's primary ideology becomes the
-    Church's, which the Church faction already follows completely. Owner:
-    [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97) — it is the same question as
-    that ticket's existing "per (faction × ideo), or per faction against the player's current
-    primary", now with a concrete campaign event that forces it.
-15. **Rerouted: player-faith role architecture.** The player faith needs one or two
-    founder-specific seats, several preacher/converter seats for core disciples, at least one
-    crafting specialist and campaign-time role unlocks. [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114)
-    owns multiple holders, custom specialist effects and progressive unlocking;
-    [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116) owns the later catalogue
-    decision. §4's old two-seat build is superseded. **Capability answered** — § *The player faith's role hierarchy*.
-16. **Is the commitment reversible, and at what price?** Mechanically it is trivially
-    reversible — a second rite calling `SetIdeo` back, or enough colonists converting away —
-    and `Pawn_IdeoTracker.previousIdeos` already records the founder's prior ideologies [V].
-    Whether the campaign *permits* it is a requirement, and neither
-    `docs/requirements/RELIGION.md` nor [`ENDING.md`](../plot/ENDING.md) says. **Gap, no owner.**
-    This is the same unowned-numbers gap as decisions 4 and 8 and probably belongs in the same
-    ticket.
+    ([`POLITICS.md`](POLITICS.md) gate C). Capability: `PatchOperationAdd` on
+    `permanentEnemyToEveryoneExcept` makes any faction befriendable (§2); a faction left off the
+    list starts and stays at war with the Church.
+20. **Psylinks and Church clergy.** Church titles never grant psylinks
+    ([`requirements/RELIGION.md`](../requirements/RELIGION.md) § *Saved state and remaining work*).
+    Capability: title psylinks are closed by `maxPsylinkLevel` 0 (§4; [`PSYCHIC.md`](PSYCHIC.md)
+    writers R4 and R9), which also strips `PawnGenerator`'s title psylinks from generated Church
+    nobles [V]. The Church's own psychics — the requirement's imitation — come from caster pawn
+    kinds whose `initialLevel` sets their level, independent of titles (`PSYCHIC.md` Class I,
+    I-b and I-d) [V]. Which kinds and levels: #119.
 
 ### Institutions
 
-**Every open item here is a number, and that is deliberate.** Two entries in an earlier draft were
-*mechanisms* wearing a number's clothes — whether the decay subtraction is clamped, and whether
-suppression can reverse rather than merely remove sustain. Handing those back was wrong under
-`docs/agents/capability-research.md` § *Requirements stay where they live*: **a missing mechanism
-is the build's**. Both are now branches the build ships, with their defaults stated, and only their
-values are open. Items 4 and 6 remain open questions rather than parameters, but each is priced
-against a named donor, so neither blocks.
+**Every open item here is a number or a priced capability.** Whether the decay subtraction is
+clamped, and whether suppression can reverse rather than merely remove sustain, are mechanisms, so
+they are branches the build ships with their defaults stated (**a missing mechanism is the
+build's** — `docs/agents/capability-research.md` § *Requirements stay where they live*). Items 4
+and 6 are capabilities priced against a named donor, so neither blocks.
 
 The build does not wait on any of these — all are Def fields by construction — but naming them is
 the point.
 
 1. **The prices and the thresholds.** What Reverence a tier requires, what Goodwill it costs, how
-   many of each tier a faction may host. Same owner problem as *Reverence* item 4 above: no open
-   ticket holds Reverence's values, and none holds these either.
-   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s scope is the coupling.
-   **Gap, no owner**, recorded rather than handed to a ticket that disclaims it.
-2. **What `sustain` is worth per tier.** Purely a number. **The clamp question that used to sit
-   here is no longer open**: the build sets `Max(0, step − sustain)` behind a global
-   `bool allowNegativeDecay` defaulting to `false` (*The build* §3), so *"institutions preserve,
-   they do not evangelise"* is the shipped default and flipping it is an ordinary XML call. Whether
-   a branch exists at all was a mechanism and belonged in the build, not in this list.
-3. **What `suppressedSustainFactor` should be, per tier.** Also purely a number. **The
-   remove-versus-reverse question that used to sit here is no longer open either**: a suppressed
+   many of each tier a faction may host. Owner: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)
+   (balance), like *Reverence* item 4 above.
+2. **What `sustain` is worth per tier.** Purely a number. The clamp is built: `Max(0, step −
+   sustain)` behind a global `bool allowNegativeDecay` defaulting to `false` (*The build* §3), so
+   *"institutions preserve, they do not evangelise"* is the shipped default and flipping it is an
+   ordinary XML call.
+3. **What `suppressedSustainFactor` should be, per tier.** Also purely a number. A suppressed
    institution contributes `sustain * suppressedSustainFactor`, defaulting to `0f` (*The build*
    §4), so the requirement's *"persecute apostles"* clause is **a negative value in that field**
    rather than a second mechanism. Setting it is balance.
-4. **Whether an institution can be destroyed at all, and by what.** This build makes suppression
-   reversible because the requirement's *"unless the player changes the political situation"*
-   demands a route back (*The build* §4). Faction Territories' invasion loop shows the destructive
-   alternative exists and is affordable. Nothing in `docs/requirements/RELIGION.md` says whether a
-   long-hostile faction should eventually raze what the player built there.
+4. **Whether an institution can be destroyed, and by what.** Capability: suppression is reversible,
+   as the requirement's *"unless the player changes the political situation"* needs (*The build*
+   §4); destruction is also buildable — Faction Territories' invasion loop is the priced donor.
 5. **Whether the institution has a world-map presence.** §6 prices it at one XML patch and ~25
    lines and recommends the ledger-only form until something asks for it. The natural asker is
-   [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61), which owns the shape of the
-   political surface and is open.
+   the political surface, which is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s
+   (routes on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)).
 6. **Whether founding is instant or takes time.** Every shipped analogue in the corpus is instant —
-   a click, a charge, an object. The requirement is silent and the fiction may want a delay; VEF's
-   `WorldComponent_FactionGoodwillImpactManager` is the shape if one is wanted (*The build —
+   a click, a charge, an object. A delay is also buildable: VEF's
+   `WorldComponent_FactionGoodwillImpactManager` is the shape (*The build —
    Reverence*, *Mod donors*), and it costs nothing extra because it already ships.
+
+### Settled
+
+Kept under their original numbers, because other sections cite them.
+
+- **3 — Whether Reverence modulates the Goodwill ripple:** answered — gains and losses scale,
+  exempt factions excepted ([#160](https://github.com/cjd721/Rimworld-Archinity/issues/160),
+  [#176](https://github.com/cjd721/Rimworld-Archinity/issues/176); § *Reverence scales the Goodwill
+  a faction gains*); route and numbers #119.
+- **6 — The Empire becomes the Church wholesale, in place, renaming nothing** (§1). Every
+  Empire-tagged techprint route is kept by identifier; the trader route is conditional on
+  non-hostility and a Knight (§ *Verification*, 21 below).
+- **10 — Safe passage and political privileges** ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)):
+  privileges are vanilla-kind title permits (§5); safe passage is every non-hostile faction's,
+  through the settlement encounter — [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136).
+- **11 — There is no suspicion** ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)).
+  Betrayal at a Global Reverence threshold is authored and final; its latch is §6.
+- **15 — Player-faith role architecture:** capability answered in § *The player faith's role
+  hierarchy* ([#114](https://github.com/cjd721/Rimworld-Archinity/issues/114)); the catalogue is
+  [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116)'s.
+- **18 (Royal Ascent) — stripped** ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)).
+  Vanilla's is a `StorytellerCompProperties_RefiringUniqueQuest` on every vanilla storyteller, day
+  35, refiring every 22 days [V], which would compete with the campaign's own ending. The Church's own ending takes Royal Ascent's shape: a T2 refiring quest
+  ([`ENCOUNTERS.md`](ENCOUNTERS.md) T2, and its Multiplayer caveat) gated on the top title and on
+  not-betrayed / not-revealed, so it recurs while the top title is held and closes for good at
+  betrayal or the orbital reveal (§7 *Cost*, row *The Church's ending*). Selection #119.
+- **21 — Techprint supply after betrayal: the loss is accepted**
+  ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)). Betrayal is one-way, so Church
+  techprints close for good; the Schism shop ([`requirements/QUESTS.md`](../requirements/QUESTS.md)
+  § *Shops*, [`CURRENCIES.md`](CURRENCIES.md)) replaces them, and a run that declines the Schism keeps
+  only vanilla's other sources — the intended consequence. What survives hostility is § *Available
+  mechanisms* › *Exaltation — what survives the Church's hostility*.
 
 ---
 
@@ -4042,9 +3454,8 @@ Established on [#140](https://github.com/cjd721/Rimworld-Archinity/issues/140), 
 RimWorld 1.6.4871.
 
 This section owns **how a campaign base is imposed and held**. The *catalogue* — which precepts
-and which roles — is requirement content and belongs to
-[#124](https://github.com/cjd721/Rimworld-Archinity/issues/124) and
-[#116](https://github.com/cjd721/Rimworld-Archinity/issues/116). What a role precept holds and
+and which roles — is requirement content, still *Exploring, not chosen*; roles are
+[#116](https://github.com/cjd721/Rimworld-Archinity/issues/116)'s catalogue. What a role precept holds and
 how a seat arrives mid-campaign is § *The player faith's role hierarchy* above; the Church's own
 doctrine is NPC-side and is § *Exaltation*.
 
@@ -4199,8 +3610,8 @@ page calls it** — `DoClassic`, `DoLoad`, `DoPreset` and `Page_ConfigureIdeo.Ca
 the one seam that sees the finished faith whatever produced it, including the two paths that
 bypass `CanAdd` entirely. A part there can add the campaign meme, run
 `EnsurePreceptsCompatibleWithMemes` to pull in its `requireOne` precepts, and add campaign roles
-through `Ideo.AddPrecept(..., init: true)` (`docs/engine/ideology.md` § *Adding a role to a live
-ideology*). Vanilla ships no ideology `ScenPart` [V], so this is new code, but it hooks a virtual
+through `Ideo.AddPrecept(..., init: true)` (`docs/engine/ideology.md` § *Role precepts: what the
+two classes hold, and how a role enters a live ideology*). Vanilla ships no ideology `ScenPart` [V], so this is new code, but it hooks a virtual
 and needs no Harmony. It **still runs under Multiplayer**:
 `Page_ConfigureStartingPawns_Multifaction.GeneratingPawns` calls `_scenario.PostIdeoChosen()` [V].
 It does not stop a later reform undoing the base.
@@ -4241,7 +3652,8 @@ Engine facts that bound every route:
 - **A `FactionDef`'s meme fields do nothing for the player in the custom editor** when a world
   exists [V]. Precepts hold, memes leak — the asymmetry is the trap.
 - **A non-fluid ideology can never be reformed**, so a fixed campaign faith closes every reform
-  hole at a stroke (`docs/engine/ideology.md` § *Fluid reform needs a fluid ideology*) [V].
+  hole at a stroke (`docs/engine/ideology.md` § *Role precepts: what the two classes hold, and how
+  a role enters a live ideology*) [V].
 - **Nothing on disk sets `fixedIdeo` or `canRemoveInUI`.** Both fields work — `canRemoveInUI` is
   read by `Precept.DrawPreceptBox`, `fixedIdeo` by `Page_ChooseIdeoPreset.PostOpen` [V] — but the
   corpus provides no precedent for either.
@@ -4279,22 +3691,21 @@ Engine facts that bound every route:
 mechanism above is [V]. **Every route is [I] as a composition** — nothing has been built.
 
 Established on [#140](https://github.com/cjd721/Rimworld-Archinity/issues/140), which carries the
-full sweep record and the corrections to inherited claims — including that **"the campaign ships a
-`.rid`"**, asserted twice elsewhere in this document (§ *Superseded build* 1, § *Persistence and
-multiplayer* → *The commitment*), **overstates what is possible**; those passages should point at
-Routes C/D/E instead.
+full sweep record and the corrections to inherited claims — including that a campaign cannot ship
+a `.rid` (Route G).
 
 ### Open questions
 
-1. **Which issues carry a minimum, and where each floor sits.** Requirement content —
-   [#124](https://github.com/cjd721/Rimworld-Archinity/issues/124), overlapping
-   [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116) for the forced-roles half.
-2. **Is the campaign faith fluid or fixed?** A fixed faith can never be reformed and so closes
-   every reform hole; a fluid one can grow with the campaign. A story decision, and it decides
-   which routes are needed. Unowned.
-3. **Must the Classic option be closed, and how visibly?** Routes D and E repair a Classic start
-   silently; `WorldTechLevel.Patches.Patch_Page_ChooseIdeoPreset.DrawCategory_Transpiler` [V] is
-   the donor if the option should never appear. Unowned.
+1. **Which issues carry a minimum, and where each floor sits.** Capability: any issue, by route A's
+   `requireOne` sublist (B adds a floor at creation). The catalogue is the requirement's, still
+   *Exploring, not chosen*; forced roles are
+   [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116)'s catalogue.
+2. **Fluid or fixed campaign faith.** Capability: both. A fixed faith can never be reformed and so
+   closes every reform hole; a fluid one can grow with the campaign and needs route A or F to hold
+   the base through a reform.
+3. **The Classic option.** Capability: routes D and E repair a Classic start silently;
+   `WorldTechLevel.Patches.Patch_Page_ChooseIdeoPreset.DrawCategory_Transpiler` [V] is the donor for
+   removing the option from the page.
 4. **Build questions, deferred to the next map**: whether the campaign meme is Structure or Normal
    category; whether the base rides one meme or several; whether Route D's payload seeds a
    non-classic ideology or follows VFE Tribals into `classicMode`.

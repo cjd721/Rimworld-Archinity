@@ -2,13 +2,6 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** Completing the era capstone research project
-> is the trigger for `AdvanceEra()`, exactly as in the progression mod. The node's
-> prerequisites may encode whatever story conditions the boundary needs. There is no
-> altar rite and no separate player confirmation between project completion and the
-> advance. [#113](https://github.com/cjd721/Rimworld-Archinity/issues/113) is resolved by
-> this requirement; only the implementation hook remains for the spec.
-
 **What the campaign's era is, where it is stored, and how long the colony has been in it.**
 
 Everything in the campaign hangs off the era, and until this document existed nothing owned
@@ -17,16 +10,10 @@ it. [#7](https://github.com/cjd721/Rimworld-Archinity/issues/7) resolved the *me
 the advance — and then closed. [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)
 built [`PRESSURE.md`](PRESSURE.md)'s threat-point composition on **capped time within the
 current era**, could find no document holding that number, and recorded it as an ownerless gap.
-The progression grids
+[`PRESSURE.md`](PRESSURE.md) and the progression grids
 ([#30](https://github.com/cjd721/Rimworld-Archinity/issues/30),
-[#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)) read it next. This document is
+[#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)) read it. This document is
 that owner ([#109](https://github.com/cjd721/Rimworld-Archinity/issues/109)).
-
-> **Correction — 2026-09-17, [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128).**
-> This paragraph previously named `CHARTING.md` as a reader of the era clock. It is not one:
-> [`CHARTING.md`](CHARTING.md) gates on research, not on the clock — *"the era knob is a rung
-> on a `ResearchProjectDef`"* — and no `CurrentEra` or `TicksInCurrentEra` read appears in it.
-> [`PRESSURE.md`](PRESSURE.md) and the progression grids are the real consumers.
 
 This document owns:
 
@@ -43,16 +30,35 @@ This document owns:
   ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)).
 
 It does **not** own: how long an era *should* last, or what era time is *worth* — those are
-Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2), and the era-length
+balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119), and the era-length
 table in [`docs/engine/world-time-and-layers.md`](../engine/world-time-and-layers.md) § *Time*
 is campaign design input rather than an engine fact. It does not own **what the capstone is**
 or what research it requires ([`RESEARCH.md`](RESEARCH.md) and
 [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41)). The capstone's completion
-itself is the trigger; this document owns the hook that turns that completion into the
-single `AdvanceEra()` call.
+is the trigger ([#113](https://github.com/cjd721/Rimworld-Archinity/issues/113) settled it);
+the advance is always the players' choice, and a rite or build performed with the capstone is
+a route ([`docs/requirements/ERA.md`](../requirements/ERA.md) § *Player information and
+agency*; choice [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)). This document
+owns the hook that turns that completion into the single `AdvanceEra()` call.
 It does not own **what becomes available at each era**
 ([`docs/progression/`](../progression/README.md)), nor the **filter set** WTL runs (#7 froze
 those twenty-four toggles and this document does not reopen them).
+It does not own **the world re-authoring pass the advance triggers** — settlement swaps,
+removals, shrinks and reveals. The mechanism is verified in
+[`docs/engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md)
+([#8](https://github.com/cjd721/Rimworld-Archinity/issues/8),
+[#70](https://github.com/cjd721/Rimworld-Archinity/issues/70),
+[#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)); which factions is
+[#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)'s; the transfer shape and its
+in-flight hazards are [`TERRITORY.md`](TERRITORY.md) § *A caravan en route when its destination
+changes hands* and [`GRAVSHIP.md`](GRAVSHIP.md) § *A gravship en route when its landing tile
+changes hands* (T-140). It is bound by [`docs/requirements/ERA.md`](../requirements/ERA.md)
+§ *The era advance*: a single, indivisible act. The determinism rule is § 3's note on Lemmy's
+`System.Random`.
+
+**Consumers of the advance:** [`PRESSURE.md`](PRESSURE.md), [`docs/progression/`](../progression/README.md),
+[`WORLD-INFRASTRUCTURE.md`](WORLD-INFRASTRUCTURE.md) § 3a, [`TERRITORY.md`](TERRITORY.md)
+(T-145). AE-5(a) (unselected) would add a write.
 
 ---
 
@@ -125,32 +131,25 @@ GameComponent_Era : GameComponent
 **Prior eras' boundaries are retained — all of them — and this is a design decision with a
 consumer, not tidiness.** Two reasons, in order of force:
 
-1. **[`PRESSURE.md`](PRESSURE.md) contains a contradiction that only a retained history
-   resolves.** Its § *The build* table takes the era term as *"ticks since the era-start stamp,
-   through a curve that reaches a ceiling"* — which resets at every boundary. Its § *Verification*
-   check 2 requires that points *"must not reset at the next `AdvanceEra()`"*. Both cannot hold
-   of a single `int EraStartTick`. They both hold of
+1. **[`PRESSURE.md`](PRESSURE.md)'s era term needs the whole history.** Its § *Verification*
+   check 2 requires that points *"must not reset at the next `AdvanceEra()`"*, which a single
+   `int EraStartTick` — resetting at every boundary — cannot satisfy. The sum
 
    > `eraTime = Σ over every boundary e of  cappedCurve( ticks spent in e )`
 
-   which climbs within an era, flattens at that era's ceiling, and **adds** rather than
+   climbs within an era, flattens at that era's ceiling, and **adds** rather than
    restarting at the seam — which is also #7 § 6's *"no reset and no spike at a boundary … the
-   budget is continuous across the seam."* The retained log is what makes that sum computable.
-   The contradiction is **recorded here rather than repaired in `PRESSURE.md`**, which this
-   document does not own. The full replacement text for that document's era-term row, the
-   sentence under it and its *Outstanding decisions* bullet is written out verbatim on
-   [#109](https://github.com/cjd721/Rimworld-Archinity/issues/109) **and is being applied by the
-   orchestrator** — it is not a hand-off awaiting an owner, which matters because
-   [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60), the ticket that raised the gap,
-   is **closed**.
+   budget is continuous across the seam."* The retained log is what makes that sum computable,
+   and PRESSURE.md § *The build* (era-time row) reads it this way
+   ([#109](https://github.com/cjd721/Rimworld-Archinity/issues/109)).
 
    > **The balance consequence of the sum, named because the spec must not hide it.** Under
-   > `Σ cappedCurve`, the era term's own ceiling is **six times a single era's cap** rather than
-   > one era's — a six-era campaign that reaches every ceiling contributes six times what the
+   > `Σ cappedCurve`, the era term's own ceiling is **five times a single era's cap** rather than
+   > one era's — a five-era campaign that reaches every ceiling contributes five times what a
    > single-stamp reading would at the same moment. That is the intended shape (pressure
    > accumulates across the campaign rather than resetting), but it means the per-era cap must be
-   > authored at roughly a sixth of whatever a reader of the old row would have guessed.
-   > **The number is Balance's**, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2);
+   > authored at roughly a fifth of whatever a single-stamp reading would have suggested.
+   > **The number is balance**, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119);
    > this document owes only the warning that the unit changed.
 2. **The progression grids ask "when did we enter era X", not "how long in this one".**
    [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30) and
@@ -158,7 +157,7 @@ consumer, not tidiness.** Two reasons, in order of force:
    that wants *"180 days after the Medieval gate"* needs `StartTickOf(Medieval)` after the
    colony has left Medieval behind.
 
-The cost of retaining is six rows of `(byte, int)` for a six-era campaign. `CurrentEraStartTick`
+The cost of retaining is five rows of `(byte, int)` for a five-era campaign. `CurrentEraStartTick`
 is supplied verbatim so that #60's stated requirement — *"a read-only `int EraStartTick` and the
 current `TechLevel`"* — is satisfied without any consumer having to understand the log.
 
@@ -195,20 +194,23 @@ and `LemProgress.Systems.FactionUpgrader` each hold a `private static readonly R
 which is a guaranteed multiplayer divergence. Both defects are exactly as #7 described them;
 both are confirmed against the 1.6 assembly.
 
-**What Lemmy gets *right*, recorded because an earlier draft of this section got it backwards.**
+**What Lemmy gets *right*.**
 `WorldEraManager.InitializeWorldTechLevelAccess` handles the auto-property correctly and
 explicitly: `AccessTools.Field(type, "Current")` → null → `AccessTools.Property(type, "Current")`
 non-null → `AccessTools.Field(type, "<Current>k__BackingField")` → and, failing that, a
 `GetFields(Static | Public | NonPublic)` scan for the first static `TechLevel` [V]. The engine
-fact in *Cost* below is real and our shim must handle it; **the claim that this mod trips over it
-is false and is withdrawn.** Its defect is the missing second write, not the reflection.
+fact in *Cost* below is real and our shim must handle it; this mod does not trip over it. Its
+defect is the missing second write, not the reflection.
 
 **What calls it.** Completion of an authored era-capstone `ResearchProjectDef` calls
 `AdvanceEra(next)` once. The project may be gated by any combination of prerequisites,
-resources, exemplars or instruction, so story purpose belongs in the node rather than in a
-second rite. The implementation must identify capstones explicitly, run on the synced
-research-completion path, guard duplicate completion and preserve the rule that
-`AdvanceEra()` has no other gameplay caller. A debug route still needs its own treatment.
+resources, exemplars or instruction. The advance is always the players' choice; a rite or a
+build the players perform between completion and the call is a route
+([`docs/requirements/ERA.md`](../requirements/ERA.md) § *Player information and agency*;
+choice [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)), and a rite's
+multiplayer chain is in § *Persistence and multiplayer*. The implementation must identify capstones explicitly, run on the synced
+research-completion path (or a rite's outcome, where that route is taken), guard duplicate completion and
+preserve the rule that `AdvanceEra()` has no other gameplay caller. A debug route still needs its own treatment.
 
 **Reversible? No.** The guard rejects a downgrade and rejects a skip. There is no `RetreatEra()`
 and the boundary log is append-only. Per `CODING_STANDARDS.md` § *The bar for a change*,
@@ -261,14 +263,13 @@ Is Bliss*].
 | the same description | *"Era began: day N — n days here"*, from `CurrentEraStartTick` | one postfix on `WITab_Planet.get_Desc`, ~10 lines |
 | the boundary log | *"Neolithic day 0 · Medieval day 96 · Industrial day 310"* | **not a tooltip on the line above** — see below. A `FillTab` postfix with its own layout, ~40 lines |
 | the crossing itself | the capstone project's completion **is** the event | the era-capstone project and `AdvanceEra()` hook |
-| pressure readout | era time as a named contributor | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s surface, supplied by [`PRESSURE.md`](PRESSURE.md) |
+| pressure readout | era time as a named contributor | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (routes verified on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)), supplied by [`PRESSURE.md`](PRESSURE.md) |
 
-**The boundary log cannot be a tooltip on the description line, and an earlier draft of this
-section said it could.** `WITab_Planet.get_Desc` is a `string` property; a postfix on it has
+**The boundary log cannot be a tooltip on the description line.** `WITab_Planet.get_Desc` is a `string` property; a postfix on it has
 `ref string __result` and **no `Rect`**, so there is nothing for `TooltipHandler.TipRegion` to be
 given. Showing the log means a postfix on `WITab_Planet.FillTab` that lays out its own row and
-calls `TipRegion` against that rect — which is a different patch, with layout of its own, and it
-is priced accordingly in *Cost* rather than as the fifteen lines the tooltip would have been.
+calls `TipRegion` against that rect — a different patch, with layout of its own, priced
+accordingly in *Cost*.
 Note that `FillTab` is also where shutoff § 6a operates, so the two live next to each other.
 
 Days are `ticks / GenDate.TicksPerDay`; a RimWorld year is **60 days**
@@ -301,7 +302,7 @@ faction and then spawns settlements for each, **from `DoWindowContents`** [V]. T
 faction registration against a frozen roster (**T-07**, the same class of defect as **T-15**)
 *and* unsynced `Rand` off the frame loop, in one control.
 
-> **The `Rand` half is worse than a single draw, and an earlier draft understated it.** The loop
+> **The `Rand` half is worse than a single draw.** The loop
 > is written `for (int k = 0; k < Rand.RangeInclusive(3, 7); k++)` — **the bound is in the loop
 > condition, so it is re-drawn on every iteration** [V]. The number of settlements is therefore
 > not a draw of 3–7; it is however many iterations it takes for `k` to exceed a freshly drawn
@@ -340,13 +341,11 @@ but it belongs on the list of things that move the era without asking.
 **~230 lines of C# in the assembly we already ship. No new assembly, no def type, no XML, no
 recompiled third-party DLL.**
 
-**An earlier draft priced this at ~150 and both of the differences are real, not padding.** The
-boundary readout is a layout patch rather than a tooltip (§ 5), and the shim is not twenty-five
-lines: the nearest shipped equivalent, `LemProgress.Systems.WorldEraManager`'s WTL access, is
-**~80 lines with its assembly scan and its four-step auto-property fallback** [V] — and ours
-needs the same fallback plus a second member (`GameComponent_TechLevel`) that Lemmy never
-resolves. Pricing the shim at Lemmy's size is the honest read; pricing it at a quarter of that
-was wishful.
+**Two pieces carry most of the weight.** The boundary readout is a layout patch rather than a
+tooltip (§ 5), and the shim is not twenty-five lines: the nearest shipped equivalent,
+`LemProgress.Systems.WorldEraManager`'s WTL access, is **~80 lines with its assembly scan and
+its four-step auto-property fallback** [V] — and ours needs the same fallback plus a second
+member (`GameComponent_TechLevel`) that Lemmy never resolves.
 
 The reflection shim exists because `Archinity.Core` must not hard-reference
 `WorldTechLevel.dll` — WTL loads through the Lunar loader from
@@ -365,22 +364,22 @@ is a real one for anyone writing the shim from scratch, **not** because the dono
 
 **Saved state added by this document: one list of `(TechLevel, int)` pairs.** Nothing else.
 The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is computed from
-`Find.TickManager.TicksGame`, which is synchronised simulation state by construction.
+`Find.TickManager.TicksGame`. Under Async Time with two colonies each map keeps its own
+`TicksGame`, so which clock stamps an era's start is an open capability question:
+[#185](https://github.com/cjd721/Rimworld-Archinity/issues/185).
 
 **What must be a synced command, and what already is.**
 
-- **Superseded caller analysis: `AdvanceEra()` called from a ritual outcome worker needs no sync plumbing** — a conditional,
-  and the condition is not yet met: **no document builds that ritual** (§ 3, *What calls it*). The
-  bullet establishes that the ritual route *would* be safe, not that it is the route. The
+- **A rite as the caller: `AdvanceEra()` called from a ritual outcome worker needs no sync plumbing.**
+  A rite is one route for the advance (§ 3, *What calls it*; choice
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)). The
   citation is the lord tick, not the component tick. `LordJob_Ritual.ApplyOutcome` fires
   from a `StateGraph` transition's pre-action, which runs under
   `LordManager.LordManagerTick()` → `Map.MapPostTick()` → `TickManager.DoSingleTick()` [V,
   `Verse.Map.MapPostTick` calls `lordManager.LordManagerTick()`]. That is simulation, executed
-  identically on both clients.
-  > **An earlier draft cited `docs/engine/determinism.md` § *What is on the synced tick and what
-  > is not* for this. That table covers `WorldComponentTick`, `GameComponentTick` and
-  > `Thing.Tick` and says nothing about Lords** — it is the right authority for the two bullets
-  > below and the wrong one for this. The conclusion is unchanged; the anchor is corrected.
+  identically on both clients. (`docs/engine/determinism.md` § *What is on the synced tick and
+  what is not* covers `WorldComponentTick`, `GameComponentTick` and `Thing.Tick` and says
+  nothing about Lords; it is the authority for the two bullets below, not for this one.)
   >
   > One clause the ritual path does owe: `Dialog_BeginRitual`'s cancel route and a ritual's
   > `CancelSignal` are client-local UI, and Multiplayer serialises the dialogue separately
@@ -394,15 +393,15 @@ The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is co
   [V, `…/294100/2606448745/1.6/Assemblies/0MultiplayerAPI.dll`, `Multiplayer.API.MP`]. **The
   cheaper discipline is to have no such caller**: one entry point, reached only from the
   synchronized research-completion path.
-- **`AdvanceEra()` draws no random number**, which is a rule rather than an observation. Every
-  write is a plain assignment. If a future beat wants a roll at a boundary, it belongs in the
-  rite's outcome worker — already on the tick — and not here.
+- **The four writes draw no random number**, which is a rule rather than an observation. Every
+  write is a plain assignment. Any boundary roll (AE-5(a)'s quest generation) runs on the same
+  synced research-completion path, after the writes.
 - **Nothing here is a `ModSettings` field.** WTL's twenty-four filter toggles *are* settings and
   are therefore part of the sync surface (**T-18**); #7 froze them, and a mismatch between the
   two clients is a divergence this document cannot detect. That is an argument for recording
   the frozen set in the repo, not for reading settings at runtime.
 - **Session shape.** [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) settled
-  shared: one player faction, one colony, Async Time on. The era is world-scoped and
+  one shared player faction, two colonies on separate tiles, Async Time on. The era is world-scoped and
   faction-independent, so Multiplayer's `FactionRepeater` machinery does not apply to it.
 
 ---
@@ -418,11 +417,11 @@ The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is co
 - **The WTL reflection shim resolves nothing.** Log once, and let `AdvanceEra()` still write the
   boundary and the player faction def. The campaign then advances its own era while the world's
   content filter does not follow — visible within minutes as tech above the era appearing in
-  trade stock. Loud enough, and strictly better than throwing inside a rite.
+  trade stock. Loud enough, and strictly better than throwing on the research-completion path.
 - **A legacy save's era time reads as the whole game.** § 4's seed, by design. It over-states
   rather than under-states, so a capped curve sits at its ceiling instead of at zero. Say so to
   whoever balances it.
-- **The rite fires twice.** The one-rung guard rejects the second call with `Log.Error` and
+- **The capstone completes twice.** The one-rung guard rejects the second call with `Log.Error` and
   changes nothing. The log stays append-only and no boundary is duplicated.
 - **`Filter_Factions` is switched back on.** § 6b re-arms a runtime faction generator against
   **T-07**. This is the single settings change that can break the world irrecoverably, and it
@@ -447,7 +446,7 @@ compose into a working era clock is [I] by construction** and stays [I] until so
 built and loaded twice.
 
 **Not ours:** how long an era lasts, what era time is worth, and the shape of the capped curve
-— all Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).
+— all balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 
 **The contract other specs may rely on**, stated so nobody re-derives it:
 
@@ -514,12 +513,10 @@ pieces bear on this document:
   including our own write 3, which is why `AdvanceEra()` is a method with a one-rung guard rather
   than a poll.
 
-  > **An earlier draft claimed Node Research prefixes `AdvanceTechLevel` to `false` to stop
-  > exactly this, cited to `docs/data/PARTS-BIN.md`. That is withdrawn.** Node Research
-  > (`3729878405`) **is not in either corpus root** and is absent from `MOD-SNAPSHOT.md`, so its
-  > assembly cannot be read and the claim is **[I]** by
-  > [`docs/agents/capability-research.md`](../agents/capability-research.md) § *Inherited
-  > claims* — and false read as a present-tense fact about this load order. A corpus-wide sweep
+  > **Node Research (`3729878405`) is said to prefix `AdvanceTechLevel` to `false`; that is
+  > [I].** It is **not in either corpus root** and is absent from `MOD-SNAPSHOT.md`, so its
+  > assembly cannot be read ([`docs/agents/capability-research.md`](../agents/capability-research.md)
+  > § *Inherited claims*), and it is not in this load order. A corpus-wide sweep
   > for `AdvanceTechLevel`, both heap halves, returns **only** VFE Tribals' three copies and
   > `LemProgress.dll` [V]. **Nothing in the corpus suppresses the detector**, and the one mod
   > that hooks the ladder at all — Lemmy, via a prefix on `AdvanceToEra` that returns **`true`**
@@ -528,7 +525,7 @@ pieces bear on this document:
 
 `docs/data/PARTS-BIN.md` § 5.3 already files VFE Tribals as **RESTAT leaning REBUILD** and says
 the ladder is *"five XML defs and one `GameComponent`"*. Reading the assembly agrees, and adds
-the reason to rebuild rather than restat: the era advance has to sit behind the altar and write
+the reason to rebuild rather than restat: the era advance has to sit behind capstone completion and write
 a boundary, and neither is a patch on somebody else's `GameComponent`.
 
 ### What vanilla does provide, and where it is used instead
@@ -555,15 +552,13 @@ heap, with the `\x00` escapes typed directly into the ripgrep pattern, never bui
 | `EraAdvancementDef` / `EraAdvancement` | 3 paths → VFE Tribals only | **1 → `LemProgress.dll`** | sweep validation, both halves |
 | `AdvanceTechLevel` | VFE Tribals ×3, `LemProgress.dll` | 0 | confirms nothing else hooks the ladder |
 
-**Why the `#US` half is not optional here, contra an earlier draft of this note.** That draft
-said a null-interleaved pass "is not applicable to a field or type *name*". **That is wrong, and
-this sweep is its own counter-example:** the `#US` half of `EraAdvancement` returns a hit in
+**Why the `#US` half is not optional here, even for a field or type *name*.** This sweep is
+its own proof: the `#US` half of `EraAdvancement` returns a hit in
 `LemProgress.dll` that the ASCII half does not, because Lemmy reaches VFE Tribals and WTL
 entirely through `AccessTools.TypeByName` / `AccessTools.Field` **string arguments** — which is
 exactly where a type or member *name* lives in the `#US` heap. Any mod that touches another mod
-reflectively is invisible to the ASCII half alone. The negative above survives; the reasoning
-that would have justified skipping the second pass does not, and skipping it would have hidden
-the one mod in the corpus that manipulates the era ladder from outside.
+reflectively is invisible to the ASCII half alone. Skipping it would have hidden the one mod in
+the corpus that manipulates the era ladder from outside.
 
 Hit counts are **[I]** — a sweep is a filename-and-string result, never a read. The three
 assemblies that matter were then read end to end.
@@ -584,7 +579,7 @@ which is Balance's and not this document's.
    be the new era. (This is the check Lemmy Progression fails.)
 2. **The def re-stamp.** After the same reload, `Faction.OfPlayer.def.techLevel` must equal the
    new era — **T-11**'s revert repaired by § 4.
-3. **Retention.** After two advances, the boundary tooltip must list three rows and the first
+3. **Retention.** After two advances, the boundary-log row must list three rows and the first
    two start ticks must be unchanged.
 4. **Continuity.** With [`PRESSURE.md`](PRESSURE.md)'s dev storyteller panel open, note base
    points immediately before and after an advance. They must not fall. (Fails today if the era
@@ -601,28 +596,20 @@ which is Balance's and not this document's.
 ## Outstanding decisions
 
 - **The era-time curve is Balance's**, including its ceiling, its time-to-ceiling, and whether
-  each era's cap is the same. Fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).
-  **The unit changed** — under `Σ cappedCurve` the term's ceiling is six era-caps, not one (§ 2)
-  — so a per-era cap authored against the old single-stamp reading will be roughly 6× too large.
-- **`PRESSURE.md`'s era term needed one edit and this document did not make it.** § 2 shows the
-  single-stamp reading contradicts that document's own Verification check 2. **This is not an
-  open hand-off:** the full replacement text — the term-table row, the sentence under it, and the
-  *Outstanding decisions* bullet — is written out verbatim in the resolution on
-  [#109](https://github.com/cjd721/Rimworld-Archinity/issues/109) and **is being applied by the
-  orchestrator**. Recorded as a row here only so a reader of this document knows the change
-  happened and why, not as work awaiting an owner — which matters, because
-  [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60), the ticket that raised the gap,
-  is closed and #109 closes with this resolution.
-- **Era *lengths* have no requirements owner.** `docs/engine/world-time-and-layers.md` § *Time*
-  carries Conrad's target lengths and says explicitly that they are campaign design input rather
-  than an engine fact; `docs/requirements/` holds no document that owns them and
-  `docs/progression/` holds only a README. **Stated as a gap, not handed off** — the owning
-  document would be a progression requirement, and
-  [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30) is the nearest live ticket.
-- **Whether the boundary log is shown to the player at all**, or only fed to the pressure
-  readout. § 5 proposes a tooltip; it is a design call, not a capability one.
+  each era's cap is the same: balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+  **The unit changed** — under `Σ cappedCurve` the term's ceiling is five era-caps, not one (§ 2)
+  — so a per-era cap authored against a single-stamp reading will be roughly 5× too large.
+- **`PRESSURE.md`'s era term** reads the sum of § 2; it was applied to PRESSURE.md § *The
+  build* (era-time row) from [#109](https://github.com/cjd721/Rimworld-Archinity/issues/109).
+- **Era lengths are balance**, owned by [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)
+  per [`docs/requirements/ERA.md`](../requirements/ERA.md) § *Open questions*.
+  `docs/engine/world-time-and-layers.md` § *Time* carries Conrad's target lengths as campaign
+  design input rather than an engine fact.
+- **Showing the boundary log to the player.** Capability: § 5's `FillTab` row; the log also
+  feeds the pressure readout whether or not it is shown.
 - **Whether a beat may read `StartTickOf` for an era the colony has left.**
-  [`CHARTING.md`](CHARTING.md) is the consumer; the contract in *Status* supports it either way.
+  [`docs/progression/`](../progression/README.md) grid cells are the consumer; a beat that wants
+  it reads the same contract. The contract in *Status* supports it either way.
 
 ---
 
@@ -813,7 +800,7 @@ appearing overnight read as a bug, not an age.
   of ours. The donor is `GenStep_ScatterShrines.ScatterAt`, which pushes a BaseGen symbol into a
   used-rect-checked rect [V].
 - **Consequences:** the "Archon site with a few defenders" sits in the yard. It is still
-  map-seeded, so whether it may be expected to be opened on day one is a story call.
+  map-seeded, so it can be opened from day one.
 
 #### AE-8 — Replace with a journey
 
@@ -885,9 +872,10 @@ appearing overnight read as a bug, not an age.
   - **Odyssey** — `Junkyard` mutator (Scarlands junk ×15 density, no WTL row); Scarlands'
     `AncientRuins_Scarlands` and Glacial Plain's `FrozenRuins` biome steps; the `AncientUplink`
     mutator and ruin room. The uplink's home-map half is ours and its giver half is
-    [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)'s, whose single `PrefabDef
+    [`ORBIT.md`](ORBIT.md) § *Holding every `OrbitalScanner` giver shut*
+    ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)), whose single `PrefabDef
     AncientUplink` funnel reaches every arrival route.
-  - **Anomaly** — `VoidMonolith` on `Base_Player`. Whether it counts as above-era is a story call.
+  - **Anomaly** — `VoidMonolith` on `Base_Player`, so within AE-1–AE-3's home scope [I].
   - **Mechanoids: Total Warfare** redefines `AncientExostriderRemains` and defines an unattached
     `AncientWarBeaconRemains` (its `Base_Player` patch adds nothing) [V].
   - **Vanilla ship-part crash incidents** — un-gated in the frozen configuration by **T-166**.
@@ -923,10 +911,9 @@ appearing overnight read as a bug, not an age.
 
 ### Open questions
 
-- **Story — Conrad:**
-  - Is a replacement a fixture in the yard (AE-7) or a place to go (AE-8)?
-  - Does the mechanitor arrive at Industrial at all?
-  - Does Anomaly's monolith count?
+- **Capability, answered above:** a replacement can be a fixture in the yard (AE-7) or a place to
+  go (AE-8); the mechanitor crash has routes of its own in the carrier table (AE-1–AE-3, AE-5,
+  AE-6, AE-7, AE-8); Anomaly's `VoidMonolith` sits on `Base_Player`, which AE-1–AE-3 reach [I].
 - **Build — [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):**
   - the no-op step for AE-3;
   - AE-5's once-only guard;
@@ -935,6 +922,7 @@ appearing overnight read as a bug, not an age.
 - **[#22](https://github.com/cjd721/Rimworld-Archinity/issues/22):**
   - § 2 per the list above;
   - the T-166 ship-part incidents as arrivals.
-- **[#180](https://github.com/cjd721/Rimworld-Archinity/issues/180):** the uplink as a giver.
-- **Unowned:** whether a `Base_Player` child or a modded player-settlement generator bypasses
+- **The uplink as a giver:** answered in [`ORBIT.md`](ORBIT.md) § *Holding every
+  `OrbitalScanner` giver shut* ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)).
+- **Capability, unread [I]:** whether a `Base_Player` child or a modded player-settlement generator bypasses
   AE-3. Vanilla's two children (`BasePlayer_SecondArchonexusCycle`, `…Third…`) inherit it [V].

@@ -2,11 +2,6 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** Destructive Glitterite artifact analysis and
-> repeated raids are first-class Trace inputs alongside serious network intrusion.
-> Glitterites themselves are never hack targets, so android-target hacking contributes
-> nothing. Other androids are not Glitterites by definition.
-
 Implements [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md)
 § *Trace — The Glitterites Learn You Back* and
 [`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md) § *Glitterite pursuit*
@@ -16,6 +11,8 @@ Implements [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md)
 **This document owns** the Trace number, its bands, what raises and decays it, the
 search-progress meter that runs beside it, the relocation rule that resets search,
 the pursuit quest, and every surface on which the player reads any of the above.
+Glitterites are never hack targets (`GLITTERTECH.md` § *A captured Glitterite*), so no
+android-target hack feeds Trace.
 
 **Adjacent systems take over at five boundaries.**
 
@@ -25,7 +22,7 @@ the pursuit quest, and every surface on which the player reads any of the above.
 | **How big a raid is, and how it is authored** | [`PRESSURE.md`](PRESSURE.md). It says how threat strength is composed; this document says what starts a pursuit raid and when. **Trace never enters `DefaultThreatPointsNow`** — see § *Why Trace cannot multiply with Reverence*. |
 | **The balance that pays for a Trace-reducing quest** | [`CURRENCIES.md`](CURRENCIES.md). Trace is a band ladder, not a balance, and lives in its own component. |
 | **The shop window the readout sits in** | [`CURRENCIES.md`](CURRENCIES.md) § *Where the player sees it*, D1. This document adds one header row to a window that document already builds. |
-| **Cross-cutting political-UI layout** | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61). This number's readout is here. |
+| **Cross-cutting political-UI layout** | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map). Every surface has a route ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)); tab shape and placement are the build map's. This number's readout is here. |
 
 **Why this is its own document.** Trace spans three specs — its input is hacking, its
 output is the storyteller, its readout is the currency window — and none of the three
@@ -148,9 +145,9 @@ looked up in `TraceDef.intrusionRows` by the report's `depth` and scaled by
 `defenceFactorCurve.Evaluate(report.defence)`.
 
 **This is where the two specs must agree, and the agreement is data rather than a
-convention.** `GLITTERTECH.md` says *"Simple local hacks — such as a basic isolated
-door — need not matter. Network-level hacks of mechanoids, reactors, command systems,
-defenses or androids do."* `HACKING.md` makes `depth` **a property of the target,
+convention.** `GLITTERTECH.md` § *Trace* says *"Simple local hacks—such as a basic isolated
+door—need not matter. Network-level hacks of mechanoids, reactors, command systems and
+defenses do."* `HACKING.md` makes `depth` **a property of the target,
 declared in XML** on `Arch_IntrusionDepthExtension`, defaulting to `Local`, and emits
 every intrusion including `Local` ones so that *"#56 decides to ignore them, rather
 than me deciding they never happened"* **[V]**. So:
@@ -173,7 +170,7 @@ fields, `Notify_QuestSignalReceived` **[V]**. This is *"repeated raids… teach 
 Glitterites who is attacking them"*: a raid that raises Trace does it by firing a
 quest signal, which is inside the synced quest machinery.
 
-**Raise C — an artifact is analysed.** Destructive Glitterite analysis calls `Notify_Trace` from the synced tick, at start, per increment or at completion, as [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) decides. The carrier is [`RESEARCH.md`](RESEARCH.md) § *Destructive artifact analysis* ([#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)). Add it to § *Multiplayer*'s writer table as "`IThingStudied.OnStudied` → job tick".
+**Raise C — an artifact is analysed.** Destructive Glitterite analysis calls `Notify_Trace` from the synced tick, at start, per increment or at completion, as [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) decides. The carrier is [`RESEARCH.md`](RESEARCH.md) § *Destructive artifact analysis* ([#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)). Its writer is in § *Multiplayer*'s table.
 
 **Lower — a Trace-reducing quest.** The same part with a negative `traceChange`.
 Requirements rule 7 (*"Glitterite quests provide opportunities to reduce Trace"*) is
@@ -246,15 +243,21 @@ if (now.Valid && now != lastSettledTile) {
   reacquisition."*
 
 `Find.WorldGrid.TraversalDistanceBetween(PlanetTile, PlanetTile)` is layer-aware **[V]**.
+It is not the number the player sees at launch: `GravshipUtility.TryGetPathFuelCost`
+**projects** a cross-layer origin with `GetClosestTile_NewTemp` *before* measuring, and
+the launch UI shows a chemfuel cost rather than a tile count **[V]** (§ *Planet↔orbit as a
+qualifying relocation* › *Legibility*,
+[#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)). Across a layer change
+the unprojected call here returns `int.MaxValue`, which is what makes rule 1's last
+sentence hold for free.
 
-> ~~*and is the same function `GravshipUtility.TryGetPathFuelCost` uses, so the number
-> the player sees when launching and the number we test are the same number.*~~
-> **Struck by [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150).** It is
-> the same function but not the same call: `TryGetPathFuelCost` **projects** a
-> cross-layer origin with `GetClosestTile_NewTemp` *before* measuring, and the launch UI
-> shows a chemfuel cost rather than a tile count **[V]**. See § *Planet↔orbit as a
-> qualifying relocation* → *Legibility*. Across a layer change the unprojected call here
-> returns `int.MaxValue`, which is what makes rule 1's last sentence hold for free.
+**A qualifying relocation is a move of the colony's base**
+([`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md) § *Glitterite pursuit*,
+rule 1): by gravship, or by caravanning out, founding a new settlement and abandoning the
+old. A short move still grants no fresh safe window, and a move between two places in
+orbit counts the same way, past its threshold (§ *Planet↔orbit as a qualifying
+relocation*, Route C). The tick comparison above registers any change of settled tile,
+however it was made, so the caravan case needs nothing further **[I]**.
 
 Rule 4 (*"Reducing Trace cannot undo progress already made"*) is structural rather
 than enforced: `searchProgress` is only ever written by `QuestPartTick` and by the
@@ -267,19 +270,8 @@ escape signal. No Trace path can reach it.
 > Nothing in its signature, and nothing reachable from it, says where the gravship came
 > from. That alone disqualifies it.
 >
-> *An earlier draft gave two further reasons and **both were false**, so they are struck
-> rather than quietly dropped. It said `LandingEnded` nulls the gravship "two statements
-> before" the call — it is seven (`terrainCapture`, `gravship`, `Current.Game.Gravship`,
-> `CurTimeSpeed`, two curtain masks, `map`, `moveDesignator`, then `ResetCutscene()`, then
-> the call) **[V]**. And it said `takeoffTile` / `landingTile` are "reset by
-> `ResetCutscene`" — **they are not**. `ResetCutscene()` is exactly
-> `Find.ScreenshotModeHandler.Active = false; cutsceneInProgress = false; landingMap =
-> null;` **[V]**. Both tiles survive the landing and are `Scribe_Values`-persisted as
-> `"takeoffTile"` and `"targetTile"` **[V]**, so they are reachable by `AccessTools.Field`
-> from anywhere. The conclusion was right on the wrong evidence.*
->
 > **A postfix on `GravshipUtility.TravelTo(Gravship, PlanetTile oldTile, PlanetTile
-> newTile)`** has both tiles and was the previous proposal. **Rejected on two independent
+> newTile)`** has both tiles. **Rejected on two independent
 > counts, each verified:**
 >
 > 1. **`TravelTo` reassigns its own `oldTile` parameter.** The body is
@@ -299,12 +291,13 @@ escape signal. No Trace path can reach it.
 
 ### Where the player sees it
 
-Six surfaces. Four are free or nearly so, and **the one the requirements name
-explicitly — the risk of an intrusion, before committing to it — is ten lines on a
-patch [`HACKING.md`](HACKING.md) already writes.**
+Six surfaces. Four are free or nearly so, and **the per-intrusion risk readout (D3) is
+ten lines on a patch [`HACKING.md`](HACKING.md) already writes.** PRESSURE's player-information
+rules ask that pressure be broadly understood and relocation distance legible; D3 is
+optional, and no requirement names it.
 
-**D1 — the band, in the network window.** One header row in the
-`MainTabWindow_Network` that [`CURRENCIES.md`](CURRENCIES.md) builds: band icon,
+**D1 — the band, in the network window.** One header row in the currency window(s)
+[`CURRENCIES.md`](CURRENCIES.md) builds: band icon,
 band label, the number coloured
 `Color.Lerp(BrightGreen, RedReadable, InverseLerp(0, 100, trace))`, and a hover
 tooltip carrying the band description, the modifiers, and a bullet list of every
@@ -322,9 +315,8 @@ mission that raises Trace and one that lowers it both show a row in the quest-ch
 list *before* acceptance. ~60 lines, and [`CURRENCIES.md`](CURRENCIES.md) already
 establishes the pattern for `Reward_Currency`.
 
-**D3 — the risk of *this* intrusion, before committing to it.**
-`GLITTERTECH.md` asks the player to *"see the risk before committing to an
-intrusion"*, and that is a per-target readout, not a letter afterwards.
+**D3 — the risk of *this* intrusion, before committing to it — optional; no requirement
+names it.** A per-target readout, not a letter afterwards.
 [`HACKING.md`](HACKING.md) already writes a postfix on
 `RimWorld.CompHackable.CanHackNow(Pawn)` for the research gate, and vanilla already
 renders that `AcceptanceReport.Reason` in three places — the float-menu refusal,
@@ -380,19 +372,18 @@ Intel rather than fighting them. **One postfix, three rows — not two postfixes
 | `Letter_Trace` | new C# | ~50 | same |
 | Relocation check on `WorldComponentTick` (no patch) | new C# | ~25 | `Archinity.Altar/Source/Trace.cs` |
 | Startup validator — band ranges tile 0..100 with no gap or overlap | new C# | ~15 | same |
-| D1 band row in `MainTabWindow_Network` | new C# | ~40 | `Source/CurrencyUI.cs` |
+| D1 band row in the currency window ([`CURRENCIES.md`](CURRENCIES.md) § *The purchasable quest catalogue*) | new C# | ~40 | `Source/CurrencyUI.cs` |
 | D3 inspect-string addition to the existing `CanHackNow` postfix | patch | ~10 | `Source/Patches.cs` |
 | D6 — one more row on an existing postfix | patch | ~5 | `Source/Patches.cs` |
 | **Total new C#** | | **~645** | one assembly |
 | One `TraceDef` + three `TraceBandDef`s + every effect | **XML** | ~180 | `Archinity.Glitterites/Defs/Trace/` |
 | The pursuit `QuestScriptDef` — the search part, the detection raid, the threats generator, the reveal letter, signals and text | **XML** | **~400** | same |
-| The detection `IncidentDef`, `Arch_IntrusionDepthExtension` on every target def, `layerWhitelist` patches for orbit (**T-48**) | **XML** | ~120 | `Archinity.Glitterites/Patches/` |
+| The detection `IncidentDef`, `Arch_IntrusionDepthExtension` on every target def, `layerWhitelist` on our own pursuit/threat defs (**T-48**) — the general orbital pack is [`GRAVSHIP.md`](GRAVSHIP.md) § *Ordinary colony life on an orbital home*, Route A | **XML** | ~120 | `Archinity.Glitterites/Patches/` |
 | **Total XML** | | **~700** | |
 
-> The XML figure was **~350** in the first draft and that was 1.5–2× low. Royalty's
-> `Script_EndGame_RoyalAscent.xml` — the shipped quest that does roughly what the pursuit
-> quest must do — is ~400 lines on its own **[V]**, and it does not also carry a band
-> ladder or an intrusion-depth patch set.
+> Royalty's `Script_EndGame_RoyalAscent.xml` — the shipped quest that does roughly what
+> the pursuit quest must do — is ~400 lines on its own **[V]**, and it does not also carry
+> a band ladder or an intrusion-depth patch set.
 
 Marked **[I]**: every mechanism composed above is **[V]**; the claim that they
 compose into the required behaviour is inferred until something compiles, and the
@@ -469,10 +460,10 @@ in scope.
 **That scope includes every Intel exchange entry, by construction.**
 [`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange* sells Instruction items as
 `Archinity_Intel` purchases, so a high Trace band raises the price of Instruction as well
-as the pursuit — aggression taxed twice. Whether that is intended is an **open
-requirement**, not ruled here; owner
-[#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) (`CURRENCIES.md`
-§ *Outstanding decisions*). A per-entry opt-out is ~2 lines.
+as the pursuit — aggression taxed twice. Either can be built: a per-entry opt-out is ~2
+lines. Exchange prices and Trace exposure are
+[#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)'s (`CURRENCIES.md`
+§ *Outstanding decisions*).
 
 ---
 
@@ -520,6 +511,7 @@ rather than by luck.**
 | decay | `WorldComponentTick` | the world tick |
 | `Notify_Intrusion` | `ThingComp.Notify_Hacked` inside `CompHackable.OnHacked`, reached from `JobDriver_Hack` **[V]** | the job |
 | `QuestPart_ChangeTrace` | `Notify_QuestSignalReceived` | the quest machinery |
+| destructive analysis (Raise C) | `IThingStudied.OnStudied` → job tick | the job |
 | `QuestPart_TraceSearch.QuestPartTick` | `Quest.QuestTick` | the world tick |
 | the relocation check | `WorldComponentTick` — no patch, no hook |
 
@@ -549,14 +541,8 @@ at different ticks, and a game-state write there is a desync with no error messa
 
 **`PatchGravshipCutsceneToFreeze` does not rescue it**: it postfixes `InitiateTakeoff` and
 `InitiateLanding` with `StartFreeze()` **[V]** — it opens the window that
-`PatchGravshipTakeoffEnded` closes.
-
-> *An earlier draft of this section asserted that our postfix would sit "inside the same
-> frozen window", and § *Verification* item 3 said "the freeze lifts in `LandingEnded`'s
-> prefix". **Both are false**, and they were reached by reading two of the three gravship
-> patches and generalising. `PatchGravshipTakeoffEnded` is the third. The same draft
-> withdrew a proposed trap on the strength of that generalisation; **the trap is
-> reinstated as T-78**, scoped to the asymmetry rather than to vanilla.*
+`PatchGravshipTakeoffEnded` closes. **T-78** is the register entry, scoped to the
+asymmetry rather than to vanilla.
 
 **The build avoids the whole question.** The relocation check runs on
 `WorldComponentTick`, reads two scribed `PlanetTile`s, calls one grid method, draws no
@@ -587,10 +573,10 @@ re-read [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)'s scribed-
 claim. Evidence class **READ**.
 
 **This section owns only whether the move counts.** Whether the pursuit's raid can
-reach an orbital home once it does is [`ORBIT.md`](ORBIT.md)
-([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148)) and the **T-48** row
-in § *Outstanding decisions*; ordinary life on an orbital home is
-[`GRAVSHIP.md`](GRAVSHIP.md) ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)).
+reach an orbital home once it does is the **T-48** row in § *Outstanding decisions*;
+ordinary life on an orbital home, and the general orbital whitelist, is
+[`GRAVSHIP.md`](GRAVSHIP.md) § *Ordinary colony life on an orbital home*
+([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)).
 
 ### Verdict
 
@@ -652,7 +638,7 @@ A finite value rules a layer change out; `int.MaxValue` does **not** rule one in
 
 | Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
 |---|---|---|---|---|---|
-| **A** | The guarantee, for nothing — the call § *The escape rule* already makes returns `int.MaxValue` across layers | vanilla — `WorldGrid.TraversalDistanceBetween` | already in the design | Easy (zero) | Yes |
+| **A** | The guarantee, for nothing — the call the escape rule (§ *The search meter and the pursuit*) already makes returns `int.MaxValue` across layers | vanilla — `WorldGrid.TraversalDistanceBetween` | already in the design | Easy (zero) | Yes |
 | **B** | The same guarantee **stated** — an explicit `from.Layer != to.Layer` branch ahead of the distance test | our code, reading `PlanetTile.Layer` / `.LayerDef` | C# | Easy | Yes |
 | **C** | A threshold that means the same thing on each layer, so orbit→orbit reads sensibly | `TraceDef` XML keyed by `PlanetLayerDef` | XML | Easy | Yes |
 | **D** | The move seen in the landing frame, both endpoints unprojected | `WorldComponent_GravshipController.takeoffTile` + `Gravship.destinationTile` | C#, Harmony | Medium | **With work** — **not recommended** |
@@ -714,7 +700,7 @@ with no side effects **[V]**.
 > and its settings file, `layerType SurfaceLayer` **[V]** — the shipped, XML-only
 > template for adding a layer. Under plain `Layer !=` a hop to a moon surface escapes
 > for the same reason orbit does; under `isSpace`, only entering or leaving space does.
-> **Which is right is a requirement, not a capability** — see § *Outstanding decisions*.
+> The engine supports either reading at identical cost (§ *Outstanding decisions*).
 
 **Route C — the per-layer threshold, and the answer to orbit→orbit.** Two orbital tiles
 are on the same layer, so the distance test behaves normally there — but **a "tile" is
@@ -741,13 +727,9 @@ thing on both. Vanilla faces the same problem and solves it by division:
 > ratio is the right ratio for a *pursuit*. The `÷ rangeDistanceFactor` shorthand is
 > recorded here as vanilla's precedent for the *shape* of the answer, not as the number.
 
-**Correcting my own wide pass.** The resolution comment on
-[#150](https://github.com/cjd721/Rimworld-Archinity/issues/150) said *"every planet layer
-in play is vanilla's."* **That is wrong.** The sweep was sound for what it covered — no
-mod in either Steam root adds a `PlanetLayerDef` or `PlanetLayerSettingsDef`, validator
-`<ThingDef` matching 4,351 mod files in the identical form **[V]** — but **Archinity is
-not in those roots**, and Archinity modifies the orbit layer. The corpus is the two Steam
-roots *plus this repo*.
+**The corpus is both Steam roots plus this repo.** No mod in either Steam root adds a
+`PlanetLayerDef` or `PlanetLayerSettingsDef` **[V]**, but `Archinity.Pacing` replaces the
+orbit grid (above), so not every planet layer in play is vanilla's.
 
 **Route D — observing the travel event, and why not.** Both endpoints are there and
 unprojected: `Verse.WorldComponent_GravshipController.takeoffTile` and
@@ -772,14 +754,11 @@ prefix **[V]**; and `ScenPart.PostGravshipLanded(Map)` still takes only a `Map` 
 > icosahedral grid are plausible **[I]**. **Routes A–C never call it.** Proposed as a
 > trap on [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150).
 
-### Legibility — and a correction to this document
+### Legibility
 
 Requirements rule 1 asks that *"relocation distance requirements must be legible so a
-short hop is an informed risk."* § *The escape rule* and § *Failure and recovery* both
-justify that with *"`TraversalDistanceBetween` is the same function the gravship's own
-fuel cost uses, so the number the player sees when launching and the number we test are
-the same number."* **That is false across a layer change, and false hardest on exactly
-the case this section is about.**
+short hop is an informed risk."* The number the player sees at launch is not the number
+the relocation test reads, and the gap is widest on a layer change.
 
 `RimWorld.GravshipUtility.TryGetPathFuelCost` **projects first and measures second**: on
 `from.Layer != to.Layer` it does `from = to.Layer.GetClosestTile_NewTemp(from);` and only
@@ -846,7 +825,7 @@ number, because there is no number on either side to compare.
 | A `TraceBandDef` leaves the load order, or its range is edited | **Loud on the next load** — the band walk finds no band whose `traceRange.max >= trace` | The walk must not leave `band` null. A startup validator asserting that the shipped `traceRange`s tile 0..100 with no gap and no overlap is ~15 lines and converts a null-band crash into a config error. **This is the one place the donor's design is genuinely fragile: its walk has no fallback** **[V]**. |
 | Trace and search disagree — search completes while Trace is 0 | Visible: a pursuit raid with no readout to explain it | Not a bug. Rule 4 is explicit that reducing Trace *"cannot undo progress already made"*, and rule 6 that *"reducing Trace after detection does not conceal the location."* The `ExpiryInfoPartTip` must say so. |
 | The pursuit quest ends (declined, failed, cleaned up) and search is orphaned | `searchProgress` lives on the quest part, so it dies with it | Correct by construction, but it means **the pursuit quest must not be dismissible**. Author it auto-accepted with no `QuestPart_Choice`; `Quest.dismissed` only hides a row, it does not end a quest **[V]**. |
-| A short relocation is mistaken for an escape | **Silent** — the player believes they got away | Prevented rather than recovered: the threshold is a `TraceDef` field, stated in `ExpiryInfoPartTip`. ~~and `TraversalDistanceBetween` is the same function the gravship's own fuel cost uses, so the number the player sees when launching and the number we test are the same number~~ — **struck by [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)**: the launch UI shows a chemfuel cost, not a tile count, and it **projects** a cross-layer origin before measuring **[V]**. For a same-layer move the fuel cost is still monotonic in the distance we test; for a layer change there is no comparable number and the tooltip must state the rule. See § *Planet↔orbit as a qualifying relocation* → *Legibility*. |
+| A short relocation is mistaken for an escape | **Silent** — the player believes they got away | Prevented rather than recovered: the threshold is a `TraceDef` field, stated in `ExpiryInfoPartTip`. The launch UI shows a chemfuel cost, not a tile count, and it **projects** a cross-layer origin before measuring **[V]** ([#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)). For a same-layer move the fuel cost is still monotonic in the distance we test; for a layer change there is no comparable number and the tooltip must state the rule. See § *Planet↔orbit as a qualifying relocation* → *Legibility*. |
 | `GravshipUtility.TravelTo`'s signature changes on a RimWorld update | **Loud** — Harmony throws at startup on a missing target | Nothing else in this document is exposed to an update; every other seam is a virtual override or a `Def` field. |
 | Two clients hold different Trace | MP desync | Unreachable by design — see the writer table. No path originates at a button and no number comes from `ModSettings`. |
 
@@ -865,21 +844,20 @@ stay and fight indefinitely, and the threats generator is bounded by its authore
 | | |
 |---|---|
 | **Verified available mechanisms** | `VFED.VisibilityLevelDef` / `VisibilityEffect` as a band-ladder architecture; the `IncidentWorker.CanFireNow` prefix and the `FactionDef.RaidCommonalityFromPoints` postfix as band-effect seams; `QuestPartActivable`'s `QuestPartTick` / `ExpiryInfoPart` / `AlertReport`; `QuestPart_RandomRaid` and `QuestPart_ThreatsGenerator` with `currentThreatPointsFactor`; `WorldGrid.TraversalDistanceBetween`; `World.FillComponents`. All **[V]**. |
-| **Corrected since the first resolution** | The relocation seam moved from a `GravshipUtility.TravelTo` postfix to a `WorldComponentTick` tile comparison, for two verified reasons: `TravelTo` reassigns its own `oldTile` parameter on a cross-layer move, and `TakeoffEnded` runs **after** Multiplayer lifts its freeze and with no `Rand` wrapper (**T-78**). Two supporting claims about `LandingEnded`'s statement ordering and `ResetCutscene` were **false** and are struck in place. |
-| **Confirmed negative** | **Odyssey's gravship pursuit does not carry the required behaviour.** See *Available mechanisms*; this corrects a stated preference in `docs/requirements/PRESSURE.md`. |
+| **Corrected since the first resolution** | The relocation seam moved from a `GravshipUtility.TravelTo` postfix to a `WorldComponentTick` tile comparison, for two verified reasons: `TravelTo` reassigns its own `oldTile` parameter on a cross-layer move, and `TakeoffEnded` runs **after** Multiplayer lifts its freeze and with no `Rand` wrapper (**T-78**). |
+| **Confirmed negative** | **Odyssey's gravship pursuit does not carry the required behaviour.** See *Available mechanisms*. |
 | **Proposed, not selected** | The whole build above. **[I]** as a composition, and the line estimates with it. |
-| **Open parameters** | Every number: band thresholds, decay rate, the four `intrusionRows` columns, `searchRatePerDayByTrace`, `revealAtSearchProgress`, `escapeDistanceTiles`, both `currentThreatPointsFactor`s. Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2). |
+| **Open parameters** | Every number: band thresholds, decay rate, the four `intrusionRows` columns, `searchRatePerDayByTrace`, `revealAtSearchProgress`, `escapeDistanceTiles`, both `currentThreatPointsFactor`s. Balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). |
 
 ---
 
 ## Available mechanisms
 
-### Odyssey's gravship pursuit — the named preferred provider, read and declined as a carrier
+### Odyssey's gravship pursuit — read and declined as a carrier
 
-`docs/requirements/PRESSURE.md` § *Glitterite pursuit* opens: *"The preferred provider
-to investigate is Odyssey's existing gravship pursuit mechanic. Reuse is a design
-preference, not yet a verified implementation."* It has now been verified, and the
-verdict is **repoint, not reuse**.
+`docs/requirements/PRESSURE.md` § *Glitterite pursuit* once named this as the preferred
+provider; it now names none and cites this section. The verdict is **repoint, not
+reuse**.
 
 **What it actually is [V]:** `RimWorld.ScenPart_PursuingMechanoids`, a single
 `ScenPart` on the Odyssey `TheGravship` scenario (`ScenPartDef PursuingMechanoids`,
@@ -912,19 +890,6 @@ tick deadlines**, scribed `LookMode.Reference, LookMode.Value`. `Tick()` runs fr
 - `PostGravshipLanded`'s existence proved where the landing hook is, and its
   signature proved why we cannot use it.
 
-**Premise corrected, and the correction belongs to exactly one file.**
-**`docs/requirements/PRESSURE.md` § *Glitterite pursuit*** is the only requirements
-document that names Odyssey or gravship pursuit; its opening sentence is *"The preferred
-provider to investigate is Odyssey's existing gravship pursuit mechanic."* The mechanic
-exists, and it is a scenario timer — rules 1, 3, 4, 5 and 7 each need machinery it does
-not have.
-
-> **`docs/requirements/GLITTERTECH.md` does not name Odyssey, gravships or pursuit reuse
-> anywhere.** Its § *Saved state and remaining work* delegates: *"The pursuit rules are
-> settled in [difficulty and pursuit](PRESSURE.md#glitterite-pursuit)."* An earlier draft
-> of this paragraph said both files carried the preference. They do not, and a requirements
-> correction that names the wrong file cannot be acted on.
-
 ### VFE Deserters Visibility — the architecture, repointed
 
 `…/294100/3025493377/1.6/Assemblies/VFED.dll`. `MOD-SNAPSHOT.md` marks
@@ -942,7 +907,7 @@ not the source tree.
 | `VisibilityEffect_RaidChance` → `FactionDef.RaidCommonalityFromPoints` postfix | **KEEP THE SEAM** **[V]**. |
 | `VisibilityEffect_ArmySize` → `PawnGroupMakerUtility.GeneratePawns` prefix | **REJECT.** See § *Why Trace cannot multiply with Reverence*. The seam is real; using it is the multiplication the requirements forbid. |
 | `VisibilityEffect_GameCondition` → a world `GameCondition` with a duration | **REJECT for the pursuit**, though it is a working countdown. A `GameCondition` duration is a fixed deadline; rule 3 requires an estimate that moves when Trace moves. |
-| `VisibilityEffect_Goodwill` → a random faction −10 per `TickDay` | **REJECT.** `GLITTERTECH.md` says the Glitterites are *"outside human belief, persuasion or diplomacy"*; a pursuit that moves human goodwill contradicts it. |
+| `VisibilityEffect_Goodwill` → a random faction −10 per `TickDay` | **REJECT.** `GLITTERTECH.md` § *Strongholds* says the Glitterites are *"hostile to everyone and outside normal diplomacy"*; a pursuit that moves human goodwill contradicts it. |
 | `VisibilityEffect_AerodroneBombardment` | **REJECT the implementation outright.** `private static bool active`, an `OnActivate` `Rand.Range`, and a scheduled delegate whose persistence serializes `action.Method.Name + "." + DeclaringType.AssemblyQualifiedName` and reflects it back on load **[V]**. |
 | `QuestPart_ChangeVisibility` + `Utilities.ChangeVisibility` | **KEEP THE PATTERN** — a two-field `QuestPart` on `Notify_QuestSignalReceived` **[V]**. |
 | `Reward_Visibility` | **KEEP THE PATTERN, not the type** — a plain `RimWorld.Reward` subclass using only vanilla API, with `TotalMarketValue` pricing the meter change **[V]**. |
@@ -961,8 +926,8 @@ not the source tree.
 | `QuestPart_RandomRaid` **[V]** | a one-shot raid on a signal with `pointsRange`, `faction`, `useCurrentThreatPoints`, `currentThreatPointsFactor`, `arrivalMode`, `raidStrategy` | **Adopted** for the detection raid. |
 | `IncidentCycleUtility.IncidentCountThisInterval` **[V]** | a schedule seeded from `World.info.persistentRandomValue`, the target's `ConstantRandSeed`, the comp index and the interval number — it draws nothing from the shared `Rand` stream | The reason the threats generator is the MP-safest of the repeating options. [`PRESSURE.md`](PRESSURE.md) § 3 says the same about its own comp. |
 | `GravshipUtility.TravelTo(Gravship, PlanetTile, PlanetTile)` **[V]** | `public static`, receives both tiles, called from `TakeoffEnded()`'s body | **Considered and rejected.** It reassigns `oldTile` on a cross-layer move, so a postfix measures the projected tile **[V]**; and its caller runs after Multiplayer's freeze lifts, with no `Rand` wrapper (**T-78**). |
-| `WorldComponent_GravshipController.takeoffTile` / `landingTile` **[V]** | both `Scribe_Values`-persisted (`"takeoffTile"`, `"targetTile"`), untouched by `ResetCutscene`, reachable by `AccessTools.Field` | **Not needed** — the tick comparison reads the settled tile directly. Recorded because an earlier draft claimed they were destroyed, and they are not. |
-| `WorldGrid.TraversalDistanceBetween` / `ApproxDistanceInTiles` **[V]** | tile distance, layer-aware; `TraversalDistanceBetween` is what `GravshipUtility.TryGetPathFuelCost` uses | **Adopted** — the player's fuel cost and our escape test read the same function. |
+| `WorldComponent_GravshipController.takeoffTile` / `landingTile` **[V]** | both `Scribe_Values`-persisted (`"takeoffTile"`, `"targetTile"`), untouched by `ResetCutscene`, reachable by `AccessTools.Field` | **Not needed** — the tick comparison reads the settled tile directly. |
+| `WorldGrid.TraversalDistanceBetween` / `ApproxDistanceInTiles` **[V]** | tile distance, layer-aware; `TraversalDistanceBetween` is what `GravshipUtility.TryGetPathFuelCost` uses | **Adopted** — layer-aware; the unprojected call returns `int.MaxValue` across layers. It is not the number the launch UI shows (§ *Planet↔orbit as a qualifying relocation* › *Legibility*). |
 | `MapParent.Abandon(bool wasGravshipLaunch)` leaving a `GravshipLaunch` world object **[V]** | a marker at the abandoned tile, carrying `creationGameTicks` | **Not adopted**, but it is the fallback if `TravelTo` ever stops being patchable. |
 | `ScenPart` + `Scenario.TickScenario` + `GetAlerts()` **[V]** | a save-backed global tick host with a free alert surface and no Harmony patch | **Not adopted** — the quest gives us more. Recorded because it is genuinely the cheaper spine for a meter with no quest. |
 | `GameCondition` with a duration **[V]** | a visible world-scoped countdown | **Not adopted** — a fixed deadline cannot express a rate that Trace changes continuously. |
@@ -1015,10 +980,6 @@ Multiplayer's `PatchGravshipLandingEnded`, `PatchGravshipCutsceneToFreeze`,
    arrival.** The failure mode if it flickers is a spurious escape or a missed one.
    Observable with one client; the two-client check is only that both reach the same
    verdict on the same tick, which they must, because the input is scribed game state.
-   *(This item previously asked whether a `TravelTo` postfix fired inside Multiplayer's
-   freeze. It does not — `PatchGravshipTakeoffEnded`'s prefix lifts the freeze before
-   `TakeoffEnded`'s body runs **[V]** — and the seam was changed rather than tested. See
-   **T-78**.)*
 4. **That a `TraceEffect_Incident`-gated `IncidentDef` is actually suppressed.** The
    donor's prefix on `CanFireNow` is **[V]**; that our registration runs before the
    first storyteller interval is **[I]**.
@@ -1026,8 +987,8 @@ Multiplayer's `PatchGravshipLandingEnded`, `PatchGravshipCutsceneToFreeze`,
 **Observable checks that demonstrate the requirements are satisfied:**
 
 - Hacking an isolated door authored `Local` moves Trace by zero; hacking a Glitterite
-  reactor authored `Network` moves it, and the amount was legible on the reactor's
-  inspect string *before* the hack started.
+  reactor authored `Network` moves it (and, if D3 is built, the amount shows on the
+  reactor's inspect string *before* the hack starts).
 - A quest offering a Trace reduction shows a Trace row in the quest-choice list before
   acceptance, next to an Intel row on the alternative approach.
 - Crossing a band sends one letter listing exactly the effects that changed, and
@@ -1045,11 +1006,9 @@ Multiplayer's `PatchGravshipLandingEnded`, `PatchGravshipCutsceneToFreeze`,
 
 | Question | Consequence | Owner |
 |---|---|---|
-| **Every number** — band thresholds, decay, the `intrusionRows` columns, search rate curve, reveal point, escape distance, both raid factors | Balance. Nothing structural depends on any of them. | Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) |
+| **Every number** — band thresholds, decay, the `intrusionRows` columns, search rate curve, reveal point, escape distance, both raid factors | Balance. Nothing structural depends on any of them. | Balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
 | **Which target defs are authored `Network` / `Command`** | Decides what actually raises Trace. The mechanism does not depend on the answer. | Authoring, alongside [`HACKING.md`](HACKING.md)'s `HackTargetClass` catalogue ([#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)) |
-| **Does deep analysis raise Trace?** `GLITTERTECH.md` names *"deep analysis"* among the things that teach the Glitterites, but no mechanism reports an analysis. `CompUseEffect_GainCurrency` ([`CURRENCIES.md`](CURRENCIES.md) Credit B) is the obvious place to add a Trace field. | One extra field on a comp that is already in the budget, or the clause goes unimplemented. | **Requirements gap, no ticket** → [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) |
-| **Does the pursuit reach an orbital home?** `QuestPart_ThreatsGenerator` needs a `mapParent` with a map, and **T-48** narrows the legal `IncidentDef` set drastically on an orbit layer. The pursuit's own defs need `layerWhitelist`. | The late-Ultra act is where pursuit matters most, and it is exactly where incidents silently stop. | This document flags it; [`PRESSURE.md`](PRESSURE.md) § *Failure and recovery* owns the T-48 sweep, and [`ORBIT.md`](ORBIT.md) owns the layer |
-| **Which tile counts as "the colony's" when two player home maps exist.** `CurrentSettledTile()` reads the home map holding a grav engine, falling back to `Find.AnyPlayerHomeMap`. [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) settled one player faction and one colony, so this is inert until the gravship creates a second map — and the orbital act is exactly when it stops being inert. | A wrong answer makes a relocation read as an escape, or the reverse. | [`ORBIT.md`](ORBIT.md) owns the layer; flagged here. |
-| **Can an orbit→orbit move shake a pursuit, and at what distance?** `SPACE.md` § *Living in orbit* and `PRESSURE.md` rule 1 both settle planet↔orbit and say nothing about moving between two orbital tiles. Route C can express any answer; it cannot choose one. Note that an orbit "tile" is not a surface tile, and that the threshold must be **authored per layer rather than derived** — `Archinity.Pacing` already replaces the orbit grid Odyssey's own `rangeDistanceFactor 20` was calibrated against, and **T-45** makes that replacement worldgen-only. See § *Planet↔orbit as a qualifying relocation* → Route C. | The late-Ultra act is entirely in orbit, so this is the threshold that will actually be tested. | **Requirements gap** → [`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md) / [`SPACE.md`](../requirements/SPACE.md), [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127) |
-| **Layer identity, or `isSpace`?** If a second *surface* layer is ever added — Odyssey ships a `Moon` template commented out, XML-only **[V]** — does hopping to it qualify the way orbit does? The engine supports either reading at identical cost. | Decides whether "escape" means *left the planet* or *left this world*. Nothing structural depends on the answer. | **Requirements gap** → [`docs/requirements/PRESSURE.md`](../requirements/PRESSURE.md), [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127) |
-| **The pressure-stat name.** [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) leaves *Trace* as the working name with *Visibility* acceptable. | Naming only. **Recommend Trace**, because *Visibility* is the donor's word for a different fiction and reusing it invites the reader to assume the donor's behaviour. | Conrad |
+| **Does the pursuit reach an orbital home?** `QuestPart_ThreatsGenerator` needs a `mapParent` with a map, and **T-48** narrows the legal `IncidentDef` set drastically on an orbit layer. The pursuit's own defs need `layerWhitelist` (§ *Cost*). | The late-Ultra act is where pursuit matters most, and it is exactly where incidents silently stop. | This document whitelists its own pursuit defs; the general orbital pack and life on an orbital home are [`GRAVSHIP.md`](GRAVSHIP.md) § *Ordinary colony life on an orbital home* ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)) |
+| **Which tile counts as "the colony's" when two player home maps exist.** `CurrentSettledTile()` reads the home map holding a grav engine, falling back to `Find.AnyPlayerHomeMap`, and scribes one tile. [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) settled two colonies on two separate tiles, so two home maps exist from the second colony's founding, and the pursuit can run while both stand. | A wrong answer makes a relocation read as an escape, or the reverse. | Capability: [#186](https://github.com/cjd721/Rimworld-Archinity/issues/186) — whether the pursuit can track each colony separately, only one, or both as one target, and by which routes |
+| **How far an orbit→orbit move must go.** A move between two places in orbit shakes the pursuit the same way a move on the planet does (`PRESSURE.md` § *Glitterite pursuit*, rule 1). An orbit "tile" is not a surface tile, so the threshold must be **authored per layer rather than derived** — `Archinity.Pacing` already replaces the orbit grid Odyssey's own `rangeDistanceFactor 20` was calibrated against, and **T-45** makes that replacement worldgen-only. | The late-Ultra act is entirely in orbit, so this is the threshold that will actually be tested. | Capability: § *Planet↔orbit as a qualifying relocation*, Route C (a threshold per layer). The number: balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
+| **Layer identity, or `isSpace`?** If a second *surface* layer is ever added — Odyssey ships a `Moon` template commented out, XML-only **[V]** — hopping to it qualifies under layer identity and not under `isSpace`. | Decides whether "escape" means *left the planet* or *left this world*. Nothing structural depends on the answer. | Capability: Route B (layer identity) or B′ (`isSpace`), both **[V]**, same cost (§ *Planet↔orbit as a qualifying relocation* › *Routes*). Which ships is the build map's |

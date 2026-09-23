@@ -6,7 +6,7 @@
 into the material they were made of, at a bench, without inventing an intermediate
 resource.
 
-The campaign deprecates constantly, across six eras, and recycling is the counterweight
+The campaign deprecates constantly, across five eras, and recycling is the counterweight
 the deprecation design leans on — one of four named levers in
 `docs/playtest-notes.md` § *Recycling is in, and a bench may be justified by the labour
 it soaks*. The hard constraint is the no-chains rule in `docs/PLOT.md` § *Campaign in play*
@@ -18,15 +18,17 @@ Established by [#82](https://github.com/cjd721/Rimworld-Archinity/issues/82).
 
 **Where adjacent systems take over.**
 
-- Which era a recipe unlocks in, and the research key that gates it —
-  [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) and
-  [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30).
+- Which era a recipe unlocks in, and the research key that gates it — the research gate
+  (`docs/requirements/ERA.md` § *The acquisition gate*), placed by
+  [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30); the bench is
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 - What a new bill defaults to, and the `hpRange` / `qualityRange` sliders —
-  [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95).
-- Whether the add-bill menu is legible with this many recipes on it —
-  [#96](https://github.com/cjd721/Rimworld-Archinity/issues/96). (#87 carried the
-  bill-and-recipe-menu mod survey and is **closed**; #96 is the open owner.)
-- No requirements document owns item deprecation. See *Outstanding decisions*.
+  [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95), `DEFAULTS.md` § *Half one*.
+- Whether the add-bill menu is legible with this many recipes on it — `COLONY.md` § *The
+  add-bill menu shows what matters now*
+  ([#161](https://github.com/cjd721/Rimworld-Archinity/issues/161)).
+- Requirement: `docs/requirements/COLONY.md` § *Obsolete gear goes back to the material it
+  was made of*.
 
 ---
 
@@ -124,8 +126,13 @@ every target here is stuff. The readers of `smeltable` located are
 `ThingDef.PotentiallySmeltable`, `Thing.Smeltable`, `Thing.SmeltProducts` and
 `RecipeDef.WorkAmountTotal`'s `SmeltOrDestroyThing` branch. The intended side effect is
 that vanilla's own `SmeltApparel` and `SmeltWeapon` at the `ElectricSmelter` begin
-accepting textile and wooden gear too. Field readers were not exhaustively enumerated
-across the whole assembly; residual risk **[I]**.
+accepting textile and wooden gear too — at vanilla's 25%, beside the reclaim recipe's 50%:
+each carries one `<li>Smelted</li>` (Core `Recipes_Production.xml`) [V], and the same two
+defs sit on `DankPyon_Furnace` and (`SmeltWeapon`) on `VFE_FueledSmelter` (3, below). Every
+reclaim path's fraction can be set by mechanisms verified here: a second `Smelted` entry
+added to `SmeltApparel`/`SmeltWeapon` by `PatchOperation` (*The return fraction*), or
+removing them from a bench's `recipeUsers` (3, below). Field readers were not exhaustively
+enumerated across the whole assembly; residual risk **[I]**.
 
 **2 — two RecipeDefs**, `Archinity_ReclaimApparel` over the `Apparel` category and
 `Archinity_ReclaimGear` over `Weapons`. Split rather than merged so the bill's ingredient
@@ -175,8 +182,9 @@ on `USH_DisassembleCorpseMechanoid`, commented `<!-- doubled products -->`
 two independent `GenMath.RoundRandom` draws aggregate to the intended fraction modulo
 rounding variance is **[I]**.
 
-The mechanism can express 25 / 50 / 75 / 100 and nothing between. **What the number should
-be is a requirement and is open** — see *Outstanding decisions*.
+The mechanism can express 25 / 50 / 75 / 100 and nothing between. **The requirement is
+50%: two `Smelted` entries** (`docs/requirements/COLONY.md` § *Obsolete gear goes back to
+the material it was made of*).
 
 ### Quality and damage
 
@@ -208,7 +216,8 @@ and the yield is visible as items dropping at the bench.
 `RecipeDef.SpecialDisplayStats`' `EfficiencyStat` line, which requires setting
 `efficiencyStat` — which does nothing, but would print the number as though it did [V]. The
 fraction therefore goes in the recipe `<description>` as prose. Menu legibility with this
-many recipes on one bench is [#96](https://github.com/cjd721/Rimworld-Archinity/issues/96)'s.
+many recipes on one bench is `COLONY.md` § *The add-bill menu shows what matters now*
+([#161](https://github.com/cjd721/Rimworld-Archinity/issues/161)).
 
 ### Cost
 
@@ -217,19 +226,15 @@ many recipes on one bench is [#96](https://github.com/cjd721/Rimworld-Archinity/
 | `smeltable` flip, 7 targets | XML `PatchOperationAdd` | ~40 lines, one `Patches/` file |
 | `Archinity_ReclaimApparel` / `_ReclaimGear` | XML RecipeDefs | ~70 lines |
 | dedicated reclaim bench (optional) | XML ThingDef | ~50 lines |
-| era attachment (`researchPrerequisite`, `recipeUsers`) | XML | ~10 lines; keys from #22 / #30 |
+| era attachment (`researchPrerequisite`, `recipeUsers`) | XML | ~10 lines; keys from #30 |
 | *"Do until you have X"* | C#: `workerCounterClass` subclass of `RecipeWorkerCounter` | ~30 lines, `Archinity.Core` |
-| yield scaled by HP or quality, or a non-25% fraction | C#: Harmony postfix wrapping `Verse.Thing.SmeltProducts`' `IEnumerable<Thing>` result | ~30 lines, `Archinity.Core` |
+| yield scaled by HP or quality, or a non-25% fraction | C#: Harmony postfix wrapping `Verse.Thing.SmeltProducts`' `IEnumerable<Thing>` result | not needed (COLONY requirement) |
 
-**Selected: nothing.** Rows 1–4 are the **verified available mechanism** and the shape the
-build takes once it is chosen; that choice waits on the return fraction and the
-damage/quality question, both of which are requirements and both open (*Outstanding
-decisions*). Rows 5–6 are named escalations above that, taken only if a requirement demands
-them. What separates them from the XML build: the XML build cannot express a fraction that
-is not a multiple of 25%, and cannot make yield depend on condition. Both C# rows pass the
-two gates if taken — Divergence, because the postfix reads only the `Thing`; Loudness,
-because Harmony throws at startup on a missing target — so the escalation is a question of
-scope, not risk.
+**Nothing is selected; route choice is #119's.** Rows 1–4 are the **verified available
+mechanism** and the shape the build takes. Row 5 is a named escalation above that (T-58,
+*Failure and recovery*). Row 6 is not needed: the requirement's 50% return and
+condition-blind yield are both expressible in XML, and the postfix was the only way to
+express a fraction off the 25% quanta or a yield that depends on condition.
 
 **No mod needs to be sourced.** Nothing in the corpus carries this, and nothing needs to:
 the verdict for the sourcing ledger
@@ -251,7 +256,7 @@ loading."*
 **Zero synchronization work.** The only `Rand` on the path is `GenMath.RoundRandom` inside
 `SmeltProducts`, reached from the already-synced bill-completion path — the same path VFE
 Medieval 2 runs `Rand.Chance` in today (`docs/engine/facilities-and-recipes.md` § *Crafted
-quality is pawn-only in vanilla*; `CODING_STANDARDS.md` § *Divergence*). Nothing here is
+quality is pawn-only in vanilla*; `CODING_STANDARDS.md` § *The two gates*). Nothing here is
 cached per client, and nothing reads `ModSettings`, `Prefs` or `Find.CurrentMap`.
 
 ---
@@ -306,20 +311,13 @@ control-validated wide pass over both corpus roots plus `common/RimWorld/Data/`.
 - **Verified:** the 25% hardcode, the ignored `efficiency` argument, the repeated-entry
   multiplier, the `TargetCount` block, the venue inventory, relic protection, `intricate`
   exclusion [V].
-- **Proposed, not selected:** the return fraction, the era, the bench, and whether a
-  dedicated bench ships at all. **Nothing in this document is selected** — rows 1–4 of the
-  cost table are the shape the build takes, not a commitment to build it.
+- **Proposed, not selected:** the era, the bench, and whether a dedicated bench ships at
+  all. The return fraction is the requirement's 50%. **Nothing in this document is
+  selected** — rows 1–4 of the cost table are the shape the build takes, not a commitment
+  to build it.
 - **[I]:** that the composed build behaves as designed — nothing has been built; that no
   other engine return path is stuff-aware; and **every corpus-sweep negative below**, which
   is a metadata-heap or label hit and inferential by the method's own rule.
-
-**Corrected on adversarial re-derivation (2026-09-12):** *"every vanilla apparel def is
-already `smeltable=true`"* is false — six defs override it back to `false`, none of them
-`MadeFromStuff`, so the build survives but the universal does not; `SmeltProducts` also
-appends `def.smeltProducts`, unscaled; the `intricate` list omitted Biotech's
-`MechResourceBase`; "all five wools" is 5 in Core and 7 with DLC; the corpus-sweep
-negatives were marked [V] and are [I]; and the three traps now carry IDs (**T-56**,
-**T-57**, **T-58**).
 
 Established by [#82](https://github.com/cjd721/Rimworld-Archinity/issues/82).
 
@@ -336,7 +334,7 @@ which is the whole shape of the problem, and the flag flip is the whole shape of
 
 `intricate` resources are never returned: `ComponentIndustrial`, `ComponentSpacer`,
 `Chemfuel`, every Biotech subcore via the abstract `SubcoreBase`, **and Biotech's
-`MechResourceBase`** — which the earlier draft omitted, and which is the one that keeps
+`MechResourceBase`** — which is the one that keeps
 mech-derived resources out of a reclaim yield [V]. That is desirable — reclaiming power
 armour must not print free components.
 
@@ -416,31 +414,14 @@ showing *allow smeltable* / *allow non-smeltable*.
 
 ## Outstanding decisions
 
-> **Answered by [#129](https://github.com/cjd721/Rimworld-Archinity/issues/129).**
-> `docs/requirements/COLONY.md` § *Obsolete gear goes back to the material it was made of*
-> now owns recycling and supplies (1) and (2) below: **the return fraction is 50%**, and
-> **yield does not depend on condition or quality** — what the player filters is which items
-> are fed to the bench, not what each is worth once fed, so the Harmony postfix in the
-> escalation row is not needed. (3) and (4) remain open as written. The paragraph below is
-> kept for the reasoning that produced the question.
+`docs/requirements/COLONY.md` § *Obsolete gear goes back to the material it was made of*
+owns reclaiming: **the return fraction is 50%** (two `Smelted` entries), and **yield does
+not depend on condition or quality** — what the player filters is which items are fed to
+the bench, not what each is worth once fed. Two parameters sit elsewhere:
 
-**No requirements document owns item deprecation.** `docs/requirements/` holds ALTAR,
-CHARTING, GLITTERTECH, POLITICS, PRESSURE, QUESTS and RELIGION. Recycling is one of four
-named counterweights to deprecation in `docs/playtest-notes.md` § *The levers, per Conrad*
-— layer occupancy, non-combat stat bonuses, the item upgraded as itself, and recycling —
-and none of the four has an owning requirements document. The parameters this build needs
-from one:
-
-1. **The return fraction.** 25 / 50 / 75, or a value that forces the C# escalation.
-   Unowned.
-2. **Whether yield must depend on damage or quality.** If yes, the XML build cannot do it
-   and the Harmony postfix is required. Unowned.
-3. **Which era the reclaim recipe unlocks in, and at which bench.**
-   [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30) supplies the progression
-   row; [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) supplies the gate.
-4. **Whether a dedicated reclaim bench ships, or the recipe attaches to existing benches.**
-   A design call resting on Conrad's *"a bench earns its place by the labour it absorbs"*;
-   the mechanism supports either at the same cost.
-
-(1) and (2) are requirements, not mechanisms, and are deliberately left open here rather
-than guessed.
+- **Which era the reclaim recipe unlocks in.** The research gate
+  (`docs/requirements/ERA.md` § *The acquisition gate*), placed by
+  [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30)'s progression row.
+- **Which bench carries it.** The mechanism supports a dedicated reclaim bench or existing
+  benches at the same cost (*New code and defs* › 3); which ships is
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.

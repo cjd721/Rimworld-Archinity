@@ -6,21 +6,20 @@
 set*, so that a two-player session is not spent re-entering the same number at every bench
 and rebuilding the same outfit in every colony.
 
-Two surfaces, one mechanism:
+Two surfaces (the bill and the kit), one mechanism:
 
 - **Every new bill arrives configured** — repeat mode, target count, durability floor,
   quality floor — instead of at vanilla's defaults.
   [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95).
-- **Kit presets are authored and shipped** — Cook, Farmer, Smith, Miner, Doctor, melee
-  soldier, ranged soldier — instead of hand-built once per colony.
+- **Kit presets are authored and shipped** — for example Cook, Farmer, Smith, Miner,
+  Doctor, melee soldier, ranged soldier — instead of hand-built once per colony.
   [#28](https://github.com/cjd721/Rimworld-Archinity/issues/28).
 - **A kit covers the whole pawn, weapon included**, and the player can force a pawn to
   re-equip to it or drop what it carries.
   [#155](https://github.com/cjd721/Rimworld-Archinity/issues/155). This is the clause #28
-  could not reach; its answer is *The whole kit, weapon included*, below, and it
-  **corrects** one claim #28 left standing.
+  could not reach; its answer is *The whole kit, weapon included*, below.
 - **A bill's configuration can be pasted onto another bill**, carrying the settings and
-  not the recipe, across recipes and benches.
+  not the recipe or the material, across recipes and benches.
   [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157). Its answer is *A bill's
   configuration, pasted onto another bill*, below. It sits on top of the #95 defaults.
 
@@ -31,11 +30,10 @@ one place vanilla hardcodes the value.* Neither may live in `ModSettings`.
 
 **Where adjacent systems take over.**
 
-- The recycling bench and its recipes — `ITEMS.md`. That document's § *Quality and damage*
-  contains an error this one corrects; see *Corrections to standing documents* below.
+- The recycling bench and its recipes — `ITEMS.md`.
 - Whether the add-bill menu is **legible** with this many recipes on it, and the era filter —
-  [#96](https://github.com/cjd721/Rimworld-Archinity/issues/96). #87 carried the mod survey
-  and is closed.
+  `COLONY.md` § *The add-bill menu shows what matters now*
+  ([#161](https://github.com/cjd721/Rimworld-Archinity/issues/161)).
 - **Which items are in which kit, and the exact preset roster** — downstream of the ladders
   ([#19](https://github.com/cjd721/Rimworld-Archinity/issues/19),
   [#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)) and the era fills
@@ -43,8 +41,8 @@ one place vanilla hardcodes the value.* Neither may live in `ModSettings`.
   [#42](https://github.com/cjd721/Rimworld-Archinity/issues/42)). This document owns the
   mechanism that carries a roster, not the roster — but see *The one-belt rule*, which the
   roster must obey.
-- **What the quality floor should be** is a requirement, not a mechanism. See
-  *Outstanding decisions*.
+- Floor values are [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s
+  (`docs/requirements/COLONY.md`).
 
 ---
 
@@ -72,25 +70,18 @@ halves below it predate that rule and lead with a build instead.
   `Pawn_OutfitTracker.CurrentApparelPolicy` **[V]**. **No** for the Compositable Loadouts
   route — MP Compat ships no compat class for it in 1.5 or 1.6 **[V]**.
 
-### The claim this corrects
+### Policy layer versus vanilla
 
-**#28 concluded that "weapons are not reachable by this layer at all", and half of that
-survives.** Re-read against 1.6.4871:
+**The `Policy` layer reaches no weapons [V].** `RimWorld.ApparelPolicy` has exactly one
+field, `public ThingFilter filter`; `RimWorld.Policy` carries only
+`id`/`label`/`RenamableLabel`; `RimWorld.Pawn_OutfitTracker` carries only
+`curApparelPolicy` and `forcedHandler`; the family is
+`ApparelPolicy`/`DrugPolicy`/`FoodPolicy`/`ReadingPolicy` and there is no fifth subclass
+**[V]**.
 
-- ✅ **The `Policy` layer reaches no weapons — confirmed [V].** `RimWorld.ApparelPolicy`
-  has exactly one field, `public ThingFilter filter`; `RimWorld.Policy` carries only
-  `id`/`label`/`RenamableLabel`; `RimWorld.Pawn_OutfitTracker` carries only
-  `curApparelPolicy` and `forcedHandler`; the family is
-  `ApparelPolicy`/`DrugPolicy`/`FoodPolicy`/`ReadingPolicy` and there is no fifth
-  subclass **[V]**.
-- ❌ **"Compositable Loadouts is the only thing in the corpus that reaches weapons from a
-  preset" — FALSE in 1.6 [V].** Vanilla Odyssey's `RimWorld.Building_OutfitStand` holds
-  apparel **and one weapon** and transfers both **[V]**, and it is the better carrier of
-  the two, because Multiplayer ships explicit sync for it and none for the mod. The
-  sentence in *Available mechanisms* below is corrected accordingly.
-
-The accurate statement is narrower: **weapons are unreachable from the policy layer;
-they are not unreachable from vanilla.**
+**Weapons are unreachable from the policy layer; they are not unreachable from vanilla.**
+Odyssey's `RimWorld.Building_OutfitStand` holds apparel **and one weapon** and transfers
+both, and Multiplayer syncs it **[V]** (Route A).
 
 ### Routes
 
@@ -316,17 +307,16 @@ The full evidence — every method read, both sweep encodings, and who else name
 
 ### Open questions
 
-**Requirement gaps, handed to [#129](https://github.com/cjd721/Rimworld-Archinity/issues/129),
-which owns `docs/requirements/COLONY.md`.**
+**Capability answered below** ([#129](https://github.com/cjd721/Rimworld-Archinity/issues/129),
+which wrote `docs/requirements/COLONY.md`, is closed).
 
-1. **"Force it to drop what it is carrying" does not say what "carrying" means.**
-   Inventory, weapon, apparel, or all three? Each has a different shipped verb and a
-   different price — the weapon is one vanilla click, apparel is per-item, and "all three
-   at once" is new code on every route, because nothing strips a standing colonist.
-2. **"Assigning a set is one act, after which the pawn equips itself without further
-   instruction" does not say whether the assignment is standing.** One-shot (the stand)
-   and standing (a policy, a tag) are different features at different weights, and the
-   sentence reads either way. **This is the clause that decides between A+B and D.**
+1. **What "drop what it is carrying" covers.** Capability: the weapon alone is one vanilla,
+   MP-synced act (`ITab_Pawn_Gear.InterfaceDrop`); apparel is per item; inventory, weapon and
+   apparel together is new code on every route, because nothing strips a standing colonist —
+   Hard under Route D (*Verdict*).
+2. **Kept assigned or applied once.** Capability: both. Standing, apparel only: Route B
+   (apparel policy); one-shot, weapon included: Route A (outfit stand); standing, weapon
+   included: Route D (*Routes*).
 
 **Unverified route claims.** Multiplayer's `Building_OutfitStand.GetGizmos` lambda index 1
 is the *Swap outfit* targeting callback **by declaration order** **[I]** — the
@@ -346,13 +336,10 @@ neither works — so a selected Route A owes a check that a freshly built kit st
 *Swap outfit* gizmo and actually accepts its weapon, before any check about what a pawn
 does with it. Listing those checks is #119's act, not this document's.
 
-**Sibling.** [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157) — copying a
-bill's configuration — shares a mechanism after all:
-`StorageSettingsClipboard.CopyPasteGizmosFor` is vanilla's shipped "copy this
-configuration onto that one" gizmo pair, and the outfit stand already carries it **[V]**.
-*(#157 narrows this: the storage clipboard takes a `StorageSettings`, which a bill does not
-have. Bills use their own `BillUtility.Clipboard`. The storage clipboard is a pattern to copy,
-not a mechanism the two share. See* A bill's configuration, pasted onto another bill*.)*
+**Sibling.** [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157) (bill paste):
+the stand carries vanilla's `StorageSettingsClipboard.CopyPasteGizmosFor` **[V]**, a pattern to
+copy, not a shared mechanism — it takes a `StorageSettings`, which a bill does not have; bills
+use `BillUtility.Clipboard`. See *A bill's configuration, pasted onto another bill*.
 
 ---
 
@@ -366,13 +353,17 @@ RimWorld 1.6.4871 rev590 and the corpus pinned in `docs/data/MOD-SNAPSHOT.md`. T
 
 ### Verdict
 
-- **Possible?** **Yes, and one mod already ships it.** Better Workbench Management puts a
-  *"Paste all settings (except output product) from copied bill into this one"* button on every
-  bill row and in the bill dialog. It works across recipes and across benches **[V]**. It fails
-  the requirement in one place: **it copies the material restriction only when the two recipes'
-  fixed ingredient filters are identical**. In the ticket's own example, plate armour is
-  `Metallic`+`Woody` and the simple helmet is `Metallic`, so *"steel only"* is dropped with no
-  message **[V]** by reading (**T-156**).
+- **Possible?** **Yes — Route C in full, and one mod ships nearly all of it.** Better Workbench
+  Management puts a *"Paste all settings (except output product) from copied bill into this
+  one"* button on every bill row and in the bill dialog. It works across recipes and across
+  benches **[V]**. Against the requirement that a paste **never carries the material** and never
+  forces a setting on, it fails in two places. **It copies the material restriction whenever
+  the two recipes' fixed ingredient filters are identical**, and drops it with no message
+  otherwise (plate armour, `Metallic`+`Woody`, → simple helmet, `Metallic`) **[V]** by reading
+  (**T-156**). And it pastes Compositable Loadouts' `W_PerTag` mode onto a recipe that cannot
+  count **[V]** by reading (*Route A*). Route C chooses which fields it writes, so it can leave
+  the material out, skip a setting the target cannot take with a message, or refuse with
+  vanilla's `CanCountProducts` refusal.
 - **Multiplayer?** **With work.** None of the shipped paths is synced. Multiplayer watches bill
   fields only inside `Bill.DoInterface` and `Dialog_BillConfig.DoWindowContents`. A paste writes
   some fields that are not watched in either scope, and neither MP nor MP Compat carries a
@@ -384,7 +375,7 @@ RimWorld 1.6.4871 rev590 and the corpus pinned in `docs/data/MOD-SNAPSHOT.md`. T
 | Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
 |---|---|---|---|---|---|
 | **A** | A per-bill *Paste settings* button, across recipes and benches. Also: paste the bills as new ones, optionally **linked** so that later edits mirror | Better Workbench Management (`falconne.BWM`, `935982361`) | dependency, no code | **Easy** | **No.** It partly desyncs, and no compat exists |
-| **B** | Route A's behaviour, with the paste routed through one synced command of ours | BWM, plus a compat patch in `Archinity.Altar` | dependency + C# (Harmony + MP API) | **Medium** | **With work** |
+| **B** | Route A's behaviour, with the paste routed through one synced command of ours | BWM, plus a compat patch in our assembly (`Archinity.Core`) | dependency + C# (Harmony + MP API) | **Medium** | **With work** |
 | **C** | Our own configuration paste. We choose the translation rules and take no dependency | our code. Donors: BWM `MirrorBills`, vanilla `Bill.Clone`, `BillRepeatModeUtility`, MP's timetable paste | C# | **Medium** | **With work.** One SyncMethod |
 | **D** | Route C's paste with no command of our own. It relies on MP's existing field watches and synced setters | our code | C# | Medium | **No, not recommended** |
 | **E** | Named bill configurations: a stored library the players author once and then apply anywhere | our code. Donor: the `OutfitDatabase`/`Policy` shape | C# | **Hard** | With work |
@@ -440,8 +431,9 @@ Whether they compose into the requirement stays untested until something is comp
   float menus (`BetterWorkbenchesIntegration`) **[V]**. So Route A also works inside Nice Bill
   Tab.
 
-**What it cannot do.** It loses the material restriction whenever the fixed filters differ, as
-described under *The material restriction* below. It gives no feedback when a field is skipped.
+**What it cannot do.** It cannot leave the material out: it copies the material restriction
+whenever the two fixed filters match, and drops it silently whenever they differ, as described
+under *The material restriction* below. It gives no feedback when a field is skipped.
 It pastes onto one bill at a time, with no "apply to all bills on this bench". It has **no bill
 type check**: `CanPasteInto(Bill_Production)` accepts Glittertech's `Bill_Glittertech` /
 `Bill_Overclock` and the mech bills. That is the same hazard #95's gate 1 exists for **[V]**.
@@ -509,7 +501,8 @@ The donors are exact:
 
 **What it gets us.**
 
-- **We choose the material rule**, which is the one thing Route A gets wrong.
+- **We choose which fields are written**, so the material can be left out entirely, which
+  Route A cannot do.
 - The T-58 gate can call the virtual `recipe.WorkerCounter.CanCountProducts(target)` instead of
   a hand-copied rule.
 - A bill-type allowlist, as in #95's gate 1.
@@ -559,8 +552,7 @@ rule and the T-58 call, and does not inherit BWM's Multiplayer debts. Selection 
 
 ### Which fields paste flat, and which need translating
 
-**The ticket's premise, corrected.** A bill's `ingredientFilter` is not built from the recipe's
-`fixedIngredientFilter`:
+**A bill's `ingredientFilter` is not built from the recipe's `fixedIngredientFilter`:**
 
 - It is **copied from `recipe.defaultIngredientFilter`** in the `Bill` constructor **[V]**.
 - A recipe's default falls back to a copy of its fixed filter **only when none is authored**
@@ -620,8 +612,8 @@ Two smaller effects:
 - `Bill.ExposeData` strips any def the recipe's fixed filter forbids when the game saves
   **[V]**. Out-of-range entries do not persist, but an empty intersection does.
 
-**The translation rules a build could choose between.** These are levers for #119, not a
-design:
+**The translation rules a paste that carried the material would need.** The requirement has
+the paste never carry it, so none is needed; they are the record of why:
 
 - **Strict equality**, which is BWM's rule. Safe and silent, but it fails the ticket's own
   example.
@@ -722,19 +714,17 @@ greys the paste icon unless the bench's `AllRecipes` contains the clipboard's re
 
 ### Open questions
 
-**Requirement gaps, for Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).**
-[#129](https://github.com/cjd721/Rimworld-Archinity/issues/129), which wrote
-`docs/requirements/COLONY.md`, is closed.
+**Capability answered** ([#129](https://github.com/cjd721/Rimworld-Archinity/issues/129),
+which wrote `docs/requirements/COLONY.md`, is closed).
 
-1. **When the target cannot be made of the source's material**, should the paste leave the
-   target's restriction alone, refuse, or tell the player? Plate armour → parka is the case.
-   Each translation rule above answers this differently.
-2. **Does "the configuration" include suspended, paused, search radius and count-from
-   stockpile?** The requirement lists seven clauses; a bill carries these four as well.
-3. **One bill per paste, or "every bill on this bench"?** The worked case is three pastes, and a
-   bulk paste is a cheap lever on Route C.
-4. **Pasting "do until you have X" onto a bill that cannot count** (T-58): should the target
-   keep its own mode, as BWM does, or drop to "repeat N" with the pasted number?
+1. **The material.** Answered by the requirement: the material is never pasted. *The
+   material restriction — the one field that needs translating* stays as the record of why.
+2. **Extras and bulk.** Capability: the four extra fields (suspended, paused, search radius,
+   count-from-stockpile) paste like the rest (*Which fields paste flat, and which need
+   translating*); pasting onto every bill on a bench is Route C's command in a loop.
+3. **Pasting "do until you have X" onto a bill that cannot count** (T-58). Capability: leave
+   the target's mode, as BWM does **[V]**, or refuse with vanilla's
+   `RecipeCannotHaveTargetCount` message (Route C; *Half one*, gate 2).
 
 **Unverified.** That BWM's paste desyncs the initiating client in a live two-client session
 is **[I]**; the watch mechanism is **[V]**. That MP's `Bill` worker resolves a `Bill_Production`
@@ -744,10 +734,9 @@ it through `AddBill`.
 
 **Build questions, deferred to #119:**
 
-- the material translation rule;
 - whether the clipboard holds a live reference (a dangling source must be handled) or a
   snapshot (which then needs `ExposeParameter`);
-- the first `0MultiplayerAPI` reference in `Archinity.Altar`;
+- the first `0MultiplayerAPI` reference in our assembly (`Archinity.Core`);
 - where the buttons sit next to BWM and Nice Bill Tab if either ships.
 
 ---
@@ -825,9 +814,9 @@ one that the corpus forces on us:
    **true** **[V]**, so the first gate passes for almost everything — it is the second that
    actually narrows.
 
-**What those two fields actually do, because the ticket and `ITEMS.md` both describe them
-wrongly.** `Bill_Production.hpRange` and `.qualityRange` are **product-counting filters**,
-not ingredient filters. They are consumed in exactly one place:
+**What those two fields actually do, because #95 described them wrongly.**
+`Bill_Production.hpRange` and `.qualityRange` are **product-counting filters**, not
+ingredient filters. They are consumed in exactly one place:
 `Verse.RecipeWorkerCounter.CountProducts` / `CountValidThing`, which decide *which existing
 items on the map count toward `targetCount`* **[V]**. They appear nowhere in `Bill` and
 nowhere in the ingredient path; ingredient selection runs through
@@ -835,7 +824,7 @@ nowhere in the ingredient path; ingredient selection runs through
 ingredient-side equivalents are `ThingFilter.AllowedHitPointsPercents` and
 `.AllowedQualityLevels` — a *different pair of fields on a different object*.
 
-The campaign's intent survives the correction: *"keep making longswords until I have five
+The campaign's intent survives: *"keep making longswords until I have five
 that are Good or better"* is precisely what `qualityRange` expresses. But it must be wired
 to the counting semantics, or the implementer will reach for the wrong field.
 
@@ -962,7 +951,7 @@ Multiplied by 10 these land far under the threshold. **`mechanitorApparel` is lo
 us**: the control pack and bandwidth pack in link 1's list are exactly that, so a non-mechanitor
 on a preset naming them wears neither.
 
-`TryGiveJob` also has non-score gates no draft mentioned **[V]**: `apparel.IsInAnyStorage()`
+`TryGiveJob` also has non-score gates **[V]**: `apparel.IsInAnyStorage()`
 — **a belt lying on open ground is never fetched** — plus `!IsForbidden`, `!IsBurning`, gender,
 `developmentalStageFilter`, biocoding, `ApparelUtility.HasPartsToWear`, reachability and
 reservation, and no quest lodger or apparel-disabled mutant. The whole check runs on a
@@ -990,9 +979,9 @@ deliberately rather than by luck.
   policy, and `ApparelPolicy.filter` is an apparel filter. Vanilla's only weapon-acquisition
   AI is `JobGiver_PickUpOpportunisticWeapon`, an opportunistic 8-tile think node gated on
   `!AlreadySatisfiedWithCurrentWeapon` **[V]** — not a per-pawn preference and not something a
-  preset can drive. **Re-verified by #155 and still true — but read it as written: it is a
-  statement about the *policy layer*, not about vanilla.** Odyssey's outfit stand reaches
-  weapons from an authored set; see *The whole kit, weapon included* above.
+  preset can drive. **This is a statement about the *policy layer*, not about vanilla:**
+  Odyssey's outfit stand reaches weapons from an authored set; see *The whole kit, weapon
+  included* above.
 
 #### The donor that makes this cheap
 
@@ -1029,11 +1018,11 @@ and copying the def's entries **[V]**. Apparel is the one policy family missing 
   but relying on that is relying on a predicate in someone else's assembly. Constructing the
   object ourselves costs two extra lines and depends on nothing.
 
-**The soldier presets ship apparel-only.** "Melee soldier" and "ranged soldier" name the
-pawn, not the weapon: the preset carries plate and a shield belt, or flak and a smokepop pack,
-and says nothing about what is in the pawn's hands. That is what the mechanism supports, and
-pretending otherwise would mean building a second behaviour. The weapon half is priced and
-deferred below.
+**On this half, the soldier presets are apparel-only.** "Melee soldier" and "ranged soldier"
+name the pawn, not the weapon: the preset carries plate and a shield belt, or flak and a
+smokepop pack, and says nothing about what is in the pawn's hands. That is what the policy
+mechanism supports. The weapon half's routes are in *The whole kit, weapon included*;
+selection is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 ### Cost
 
@@ -1137,7 +1126,8 @@ adversarial audit of 2026-09-12, which returned **SOLID WITH FIXES**; the fixes 
 into this document.
 
 **Verified available mechanism** for both halves. Neither is an implementation commitment
-yet: #28's roster and #95's quality floor are both requirement-side and unset.
+yet: the roster is the progression grids' (#19/#20/#41/#42) and the floor values are #119's
+(`docs/requirements/COLONY.md`).
 
 - #95 — [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95), splitting
   [#87](https://github.com/cjd721/Rimworld-Archinity/issues/87) (closed). Three of #87's four
@@ -1151,9 +1141,9 @@ yet: #28's roster and #95's quality floor are both requirement-side and unset.
   `2606448745/1.6/AssembliesCustom/Multiplayer.dll`,
   `2679126859/1.6/Assemblies/Inventory.dll` and
   `1629973374/{1.4,1.5,1.6}/**/Multiplayer_Compat*.dll`, with a two-encoding wide pass over
-  both corpus roots. It **corrects one claim #28 left standing** (see *The claim this
-  corrects*) and confirms the rest. Its routes are [I] by construction; the mechanisms they
-  compose are [V] and catalogued in
+  both corpus roots. It confirms #28's policy-layer finding and adds the outfit stand as a
+  weapon carrier (see *Policy layer versus vanilla*). Its routes are [I] by construction;
+  the mechanisms they compose are [V] and catalogued in
   [`docs/engine/equipment-and-kits.md`](../engine/equipment-and-kits.md).
 
 **The proposed build is [I] by construction.** Every mechanism it composes is [V]; the claim
@@ -1267,12 +1257,9 @@ from a preset: `Inventory.ThinkNode_LoadoutRealisation.FindItem` issues `JobDefO
 `count == 1 && item.def.IsWeapon && pawn.equipment.Primary == null` **[V]** — so it arms an
 empty hand and **never swaps a weapon the pawn is already holding**.
 
-**An earlier draft of this paragraph said it was the only thing in the corpus that reaches
-weapons from a preset. That is wrong, and the correction is load-bearing:** vanilla Odyssey's
-`RimWorld.Building_OutfitStand` holds apparel **and one weapon** and transfers both **[V]**,
-and unlike this mod it is covered by Multiplayer's sync surface **[V]**. See *The whole kit,
-weapon included* above, and
-[#155](https://github.com/cjd721/Rimworld-Archinity/issues/155).
+Vanilla Odyssey's `RimWorld.Building_OutfitStand` also reaches weapons from an authored set,
+and unlike this mod it is covered by Multiplayer's sync surface **[V]**; see *The whole kit,
+weapon included* ([#155](https://github.com/cjd721/Rimworld-Archinity/issues/155)).
 
 **So the relationship is a conditional incompatibility, not an optional bridge.** If
 Compositable Loadouts ships, either `onlyItemsFromLoadout` stays off on every client, or the
@@ -1286,30 +1273,6 @@ vanilla's own `IdeoPresetDef` — in type-reference tables and as real XML insta
 `Data/Ideology` and one mod — plus incidental substring hits in `Multiplayer.dll` and
 `WorldTechLevel.dll` **[V]**. No hit is a mod-defined preset Def. The hit count varies with
 how the sweep is spelled and is not quoted here; the negative does not.
-
-### Corrections to standing documents
-
-**`docs/specs/ITEMS.md` § *Quality and damage* is wrong and should be amended.** It states that
-"`Bill.hpRange` and `Bill.qualityRange` filter which items are picked as **ingredients**, so
-*'recycle only tattered gear'* … are already expressible on the bill", and that those sliders
-"render only after the repeat mode is switched to `TargetCount`".
-
-The capability is real; both field names are wrong, and the consequence is the opposite of
-what is written:
-
-- The ingredient-side gates are `bill.ingredientFilter.AllowedHitPointsPercents` and
-  `.AllowedQualityLevels` **[V]** — `ThingFilter` fields, not `Bill_Production` fields.
-- They are drawn by `Dialog_BillConfig.DoIngredientConfigPane`, a **separate method with no
-  repeat-mode gate**, called with `forceHideHitPointsConfig: false, forceHideQualityConfig:
-  false` **[V]**. Two further conditions apply and are easy to miss: the pane draws at all only
-  when the recipe has at least one **non-fixed** ingredient **[V]**, and inside
-  `ThingFilterUI.DoThingFilterConfigWindow` the two sliders are additionally gated on
-  `ThingFilter.allowedHitPointsConfigurable` / `allowedQualitiesConfigurable` — both default
-  `true` and recomputed from the allowed defs at `ResolveReferences` **[V]**.
-
-So *"recycle only tattered gear"* is available on a reclaim bill **with no repeat-mode click at
-all**, and does not wait on #95. The proposed replacement text is on
-[#95](https://github.com/cjd721/Rimworld-Archinity/issues/95).
 
 ---
 
@@ -1387,30 +1350,12 @@ here.
 
 ## Outstanding decisions
 
-> **Partly answered by [#129](https://github.com/cjd721/Rimworld-Archinity/issues/129).**
-> `docs/requirements/COLONY.md` § *Bills arrive configured, and a configuration can be
-> reused* now owns crafting defaults, and settles **which row carries what**: the global row
-> carries the **repeat mode only**, and both floors live on **per-recipe rows** — which
-> honours this document's own "do not set it globally" constraint by construction. The two
-> floor *values*, and whether they vary by era, remain open exactly as described below.
->
-> #129 also adds a requirement this document does not cover: **a bill's configuration can be
-> copied onto another bill, carrying the settings and not the recipe.** That is
-> [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157). Its routes are in *A bill's
-> configuration, pasted onto another bill*, above.
-
-**The quality floor is a requirement, not a mechanism, and nothing owns it.** #95 names the
-problem exactly: *"Good status" is not a number*, and `QualityCategory.Good` is index 4 of 0–6.
-The mechanism takes any `QualityRange`; which one the campaign wants is a gameplay rule. It
-belongs to [#96](https://github.com/cjd721/Rimworld-Archinity/issues/96), the open owner of
-the crafting surface — #87 established that **no requirements document owns menu legibility or
-crafting defaults at all**, and `docs/progression/` holds only a README. Two sub-questions for
-whoever sets it: the floor value, and whether it varies by era (an era-varying floor also wants
-`docs/progression/`'s grid, which does not exist).
-
-**The durability floor has the same shape** and the same owner, plus one mechanical constraint
-this document does own: **do not set it globally**, because on a counted-resource recipe it is
-the one case that costs a real fast path.
+`docs/requirements/COLONY.md` § *Bills arrive configured, and a configuration can be reused*
+settles the rows — the global row carries the repeat mode, both floors live on per-recipe
+rows. Floor values, and whether they vary by era, are
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s. The one constraint this
+document owns stands: **never set a durability floor on the global row**, because on a
+counted-resource recipe it is the one case that costs a real fast path.
 
 **The preset roster is #19/#20/#41/#42's**, explicitly out of scope for #28. This document
 carries the mechanism; the rows are theirs — subject to **the one-belt rule** and the
@@ -1446,14 +1391,8 @@ Three options:
 - **Treat the mod as excluded.** A sourcing decision, not ours —
   [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.
 
-**Whether the soldier presets get a weapon half — answered by #155, and the answer is not
-the one this paragraph assumed.** It read as a two-way choice between apparel-only and a
-Compositable Loadouts bridge, with "build it ourselves" priced as duplicating a mod on disk.
-**There is a third carrier and it is vanilla**: Odyssey's outfit stand ships an authored set
-that includes the weapon, with a one-click force-re-equip gizmo, and Multiplayer syncs it —
-while the Compositable Loadouts bridge is **unsynced in 1.6** and arms only an empty hand.
-The routes, their clause coverage and their weights are in *The whole kit, weapon included*
-above; selection is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+**The soldier presets' weapon half.** Its routes are in *The whole kit, weapon included*;
+selection is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 **What `defaultOutfitTags` could do instead, and why it is not the build.** Patching
 `<defaultOutfitTags>` onto ThingDefs is pure XML and needs no code at all — but it can only

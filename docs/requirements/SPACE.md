@@ -50,11 +50,21 @@ offworld board is there in full.
 - **A jump between the planet and orbit, in either direction, always counts as a
   qualifying relocation** for Glitterite pursuit ([pressure](PRESSURE.md) §
   *Glitterite pursuit*).
+- **A move between two places in orbit counts the same way, past a distance threshold.** As
+  on the planet, a short move does not grant a fresh safe window. (Conrad, #118, 2026-09-23)
 
 ### The reveal
 
 - **Before the reveal, orbit is completely closed**: no view of the orbital map, no
   flight to it, and no orbital sites of any kind.
+- **Nothing in orbit makes contact with the colony** — a trader's hail, a signal, a site —
+  **until the colony can reach or talk to orbit.** The stages by which that opens are routes.
+  (Conrad, #118, 2026-09-23)
+- **Planet-side sites that a grav engine makes reachable exist once the colony has a grav
+  engine** — Odyssey's planet-side gravcore leads, the source of grav panels and parts. This
+  is how the gravship arc is adopted "as shipped" alongside a closed orbit: the planet-side
+  leads stay, and the orbital leads are what closing orbit holds shut. (Conrad, #118,
+  2026-09-23)
 - The reveal is a single campaign moment, earned as the reward of the planetary
   resolution. It happens once, for the world, and both founders share it.
 - At the reveal the orbital map is visible and fully populated, exactly as the world map
@@ -92,19 +102,22 @@ offworld board is there in full.
 
 ## Open questions
 
-- **What unlocks the reveal** — signal jammer, orbital scanner, a techprint, a research
-  project or a ship capability — and what in Odyssey gates the orbital view, flight and
-  sites well enough to hold all three shut until then.
-  [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148)
-- **Whether the orbital scanner and Charting are one mechanism or two.** Odyssey's
-  scanner discovers orbital sites through its own quest-giver tag; Charting is the
-  campaign's discovery-as-labor apparatus. Merging them, or keeping them deliberately
-  separate, waits on the routes.
-  [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)
-- **How much of ordinary colony life survives on an orbital home.**
-  [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)
-- **Whether a layer change registers as a relocation** against the pursuit's distance
-  test. [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)
-- **What a Glitterite stronghold's map must hold**, in
-  [Glittertech](GLITTERTECH.md) § *Strongholds*.
-  [#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)
+- **What unlocks the reveal, and what holds orbit shut until then.** Answered:
+  [`ORBIT.md`](../specs/ORBIT.md) § *The reveal gate — what closes orbit, and what opens it*
+  and § *What the player obtains*
+  ([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148)).
+- **Whether the orbital scanner and Charting are one mechanism or two.** Answered:
+  [`CHARTING.md`](../specs/CHARTING.md) § *The orbital scanner and Charting — one apparatus or
+  two* ([#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)).
+- **How much of ordinary colony life survives on an orbital home.** Answered:
+  [`GRAVSHIP.md`](../specs/GRAVSHIP.md) § *Ordinary colony life on an orbital home*
+  ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)).
+- **Whether a layer change registers as a relocation** against the pursuit's distance test.
+  Answered: [`TRACE.md`](../specs/TRACE.md) § *Planet↔orbit as a qualifying relocation*
+  ([#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)).
+- **What a Glitterite stronghold's map must hold**, in [Glittertech](GLITTERTECH.md)
+  § *Strongholds*. Answered: [`ORBIT.md`](../specs/ORBIT.md) § *A stronghold a quest generates*
+  ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)).
+- **Whether Odyssey's hidden Salvagers can be held back from raiding until the reveal** —
+  capability only. Answered: [`ORBIT.md`](../specs/ORBIT.md) § *A hidden faction raids before
+  the reveal*.

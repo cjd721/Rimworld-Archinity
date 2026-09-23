@@ -85,13 +85,9 @@ belongs to `docs/specs/` and to the capability ticket named:
   `docs/specs/CHARTING.md` as available-but-unselected mechanisms. [#57][57], [#40][40].
 - `RELIGION.md` — "an Empire-like scale" and "the Church's Honor-equivalent"
   ([#53][53]); "Influence is the Schism's equivalent of Deserters Intel"
-  ([#54][54]); the commitment to a bespoke political UI ([#61][61]); the
-  storyteller incident-selection hook ([#60][60]).
-- `GLITTERTECH.md` — "the Ultra counterpart to Deserters Intel" ([#54][54], which carries
-  Influence and Intel together);
-  deferring the Trace/Visibility name to whatever implementation reads better
-  ([#56][56]); "the research carrier and remote hacking implementation remain to be
-  verified against the available mods" ([#67][67], [#58][58]).
+  ([#54][54]); the storyteller incident-selection hook ([#60][60]).
+- ~~`GLITTERTECH.md`~~ — **done.** Its carrier text has moved to `docs/specs/CURRENCIES.md`,
+  `RESEARCH.md` and `HACKING.md` ([#54][54], [#67][67], [#58][58]).
 - `ALTAR.md` — the research-gating mechanism that separates Industrial lottery access
   from earlier deterministic rewards ([#31][31] for the placement, [#59][59] for
   the machinery). This document cites no capability ticket at all; #59 owns whether the
@@ -100,16 +96,14 @@ belongs to `docs/specs/` and to the capability ticket named:
 **Cut the carrier, keep the behavior.** In each case the requirement is the observable
 behavior and only the named mechanism moves. Charting's Tier 1/2/3 priority table and its
 selection rule are requirements and stay. So does *per-faction Reverence is visible beside
-Goodwill and the bands are legible* — only "the custom political UI" is the mechanism.
+Goodwill and the bands are legible*; the political UI that shows it is a mechanism.
 
 [31]: https://github.com/cjd721/Rimworld-Archinity/issues/31
 [40]: https://github.com/cjd721/Rimworld-Archinity/issues/40
 [53]: https://github.com/cjd721/Rimworld-Archinity/issues/53
 [54]: https://github.com/cjd721/Rimworld-Archinity/issues/54
-[56]: https://github.com/cjd721/Rimworld-Archinity/issues/56
 [57]: https://github.com/cjd721/Rimworld-Archinity/issues/57
 [58]: https://github.com/cjd721/Rimworld-Archinity/issues/58
 [59]: https://github.com/cjd721/Rimworld-Archinity/issues/59
 [60]: https://github.com/cjd721/Rimworld-Archinity/issues/60
-[61]: https://github.com/cjd721/Rimworld-Archinity/issues/61
 [67]: https://github.com/cjd721/Rimworld-Archinity/issues/67

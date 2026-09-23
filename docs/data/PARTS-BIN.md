@@ -216,15 +216,14 @@ psyset switching is left unsynced deliberately.
 6. `adaptive.storage.framework` is covered *and* natively MP-aware;
    `Adaptive.PrimitiveStorage` is a different, uncovered mod.
 7. Vehicles split — VVE covered, VVE-Upgrades not, though `SmashPhil.VehicleFramework`
-   underneath both is covered. **The split is not a hazard, and this line previously
-   read as though it were — inverted, and corrected here.** *Vanilla Vehicles Expanded –
+   underneath both is covered. **The split is not a hazard.** *Vanilla Vehicles Expanded –
    Upgrades* (`OskarPotocki.VanillaVehiclesExpandedUpgrades`, `3302208420`) **ships zero
    assemblies**: 32 XML files plus one `.txt` and one `.md`, and the XML resolves to **28
    defs — 14 of them the same defs duplicated across the 1.5 and 1.6 folders** — plus 2
    comp patches, `About.xml` and `LoadFolders.xml`. **[V]** There is no code for a compat
    patch to cover, so *"no compat coverage"* is not a finding about it at all. The entire
    multiplayer surface under it belongs to Vehicle Framework — see `MOD-VERDICTS.md`,
-   Real tier, whose row is itself corrected by the same ticket.
+   Real tier.
    ([#69](https://github.com/cjd721/Rimworld-Archinity/issues/69))
 8. `rwmt.Multiplayer`, `brrainz.harmony` and `zetrith.prepatcher` appear uncovered by
    construction; the real uncovered count is ~69.
@@ -457,12 +456,13 @@ three complete 16-frame tribalwear sets.
 **This is Archinity's premise rendered as XML, and framed as a ceremony rather than a
 research checkbox** — the right register for a campaign centred on an altar.
 
-Two blockers. **A hard co-op desync:** `AddCornerstone` is called *directly from
-inside `DoWindowContents`*, immediately after `Widgets.ButtonText` returns true,
-mutating saved state on one client with no `[SyncMethod]`. **[V]** (It *is* covered by
-the compat layer, so verify rather than assume.) **And it retiers a dozen vanilla
-buildings** in `…\1.6\Patches\Core.xml` — `SimpleResearchBench`, `Campfire`,
-`TorchLamp`, `Wall`, `Door`, `Barricade`, `FueledStove`, `TableButcher`, the pen
+One blocker. The cornerstone pick is not one: `AddCornerstone` is called *directly from
+inside `DoWindowContents`*, immediately after `Widgets.ButtonText` returns true, and the
+mod has no `[SyncMethod]` of its own, but MP Compat's `VanillaFactionsTribal` registers
+`GameComponent_Tribals.AddCornerstone` as a sync method, so the window's write goes
+through it. **[V]** (decompiled 1.6 `Multiplayer_Compat.dll` and `VFETribals.dll`.)
+**The blocker: it retiers a dozen vanilla buildings** in `…\1.6\Patches\Core.xml` —
+`SimpleResearchBench`, `Campfire`, `TorchLamp`, `Wall`, `Door`, `Barricade`, `FueledStove`, `TableButcher`, the pen
 buildings — which **collides head-on with `Archinity.Pacing/Patches/Retier_Medieval.xml`**.
 Whichever loads later wins, silently. Reconcile deliberately.
 
@@ -1167,8 +1167,13 @@ depends on it.
 
 ## 7. Design area (c) — the questline
 
-**The Chronicle is authorable in pure XML today, with VEF as the only new dependency
-and no second assembly.**
+**Quest chains are authorable in pure XML today, with VEF as the only new dependency
+and no second assembly.** This section surveys that route; it is not the Chronicle's
+settled carrier. #40 answered the Chronicle's authoring at route depth
+(`docs/specs/CHARTING.md` § 2 and § *Alternatives, and what separates them*, item 3): VEF
+chains fire on their own MTB, so they cannot carry the spine. The recommended split is
+vanilla `QuestPart_SubquestGenerator` for the spine and VEF's `QuestChainExtension` as one
+candidate for gated side content. The carrier is not chosen; that is the build map's (#119).
 
 ### 7.1 What vanilla already gives you
 
@@ -1411,6 +1416,10 @@ different pawns. **[V]** Generate recurring NPCs inside a quest with vanilla
 `QuestNode_GeneratePawn` instead.
 
 ### 7.8 The architecture, assembled
+
+This assembles the VEF route as surveyed. Under #40's answer (§ 7 head) it fits gated side
+content, not the spine, whose route is vanilla `QuestPart_SubquestGenerator`
+(`docs/specs/CHARTING.md` § 2).
 
 1. **`Archinity_ChronicleBeatBase`** — one `QuestScriptDef` in the VFED `Base.xml`
    style, parameterised by `$sitePartDef`, `$landmark`, `$rewardThing`,
@@ -2316,8 +2325,10 @@ conditions (`DialogCondition_Skill`, `DialogCondition_Hediff`), `hideWhenDisable
 *"I don't know"*, English is machine-translated, it self-describes as `(WIP)`, and its
 runtime surface is exactly the shape that desyncs.
 
-> **The ticket's own alternative is the right one.** Vanilla `QuestScriptDef` plus VEF's
-> `QuestChainExtension` (§7) delivers the Chronicle with no second assembly. Mark `Evaluate Story Framework` resolved-negative.
+> **The ticket's own alternative is the right one.** Vanilla `QuestScriptDef` plus the §7 chain
+> primitives carry the Chronicle's routes with no second assembly — which carrier ships is not chosen
+> ([The Chronicle's authoring mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/40);
+> `docs/specs/CHARTING.md`). Mark `Evaluate Story Framework` resolved-negative.
 
 ### 12.2 `Worldbuilder` — identified, and larger than assumed
 
@@ -2359,8 +2370,11 @@ never live in a co-op session. Node Research and Worldbuilder are two limbs of t
 Nothing here commits the project to anything. But seven things are now settled enough to
 stop re-litigating:
 
-1. **The Chronicle does not need a second assembly.** §7.8 is a complete architecture
-   out of vanilla nodes plus VEF, and VQE Ancients proves the chain works.
+1. **The Chronicle does not need a second assembly.** §7.8 is a complete quest-chain
+   architecture out of vanilla nodes plus VEF, and VQE Ancients proves the chain works.
+   It is not the Chronicle's settled carrier: #40 answered that at route depth (§ 7 head)
+   — VEF chains cannot carry the spine, and `QuestChainExtension` is one candidate for gated
+   side content.
 2. **The altar does not need one either.** §9.1 assembles the whole religion→industry
    arc from four vanilla comps and a retargeted vanilla ritual.
 3. **Threat can track time instead of wealth today, for free.** §8.1. The remaining work
@@ -2380,7 +2394,7 @@ And two things to decide deliberately rather than drift into:
 **VEF is close to a one-way door.** It is the only source of XML quest chaining,
 `LootableBuilding`, KCSG and the facility-topology extensions; it dropped its
 Multiplayer API integration in 1.6; and its GameComponents scribe by class name, so if
-the Chronicle is built on `QuestChainExtension` that decision is effectively made at
+any Chronicle content is built on `QuestChainExtension` that decision is effectively made at
 scenario setup. *(The original entry also called it never-vendorable on licence
 grounds. Struck — vendoring VEF is available to us if depending on it proves fragile,
 which is the real escape hatch.)*

@@ -108,7 +108,9 @@ ally can pay is answered alongside sworn factions
   fight it off, or not, and an outpost left undefended is **destroyed**. No staff are
   captured and there is no rescue beat.
 - **A destroyed outpost is not gone for good.** It stays on the map as a ruin a caravan can
-  go and loot for what survives, and paying the build cost again rebuilds it. Routes for the
+  go and loot for what survives, and paying the build cost again rebuilds it. Rebuilding costs
+  resources. What else, if anything, a rebuild asks for is a route for the build map (Conrad,
+  #118, 2026-09-23). Routes for the
   attack are [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171)'s; the
   consumed-pawn premise and the ruin are
   [#179](https://github.com/cjd721/Rimworld-Archinity/issues/179)'s.
@@ -145,10 +147,10 @@ ally can pay is answered alongside sworn factions
   does not climb when its faction climbs an era.
 - **The form the payment takes is open and every shape is on the table**
   ([#166](https://github.com/cjd721/Rimworld-Archinity/issues/166)): a fixed basket arriving
-  on a clock; a credit the holding accrues that the player spends against that holding's own
-  list; things sent unprompted on the faction's own schedule; or combinations. **Delivery to
-  the colony's home map is the working preference**, and home itself moves once the gravship
-  becomes it.
+  on a clock; things sent unprompted on the faction's own schedule; or combinations. **Delivery
+  to the colony's home map is the working preference**, and home itself moves once the gravship
+  becomes it. A holding has no currency of its own. No credit, points or favour builds up to be
+  spent; what it owes arrives as goods (Conrad, #118, 2026-09-23).
 - **A holding does not improve on its own.** What was taken is what the colony has. A
   Medieval holding is still a Medieval holding in the Spacer era, and Industrial yields mean
   going and taking an Industrial settlement.
@@ -170,7 +172,7 @@ ally can pay is answered alongside sworn factions
   [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)'s exclusion of a
   vassal-gets-raided simulation stands.
 - **When a holding ends, lost or released, everything outstanding on it is gone.** Unpaid
-  rebuild debt and accrued credit are extinguished, not paid out or carried over. The
+  rebuild debt is extinguished, not paid out or carried over. The
   settlement passes to a faction drawn at random from those available; what *available*
   means is the build map's.
 - **The era advance does not touch a holding.** A holding stores its own era, set at
@@ -178,6 +180,12 @@ ally can pay is answered alongside sworn factions
   boundary but never modifies what the player owns, and a holding is owned. How the holding
   is represented (§ 3's R1 or R2 in [the spec](../specs/TERRITORY.md)) is the build map's,
   provided this holds.
+- **A settlement never changes hands while the player has its map loaded and in use.** Either
+  the change waits until the map closes, or everyone is moved off it first, whichever is easier
+  to build (Conrad, #118, 2026-09-23). A transfer at the era advance cannot wait: the advance
+  is a single act and nothing else may change on a delay ([Era](ERA.md)), so there only moving
+  everyone off first fits. Which of those can be done is
+  [#188](https://github.com/cjd721/Rimworld-Archinity/issues/188).
 
 ### A sworn faction owes services, not goods
 
@@ -187,7 +195,8 @@ ally can pay is answered alongside sworn factions
 - **It owes services, and it does not turn its settlements into paydays.** A faction of a
   dozen settlements each paying tribute would dwarf every other system in the campaign and
   make conquest pointless. What a sworn faction gives is of a different kind: troops,
-  people, access, safe passage, standing — things only a people can give.
+  people, access, safe passage, standing — things only a people can give (safe passage is every
+  non-hostile faction's already — [Politics](POLITICS.md) § *Meaning*).
 - **What it can owe, and how that reaches the player, is wide open**
   ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168)). Sends on its own
   schedule, specific things on a fixed one, categories it is known for, favours the player
@@ -302,14 +311,13 @@ has to follow that move rather than assume a fixed tile
   **Per-faction values are not excluded by this** where they are spent in events aimed at
   the colony — what is excluded is a simulation the player is not part of.
 - **No third currency.** Goodwill and Reverence are the levers; a new stat invented to sit
-  beside them is not, and neither is royal favour with a sworn faction. Whether Reverence is
+  beside them is not, and neither is royal favour with a sworn faction, and there is no currency
+  for holdings. Whether Reverence is
   *spent* as well as held is the build map's: both routes exist
   ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168),
   [#176](https://github.com/cjd721/Rimworld-Archinity/issues/176)).
 - **Glitterites are not subjugatable.** They are orbital, hostile, outside diplomacy and
-  believe nothing. [Glittertech](GLITTERTECH.md) previously said a Glitterite settlement
-  could be "made a vassal"; that was a stray phrase and has been struck. Glitterite ground
-  is a strongholds question, not a territorial one.
+  believe nothing. Glitterite ground is a strongholds question, not a territorial one.
 - **The player operates nothing it did not build.** Stated above as a requirement, repeated
   here as a boundary on solutions: any route whose cost is a management surface fails.
 - **Nothing here may be carried in mod settings** ([T-18](../TRAPS.md)), and every player act
@@ -324,40 +332,14 @@ has to follow that move rather than assume a fixed tile
 
 ## Open questions
 
-- **Taking a settlement must be hard** —
-  [#164](https://github.com/cjd721/Rimworld-Archinity/issues/164): defended maps, real
-  garrisons, difficulty following tech tier.
-- **A settlement's specialty, and learning it before committing** —
-  [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165): whether a durable
-  per-settlement specialty exists at all, what derives it, and what reveals it.
-- **What a holding pays, and how the player takes it** —
-  [#166](https://github.com/cjd721/Rimworld-Archinity/issues/166): basket, accrued credit
-  and menu, unprompted sends; delivery; the rebuild gate and its tech-tier scaling.
-- **Paying to advance a holding to a later era** —
-  [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167), which also confirms the
-  era advance cannot retier or remove one.
-- **How a holding ends** —
-  [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172): released, retaken,
-  destroyed, or throwing the colony off — and whether loss can reach the player as an event
-  rather than a background roll.
-- **A sworn faction owes services** —
-  [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168): what can be owed, every
-  route by which it arrives, whether the player can ask, and whether Reverence gates or is
-  spent.
-- **A hostile faction acts against the colony** —
-  [#169](https://github.com/cjd721/Rimworld-Archinity/issues/169): every route from hatred to
-  consequence.
-- **What an outpost costs** —
-  [#170](https://github.com/cjd721/Rimworld-Archinity/issues/170): materials, silver, and
-  which pawns can be committed.
-- **An outpost's upkeep as events** —
-  [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171).
-- **An outpost that consumes its pawns and runs on its own**, and its ruin —
-  [#179](https://github.com/cjd721/Rimworld-Archinity/issues/179).
+- **The capability tickets are answered** in [`docs/specs/TERRITORY.md`](../specs/TERRITORY.md)
+  (#164–#168, #170–#172, #179) and [`docs/specs/PRESSURE.md`](../specs/PRESSURE.md)
+  § *Hostility-scaled pressure* (#169).
 - **What the colony owes when *it* is the weaker party** — [Politics](POLITICS.md) wants a
   route back from defeat through peace, tribute or subordination. That is the colony paying
-  a stronger faction, which is the mirror of this document and not part of it. It has no
-  owner yet.
+  a stronger faction, which is the mirror of this document and not part of it. Capability:
+  [#189](https://github.com/cjd721/Rimworld-Archinity/issues/189); choice: [the build
+  map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **Vassalage as an altar-fuel route.** A holding that sends people is one of the
   acquisition routes the sacrifice economy is counting on; how many bodies the altar demands
-  and where they come from is [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10)'s.
+  and where they come from is [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.

@@ -16,7 +16,7 @@ should not begin covered in modern paved roads… other factions also build it."
 
 This document owns the **world-map mobility ladder**: what road tiers mean for travel (§1), what
 exists at worldgen (§2), the era-driven construction process and the player's two verbs (§3, and
-§ *The player's two verbs on a route*), and
+§ *The player's verb on a route — contribute*), and
 **vehicles** ([#69](https://github.com/cjd721/Rimworld-Archinity/issues/69), §4), which multiply
 with roads and cannot be tuned apart from them.
 
@@ -31,41 +31,38 @@ It does **not** own:
   alliance edges; vanilla creates none (§3b). §3 reads the graph and writes nothing to it.
 - **Charting.** [`docs/requirements/CHARTING.md`](../requirements/CHARTING.md) (*Road construction
   is not a Charting decision*): Charting never builds, upgrades, finances or prices a road. Whether
-  completed mobility later contributes a reach rung is cross-spec integration
-  ([#118](https://github.com/cjd721/Rimworld-Archinity/issues/118)); the rung shapes at the end of
-  this document are offered, not selected.
+  completed mobility later contributes a reach rung is
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s route selection; the rung
+  shapes at the end of this document are offered, not selected.
 - **Numbers.** Tier speeds, which tier each era unlocks, build duration, neighbor radius and
-  funding prices belong to the balance deferral in
-  [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2).
+  funding prices are balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 
-The plot's verbs are *"finance, **protect**, capture and benefit from"* infrastructure. Finance,
-capture and benefit are below; **protect is answered in § *The player's two verbs on a route***.
+The plot's verbs are *"finance, capture and benefit from"* infrastructure; all three are below.
+Routes are never threatened, and the player holds no stake in one
+([`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md) § *No
+route is threatened*, [#174](https://github.com/cjd721/Rimworld-Archinity/issues/174)).
 
-## The player's two verbs on a route — contribute, and answer a threat
+## The player's verb on a route — contribute
 
 ### Purpose and scope
 
-This section answers two clauses of [`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md):
+This section answers one clause of [`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md):
 
 - *Player agency over routes.* Contribute to a specific, named route, distinguishably from a gift, through a channel that fits the era.
-- *Protecting infrastructure.* A route the player has a stake in comes under threat as an event the player answers. The road is never damaged, and the outcome moves goodwill and the ownership of the endpoint settlements.
 
-It was established by [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154). It **replaces the *"Protect is unanswered"* outstanding decision** and extends §3d with its entry points.
+It was established by [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154) and extends §3d with its entry points. Threats to routes were cut by #174; the event shapes live in [`TERRITORY.md`](TERRITORY.md) § 1.
 
 It does not own:
 
 - The funding carrier itself, which is §3c/§3d's `fundedWork`.
-- The event machinery: [`TERRITORY.md`](TERRITORY.md) §1 (#92) and [`POLITICS.md`](POLITICS.md) § *The faction demand* (#91).
 - What an endpoint changing hands writes: `TERRITORY.md`, #172 and #164.
 - How much goodwill lands: #160.
 - Any number, all of which belong to [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 
-The threat shapes use the names shared across #154, #164, #171 and #172: **E-quest**, **E-overlay**, **E-site**, **E-march**.
-
 ### Verdict
 
-- **Possible?** Yes, both verbs. Contribute is one carrier with five entry points that climb the eras by themselves. Threat has four event shapes that reach an endpoint settlement, plus a shared eligibility predicate: small C#, and one new field on `RouteProject` if *"the player funded it"* is to count as a stake.
-- **Multiplayer?** Yes for the float-menu, quest, transport-pod and overlay forms: Multiplayer already syncs those commits. The comms-console form needs work (T-82 index discipline, T-95, T-97). A caravan gizmo needs its own `[SyncMethod]` (T-80).
+- **Possible?** Yes. Contribute is one carrier with five entry points that climb the eras by themselves.
+- **Multiplayer?** Yes for the float-menu, quest and transport-pod forms: Multiplayer already syncs those commits. The comms-console form needs work (T-82 index discipline, T-95, T-97). A caravan gizmo needs its own `[SyncMethod]` (T-80).
 
 ### Routes
 
@@ -91,7 +88,7 @@ The threat shapes use the names shared across #154, #164, #171 and #172: **E-que
 
 - *Gets us:* the NPC as the initiator. Contribution arrives as an ask with a deadline, which suits the requirement that infrastructure *"would happen without them"*. The requested good and count are XML fields. The quest can say *"for the road to Ruen"*. Declining is free unless we attach #91's refusal part.
 - *Cannot:* be initiated by the player.
-- *Consequences:* the route finder node is the same one every threat route uses.
+- *Consequences:* it needs a route finder node of ours.
 
 **C3 — comms console.**
 
@@ -110,73 +107,17 @@ The threat shapes use the names shared across #154, #164, #171 and #172: **E-que
 - *Gets us:* remote agency before radio that does not pre-empt the radio beat. The promise is remote and the goods still travel.
 - *Consequences:* it needs both C2 and C3.
 
-#### Answer a threat — four event shapes
-
-| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
-|---|---|---|---|---|---|
-| T1 — E-overlay | *"Ashvale under attack"* on the map. Fight on the settlement's own map, or stay away. Staying away resolves as **E-overlay/roll** (a §0 P4 seeded roll decides) or **E-overlay/forfeit** (the endpoint falls, no roll) | #92 Build B, `TERRITORY.md` §1, with an authored trigger naming the endpoint and the attacker | C# | Hard alone. Medium on top of #92 | Yes (on a `Settlement` target; §1's harness is none) |
-| T2 — E-quest | An explicit accept/decline, with the cost of declining shown first. The answer can be a delivery, lent colonists, or a site | #91's demand + `QuestPart_DemandRefused` + the finder node + an ownership-transfer part | XML + small C# | Medium on top of #91 | Yes |
-| T3 — E-quest→E-overlay | T2's legibility, and T1's arena on accept. Declining or staying away resolves as /roll or /forfeit, as T1 | T2's shell spawns T1's object | C# | Medium on top of both, Hard in total | Yes (on a `Settlement` target) |
-| T4 — E-site on the road | *"A war camp on the road to Ashvale"*: a fightable map on the route. It grows if ignored and hits the endpoint on expiry | VFE Medieval 2's `VFEM2_OpportunitySite_SiegeCamp` as the donor + a tile node + an endpoint consequence part | XML + small C# | Medium | Yes [I] |
-| T5 — E-march | A war party that visibly marches up the road | A moving world object of our own. Rim War is a design donor only, because it is barred | C# | Hard | With work. **Not recommended**: no Multiplayer-safe donor, and T1 and T4 carry the same beat |
-
-**T1 — E-overlay.**
-
-- *Gets us:* the threat is visible on the map with no letter needed, it has a timeout, and it resolves in absentia. Winning or losing moves goodwill and the endpoint's owner, both already in #92's design.
-- *Two in-absentia shapes, equal routes:* **/roll**, a §0 P4 seeded roll (#92's shipped design), and **/forfeit**, where declining means the endpoint falls with no roll (#172's variant (b)). Which one runs is Conrad's call, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2): #8's rule that loss is *never a background roll* stands against #92's shipped in-absentia roll.
-- *Cannot:* offer an explicit decline. Declining means staying away, so the cost of declining can only be stated in the letter and inspect text, not in an accept UI.
-- *Consequences:* it carries #92's `CheckDefeated` block and its lord-trigger surgery (TERRITORY §1).
-
-**T2 — E-quest.**
-
-- *Gets us:* the requirement's *"accept or decline, with the consequence of declining legible in advance"*, shown in the accept UI. Three answer shapes, all XML:
-  - deliver arms (`Script_TradeRequest`);
-  - lend colonists (`QuestNode_LendColonistsToFaction`);
-  - go there (an E-site).
-- *Cannot:* show the threat on the map by itself. It also cannot put the fight on the settlement's own map, because that needs T1's object.
-- *Consequences:* it depends on #91's refusal part, already priced in POLITICS.
-
-**T3 — E-quest→E-overlay.** The composition `POLITICS.md` already anticipates. It is the most complete answer to the requirement. With /forfeit, the refusal part itself writes the loss. With /roll, the overlay still spawns and resolves in absentia.
-
-**T4 — E-site.**
-
-- *Gets us:* the nearest the fiction gets to *defending the road*, without the road ever being damaged. VFE Medieval 2's siege camp is the shipped shape: attack early against few enemies, or face a larger force later.
-- *Cannot:* be aimed at a route in XML. `QuestNode_GetSiteTile` roots at the player's home map, so it needs our own tile node.
-- *Consequences:* site-map generation (#88's concern) applies. The donor's raid-on-fail targets **our** colony, and the consequence part must target the endpoint instead.
-
-#### The eligibility predicate — which route, which endpoint, what the letter says
-
-The predicate is **one shared piece of C# for T1–T4**, Medium-lite and deterministic. A stake can be any of the following:
-
-| Stake | Readable from | Status |
-|---|---|---|
-| S-a — the player's colony is an endpoint | `RouteProject.from/to.Faction == Faction.OfPlayer` | Readable |
-| S-b — the player is allied with an endpoint's faction | `Faction.OfPlayer.RelationKindWith(f) == Ally` | Readable |
-| S-c — the player funded the route | **Nothing today.** `fundedWork` drains as the clock spends it | Needs one scribed accumulator on `RouteProject` |
-| S-d — the player paved part of it | **Nothing.** `OverlayRoad` stores a `RoadDef` per edge and no builder | Needs a ledger. Not recommended |
-
-**The attacker** is a faction `HostileTo` the endpoint's faction with a settlement within reach. Vanilla's initial goodwill of −80 or −100 yields such pairs. Only a `Faction` is needed, never a slate `Settlement`.
-
-**The letter** can attribute the builder, both endpoints, the tier, progress or completion, the attacker, and the player's contribution once S-c is stored.
-
-**The story gets one consequence for free.** The requirement says a captured endpoint **completes** its route, so losing a threat against a route still under construction **finishes the road for the enemy**.
-
-**Recommendation (not a selection).**
-
-- Contribute: C1 as the float-menu option plus C2, both synced for free. C3 at Industrial as the radio beat. C5 if Medieval Overhaul's messenger table ships.
-- Threat: T3 if #92 and #91 are both built. T2 if #92 is not. T4 as the cheapest in-person fight. /roll and /forfeit are equal shapes for the in-absentia branch, and the choice between them is Conrad's call, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2): #8's rule that loss is *never a background roll* stands against #92's shipped in-absentia roll.
-- Predicate: add S-c's field if *"funded it"* is a stake.
-- Selection belongs to #119.
+**Recommendation (not a selection).** C1 as the float-menu option plus C2, both synced for free. C3 at Industrial as the radio beat. C5 if Medieval Overhaul's messenger table ships. Selection belongs to #119.
 
 ### Constraints
 
-- **The road is never the target.** Every threat route aims at an endpoint settlement. `OverlayRoad` cannot remove or downgrade a link (T-43), so no route here needs it to.
+- **The road is never damaged.** `OverlayRoad` cannot remove or downgrade a link (T-43), and no route here needs it to.
 - **A caravan gizmo or dialog button is not synced; a world-object float-menu option is** (T-80). Multiplayer's float-menu postfix runs at Harmony priority −2, so an option *our* default-priority postfix appends to `Settlement.GetFloatMenuOptions` is wrapped and synced as well.
 - **A comms option is synced by its index** (T-82). Disable an unavailable option, never omit it. Do not subclass `Dialog_NodeTree` (T-95). Set `resolveTree` (T-97). `AddAndDecorateOption` is a local function that cannot be patched.
 - **The comms console is not only radio.** Medieval Overhaul's messenger table (`DankPyon_ScribeTable`, Medieval research `DankPyon_CarrierBirds`) subclasses `Building_CommsConsole` and opens the same faction dialogue. `FactionDialogFor` receives only the negotiator, so an option cannot see which console opened it. Gate on research or the era clock.
 - **A custom `ChoiceLetter`'s options are not synced** (T-96). A plain letter is fine.
-- **An endpoint that changes hands by destroy-and-recreate orphans its route project.** `RouteProject` holds `Settlement from, to` by `Scribe_References` (§3c). Four transfers mint a new object and ID: `SettlementDefeatUtility.CheckDefeated`, a TERRITORY §3 R1 replacement, FT&V's and therefore Build B's `ApplyWinnerToSettlement` whenever it resolves with no map open (every E-overlay/roll or /forfeit taken in absentia: FT&V's `ApplyWinnerToSettlement` recreates in absentia and `SetFaction`s only when a map is open [V]), and Rim War's convert. Any of them leaves the project pointing at a destroyed object. Stakes S-a and S-b, and the rule that *a captured endpoint completes the route*, then read the wrong owner or null. **Endpoints must be re-bound by tile at transfer, or the transfer must be `SetFaction`** (per #152). See the merged ownership-change identity trap (**T-140**).
-- **An arrival action of ours never aborts unless it says so.** `CaravanArrivalAction.StillValid`'s base returns `true` (per #152 on the batch board). Transport pods re-validate only on arrival. The C1, C4 and T1 attend actions must override `StillValid` to re-check that the project is still `Building` and the endpoint still has the same owner. Otherwise a caravan keeps marching toward a route that has since changed hands.
+- **An endpoint that changes hands by destroy-and-recreate orphans its route project.** `RouteProject` holds `Settlement from, to` by `Scribe_References` (§3c). Four transfers mint a new object and ID: `SettlementDefeatUtility.CheckDefeated`, a TERRITORY §3 R1 replacement, FT&V's and therefore TERRITORY's Build B `ApplyWinnerToSettlement` whenever it resolves with no map open (FT&V's `ApplyWinnerToSettlement` recreates in absentia and `SetFaction`s only when a map is open [V]), and Rim War's convert. Any of them leaves the project pointing at a destroyed object, and the rule that *a captured endpoint completes the route* then reads the wrong owner or null. **Endpoints must be re-bound by tile at transfer, or the transfer must be `SetFaction`** (per #152). See the merged ownership-change identity trap (**T-140**).
+- **An arrival action of ours never aborts unless it says so.** `CaravanArrivalAction.StillValid`'s base returns `true` (per #152 on the batch board). Transport pods re-validate only on arrival. The C1 and C4 attend actions must override `StillValid` to re-check that the project is still `Building` and the endpoint still has the same owner. Otherwise a caravan keeps marching toward a route that has since changed hands.
 - **Goodwill amounts are requested, not landed.** Every goodwill write passes `TryAffectGoodwillWith`'s gates and the toward-natural amplification (#160).
 
 ### Available mechanisms
@@ -201,36 +142,23 @@ The predicate is **one shared piece of C# for T1–T4**, Medium-lite and determi
   - `TransportersArrivalAction_GiveGift` scribes a settlement reference and calls `FactionGiftUtility.GiveGift` on `Arrived` [V].
   - Multiplayer registers `CompLaunchable.TryLaunch` with `ExposeParameter(1)` [V].
   - `TransportPod` research is Industrial [V].
-- **Quest offers:**
-  - `IncidentWorker_GiveQuest` fires `def.questScriptDef` from an `IncidentDef` [V].
-  - `QuestNode_GetSiteTile` takes its `nearTile` from slate `map` or a random player home map [V].
-- **E-site donor:** VFE Medieval 2 `VFEM2_OpportunitySite_SiegeCamp` (`1.6/Defs/QuestScriptDefs/SiegeCampQuest.xml`) combines `QuestNode_GetSiteTile`, `QuestNode_WorldObjectTimeout` and `VFEMedieval.QuestNode_SpawnRaidOnFail` [V].
-- **E-overlay and E-quest** are cited and not re-derived: `TERRITORY.md` §1 and §0 P1–P5, and `POLITICS.md` § *The faction demand*.
-- **Wide pass for other shipped threat carriers:**
-  - defNames matching defend/siege/relief/reinforce/escort/convoy/protect across both roots and `Data` found no quest that threatens a *third party's* settlement.
-  - Faction Territories and Vassalage is declined, [SR]Factional War is recommended against (TERRITORY), and Rim War is barred (`MOD-VERDICTS.md`).
-  - A sweep for messenger/courier/telegraph across both roots (DLLs and XML) found Medieval Overhaul's table as the only pre-radio remote channel.
+- **Quest offers:** `IncidentWorker_GiveQuest` fires `def.questScriptDef` from an `IncidentDef` [V].
+- **Wide pass for other remote channels:** a sweep for messenger/courier/telegraph across both roots (DLLs and XML) found Medieval Overhaul's table as the only pre-radio remote channel.
 
 ### Status
 
 - **Evidence class READ.** Every mechanism named above is [V] against 1.6 assemblies and defs. Every route is [I] until built.
 - The standing §3d caravan-gizmo recommendation stands as the path-tile form of C1.
-- The standing §3f claim that *"a `Complete` project is the attribution record"* holds for the builder only. It does not record the player's contribution (S-c).
-- Established by [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154). It shares event shapes with #171 and #172, and contribution shapes with [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131) route G.
+- Established by [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154). It shares contribution shapes with [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131) route G.
 
 ### Open questions
 
-- **What counts as a stake, and whether a route still under construction can be threatened.** A requirement gap in `docs/requirements/WORLD-INFRASTRUCTURE.md`. No open ticket owns that document, so it is reported as a gap.
 - **Whether the messenger table is a rung or a hazard.** Story, #119. Whether Medieval Overhaul ships is [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.
-- **The cost of declining, and whether the in-absentia outcome still runs after a decline.** Balance, #119.
 - **What the endpoint's change of hands writes.** #172 and #164. It is also this section's own hazard: a destroy-and-recreate transfer breaks `RouteProject`'s endpoint references (see *Constraints*). Whether to re-bind by tile or to require `SetFaction` is a build question for #119.
-- **/roll or /forfeit for an endpoint declined or left unattended**, and whether the roll still runs after a decline. Conrad's call, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2): #8's rule that loss is *never a background roll* stands against #92's shipped in-absentia roll.
 - **Build questions for the next map:**
   - fixed lots or an amount window for C1;
   - the float-menu form, the gizmo form, or both;
-  - whether our arrival action round-trips through `ExposeParameter`;
-  - where the eligibility predicate is hosted (a `QuestNode`, an `IncidentWorker.CanFireNow`) and how it iterates `WorldComponent_RoadNetwork.projects` and picks (a §0 P4 seeded roll);
-  - the tile node's radius for T4.
+  - whether our arrival action round-trips through `ExposeParameter`.
 
 ## The build
 
@@ -269,8 +197,7 @@ would be a bug of **the T-20 class**.
 in the corpus — both in Vehicle Framework, and §4c is what makes them obey.**
 `Vehicles.RoadCostHelper.GetRoadMovementDifficultyMultiplier` exists in **two `RoadDef`
 overloads, not one** [V] — `(List<VehicleDef>, RoadDef)` and `(List<VehiclePawn>, RoadDef)`,
-byte-for-byte the same loop. The `VehiclePawn` overload is the one a live caravan takes;
-an earlier draft of this section named only the `VehicleDef` one. Both take
+byte-for-byte the same loop. The `VehiclePawn` overload is the one a live caravan takes. Both take
 `roadDef.movementCostMultiplier` as a **base** and let
 `VehicleDef.properties.customRoadCosts[roadDef]` **replace** it [V]. The replacement is
 **unconditional and works in either direction**: the loop is
@@ -290,8 +217,8 @@ alternatives and the cost; this section states the dependency once and does not 
 caveat.
 
 A ladder, as a `PatchOperationReplace` per def (values are a starting proposal, not a
-balance ruling — the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2) owns the
-numbers; see *Outstanding decisions*):
+balance ruling — the numbers are balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119);
+see *Outstanding decisions*):
 
 | `RoadDef` | ships | proposed | reads as |
 |---|---|---|---|
@@ -350,16 +277,15 @@ The first removes every asphalt road and highway from the generated world. The s
 `DirtPath` and `DirtRoad`. **`ancientOnly` has exactly one reader in the whole assembly** —
 that `Where` clause [V] — so it is a precise, single-effect lever and not a repurposing.
 
-**It does not remove road debris, and an earlier draft of this document was wrong to say it
-did.** `GenStep_ScatterRoadDebris.Generate` computes
+**It does not remove road debris.** `GenStep_ScatterRoadDebris.Generate` computes
 `count = (mapHasRoads ? VehicleRangeRoadMap : VehicleRangeNonRoadMap).RandomInRange`, and
 `VehicleRangeNonRoadMap = new IntRange(1, 2)` [V] — a roadless map still spawns **1–2
 ancient vehicle wrecks**. Worse, `CanScatterAt`'s `!c.GetTerrain(map).IsRoad` rejection has
 nothing to reject, so the wrecks **scatter map-wide** instead of hugging the road line.
-Removing `AncientRoads` therefore makes road debris *less* localised, not absent. **If car
-wrecks are unwanted on a Neolithic map that is a separate lever** — the
-`GenStep_ScatterRoadDebris` entry in the map generator's step list — and it has not been
-investigated. Named as a gap in *Outstanding decisions*.
+Removing `AncientRoads` therefore makes road debris *less* localised, not absent. **Car
+wrecks on the player's own map are a separate lever** — the `GenStep_ScatterRoadDebris` entry in
+the map generator's step list — answered in [`ERA.md`](ERA.md) § *Above-era content seeded on the
+player's own map* ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153); AE-3/AE-7).
 
 Otherwise the result is the Neolithic map the plot asks for: paths and dirt tracks between
 settlements, no stone, no asphalt, no ruined highways.
@@ -377,14 +303,6 @@ Used **selectively** it is exactly right: the anima tribe and the high-tech stro
 no road reaching them, and one XML field per faction says so.
 
 ### 3. Era-driven route construction — `WorldComponent_RoadNetwork`
-
-> **This section replaces the era-rite build of 2026-09-12** — an instantaneous re-overlay of road
-> links within a proximity radius, run inside [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)'s
-> synced command — which the requirement correction of 2026-09-13 superseded. Everything it
-> rested on was **re-read against the 1.6 assemblies** by #68's second reopen rather than
-> inherited: `SurfaceTile.potentialRoads`, `WorldGrid.OverlayRoad`, the `SurfaceLayer`
-> persistence, VFE Classical and its Multiplayer Compatibility sync. Its ledger is folded into
-> §3f.
 
 **Mechanism.** One `WorldComponent` in `Archinity.Core`. When the era advances it **plans** one
 route project per allied settlement pair (§3b). On the world tick it spends a daily work budget on
@@ -439,15 +357,15 @@ Runs once per era advance, entirely from synchronized world state, and **draws n
    builds intra-faction routes only.**
 4. **Neighbor.** For each settlement *s* of A, ordered by `ID`: up to **k** partner settlements
    within **R** tiles by `WorldGrid.ApproxDistanceInTiles`, nearest first, ties broken by `ID`.
-   Unordered pairs are deduplicated. **k and R are Balance; the rule is the mechanism.** Whether
-   intra-faction pairs count, and whether player colonies are eligible partners, are requirement
-   questions (*Outstanding decisions*).
+   Unordered pairs are deduplicated. **k and R are Balance; the rule is the mechanism.**
+   Intra-faction pairs count, and a player colony is a partner of any builder allied to the
+   player ([`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md),
+   [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128)).
 5. **Path.** `s.Tile.Layer.Pather.FindPath(s.Tile, t.Tile, caravan: null)` [V,
    `RimWorld.Planet.WorldPathing.FindPath`]. The edge cost is
    `3300 × layerMovementDifficulty[tile] × WorldGrid.GetRoadMovementDifficultyMultiplier(from, to)`,
    so **the live road multiplier is inside the cost and new routes run along existing roads**. That
-   is the "pave the tracks already there" property the superseded build got by refusing to path at
-   all, now obtained by pathing — and it is exactly how vanilla lays its own network:
+   is the "pave the tracks already there" property, obtained by pathing — and it is exactly how vanilla lays its own network:
    `WorldGenStep_Roads.DrawLinksOnWorld` calls `layer.Pather.FindPath(a, b, null)` and overlays
    every edge of the result [V]. **Release every result with `WorldPath.ReleaseToPool()`**:
    `WorldPathPool.GetEmptyWorldPath` force-clears the pool with
@@ -522,8 +440,9 @@ Every 2500 ticks, per `Building` project, in `id` order:
   `fundedWork` at up to a capped extra rate per pass, so funding **accelerates** a project rather
   than completing it on the click. The cap is Balance; no cap means an instant finish.
 - **Farther.** `Extend(projectId, targetTile)` paths from the project's far endpoint to the target
-  with the same `FindPath`, appends the tiles, and prices the new pending edges. What a player may
-  extend *to* — another settlement, their own colony, any tile — is a requirement question.
+  with the same `FindPath`, appends the tiles, and prices the new pending edges. *Farther*
+  targets another settlement or the player's colony, never a bare tile; funding presence follows
+  the era channel (§ *The player's verb on a route — contribute*, C1–C5).
 - **Where the player does it: a caravan gizmo** [I]. A postfix on `Caravan.GetGizmos` offers
   *Fund road project* when the caravan stands on, or next to, a tile of a `Building` project's path
   or one of its endpoint settlements. A local window picks the amount; the commit is
@@ -542,10 +461,10 @@ Every 2500 ticks, per `Building` project, in `id` order:
 - **The alternative is a comms-console option** on the builder faction's dialogue.
   `docs/engine/determinism.md` § *MP serialises the comms-console dialogue, options included*
   says an appended option needs no `[SyncMethod]` of ours, but **T-82** makes it sync by the
-  option's **index**, and the goods would come from beacons rather than a caravan. What separates
-  the two is whether funding requires physical presence — a requirement call. Caravan recommended.
+  option's **index**, and the goods would come from beacons rather than a caravan. Which channel
+  applies follows the era (C1–C5). Caravan recommended.
 
-  The entry points are enumerated in § *The player's two verbs on a route* (C1–C5). The caravan
+  The entry points are enumerated in § *The player's verb on a route — contribute* (C1–C5). The caravan
   gizmo here is C1's path-tile form. At an endpoint settlement, the float-menu form syncs for free.
 
 #### 3e. Direct construction — the second verb, shipped
@@ -588,9 +507,8 @@ WorldComponent_RoadNetwork : WorldComponent
 
 **The roads themselves are engine state** in `SurfaceTile.potentialRoads`. The component holds only
 what the engine cannot: which projects exist, how far each has got, and who built what. **A
-`Complete` project is the attribution record** the superseded ledger was for, so there is one store,
-not two. It records the builder, not the player's contribution. `fundedWork` drains as it is spent,
-so *"the road you paid for"* needs one more scribed accumulator on `RouteProject` (stake S-c).
+`Complete` project is the attribution record**, so there is one store, not two. It records the
+builder.
 
 **Capture, do not degrade — unchanged.** A road's value follows the settlements at its ends, and
 `OverlayRoad` cannot remove or downgrade a link (**T-43**). *Capturing a corridor is capturing the
@@ -672,9 +590,9 @@ startup, and VF's no-thread warning is a positive confirmation in the log.
 `vehiclePawn.GetStatValue(VehicleStatDefOf.MoveSpeed) * WorldSpeedMultiplier / 60f` per vehicle
 and converts to ticks. So the per-vehicle rung values are `vehicleStats/MoveSpeed`,
 `properties/worldSpeedMultiplier` and — for air vehicles — `vehicleStats/FlightSpeed`, every
-one a `PatchOperationReplace`. The **numbers** belong to the balance deferral in
-[map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2), with
-§1's road ladder; the *shape* is settled.
+one a `PatchOperationReplace`. The **numbers** are balance,
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119), with §1's road ladder; the
+*shape* is settled.
 
 **The one re-gate the ladder needs is two operations.** As shipped, `VVE_Frog` and `VVE_Toad`
 — both `<vehicleType>Air</vehicleType>` — are gated on `VVE_BasicVehicles`, the same research
@@ -695,8 +613,7 @@ This is the item §1 handed to #69 by name. **The fix below is selected**, re-de
   bodies, and the `VehiclePawn` one is what a live caravan reaches [V]. Each takes
   `roadDef.movementCostMultiplier` as a base and lets
   `VehicleDef.properties.customRoadCosts[roadDef]` **replace** it [V] — **not "lower
-  winning"**, which an earlier draft of §1 asserted and which is withdrawn there rather than
-  merely contradicted here. The loop is
+  winning"**. The loop is
   `if (customRoadCosts.TryGetValue(roadDef, out value) && (!flag || value < num))`: `!flag`
   short-circuits the comparison on the first declaring vehicle, so the **first declaring
   vehicle replaces the `RoadDef` base unconditionally, in either direction**, and "lower wins"
@@ -714,7 +631,7 @@ This is the item §1 handed to #69 by name. **The fix below is selected**, re-de
 - **There is a second dial, and §1 does not name it.** Off-road, `RoadCostHelper` returns
   `MaxRoadMultiplier(vehicles, VehicleOffRoadMultiplier)` — per-vehicle
   `properties.offRoadMultiplier`, further offset by the `OffRoadMultiplier` upgrade stat [V].
-  **The clamp is not where an earlier statement put it.** Only the
+  **Where the clamp sits.** Only the
   `VehicleOffRoadMultiplier(VehiclePawn)` overload clamps **0.01–10**; the **`VehicleDef` path is
   unclamped**, and `MaxRoadMultiplier` clamps its own result **0.01–100** [V]. A `VehicleDef`
   value outside 0.01–10 therefore survives into the caravan maths. Note the asymmetry too:
@@ -866,11 +783,10 @@ already has.** That divergence is **T-74**, it is §4a's to fix, and the #69 fin
 `TaskManager.Run` landing on `Verse.Rand`'s unlocked global state via
 `VehicleRegionCostCalculator` — is on the **map** pathfind, which A touches no part of.
 
-##### The removal alternative, and why the stated reason for rejecting it was wrong
+##### The removal alternative
 
-> **An earlier draft of this section said:** *"a vehicle with no entry for a road gets **no road
-> benefit on the world map at all**. Override the values; never remove the keys."* **The
-> conclusion holds; that reason does not.**
+> **Override the values; never remove the keys** — but not because a vehicle with no entry for a
+> road loses its road benefit. The reason is below.
 >
 > `PassableRoad` — `vehicleDef.properties.customRoadCosts.ContainsKey(roadLink.road)` — is a
 > local function inside
@@ -917,7 +833,7 @@ already has.** That divergence is **T-74**, it is §4a's to fix, and the #69 fin
 | Direct-construction tiers | XML, `VFEC.RoadBuildingDef` ×N + 1–3 `ResearchProjectDef` | ~60 lines | `Defs/RoadBuildingDefs.xml` |
 | Direct-construction mechanism | **none** — VFE Classical ships it, MP Compat syncs it | 0 | — |
 | — *if VFE Classical is declined by [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)* | new C# | ~70 lines + 1 `SyncMethod` | `Archinity.Core` |
-| `ReachRungExtension` rows for [`CHARTING.md`](CHARTING.md) §4 | **offered, not selected** — [#118](https://github.com/cjd721/Rimworld-Archinity/issues/118) | ~8 lines each if taken | `Defs/RoadBuildingDefs.xml` |
+| `ReachRungExtension` rows for [`CHARTING.md`](CHARTING.md) §4 | **offered, not selected** — [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s route selection | ~8 lines each if taken | `Defs/RoadBuildingDefs.xml` |
 | **§4a** P1 `InitThread` prefix | new C# | ~8 lines | `Archinity.Core` |
 | **§4a** P2 `RequestNewPath` prefix (private `vehicle` field ⇒ `AccessTools.FieldRefAccess`) | new C# | ~20 lines | `Archinity.Core` |
 | **§4a** P3 `RecalculateAllPathCostsAsync` prefix (sync entry is `private` ⇒ `AccessTools.Method`) | new C# | ~15 lines | `Archinity.Core` |
@@ -928,17 +844,13 @@ already has.** That divergence is **T-74**, it is §4a's to fix, and the #69 fin
 | **§4** vehicle content, gating research, world-travel maths, MP sync of caravans and flight | **none** — VF and VVE ship it, MP Compat syncs it | 0 | — |
 
 **§3 in one line: ~455 lines of C# in the assembly we already ship, two Harmony postfixes, two
-`SyncMethod`s, ~40 lines of XML, and one new saved `WorldComponent`.** It replaces two rows of the
-superseded build — the era-rite upgrade pass (~45) and the attribution ledger (~50) — and is
-roughly four times their size, because the requirement now asks for a schedule, a planner, partial
-progress and a funding verb that the rite never had.
+`SyncMethod`s, ~40 lines of XML, and one new saved `WorldComponent`.**
 
 #### Three road scopes — priced options, not a selection
 
 **§3 as specified is the current build. Two narrower scopes are verified available mechanisms and
 are recorded here, priced, so a later ticket can pick one without re-running this research.**
-Which scope ships is a story-beat decision Conrad will take later; nothing below changes the build
-above. **Every line count is [I]** — an estimate of unwritten code.
+Which scope ships is the build map's; nothing below changes the build above. **Every line count is [I]** — an estimate of unwritten code.
 
 | Option | C# | Harmony | `SyncMethod` | Clauses lost | MP risk |
 |---|---|---|---|---|---|
@@ -983,8 +895,8 @@ above. **Every line count is [I]** — an estimate of unwritten code.
   (`MpTradeSession.giftMode`, `[SyncMethod] TryExecute()`). **Its costs:** the player funds a
   **faction**, not a chosen route, and *extend farther* is dropped — and that clause is then the
   **only** surviving reason to own a `SyncMethod` at all (~35 lines + 1 `SyncMethod` if kept). It
-  also answers requirements question 4 (funding presence) as *"physical caravan presence
-  required"*, for free.
+  covers the physical-caravan channel (C1) only; the remote channels (C3 to C5) keep their own
+  entry points.
 - **The hourly era poll is cuttable, ~15 lines.** `AdvanceEra()` is ours and is called once on the
   synced research path ([`ERA.md`](ERA.md)); polling only buys self-heal on a missed notification.
 
@@ -1045,7 +957,8 @@ the assembly we already ship.
   for every subclass the save lacks [V, `RimWorld.Planet.World.FillComponents`], so it appears
   empty — provided it declares a `(World world)` constructor. On that first load
   `lastPlannedEra` is seeded to the **current** era *without* planning, so an old save does not
-  start a retroactive construction wave. Whether it *should* is a requirement question.
+  start a retroactive construction wave. Moot for this campaign — one fresh campaign
+  ([#18](https://github.com/cjd721/Rimworld-Archinity/issues/18)).
 - **A reference that loads null** — a settlement destroyed before the save — marks its project
   `Cancelled` on the first pass. Laid edges are unaffected.
 - **Def-level suppression is not retroactive.** The byte arrays are written from the tiles that
@@ -1123,8 +1036,7 @@ the assembly we already ship.
 ## Failure and recovery
 
 - **A downgrade written through `OverlayRoad` is a silent no-op** (**T-43**). §3 relies on exactly
-  that as its collision rule. Any future degradation feature must mutate `potentialRoads` on both
-  endpoint tiles directly; `OverlayRoad` cannot express it.
+  that as its collision rule, and routes never degrade (requirement).
 - **A road in a biome with `allowRoads = false` is drawn but inert** (**T-44**).
   `WorldDrawLayer_Roads.Regenerate` reads `potentialRoads` directly, while `SurfaceTile.Roads` —
   the getter every gameplay reader uses — returns `null` when the biome forbids roads [V]. **§3's
@@ -1137,8 +1049,8 @@ the assembly we already ship.
   `PatchOperationReplace`s ship.
 - **No alliances, no inter-faction network — and nothing says so** (**T-100**). Vanilla creates no
   NPC↔NPC `Ally` relation (§3b step 3), so until [`POLITICS.md`](POLITICS.md)'s seed ships, each faction's
-  only partner is itself. If the requirement excludes intra-faction links, an era advance plans
-  **zero** routes silently. **Detection is ours**: the era letter states the route count, and the
+  only partner is itself. Until the alliance seed ships, each faction plans intra-faction routes
+  only (the requirement counts own-faction routes). **Detection is ours**: the era letter states the route count, and the
   planner logs a warning naming the era when it plans none.
 - **An unreachable pair plans nothing.** `FindPath` returns `WorldPath.NotFound`; it logs a warning
   only when its frontier empties or it passes 500,000 tiles [V]. The planner skips the pair.
@@ -1205,9 +1117,8 @@ audit of 2026-09-12 (**SOLID WITH FIXES**). **§3 was re-resolved by #68's secon
 [#69](https://github.com/cjd721/Rimworld-Archinity/issues/69), also **READ**, with one narrow RUN
 item; §4c selected by #68's first reopen.
 
-**A provenance note the first resolution got wrong.** #68 flagged that `docs/TRAPS.md`'s
-provenance lines still read 1.6.4566. **`docs/TRAPS.md` carries no version line at all** —
-the 1.6.4566 markers are in `docs/traps/world-creation.md` (ten entries) and the header of
+**The 1.6.4566 provenance markers.** **`docs/TRAPS.md` carries no version line at all** — the
+1.6.4566 markers are in `docs/traps/world-creation.md` (ten entries) and the header of
 `docs/engine/factions-and-worldgen.md` [V]. **None of them touches roads.** Re-verifying those ten
 entries is [#107](https://github.com/cjd721/Rimworld-Archinity/issues/107).
 
@@ -1231,8 +1142,8 @@ entries is [#107](https://github.com/cjd721/Rimworld-Archinity/issues/107).
 
 - `Vehicles.CustomCostDefModExtension` as the per-`RoadDef` override lever
   ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68)'s first reopen; §4c). §1's ladder
-  reaches no vehicle without it, so §4c ships whenever §1 does. **The second reopen leaves it
-  untouched**: it is def data about road *speed* and is independent of who builds roads or when.
+  reaches no vehicle without it, so §4c ships whenever §1 does. It is def data about road *speed*
+  and is independent of §3 — of who builds roads or when.
 
 **Proposed, marked [I] by construction:** the tier ladder values; the era→tier mapping; all of
 §3 — the era poll, the planner and its neighbor rule, the construction clock, the funding verbs
@@ -1241,55 +1152,11 @@ and caravan gizmo, the display postfixes; the three §4a prefixes; §4b's rung v
 mechanisms each composes are [V]; the claim that they compose into the wanted behaviour is [I]
 until built.
 
-**Superseded.** The era-rite build — an instantaneous re-overlay of road links within proximity
-radius *N* of each climbing faction's settlements, run inside #8's synced command — and the
-separate attribution ledger beside it. The requirement correction of 2026-09-13 retired the
-behaviour; #68's second reopen replaced the build with §3, whose completed-project record does
-the ledger's job.
-
-**Two premises in #68's ticket were wrong and are corrected here:**
-`RoadDef.worldTransitionPathCostFactor` **does not exist** — the field is
-`movementCostMultiplier`; and `World.grid.roads` does not exist in 1.6 — roads live on
-`SurfaceTile.potentialRoads`, reached through `WorldGrid.OverlayRoad` / `GetRoadDef`.
-
-**One claim in #68's first resolution was wrong and is struck here:** removing the `AncientRoads`
-gen step does **not** suppress `GenStep_ScatterRoadDebris`. See §2.
-
-**Two claims corrected, one addition, by #68's second reopen:**
-
-1. **RimPacts does not build NPC roads.** An earlier draft called it "NPC settlement road
-   construction", declined because #8 rejected an incremental. It is a **player-financed** route
-   from the player's colony to any non-hostile faction's settlement, bought from an inspect tab and laid all at once
-   (*Available mechanisms*). Both halves of the old verdict are withdrawn: it is not an NPC
-   builder, and the requirement now *asks* for the incremental.
-2. **Multiplayer Compatibility's `Referenced/` assembly is loaded at runtime.** This document's
-   citation of the VFE Classical sync there was right. `docs/agents/capability-research.md` once
-   said `Multiplayer_Compat_Referenced.dll` "is never loaded"; it is —
-   `MpCompatLoader.LoadConditional` loads it — and that file now carries the correction.
+**RimPacts does not build NPC roads.** It is a **player-financed** route from the player's colony
+to any non-hostile faction's settlement, bought from an inspect tab and laid all at once
+(*Available mechanisms*).
 
 **Addition.** Faction Territories carries a vassal road-investment component (`FactionTerritories.Vassalise.VassalRoadProgressComponent`) that mirrors Roads of the Rim construction sites by reflection (`EnsureSyncedForFaction`), is funded by the UI call `TryInvestRoadPoints`, and writes no road itself (0 `OverlayRoad`/`potentialRoads` in IL); Roads of the Rim is on neither corpus root. The mod stays declined ([#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) session 2; recorded as settled on [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35); [map #2](https://github.com/cjd721/Rimworld-Archinity/issues/2) *Out of scope*).
-
-**Three claims inherited by #69 were wrong and are corrected here:**
-
-1. **`docs/data/MOD-VERDICTS.md` § *Real*, the Vehicle Framework row** — the row
-   [#17](https://github.com/cjd721/Rimworld-Archinity/issues/17) admitted VF on — is wrong in
-   three places [V]. `debugUseMultithreading` is **not** a scribed bool (the `Scribe` line is
-   behind `DebugProperties.Debug`, which is `false`); the `ReleaseThread()` path it names is
-   `SectionDebug.RevalidateAllMapThreads`, which **nothing calls**; and *"every enqueue site
-   takes its synchronous fallback"* is false, because two dispatch paths never consult
-   `ThreadAvailable` at all. The row's **conclusion** — VF is admissible at the **Real** tier —
-   survives; its **price** does not. Correcting that file is the orchestrator's, not this
-   document's.
-2. **`PARTS-BIN.md` §7's *"VVE covered, VVE-Upgrades not"*** is accurate about MP Compat's
-   class list and misleading as a hazard. **VVE-Upgrades ships no assembly and no C# source at
-   all** [V] — 32 XML files, 153 PNGs, and one `.txt` and one `.md`. The 32 XML resolve to **28
-   defs (14 of them duplicated across the 1.5 and 1.6 load folders), 2 comp patches, `About.xml`
-   and `LoadFolders.xml`** [V]. There is nothing to cover; the upgrade *mechanism* is
-   Vehicle Framework's, and VF is what MP Compat covers.
-3. **§1's *"lower winning"* description of `customRoadCosts`** was imprecise, and the
-   imprecision hid the real problem. **§1 has been corrected in place** — the first declaring
-   vehicle replaces the `RoadDef` base unconditionally, in either direction — so the document no
-   longer states both sides of the claim. The full reading is §4c's.
 
 ## Available mechanisms
 
@@ -1635,37 +1502,30 @@ members and `FactionRelation`; `VFEC.WorldComponent_RoadBuilding` and `RoadBuild
 `FactionTerritories.dll` decompiled whole and read at their road members; `Multiplayer.dll`
 decompiled whole, with its IL searched for every write to the three grid-cache `copyFrom` fields.
 
-**How the survey was run — and the correction the audit forced.** `rg -a -g '*.dll'
+**How the survey was run.** `rg -a -g '*.dll'
 -g '!**/obj/**'` over both corpus roots — `steamapps/workshop/content/294100` (145 mods) and
 `steamapps/common/RimWorld/Mods` (83) — attributed with `python tools/corpus.py --which -`.
 Symbols: `RoadDef`, `WorldGenStep_Roads`, `WorldDrawLayer_Roads`, `OverlayRoad`,
 `potentialRoads`, `GetRoadDef`, `RoadWorldLayerDef`, `GetRoadMovementDifficultyMultiplier`,
 `tileRoadOrigins`, plus the builder vocabulary and the five road defNames.
 
-> **The wide half of that sweep used a technique now known to be broken, and the stated
-> validation could not have caught it.**
-> [#103](https://github.com/cjd721/Rimworld-Archinity/issues/103). The original pass ran the
-> pattern set a second time with `rg -a --encoding utf-16le`, and validated it against an
-> **ASCII** positive in `Assembly-CSharp.dll` — a control that exercises none of the UTF-16
-> path. `rg -a --encoding utf-16le "AddRoadGizmos"` returns **no match** on
-> `1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll` while the string is provably
-> present as UTF-16LE in that file, and the same command *does* find it in the 1.3 and 1.4
-> copies of the same assembly [V]. `--no-mmap` does not help.
-> `rg -a "A\x00d\x00d\x00R\x00o\x00a\x00d\x00"` finds it [V]. Every UTF-16LE negative
-> asserted by #68 was originally produced by the broken form.
->
-> **The conclusions survive; the stated evidence did not.** The auditor re-ran this
-> document's negatives — no mod-authored `<RoadDef>`, no road ownership/contest/capture
-> vocabulary, no road-building designator vocabulary, no downgrade or removal path — by
-> null-interleaved byte scan, and **they hold** **[I]** — a sweep negative is an inference
-> however carefully the sweep is built. What is retracted is the claim that the
-> sweep was validated before its negatives were trusted. Any future re-run of this survey
-> must use the null-interleaved form.
->
-> **One of those four has since been upgraded to [V].** "No mod-authored `<RoadDef>`" was
-> re-run by #68's reopen as a direct XML read — `rg -l '<RoadDef[ >]' -g '*.xml'` over both
-> roots, zero hits — which is a read of the def files rather than a byte scan of assemblies.
-> See *Vanilla and DLC*, above. The other three remain [I].
+**The UTF-16LE half uses the null-interleaved form, not `--encoding utf-16le`.** The latter
+misses strings provably present
+([#103](https://github.com/cjd721/Rimworld-Archinity/issues/103)): `rg -a --encoding utf-16le
+"AddRoadGizmos"` returns **no match** on
+`1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll` while the string is present as
+UTF-16LE in that file and the same command finds it in the 1.3 and 1.4 copies of the same
+assembly [V]; `--no-mmap` does not help; `rg -a "A\x00d\x00d\x00R\x00o\x00a\x00d\x00"` finds it
+[V]. A UTF-16 pass must be validated against a UTF-16 positive — an ASCII control exercises none
+of that path.
+
+**The negatives, by null-interleaved byte scan** — no mod-authored `<RoadDef>`, no road
+ownership/contest/capture vocabulary, no road-building designator vocabulary, no downgrade or
+removal path — **hold** **[I]**: a sweep negative is an inference however carefully the sweep is
+built. "No mod-authored `<RoadDef>`" is **[V]**: a direct XML read, `rg -l '<RoadDef[ >]' -g
+'*.xml'` over both roots, zero hits — a read of the def files rather than a byte scan of
+assemblies (see *Vanilla and DLC*, above). Any re-run of this survey uses the null-interleaved
+form.
 
 **§4's pass ran the same way and validated its UTF-16 half before trusting a negative.**
 Symbols: `VehiclePawn`, `VehiclePathFollower`, `RequestNewPath`,
@@ -1683,8 +1543,8 @@ the end of both passes [V].
 `Assembly-CSharp.dll` was decompiled whole (`ilspycmd -o`) and every reader of `ancientOnly`
 (1), `movementCostMultiplier` (2), `allowRoads` (2) and `OverlayRoad` (2 callers) was
 enumerated in the decompiled source [V]. Mod assemblies were **not** decompiled wholesale for
-§1–§3; Vehicle Framework's third read of `movementCostMultiplier` is the reason that
-distinction now appears in §1.
+§1–§3; Vehicle Framework's third read of `movementCostMultiplier` is why §1 draws that
+distinction.
 
 **`Vehicles.dll` *was* decompiled whole for §4**, and its counts are enumerated rather than
 sampled [V]: `ThreadAvailable` 8, `ThreadAlive` 8, `dedicatedThread` 32, `TaskManager.Run` 3,
@@ -1701,8 +1561,9 @@ sampled [V]: `ThreadAvailable` 8, `ThreadAlive` 8, `dedicatedThread` 32, `TaskMa
    [#102](https://github.com/cjd721/Rimworld-Archinity/issues/102) must land before
    `tools/patch_check.py` can measure a leading-`Defs/` xpath at all.
 2. After the two worldgen PatchOperations, generate a world and confirm the map carries
-   dirt paths and dirt tracks only. Observable on the world map with no dev mode. Confirm
-   separately whether 1–2 map-wide ancient wrecks per map are acceptable (§2).
+   dirt paths and dirt tracks only. Observable on the world map with no dev mode. The 1–2
+   map-wide ancient wrecks per map (§2) are answered in [`ERA.md`](ERA.md) § *Above-era content
+   seeded on the player's own map* (#153; AE-3/AE-7).
 3. After the speed ladder, send one caravan across a `DirtPath` edge and one across a
    `StoneRoad` edge and confirm the tile-cost tooltip's road line differs. The tooltip
    already prints `{road.LabelCap}: {multiplier.ToStringPercent()}` [V], so this needs no
@@ -1743,44 +1604,28 @@ sampled [V]: `ThreadAvailable` 8, `ThreadAlive` 8, `dedicatedThread` 32, `TaskMa
   multipliers, the era→tier mapping, §3's `buildDays` (about thirty), whether that means a
   per-route duration or a per-edge speed, the neighbor count *k* and radius *R*, the funding prices
   and cap, §4b's per-vehicle `MoveSpeed` / `worldSpeedMultiplier` / `FlightSpeed` values and §4c's
-  five `<cost>` values are all starting proposals. They belong to
-  **the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)**.
+  five `<cost>` values are all starting proposals. They are **balance,
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)**.
   **The road ladder and the vehicle ladder must be set in one sitting**, because they multiply and
   `customRoadCosts` overrides the road ladder outright (§4c).
-- **Requirements gaps, handed back to
-  [`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md).** No open
-  ticket owned that document, so these were reported as gaps rather than assigned. Each was a
-  one-branch switch in §3; none blocked the build. **All six were handed back and resolved by
-  [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128)** (see the requirement document's footer); item 4 is also answered at route depth
-  by § *The player's two verbs on a route*, C1–C5 (#154).
-  1. Does *"between its own settlements and the settlements of allied neighboring factions"*
-     include own-settlement ↔ own-settlement routes, or only routes to allies?
-  2. Is a player colony an eligible partner for an NPC civilization allied to the player?
-  3. What may *"extend them farther"* target — another settlement, the player's colony, any tile?
-  4. Which resources fund a route, and must the player be physically present (caravan) or may
-     they fund remotely (comms console)?
-  5. When an alliance breaks or an endpoint changes hands mid-build, does the project pause or
-     cancel?
-  6. Does loading a save that predates the feature start construction for the current era, or wait
-     for the next advance?
+- **The requirement clauses §3 switches on** (own-faction routes, player colony as partner,
+  *farther* targets, funding channel, pause vs complete, legacy saves) are stated in
+  [`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md), resolved
+  by [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128); the funding channel is
+  answered at route depth by § *The player's verb on a route — contribute*, C1–C5 (#154).
 - **§3 depends on [`POLITICS.md`](POLITICS.md)'s alliance seed.** Until § *The build* §1 ships,
   vanilla supplies no NPC↔NPC alliance and §3 plans intra-faction routes only. POLITICS owns the
   seed; this is a build-order dependency, not an ownership gap.
-- **Protect is answered** by § *The player's two verbs on a route*
-  ([#154](https://github.com/cjd721/Rimworld-Archinity/issues/154)): four event shapes (E-overlay, E-quest, E-quest→E-overlay, E-site) aimed at a
-  route's endpoint settlement, plus one shared eligibility predicate.
-- **Road debris on a roadless map is an open lever with no owner.** Suppressing
-  `AncientRoads` leaves 1–2 ancient vehicle wrecks per map and spreads them map-wide (§2).
-  Removing them means reaching the `GenStep_ScatterRoadDebris` entry in the map generator's
-  step list, which has not been investigated. **A gap, not a hand-off** — no ticket owns it.
+- **Road debris on a roadless map.** Suppressing `AncientRoads` leaves 1–2 ancient vehicle
+  wrecks per map and spreads them map-wide (§2). Answered in [`ERA.md`](ERA.md) § *Above-era
+  content seeded on the player's own map* ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153);
+  AE-3/AE-7).
 - **Whether completed mobility feeds Charting's reach is
-  [#118](https://github.com/cjd721/Rimworld-Archinity/issues/118)'s.**
-  [`docs/requirements/CHARTING.md`](../requirements/CHARTING.md) now says outright that Charting
-  never creates, upgrades or pays for a road and that a mobility rung is a later cross-spec choice.
-  The rung shapes at the end of this document are kept as input to that pass and are not selected.
-- **Whether routes can degrade.** The build says capture, not degrade. If requirements
-  later ask for a contested route physically decaying, it is ~15 lines of direct
-  `potentialRoads` mutation and it cannot go through `OverlayRoad` (T-43).
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s route selection.**
+  [`docs/requirements/CHARTING.md`](../requirements/CHARTING.md) says that Charting never creates,
+  upgrades or pays for a road, and that Charting may later read completed mobility. The rung
+  shapes at the end of this document are routes for that selection and are not selected.
+- **Routes never degrade** (requirement); `OverlayRoad`'s upgrade-only rule (T-43) matches it.
 - **Build A versus Build B** for direct construction waits on
   [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s call on VFE Classical.
 - **Whether vehicles ship at all is
@@ -1807,29 +1652,25 @@ sampled [V]: `ThreadAvailable` 8, `ThreadAlive` 8, `dedicatedThread` 32, `TaskMa
   mitigation is procedural (copy `config/ModSettings/`, never re-click) and belongs to the
   same place T-18 does; **nothing here makes it worse and nothing here fixes it.**
 - **Outposts already handles vehicles arriving at an outpost.** `VEF`'s `Outposts.dll` carries
-  `VehiclePawnType` and `VehicleRemoveAllPawns` [V]. Noted for whoever takes Charting's
-  outpost tenure work — its discovery hook is `Outposts.Outpost.Produce()`. **#57 is closed
-  and no ticket currently owns this**; not investigated further here.
+  `VehiclePawnType` and `VehicleRemoveAllPawns` [V]. Noted for [`CHARTING.md`](CHARTING.md)
+  § *Natural discovery* Route D ([#146](https://github.com/cjd721/Rimworld-Archinity/issues/146)),
+  whose discovery hook is `Outposts.Outpost.Produce()`.
 
 ### Charting reach rungs — offered, not selected
 
-> **Not selected — 2026-09-15.** Requirements make roads world infrastructure and Charting, at
+> **Not selected.** Requirements make roads world infrastructure and Charting, at
 > most, a later *reader* of completed mobility
 > ([`docs/requirements/CHARTING.md`](../requirements/CHARTING.md), *Road construction is not a
 > Charting decision*). Nothing below builds, prices or times a road, and nothing in §3 reads it.
 > Whether any of these rungs ships — and whether a completed-route rung (the optional worker
-> below) should replace the research-gated rows — is cross-spec integration,
-> [#118](https://github.com/cjd721/Rimworld-Archinity/issues/118). The shape conforms to
-> [`CHARTING.md`](CHARTING.md) §4 and is kept so that pass need not re-derive it.
+> below) should replace the research-gated rows — is
+> [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s route selection. The shape
+> conforms to [`CHARTING.md`](CHARTING.md) §4.
 
 **The reach band's interface is fixed by [`CHARTING.md`](CHARTING.md) §4 — *The reach band*,
-§ *The rung registry*.** That section, not a ticket, is the contract this document conforms to.
-**#57, which established it, is closed**, so where the text below says "#57 wants" or "#57 may",
-read it as *whoever picks Charting's reach work up* — there is no open ticket to hand the choice
-to. This document conforms to §4 rather than proposing an alternative. An
-earlier draft published `static float RoadReachFactor(PlanetTile)` and explicitly refused a
-band or tier enum. **That is withdrawn.** Nothing in Charting consumes a float, and the band
-is an element-wise max over integer rungs.
+§ *The rung registry*.** That section, not a ticket, is the contract this document conforms to; this document proposes
+no alternative. Nothing in Charting consumes a float, and the band is an element-wise max over
+integer rungs.
 
 The published form is therefore the one CHARTING §4 defines:
 
@@ -1848,8 +1689,8 @@ is XML.** CHARTING §4 already reads a `ResearchProjectDef` rung as satisfied wh
 `IsFinished`, and VFE Classical already gates player road-building on a `ResearchProjectDef`
 (§3) — so the rung and the build gate are the same def and no `workerClass` is needed.
 
-Proposed rows — **the integers are [I] and belong to
-the balance deferral in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2)**, not to this document; the
+Proposed rows — **the integers are [I] and are balance,
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)**, not this document's; the
 *shape* is the contract:
 
 | Tier the rung represents | Def carrying `<modExtensions>` | Satisfied when | `minTiles` | `maxTiles` |
@@ -1871,7 +1712,7 @@ blocks on VVE's own research defs, no `workerClass`, no code:
 | long-range ground | `VVE_ComplexVehicles` | `IsFinished` | 0 | 55 |
 | aircraft | `VVE_AerialVehicles` | `IsFinished` | 0 | 90 |
 
-**The integers are [I] and belong to the balance deferral**, as the road rows' do. Two things
+**The integers are [I] and are balance (#119)**, as the road rows' are. Two things
 about the shape are not balance and are stated here deliberately:
 
 - **The ground rung and the aircraft rung must not be the same rung**, and as shipped they
@@ -1893,30 +1734,30 @@ about the shape are not balance and are stated here deliberately:
   needs to know the other exists at the band level, even though at the *travel time* level
   §4c makes them multiply.
 
-**An optional fifth rung, if #57 wants roads that exist rather than roads that can be
+**An optional fifth rung, if #119 selects roads that exist rather than roads that can be
 built.** A research rung says the player *may* pave; it does not say a road is actually
-there. If #57 wants the stronger signal, one `workerClass` supplies it —
+there. If #119 selects the stronger signal, one `workerClass` supplies it —
 `Archinity.ReachRungWorker_RoadFromColony`, satisfied when an edge leaving any player
 colony tile carries a road of at least the named tier, read live via
 `WorldGrid.GetRoadDef(from, to, visibleOnly: true)`. ~15 lines, no state.
 
-- **Roads register nothing and push nothing.** The rungs are data on defs; #57's band code
-  scans for them. Roads do not know the band exists, and adding a tier is one
+- **Roads register nothing and push nothing.** The rungs are data on defs; [`CHARTING.md`](CHARTING.md) §4's
+  band code scans for them. Roads do not know the band exists, and adding a tier is one
   `<modExtensions>` block.
 - **Read live, never stored.** If the optional worker ships, it must recompute per call.
   `CostToMove` recomputes the underlying multiplier per edge per call and there is no cache
   anywhere in the road system. A stale per-client snapshot feeding placement is the **T-20
   class** of bug exactly.
-- **The continuous primitive stays public if #57 ever wants it.**
+- **The continuous primitive stays public if #119 ever selects it.**
   `WorldGrid.GetRoadMovementDifficultyMultiplier(from, to)` is public, is per *edge* not per
   tile, and is the same number `Caravan_PathFollower.CostToMove` multiplies tile difficulty
-  by. This document does not publish a wrapper around it; #57 may call it directly.
+  by. This document does not publish a wrapper around it; [`CHARTING.md`](CHARTING.md) §4 may call it directly.
 - **What §1 does and does not gate.** *Tier* carries no information today: all five defs
   return `0.5f`, so no ladder means no ordering between the four rungs above (**T-42**), and
   the five-step rung ladder is the part that depends on §1 landing. **Road *presence* is
   already a real signal** — `GetRoadMovementDifficultyMultiplier` returns `0.5` on any road
   edge and `1f` off-road [V], a genuine 2× difference that exists in the shipped game.
-  **#57 should keep a road/no-road term regardless of whether the ladder ships.** Only the
+  **A road/no-road term is worth keeping regardless of whether the ladder ships (#119).** Only the
   graded five-step version waits on §1.
 - **Vehicle *presence* is a far larger signal than road tier, and it is real today.** Vehicle
   caravan speed is `MoveSpeed × worldSpeedMultiplier` per vehicle, converted by

@@ -9,7 +9,8 @@ a skill*:
 - the player chooses the advance, at intervals as the skill rises;
 - only skills the pawn is deeply passionate about can be specialised;
 - each advance is small and numeric, and none unlocks content;
-- pawns the player did not train arrive already specialised.
+- pawns the player did not train arrive already specialised; the colony's starting colonists do
+  not.
 
 The requirement allows the same commitment to be delivered **by scarcity instead of by
 progression**, through bounded named posts. Both shapes are answered here as peers.
@@ -23,10 +24,13 @@ re-derived. Selecting a route is [#119](https://github.com/cjd721/Rimworld-Archi
 - Recreation that trains a passion skill: `COLONY.md` § *Recreation follows a pawn's passions*
   ([#159](https://github.com/cjd721/Rimworld-Archinity/issues/159)). It shares this document's
   passion facts; see *Constraints*.
-- Granting or changing a passion: the altar (`ALTAR.md`). Passion-granting is reserved to it
-  (`docs/playtest-notes.md`, restated on [#76](https://github.com/cjd721/Rimworld-Archinity/issues/76)).
-- The player faith's role catalogue and unlock milestones:
-  [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116) and `RELIGION.md`.
+- Passion is not grantable (`docs/playtest-notes.md`;
+  [#76](https://github.com/cjd721/Rimworld-Archinity/issues/76)). If it ever ships it is an
+  altar function, left open for playtest (Conrad).
+- The player faith's role catalogue and unlock milestones: `RELIGION.md` § *The player faith's
+  role hierarchy* ([#114](https://github.com/cjd721/Rimworld-Archinity/issues/114)); the
+  catalogue and milestones are #119's content decision
+  ([#116](https://github.com/cjd721/Rimworld-Archinity/issues/116)).
 
 ## Verdict
 
@@ -197,7 +201,7 @@ already uses. **Not recommended.**
 - The posts reach the player faith by #114's routes A, B or C.
 
 **What it cannot do.**
-- **Correction to the ticket's premise: vanilla specialist posts are not bounded.** All eight
+- **Vanilla specialist posts are not bounded.** All eight
   inherit `PreceptRoleMultiBase`, so they are `Precept_RoleMulti` [V]. `Assign` has no cap, and
   nothing outside the class caps `chosenPawns` [V, #114, re-read here]. "One holder at a time"
   must be authored:
@@ -207,9 +211,10 @@ already uses. **Not recommended.**
 - **The Easy form reaches only two of the eight.** `IdeoFoundation.CanAdd` refuses a def whose
   `preceptClass` is exactly `Precept_RoleMulti` once the ideology holds two visible
   `Precept_RoleMulti`, returning `"MaxMultiRolesCount".Translate(2)` (`MaxMultiRoles = 2`)
-  [V, re-read; `docs/engine/ideology.md` § *Two multi-holder roles per ideology*]. The editor,
-  fluid reform and generation all pass through it. So the XML/reform route gives the colony at
-  most **two specialist post types**, each still holding any number of pawns.
+  [V, re-read; `docs/engine/ideology.md` § *Role precepts: what the two classes hold, and how
+  a role enters a live ideology*]. The editor, fluid reform and generation all pass through
+  it. So the XML/reform route gives the colony at most **two specialist post types**, each
+  still holding any number of pawns.
   - Scarcity then comes from which two skills get a post at all, not from seats. A smith and a
     cook cannot both be specialists alongside, say, a shooter.
   - "Enough posts" for the skills the colony cares about needs #114's injection route
@@ -229,9 +234,13 @@ already uses. **Not recommended.**
 - Vanilla's specialists carry `requiredMemes` (`HumanPrimacy` on production) [V]. Using them
   as shipped ties the posts to memes. Our own defs need not.
 - A custom `RoleEffect` subclass does nothing (**T-107**).
-- It overlaps [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116)'s role
-  hierarchy. One role per pawn means **a founder or preacher cannot also be the colony's
-  weaponsmith.**
+- It overlaps the player faith's role hierarchy (`RELIGION.md`, #114; catalogue
+  [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116)). One role per pawn means **a
+  founder or preacher cannot also be the colony's weaponsmith.**
+- The two multi-holder slots are shared with the player faith's preacher/converter seats
+  (`RELIGION.md` § *The player faith's role hierarchy* › *Constraints*). Under the Easy form the
+  preacher def takes one of the two multi-holder slots, so every preacher type costs a
+  specialist type. The Medium form avoids this.
 
 ### F. Trained hediff at a bench or a rite
 
@@ -321,6 +330,11 @@ postfix].
 `PsycastsMod.Settings.baseSpawnChance`, during generation [V]. Mod settings are part of the sync
 surface (**T-18**). Our postfix must take its numbers from defs, never from settings.
 
+**Starting colonists are excluded by the requirement.** `Verse.StartingPawnUtility` builds its
+requests with `PawnGenerationContext.PlayerStarter`, and `PawnGenerationRequest.Context` is
+public, so the postfix can test `request.Context == PawnGenerationContext.PlayerStarter` and
+skip them [V].
+
 | Route | How a generated pawn carries specialisations |
 |---|---|
 | A, B | A generation postfix on the VPE pattern rolls entries or branches from final skill levels and major passions, as if the pawn had progressed. Authored enemies can take a pawnkind extension, as in VPE's. |
@@ -379,9 +393,8 @@ Engine facts that bound every route.
     passion mod it only reflects into [I].
 - **Passion changes mid-game.** Biotech `GeneDef.passionMod` (`AddOneLevel`, `DropAll`) [V].
   Growth moments and child generation `IncrementPassion` [V]. So a specialisation gated on
-  `Major` can lose its gate, for example to an altar xenogene. Passion-granting is the altar's
-  (`docs/playtest-notes.md`). That makes the altar the only way to open a new specialisation
-  line on an existing pawn.
+  `Major` can lose its gate, for example to an altar xenogene. Genes and growth moments can
+  still move passion, so a gate on `Major` can open or close mid-game.
 - **The pick must be a synced command.**
   - A modded `ChoiceLetter` is synced by neither mechanism (**T-96**).
   - A `Dialog_NodeTree` subclass drops out of Multiplayer's bindings (**T-95**).
@@ -468,15 +481,12 @@ Capability: [#156](https://github.com/cjd721/Rimworld-Archinity/issues/156). Rol
 
 ## Open questions
 
-**Requirement gaps.** These go to the COLONY requirement (authored by
-[#129](https://github.com/cjd721/Rimworld-Archinity/issues/129), now closed), so owned by
-[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+**Rules and balance** — choosing is the build map's
+([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
 
-- **Does a specialisation survive losing its gate?** Skill decays above 10, and a xenogene can
-  drop a passion. Kept, frozen or lost is a rule, not a mechanism.
-- **Do starting colonists arrive specialised?** The generation postfix reaches them too, unless it
-  excludes them.
-- **Is "deeply passionate" `Major` only?** The engine offers nothing else.
+- **A specialisation after its gate is lost** (skill decay above 10, a gene dropping the
+  passion). Capability: under A–D the state is ours, so it can be kept, frozen or removed at the
+  trigger [I, by construction]; under E vanilla unseats the holder on recache (#114).
 - **Thresholds, slots per skill, and the size of each advance.** Balance. The only shipped figures
   are 0.01–0.05 per entry.
 - **Does the smith fork require new work-speed stats?** If "weapons vs armour" is literal, the

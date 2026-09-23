@@ -167,8 +167,11 @@ knew advancing alongside them, some falling away, others they have never met ris
   of the handful of factions that actually mattered in the era just ended.
 - **The player always knows what is coming.** The research tree is fully visible across all
   eras from the start.
-- The player triggers the advance themselves, by finishing the capstone. Nothing else
-  advances the era.
+- **The era advance is always the players' choice.** Completing the era's research project
+  advances it, possibly together with a rite or a build the players perform; which one is a
+  route, chosen on [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+  The advance never simply happens to them, and nothing else advances the era.
+  (Conrad, #118, 2026-09-23)
 
 ## Constraints
 
@@ -219,27 +222,32 @@ knew advancing alongside them, some falling away, others they have never met ris
   hardcoded defName, with the storyteller filter likewise a hardcoded list; and its band
   computation is gated on client-local settings ahead of a `Rand` draw, with a static player
   tech-level cache never reset on save load.
-- **A caravan already en route when its destination changes hands** — capability, the one
-  unexamined case. Not era-specific: it fires on the Schism's transfers, on a revolt and on
-  ordinary conquest too.
-- **A rite between the capstone and the advance.** [#113](https://github.com/cjd721/Rimworld-Archinity/issues/113)
-  resolved that capstone completion calls `AdvanceEra()` directly, with no rite and no
-  confirmation, and **that decision stands**. Whether a ritual could sit between them — the
-  capstone unlocking an effigy the colony celebrates, the advance firing on the celebration —
-  is *explored, not chosen*, and **no capability work is outstanding on it**:
+- **A caravan already en route when its destination changes hands** — answered:
+  [`TERRITORY.md`](../specs/TERRITORY.md) § *A caravan en route when its destination changes
+  hands* ([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152)); the gravship case in
+  [`GRAVSHIP.md`](../specs/GRAVSHIP.md) § *A gravship en route when its landing tile changes
+  hands* ([#177](https://github.com/cjd721/Rimworld-Archinity/issues/177)). Not era-specific: it
+  fires on the Schism's transfers, on a revolt and on ordinary conquest too.
+- **A rite or a build between the capstone and the advance.** Completing the capstone calls
+  `AdvanceEra()` ([#113](https://github.com/cjd721/Rimworld-Archinity/issues/113)); a rite or
+  a build the players perform with it is a route (§ *Player information and agency*) — for
+  example, the capstone unlocking an effigy the colony celebrates, the advance firing on the
+  celebration. **No capability work is outstanding on it:**
   - a `RitualOutcomeEffectWorker` calling arbitrary code on a good outcome is built twice in
     [`RELIGION.md`](RELIGION.md)'s spec, ~40 lines plus the XML trio;
-  - the multiplayer chain for `AdvanceEra()` *specifically* from a ritual outcome is already
-    verified in [`docs/specs/ERA.md`](../specs/ERA.md) § *Cost*, as a superseded bullet kept
-    for this purpose — a cancelled or failed rite calls nothing;
+  - the multiplayer chain for `AdvanceEra()` *specifically* from a ritual outcome is verified
+    in [`docs/specs/ERA.md`](../specs/ERA.md) § *Persistence and multiplayer* — a cancelled or
+    failed rite calls nothing;
+  - a build is a prerequisite the capstone node can require
+    ([`docs/specs/ERA.md`](../specs/ERA.md) § *The build*, *What calls it*);
   - an era parked indefinitely is a **designed-for** case, not a hazard:
     [`PRESSURE.md`](PRESSURE.md)'s threat curve flattens at each era's ceiling and its
     verification carries *"Park an era"* as a named acceptance test.
 
-  What remains is the effigy building itself and one design call — whether the boundary is a
-  thing the player **chooses** or a thing that **happens to them**, which is #113's own
-  unfinished half.
-- **Above-era structures and events seeded on the player's own map** — capability.
+  Capability: answered (above). Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+- **Above-era structures and events seeded on the player's own map** — answered:
+  [`docs/specs/ERA.md`](../specs/ERA.md) § *Above-era content seeded on the player's own map*
+  ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)).
 - **The rate of non-bench research sources.** A building, gene or item that produces
   research points into a project the player *could already research* does not break the arc
   by the rule above, but it can collapse an era's pacing.

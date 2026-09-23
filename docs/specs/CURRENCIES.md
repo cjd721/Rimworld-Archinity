@@ -2,18 +2,6 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** Intel remains a stored numeric balance, but it
-> is not consumed by research or hacking projects directly. The player exchanges it at
-> an authored table or through a suitable faction for techprints or other unlocking
-> items. This document's generic balance and purchase machinery remains candidate
-> infrastructure; direct project debits and claims that research itself spends Intel
-> are superseded. Reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)
-> owns the exchange surface.
-
-> **Exchange surface specified — 2026-09-15**, on reopened #54: *The build* § *The Intel
-> exchange*. The banner above stays as the authority statement; that section is the mechanism
-> it pointed at.
-
 Implements the two **spendable operational currencies** the campaign requires:
 
 - **Influence** — [`docs/requirements/RELIGION.md` § *The Schism Path — Influence + Reverence*](../requirements/RELIGION.md).
@@ -23,7 +11,8 @@ Implements the two **spendable operational currencies** the campaign requires:
   Recovered from Glitterite raids, destructive analysis and site lore; held as a balance;
   **exchanged** at an authored table or through a capable faction for a techprint or another
   Instruction item. Research and hacking **never** debit it — see *The build* § *The Intel
-  exchange*.
+  exchange* ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), closed; catalogue
+  [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)).
 
 Established on [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), which
 absorbed [#55](https://github.com/cjd721/Rimworld-Archinity/issues/55)'s currency half,
@@ -42,13 +31,13 @@ of currencies, because nothing in it names either fiction.
 | The **exemplar gate** — a research project requiring a physically-analysed item | [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67). The interface between the two is stated below, and what it does *not* commit either side to is the load-bearing part. |
 | **Destructive artifact analysis** — the long job that consumes a recovered artifact, credits Intel and raises Trace | [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115). Its only contact with this document is `Credit`. |
 | **Which Instruction items are for sale, their Intel prices and cadence, and whether a table, a faction or both carries each one** | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117), the Ultra acquisition session. This document supplies **both venues as mechanism** at *The Intel exchange*; selecting and pricing them is #117's. |
-| **What a delivered item unlocks, when it is not a techprint** | **No owner — a gap.** [`HACKING.md`](HACKING.md) gates hacking research through ordinary research projects, whose Instruction item is a techprint; [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) owns no item consumer. Any unlock item that is *not* a techprint (or a `CompProperties_Techprint`-carrying authored def) needs a consumer nobody has specified — fog for [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) to either rule out or ticket. The exchange delivers a `Thing` and stops. |
+| **What a delivered item unlocks, when it is not a techprint** | [`HACKING.md`](HACKING.md) § *New verbs* has one shipped consumer: `USH_ExecData_*` items install `Hediff_LearningAbility`, which grants an ability. Any other kind of non-techprint unlock item needs its own consumer; content on [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) / [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). The exchange delivers a `Thing` and stops. |
 | **Exaltation** and **Reverence** | [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) / [`RELIGION.md`](RELIGION.md). Threshold ladders, not spends. |
 | **Trace** | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md). A band ladder, not a balance. #56 has now **ruled** on whether sharing one store with Intel couples it to Church standing — see *What is shared*. |
 | **Which bought quests return on failure, and at what price** | Authoring, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) for the Schism, and [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). The **mechanism** — what observes the failure and how an entry comes back free, paid or refunded — is here, at *A failed bought quest returns to the shop*, from [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145). |
 | **Which quests are for sale, and what they contain** | Authoring. The **machinery** that offers and sells a quest is [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s and is **in this document**, at *The purchasable quest catalogue* — because it is a purchase, and purchases live here. |
 | The **ordered Schism chain** that Influence purchases advance | Routes, stranding and the marking act: *The Schism catalogue — a spend that advances the plot*, from [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132). The reveal, ground and finale are [#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)'s. |
-| Cross-cutting political-UI layout | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61). The readout for these two numbers is here. |
+| Cross-cutting political-UI layout | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map). Every surface has a route ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)); tab shape and placement are the build map's. The readout for these two numbers is here. |
 
 **Why this is its own document rather than a section of [`RELIGION.md`](RELIGION.md).**
 The verdict is that one mechanism serves both currencies. Filing it under religion would
@@ -67,7 +56,7 @@ Answers [`RELIGION.md` § *The Schism Path*](../requirements/RELIGION.md): *"Inf
 **It does not own:**
 - Influence as a reward option: [Credit for a deed, chosen with the quest's reward](https://github.com/cjd721/Rimworld-Archinity/issues/135).
 - The reveal, ground passing to the Schism, and the finale: [The Schism — revealed, taking the Church's ground, allied for good](https://github.com/cjd721/Rimworld-Archinity/issues/130).
-- Church suspicion in general: [The Church after the reskin](https://github.com/cjd721/Rimworld-Archinity/issues/123).
+- The Church's standing: ordinary Goodwill until betrayal's latch ([`RELIGION.md`](RELIGION.md) § *The build — Exaltation* › *6. Betrayal — the permanent-hostility latch*; [#123](https://github.com/cjd721/Rimworld-Archinity/issues/123)).
 
 ### Verdict
 
@@ -91,7 +80,7 @@ Answers [`RELIGION.md` § *The Schism Path*](../requirements/RELIGION.md): *"Inf
 - Re-pay or refund on a failed blow. VFED makes the player re-pay **[V]**.
 - One advance hook, where #130's ground transfer and finale attach.
 - Either marking act.
-- A second `CurrencyDef` as a plot-only accumulator, if Conrad wants #39's two-accumulator shape **[I]**.
+- A second `CurrencyDef` as a plot-only accumulator, giving #39's two-accumulator shape **[I]**.
 
 *Cannot:*
 - Produce Influence.
@@ -121,9 +110,9 @@ Answers [`RELIGION.md` § *The Schism Path*](../requirements/RELIGION.md): *"Inf
 
 **The marking act.**
 - **Both acts work under A, B and C.** Under D the act is joining.
-- **The hostility carrier is the same for both.** VFED's `JoinDeserters` sets goodwill to `GoodwillToMakeHostile`, then `GoodwillPatches.CanChangeGoodwillFor_Postfix` freezes Empire↔player goodwill while a stored flag is set **[V]**. Vanilla hostility alone is recoverable through gifts and peace talks (`RELIGION.md` § *Exaltation — hostility and the techprint supply*) **[V]**.
+- **The hostility carrier is the same for both.** VFED's `JoinDeserters` sets goodwill to `GoodwillToMakeHostile`, then `GoodwillPatches.CanChangeGoodwillFor_Postfix` freezes Empire↔player goodwill while a stored flag is set **[V]**. Vanilla hostility alone is recoverable through gifts and peace talks (`RELIGION.md` § *Exaltation — what survives the Church's hostility*) **[V]**.
 - **First Influence gained** makes banking while favoured impossible by construction. Operations before commitment then pay no Influence, and the Influence option must warn at acceptance, as `VFED_ChasedDeserter` does **[V]**.
-- **First plot spend** lets Influence bank without limit while the Church stays friendly. That contradicts the requirement's own *"cannot bank Influence and keep the Church's favor"* and has been handed back.
+- **First plot spend** lets Influence bank without limit while the Church stays friendly. That breaks `RELIGION.md`'s banking clause, *"cannot bank Influence and keep the Church's favor"*, so the requirement as written rules it out.
 
 **Recommendation, not a selection:** A for the plot, with favours and techprints as rows in the same catalogue. B as a complement if blows should arrive as ordinary offers. First Influence gained as the marking act, because it alone meets the requirement's banking clause by construction.
 
@@ -164,9 +153,9 @@ Answers [`RELIGION.md` § *The Schism Path*](../requirements/RELIGION.md): *"Inf
 
 | Question | Owner |
 |---|---|
-| First plot spend as the marking act lets Influence bank while the Church stays favourable, contradicting the banking clause | Requirements → [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122) (closed; reopening is Conrad's call) |
-| Does a failed blow cost its price again, refund it, or retry free? All three are possible — *A failed bought quest returns to the shop* ([#145](https://github.com/cjd721/Rimworld-Archinity/issues/145)) | Requirements → [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (#122 is closed) |
-| Influence decay: a steady state below a step's price strands the plot | Existing unowned gap under *Outstanding decisions* |
+| The marking act | *First plot spend* breaks `RELIGION.md`'s banking clause; *first Influence gained* meets it by construction (§ *Routes* above). Which ships is the build map's ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)) |
+| Does a failed blow cost its price again, refund it, or retry free? All three are possible — *A failed bought quest returns to the shop* ([#145](https://github.com/cjd721/Rimworld-Archinity/issues/145)) | Capability: all three, per entry (*A failed bought quest returns to the shop*). Which ships is the build map's ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)) |
+| Influence decay: a steady state below a step's price strands the plot | Capability: yes — item rot (*Three Intel delivery options* (a)/(c)) or a tick debit on `WorldComponent_Currencies` ([`TRACE.md`](TRACE.md) § *What changes it* › *Decay* has the shape). Decay can strand the plot (*Failure and recovery*). Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
 | Chain state storage; shelving in `QuestManager` vs deep save; per-approach price snapshot; retry on generation failure; the synced accept check (B); plot rows and cooldowns in the window | Build map, on selection |
 
 ---
@@ -189,7 +178,8 @@ stays on the shelf.
 - The shelf itself, the currency pair and the accept sequence: *The purchasable quest catalogue*,
   from [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). Read as-is — its shelf,
   its `QuestCurrency`/`QuestCurrencyInfo` pair and its `ActivateQuest` seam are unchanged. **What
-  this section does change is what may ride on that shelf**: see *What this section reverses*.
+  this section adds is what may ride on that shelf**: items as well as quests (*Items on the
+  shelf*).
 - **A failed bought quest returning to the shop:** *A failed bought quest returns to the shop*,
   below, from [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145). It runs on the
   quest-**end** seam, not route B's tick. VEF's `grantAgainOnFailure` is its route C, which
@@ -199,27 +189,14 @@ stays on the shelf.
   vocabulary; the values are balance.
 - The ordered Schism chain, whose steps are entries of a particular kind: *The Schism catalogue*.
 
-### What this section reverses
+### Items on the shelf
 
-**One standing verdict in this document is overturned here, and it is named rather than
-quietly replaced.** *Delivery surfaces for the Intel exchange* carried the row
-*"**VEF `QuestGiverDef`** — **Rejected for items; kept for Intel missions.** An item through it
-is a contract whose accept fires a drop pod — a letter, a quest-tab entry and a generator run
-per item, with **T-76** and **T-77** in the way."* That row is now marked **SUPERSEDED** in
-place and points here.
-
-**What changed is one shipped node, not an opinion.** `QuestNode_AddItemsReward.RunInt`
-constructs a `QuestPart_Choice` holding a single `Reward_Items` and adds the
-`QuestPart_DropPods` that `Reward_Items.GenerateQuestParts` yields **[V]** — so an item entry
-renders as an ordinary reward row and delivers on accept, rather than as a contract wearing one.
-That also removes the row's strongest objection: **T-76 prunes exactly the entries that lack a
-`QuestPart_Choice`**, and this node is what supplies one. The generator run and the quest-tab
-entry per item remain true and are now consequences under route A, not disqualifiers.
-
-**What did **not** change:** #106's shelf, its `QuestCurrency`/`QuestCurrencyInfo` pair and
-`ActivateQuest`; #54's balance and its exchange; #132's ordered chain. The superseded row's
-reasoning survives intact as the case for **route D**, the two-shelf fallback, which is kept for
-that reason.
+`QuestNode_AddItemsReward.RunInt` constructs a `QuestPart_Choice` holding a single
+`Reward_Items` and adds the `QuestPart_DropPods` it yields **[V]**, so an item entry on VEF's
+`QuestGiverDef` shelf renders as an ordinary reward row and delivers on accept, and **T-76**
+(which prunes entries lacking a `QuestPart_Choice`) does not touch it; the generator run and
+quest-tab entry per item are route A's consequences, and the two-shelf case survives as
+route D.
 
 ### Verdict
 
@@ -453,16 +430,13 @@ hand-typed null-interleaved literal, never through `$(…)`, validated on
 [#144](https://github.com/cjd721/Rimworld-Archinity/issues/144).
 [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) and
 [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) were both re-read and their
-mechanisms stand. **One verdict in this document is superseded** — the *"Rejected for items"*
-row on VEF `QuestGiverDef` under *Delivery surfaces for the Intel exchange*, marked in place and
-explained at *What this section reverses*. Where that row and route A disagree, **route A is
-current**.
+mechanisms stand.
 
 ### Open questions
 
 | Question | Owner |
 |---|---|
-| An entry that becomes ineligible — does it **leave**, or stay visibly locked with the reason shown (which vanilla's `QuestPart_RequirementsToAccept` gives free)? | Requirements → [`QUESTS.md`](../requirements/QUESTS.md) § *Shops* |
+| An entry that becomes ineligible — does it **leave**, or stay visibly locked with the reason shown (which vanilla's `QuestPart_RequirementsToAccept` gives free)? | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map) — [`QUESTS.md`](../requirements/QUESTS.md) § *Shops* allows either |
 | Where the per-entry pruning attaches, and what it stores per entry beyond `QuestInfo.tickGenerated` | Build map, on selection |
 | Whether route C's node also attaches a re-checking part, or gates at generation only | Build map, on selection |
 | What `QuestGiverManager.CallWindow`'s `Find.WindowStack.Add` does under Multiplayer from the synced toil — one client or both. Moot if the shop opens from a main tab; settled by two clients, not by reading | Unowned |
@@ -487,10 +461,9 @@ the entry can come back, free, paid again or refunded, set per entry.
   ([#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)).
 - Entry eligibility and shelf life: *Shop entries*
   ([#144](https://github.com/cjd721/Rimworld-Archinity/issues/144)).
-- Whether a failed Schism blow is paid again, refunded or free: that is a **requirement**. The
-  Schism requirements ticket, [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122), is
-  closed, so it goes to [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). This
-  section supplies the mechanism for every answer.
+- Whether a failed Schism blow is paid again, refunded or free: this section supplies the
+  mechanism for every answer; which ships is the build map's
+  ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
 - Which entries return and at what price: [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)
   and authoring.
 
@@ -767,16 +740,15 @@ through `tools/corpus.py --which -`:
 [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145).
 [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s `ActivateQuest` order and
 [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)'s re-offer were re-read and stand.
-**One pointer corrected:** *Shop entries* said #145 "shares route B's tick seam and
-`grantAgainOnFailure` as its donor". The return runs on the **end** seam, not the tick.
+The return runs on the quest-**end** seam, not *Shop entries*' route B tick;
 `grantAgainOnFailure` is route C, which re-grants *outside* the shop.
 
 ### Open questions
 
 | Question | Owner |
 |---|---|
-| Does a failed bought quest return, and free, paid again or refunded, per entry or everywhere? | Requirements → [`QUESTS.md`](../requirements/QUESTS.md) § *Shops*; the Schism's blows → [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (#122 is closed) |
-| Which outcomes count as failure: `Fail` only, or also `Invalid` / `Unknown` | Requirements, with the answer above |
+| Does a failed bought quest return, and free, paid again or refunded, per entry or everywhere? | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map) — [`QUESTS.md`](../requirements/QUESTS.md) § *Shops* allows either; routes A–E above |
+| Which outcomes count as failure: `Fail` only, or also `Invalid` / `Unknown` | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119), with the answer above |
 | Delay, return cap, refund fraction; whether free returns are capped against reward re-rolling | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) |
 | Attach in `Buy` or by a `QuestNode`; restock inside `End` or on the next tick; skip `CanRun` on a return or refund instead; old price or new | Build map, on selection |
 
@@ -787,12 +759,10 @@ through `tools/corpus.py --which -`:
 **One implementation, two `CurrencyDef` rows in one store, and it is ours to write** — the
 named donor holds no currency to donate. See *Available mechanisms*.
 
-Read that headline precisely, because an earlier draft of it ("one implementation, instanced
-twice") understated the coupling. The build is **one `WorldComponent_Currencies` holding one
-`Dictionary<CurrencyDef,int>`**; Influence and Intel are two *rows* in that dictionary, under
-one `Scribe` key, in one component. Nothing is instanced twice. **That coupling is exactly what
-[#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) is being asked to rule on** — see
-*What is shared*, which describes the shape correctly and states what the sharing does and does
+The build is **one `WorldComponent_Currencies` holding one `Dictionary<CurrencyDef,int>`**;
+Influence and Intel are two *rows* in that dictionary, under one `Scribe` key, in one
+component. Nothing is instanced twice. [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)
+has ruled on that coupling — see *What is shared*, which states what the sharing does and does
 not imply.
 
 Everything lands in the single assembly we already ship, `ArchinityAltar.dll`, namespace
@@ -877,21 +847,24 @@ void Credit(CurrencyDef c, int amount, string reason);
 **[V]**. `VFED.Reward_Visibility` is the working precedent for a non-item reward and uses
 only vanilla API **[V]**.
 
-This is the requirement that *"the same mission family can support radically different
-approaches"* — a covert operation offers a `Reward_Currency` for Influence, a public
-miracle offers Reverence, and both rows appear in the same quest-choice list.
+So one mission family can pay differently by approach — a covert operation offers a
+`Reward_Currency` for Influence, a public miracle offers Reverence, and both rows appear in the
+same quest-choice list.
 
-**Credit B — an artifact is decoded.** *[#115](https://github.com/cjd721/Rimworld-Archinity/issues/115) has answered the carrier: [`RESEARCH.md`](RESEARCH.md) § *Destructive artifact analysis*. The recommended route calls `Credit` from an `IThingStudied` comp on the tick. The comp below stays a verified mechanism for a one-shot use item, which that section lists as route D and does not recommend for a long, interruptible job.*
-`CompUseEffect_GainCurrency`
-(`{CurrencyDef currency, int amount}`) on the recovered-artifact `ThingDef`, paired with
-vanilla `CompUseEffect_DestroySelf` so the artifact is consumed.
+**Credit B — an artifact is analysed.** [`RESEARCH.md`](RESEARCH.md) § *Destructive artifact
+analysis* route A ([#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)) calls
+`Credit` from an `IThingStudied` comp on the study job's tick, so a long, interruptible
+analysis pays as it goes and consumes the artifact at the end.
 
-Template: `RimWorld.CompUseEffect_FinishRandomResearchProject`, a 25-line `CompUseEffect`
-subclass overriding `DoEffect(Pawn)` and `CanBeUsedBy(Pawn)` to mutate global game state
-**[V]**. Once the comp exists, each new artifact is pure XML.
+`CompUseEffect_GainCurrency` (`{CurrencyDef currency, int amount}`) on the artifact's
+`ThingDef`, paired with vanilla `CompUseEffect_DestroySelf`, is that section's route D — a
+one-shot use item, **not recommended** for a long job because interruption loses all
+progress. Its template is `RimWorld.CompUseEffect_FinishRandomResearchProject`, a 25-line
+`CompUseEffect` subclass overriding `DoEffect(Pawn)` and `CanBeUsedBy(Pawn)` to mutate global
+game state **[V]**.
 
 **Credit C — optional site lore.** A `Study` override calling `Credit(CurrencyDef, int,
-string)` directly, per [`CHARTING.md`](CHARTING.md) § 10 — **not** Credit B's comp.
+string)` directly, per [`CHARTING.md`](CHARTING.md) § 10 — **not** a use-effect comp.
 `CompUseEffect_GainCurrency` fires only from `CompUsable` / `JobDriver_UseItem`, and
 `VEF.Buildings.StudiableBuilding.Study` never reaches either **[V]**; a studiable object
 carrying that comp would simply never pay. The alternative on this route is
@@ -952,12 +925,10 @@ and world view **[V]**.
 > **[V]**. The rest are bare type references. **None of the eight is a currency readout**
 > **[I]**.
 >
-> *Two names an earlier draft listed here were stale-version inflation and are struck.* VFE
-> Power's only hits are in its **1.2** and **1.3** assemblies; Medieval Overhaul's only hit is
-> in its **1.5** assembly. Neither ships a 1.6 copy carrying the name **[V]**, so neither is in
-> this game's stack at all. This is the identical error the ticket's own addendum correctly
-> caught on Achievements Expanded, and it was made two paragraphs later: **a hit is evidence
-> only if it is in the assembly 1.6 loads.**
+> VFE Power's only hits are in its **1.2** and **1.3** assemblies and Medieval Overhaul's only
+> hit is in its **1.5** assembly; neither ships a 1.6 copy carrying the name **[V]**, so
+> neither is in this game's stack. **A hit is evidence only if it is in the assembly 1.6
+> loads.**
 >
 > The contention this seam creates is **additive by construction rather than by survey**: the
 > parameter is `ref float curBaseY`, so any patcher that draws a row must decrement it, and
@@ -983,7 +954,12 @@ overwritten **[V]**. A pure number cannot live there.
 
 ### The Intel exchange — a balance into an Instruction item
 
-Reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54). The rule, from
+This is *Shop entries* route D. [#144](https://github.com/cjd721/Rimworld-Archinity/issues/144)
+recommends route A (one shelf) for items; which ships is the build map's
+([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)). The venue split
+(table/faction) below applies to either.
+
+From [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54). The rule, from
 [`GLITTERTECH.md` § *Intel Is Capability, Not Exposition*](../requirements/GLITTERTECH.md):
 research never spends Intel; *"at an authored table or through an appropriate faction —
 potentially the Traders Guild — the player exchanges an Intel balance for a techprint or other
@@ -1143,15 +1119,15 @@ fiction — a broker, not a decoder — and pays for it with three things the ta
 Faction entries are safe for Muscle and Comfort items, or as a *second* route to a Spine item at
 a different price — which is also the cheapest way to make *"deliberately both"* mean something.
 
-**Rejected surfaces** — vanilla trade with Intel as its currency, VEF's `QuestGiverDef`, bills,
-a comms-console `DiaOption`, and VFED's contraband shop — are surveyed under *Available
-mechanisms* § *Delivery surfaces for the Intel exchange*.
+**Rejected surfaces** — vanilla trade with Intel as its currency, bills, a comms-console
+`DiaOption`, and VFED's contraband shop — are surveyed under *Available mechanisms* §
+*Delivery surfaces for the Intel exchange*. VEF's `QuestGiverDef` is *Shop entries* route A.
 
 > **This is option (b) of three, and the other two are recorded priced rather than rejected.**
 > *Available mechanisms* § *Three Intel delivery options* carries (a) adopting VFE Deserters'
 > contraband economy wholesale (~15 lines of ours) and (c) our own Intel `ThingDef` with our own
-> vendor (~120–150 C#), each with what it buys and what it costs. **Which one ships is a
-> story-beat decision Conrad will take later**; (b) stays the build until that is taken.
+> vendor (~120–150 C#), each with what it buys and what it costs. Which one ships is selected on
+> [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map).
 
 **Influence is untouched.** The exchange worker is currency-agnostic by construction, but no
 requirement gives Influence an item catalogue, so no Influence entry ships. Influence's
@@ -1163,15 +1139,8 @@ balance, its #106 quest giver, and the Trace modifier's Influence exemption are 
 Def-driven, XML-authorable, save-backed purchasable quest catalogue with a *pluggable
 currency*. We write the currency and nothing else** — a `QuestCurrency` /
 `QuestCurrencyInfo` pair that reads `WorldComponent_Currencies`, about 50 lines for the pair —
-**~95** with the `Window_Contracts` subclass and the sync registration (see *Cost*).
-
-> **An earlier draft of this section, and #106's first resolution comment, opened with
-> *"nothing in the corpus or in vanilla sells a quest except VFE Deserters."* That is
-> false and is retracted.** It was reached from a sweep-and-type-list pass over
-> `VEF.Storyteller` that was reported as **[I]** and then leaned on as a negative. **An
-> [I] marker licenses "inferred from a name"; it does not license a positive claim about
-> what shipped code does.** See *Available mechanisms* § *The purchasable-quest seam* for
-> what VEF actually carries, read out of the assembly.
+**~95** with the `Window_Contracts` subclass and the sync registration (see *Cost*). What VEF
+carries, read out of the assembly, is at *Available mechanisms* § *The purchasable-quest seam*.
 
 #### The build — one piece replaced
 
@@ -1241,7 +1210,7 @@ class CurrencyQuestCurrencyInfo : QuestCurrencyInfo {  // ~20 lines
 | choice resolution | `Window_Contracts` calls `selected.quest_Part_choice.Choose(selected.choice)` **before** accepting |
 | add → accept → charge → remove | `QuestGiverManager.ActivateQuest(Pawn, QuestInfo)` |
 
-**`ActivateQuest` is, line for line, the `Purchase()` an earlier draft proposed writing:**
+**`ActivateQuest` is, line for line, the `Purchase()` Build B writes:**
 
 ```csharp
 Find.QuestManager.Add(questInfo.Quest);
@@ -1263,12 +1232,14 @@ than reaper-*avoidance*.
 object, so Influence and Intel are two givers rather than two columns of one. That is the
 better shape anyway: two networks, two fictions, two windows' worth of framing.
 
-**The readout stays in one place, which is the group's shared decision.**
-`QuestGiverDef.windowClass` is a `Type` field defaulting to `Window_Contracts`, and
-`QuestGiverManager.CallWindow()` does `Activator.CreateInstance(def.windowClass, this)`
-**[V]**. We ship `Window_ArchinityNetwork : Window_Contracts`, inheriting every row VEF
-draws and adding the balance header and [`TRACE.md`](TRACE.md)'s band row. ~40 lines, and
-#56's D1 and #106's catalogue remain one surface rather than two.
+**The window.** `QuestGiverDef.windowClass` is a `Type` field defaulting to
+`Window_Contracts`, and `QuestGiverManager.CallWindow()` does
+`Activator.CreateInstance(def.windowClass, this)` **[V]**. We ship
+`Window_ArchinityNetwork : Window_Contracts`, inheriting every row VEF draws and adding the
+balance header and [`TRACE.md`](TRACE.md)'s band row. ~40 lines. Under Build A there are two
+windows: the VEF shelf (`Window_ArchinityNetwork`) and `MainTabWindow_Network`. Where the
+balance header and band row sit, or whether they merge, is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 #### The three defects we must fix on the way in
 
@@ -1296,7 +1267,7 @@ a reason to rebuild the catalogue**. See *Persistence and multiplayer*.
 
 #### The alternative, and what separates them
 
-**Build B — write it ourselves**, as this document proposed before VEF was read properly:
+**Build B — write it ourselves**:
 `WorldComponent_QuestCatalogue` holding `List<QuestOffer>`, an
 `Arch_PurchasableQuestExtension` for membership, `EnsureFilled` modelled on
 `VFED.WorldComponent_Deserters.EnsureQuestListFilled`, the donor's shelving idiom, and
@@ -1315,10 +1286,9 @@ so this adds no new mod to the ledger. **Build B is the fallback if
 [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) declines VEF**, and it is
 kept below for that reason.
 
-> **Build B carries a defect worth naming, because it was in this document's own first
-> draft.** Its `EnsureFilled` pseudocode dropped the donor's
+> **Build B carries a defect worth naming.** Dropping the donor's
 > `questPartChoice.Choose(choices.RandomElement())` call as "an unsynced `Rand` draw from
-> `OnGUI`", and treated the difference as location only. It is not.
+> `OnGUI`" is not a change of location only.
 > `QuestPart_Choice.PreQuestAccept()` — invoked by `Quest.Accept` — does
 > `if (choices.Count >= 2) { Log.Error("Tried to accept a quest but … still has a choice
 > unresolved. Auto-choosing the first option."); Choose(choices[0]); }` **[V]**. Dropping
@@ -1441,12 +1411,10 @@ quest.Accept(null);                 // LAST statement — see Failure and recove
 `State == NotYetAccepted` **[V]**. The whole of it runs inside a single
 `[SyncMethod] TryPurchase(CurrencyPurchaseDef purchase, int choiceIndex)`.
 
-**Three things in those seven lines are corrections to this document's first draft**, and
-each one is load-bearing:
+**Three things in those seven lines are load-bearing:**
 
 - **`choiceIndex` travels through the synced method.** The donor resolves the choice with
-  `RandomElement` from `OnGUI`; omitting the call entirely — which the first draft did —
-  makes `QuestPart_Choice.PreQuestAccept` log a red error and auto-choose option zero
+  `RandomElement` from `OnGUI`; omitting the call entirely makes `QuestPart_Choice.PreQuestAccept` log a red error and auto-choose option zero
   **[V]**. Letting the player pick is both deterministic and better than either.
 - **`cost` is read before any mutation.** `Choose` destroys the non-chosen choices
   **[V]**, so a price derived from the reward set is a different number before and after
@@ -1494,12 +1462,12 @@ the donor's hardcoded `10` is not copied.
 | `WorldComponent_Currencies` | new C# | ~90 | `Archinity.Altar/Source/Currencies.cs` |
 | `Reward_Currency` | new C# | ~60 | `Archinity.Altar/Source/CurrencyQuests.cs` |
 | `QuestNode_GrantCurrency` + `QuestPart_GrantCurrency` | new C# | ~70 | same |
-| `CompUseEffect_GainCurrency` + properties | new C# | ~35 | `Archinity.Altar/Source/Currencies.cs` |
+| `CompUseEffect_GainCurrency` + properties — Credit B's route D, optional | new C# | ~35 | `Archinity.Altar/Source/Currencies.cs` |
 | `MainTabWindow_Network` (catalogue + balance header) | new C# | ~140 | `Archinity.Altar/Source/CurrencyUI.cs` |
 | `MainButtonWorker` subclass (D4, optional) | new C# | ~20 | same |
 | `GlobalControlsUtility.DoDate` postfix (D3) | patch | ~25 | `Archinity.Altar/Source/Patches.cs` |
 | MP registration behind an `MP.enabled` guard | new C# | ~15 | `Archinity.Altar/Source/Patches.cs` |
-| **— the Intel exchange, reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), both venues —** | | | |
+| **— the Intel exchange, *The Intel exchange* ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), closed), both venues —** | | | |
 | `CurrencyExchangeExtension` + `ExchangeVenue` base | new C# | ~25 | `Archinity.Altar/Source/Exchange.cs` |
 | `CurrencyPurchaseWorker_Exchange` | new C# | ~45 | same |
 | `ExchangeVenue_Table` + `CompExchangeTerminal` (+ props) | new C# | ~45 | same |
@@ -1568,20 +1536,19 @@ type not present **[V]** — so the component appears initialised-empty rather t
 `LookMode.Def` writes the defName, so on load `Scribe_Defs` holds a name with no def behind
 it and the entry arrives with a null key **[I]** — that is the behaviour the defName-based
 idiom is chosen *for*, but this specific path was not read against 1.6. `FinalizeInit` drops
-null keys and logs once; it does not silently retain them.
-
-> An earlier draft cited **T-04** for this. That was wrong and is withdrawn. T-04 is
-> *"unresolvable cross-references are omitted, not nulled"* — XML **def loading**, a different
-> subsystem, and the opposite outcome from the one described here. `Scribe_Collections` with
-> `LookMode.Def` is save loading, not def loading.
+null keys and logs once; it does not silently retain them. **T-04** (*"unresolvable
+cross-references are omitted, not nulled"*) does not apply: it is XML def loading, and this
+is save loading.
 
 ### Multiplayer
 
-**Credits are free.** `CompUseEffect_GainCurrency` is reachable only through
-`CompUsable.CompFloatMenuOptions` → `TryStartUseJob` → `JobDriver_UseItem` →
-`CompUsable.UsedBy` → `CompUseEffect.DoEffect(Pawn)` **[V]** — a Job, which Multiplayer
-syncs natively. That is the same argument `Archinity.Altar.csproj` already makes for the
-altar. Quest-part credits fire on quest signals inside the synced quest machinery.
+**Credits are free.** Credit B's route A credits from `IThingStudied` on the study job's
+tick ([`RESEARCH.md`](RESEARCH.md) § *Destructive artifact analysis*) — a Job, which
+Multiplayer syncs natively. Route D's `CompUseEffect_GainCurrency` is likewise reachable only
+through `CompUsable.CompFloatMenuOptions` → `TryStartUseJob` → `JobDriver_UseItem` →
+`CompUsable.UsedBy` → `CompUseEffect.DoEffect(Pawn)` **[V]**. That is the same argument
+`Archinity.Altar.csproj` already makes for the altar. Quest-part credits fire on quest
+signals inside the synced quest machinery.
 
 **The debit is the only new sync surface**, because it originates at a button — and it is a
 single method by design.
@@ -1654,16 +1621,16 @@ and open-category flags are static mutable fields **[V]**.
 > stored state. A stored `int` on a `WorldComponent` reduces all of that to one
 > `[SyncMethod]`.
 
-### Structural separation — what survives the reopened requirement
+### Structural separation
 
-**Superseded on 2026-09-16** by [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122): spending Influence is now how the Schism's plot advances. Routes, stranding and the marking act are in *The Schism catalogue — a spend that advances the plot*.
+Spending Influence advances the Schism plot ([#122](https://github.com/cjd721/Rimworld-Archinity/issues/122)); routes are in *The Schism catalogue — a spend that advances the plot*.
 
-What survives:
+What holds:
 1. **Different owners.** Balances live in `WorldComponent_Currencies`; chain state lives in its own component under its own `Scribe` key.
 2. **The spending API still has no vocabulary for progression.** `TrySpend(CurrencyDef, int, string)` names no chapter, quest or step.
 3. **The chain index has exactly one writer, and it is a quest outcome.** A purchase may *accept* the current step. It never writes the index — checkable by grep.
 
-The donor was mis-cited here before. VFED's `Notify_PlotQuestEnded` is the only writer of its index **[V]**, but `DeserterTabWorker_Plots.DoMainPart` gates every step but the free endgame (`VFED_DeserterEndgame`) on `TrySpendIntel` **[V]**. It shows *spend gates, outcome writes*, not that spending cannot move the campaign.
+VFED's `Notify_PlotQuestEnded` is the only writer of its index **[V]**, but `DeserterTabWorker_Plots.DoMainPart` gates every step but the free endgame (`VFED_DeserterEndgame`) on `TrySpendIntel` **[V]**. It shows *spend gates, outcome writes*, not that spending cannot move the campaign.
 
 ### The interface to [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)
 
@@ -1677,10 +1644,10 @@ Folding either into the other makes a required case inexpressible, in each direc
 - [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) gives Intel a source with **no item** —
   *"optional investigation can provide Intel progress/bonuses"*. If Intel were an item,
   curiosity would have to spawn loot.
-- The same file gives the exemplar gate a case with **no cost** — *"every major Glittertech
-  branch requires an exemplar… Want their armor? Bring home armor."* That is possession,
-  not payment. If the exemplar were "N Intel", any N Intel would open any branch and the
-  acquire→analyze loop collapses.
+- The same file gives a branch that uses the Exemplar route a case with **no cost** —
+  *"Exemplar: a colonist studies a physical likeness to unlock the project; the item
+  survives."* That is possession, not payment. If the exemplar were "N Intel", any N Intel
+  would open any branch and the acquire→analyze loop collapses.
 
 **Vanilla already models them as two independent fields.** `Verse.ResearchProjectDef` carries
 `requiredAnalyzed : List<ThingDef>` (satisfied via `AnalyzedThingsRequirementsMet`) *and*
@@ -1691,8 +1658,8 @@ Folding either into the other makes a required case inexpressible, in each direc
 sync boundary and the balance stay on this side.
 
 **#67 never calls this balance.** The exemplar gate is independent and surviving.
-Reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) owns the surface
-that exchanges Intel for an Instruction item. [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)
+*The Intel exchange* ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)) is the
+surface that exchanges Intel for an Instruction item. [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)
 owns the destructive work that credits Intel and raises Trace.
 
 **What this document needs from #67:** nothing at debit time, under either ruling.
@@ -1773,10 +1740,10 @@ to it.
 | | |
 |---|---|
 | **Verified available mechanisms** | `WorldComponent` + `Scribe_Collections.Look(…, LookMode.Def, LookMode.Value)`; `World.FillComponents` backfill; `RimWorld.Reward` + `QuestPartUtility.GetStandardRewardStackElement`; `CompUsable` → `JobDriver_UseItem` → `CompUseEffect.DoEffect`; `MainButtonDef` as pure XML; `GlobalControlsUtility.DoDate`'s `ref float curBaseY`; `Multiplayer.API.SyncMethodAttribute` with soft-dependency fallback. **Added by [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106):** **`VEF.Storyteller`'s whole quest-giver stack** — `QuestGiverDef`, `QuestCurrency.Allows`, `QuestCurrencyInfo.Buy` / `GetCurrencyInfo`, `QuestInfo` with `saveQuestDeeply`, `QuestGiverManager.ActivateQuest` / `Tick` / `Reset` / `CallWindow`, `QuestWorker.GenerateQuests`, `Window_Contracts`, and `GoodwillCurrency` as the worked subclass. Plus, for Build B only: `QuestGen.Generate` into a `Slate`; the `hidden` / `hiddenInUI` / `acceptanceExpireTick = -1` shelving idiom with `TicksUntilExpiry` returning `-1`; `QuestManager.Add` / `Remove`; `Quest.Accept(null)`; `QuestScriptDef.CanRun` + `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`; `QuestNode_IsTrue`; `QuestNode_SpawnWorldObjects`; and `QuestPart_Choice.Choose` / `PreQuestAccept`. All **[V]**. |
-| **Retracted** | *"Nothing in the corpus or in vanilla sells a quest except VFE Deserters."* **False** — VEF does, with a pluggable currency. The claim rested on a tier-3 sweep reported as [I] and then used as a negative. Corrected above and on [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). |
+| **Retracted** | *"Nothing in the corpus or in vanilla sells a quest except VFE Deserters."* **False** — VEF does, with a pluggable currency ([#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)). |
 | **Confirmed negative** | Nothing in vanilla, the DLC or the corpus holds a **Def-keyed, world-level, spendable balance**. The named donor holds no balance at all. Independently re-verified by the close-out audit, which re-ran the highest-signal sweep family and found the negative holds **harder** than either #54 comment claimed. **The sweep form used to reach it was itself defective** — see *Verification* and [#103](https://github.com/cjd721/Rimworld-Archinity/issues/103). |
 | **Proposed, not selected** | The whole build above. It is **[I]** as a composition, and the line estimates with it. |
-| **Added by reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), 2026-09-15** | **The Intel exchange.** Verified available mechanisms: `ThingDefGenerator_Techprints.ImpliedTechprintDefs` run from `DefGenerator.GenerateImpliedDefs_PreResolve` before cross-reference resolution; `ResearchProjectDef.Techprint` / `TechprintRequirementMet`; `CompTechprint` → `JobDriver_ApplyTechprint` → `ResearchManager.ApplyTechprint`; `TradeUtility.SpawnDropPod`; `DropCellFinder.TradeDropSpot`; `Building_CommsConsole.CanUseCommsNow`; `Faction.Hidden`; `RoyalTitlePermitWorker_DropResources.CallResources` as the spend-and-drop precedent; `TechprintUtility.GetResearchProjectsNeedingTechprintsNow`'s null-faction branch. All **[V]**. **Two carriers exist, neither adoptable:** Faction Territories' `Dialog_Vassalage` (declined mod) and vanilla `RoyalTitlePermitWorker_DropResources` (per-pawn favor) both spend a stored number on delivered items. Vanilla's only non-silver *trade* currency is sell-only. **Proposed, not selected:** the exchange build, **[I]** as a composition. |
+| **Added by [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)** | **The Intel exchange.** Verified available mechanisms: `ThingDefGenerator_Techprints.ImpliedTechprintDefs` run from `DefGenerator.GenerateImpliedDefs_PreResolve` before cross-reference resolution; `ResearchProjectDef.Techprint` / `TechprintRequirementMet`; `CompTechprint` → `JobDriver_ApplyTechprint` → `ResearchManager.ApplyTechprint`; `TradeUtility.SpawnDropPod`; `DropCellFinder.TradeDropSpot`; `Building_CommsConsole.CanUseCommsNow`; `Faction.Hidden`; `RoyalTitlePermitWorker_DropResources.CallResources` as the spend-and-drop precedent; `TechprintUtility.GetResearchProjectsNeedingTechprintsNow`'s null-faction branch. All **[V]**. **Two carriers exist, neither adoptable:** Faction Territories' `Dialog_Vassalage` (declined mod) and vanilla `RoyalTitlePermitWorker_DropResources` (per-pawn favor) both spend a stored number on delivered items. Vanilla's only non-silver *trade* currency is sell-only. **Proposed, not selected:** the exchange build, **[I]** as a composition. |
 | **Open parameters** | Every number — Intel prices, the exchange catalogue, its cadence, and which venue carries each item ([#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)). **Analysis pricing is resolved: research never debits Intel** ([`GLITTERTECH.md`](../requirements/GLITTERTECH.md)). See *Outstanding decisions*. |
 
 Established on [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)
@@ -1811,10 +1778,9 @@ patch of ours **[V, #53]**.
   and sums matching stacks into `TotalIntel` / `TotalCriticalIntel` **[V]**. Intel not on a
   powered beacon on that map does not exist; Intel in a caravan does not exist.
 - **VFED does draw a readout — a modal one.** `VFED.Dialog_DeserterNetwork.DoWindowContents`
-  draws both balances as labelled, icon'd rows in the window header **[V]**. #54's resolution
-  claimed *"VFED ships no balance readout"*; that is too strong and is corrected here. The
-  defensible claim is that there is **no persistent readout** — the only one is modal,
-  computed in `PostOpen`, and dies with the window. D3 is ours to write for that reason,
+  draws both balances as labelled, icon'd rows in the window header **[V]**. There is **no
+  persistent readout** — the only one is modal, computed in `PostOpen`, and dies with the
+  window. D3 is ours to write for that reason,
   which is enough of a reason on its own.
 - Spending **launches the items**: `VFED.Dialog_DeserterNetwork.TrySpendIntel(int,int)` calls
   `TradeUtility.LaunchThingsOfType(VFED_DefOf.VFED_Intel, normal, Map, null)` **[V]**. It is
@@ -1854,15 +1820,14 @@ synced method because the donor's is a call from a draw method.
 | The contraband shop | **REPLACE.** |
 | `Dialog_DeserterNetwork` + `DeserterTabDef`/`DeserterTabWorker` | **REBUILD the tabbed-window shape.** `DeserterTabDef` is a two-field `Def` with `workerClass` and a lazy `Activator.CreateInstance` **[V]** — cheap to re-author, not worth a dependency. |
 | The purchasable quest pool (`ServiceQuests` + `EnsureQuestListFilled`) | **KEEP THE SHAPE** — and it belongs to [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). See below. |
-| The ordered chain | **KEEP THE SHAPE, REPLACE THE DRIVER** — and it does not belong to this document. No ticket owns it yet. See below. |
+| The ordered chain | **KEEP THE SHAPE, REPLACE THE DRIVER** — owned by *The Schism catalogue* ([#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)), route A's donor. See below. |
 | `Reward_Visibility` | **KEEP THE PATTERN, not the type** — it is a plain `RimWorld.Reward` subclass using only vanilla API. |
 
 ### The purchasable-quest seam, and why it is [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s
 
 `VFED.WorldComponent_Deserters.EnsureQuestListFilled` refills `ServiceQuests` and sets
 **`slate.Set<bool>("purchasable", true)`** on every quest it generates **[V]** — that is
-exactly the `$purchasable` node the map named, and the corpus does carry it. **This evidence
-was in hand when #54 was resolved and was not reported there**; it is recorded here.
+exactly the `$purchasable` node the map named, and the corpus does carry it.
 
 The map made a purchasable quest catalogue conditional on #54 and #55 settling their
 currencies. Both are settled;
@@ -1887,7 +1852,7 @@ owner — the split as it actually landed:
 
 **No second balance, no second store, no second shop window was opened.**
 
-#### VEF carries it, and an earlier draft of this section said it did not
+#### VEF carries it
 
 **`VEF.Storyteller` ships a complete purchasable quest catalogue with a pluggable
 currency** — `QuestGiverDef`, `QuestCurrency`, `QuestCurrencyInfo`, `QuestInfo`,
@@ -1895,22 +1860,10 @@ currency** — `QuestGiverDef`, `QuestCurrency`, `QuestCurrencyInfo`, `QuestInfo
 `GameComponent_QuestChains`, with `GoodwillCurrency` / `GoodwillCurrencyInfo` as a shipped
 working subclass **[V]**. *The build* above is written against it.
 
-**What this document previously said, and why it was wrong.** The first draft wrote:
-*"VEF ships the shop window without the shop… the accept button is a bare
-`Widgets.ButtonText` guarded only by `QuestUtility.CanAcceptQuest`."* Both halves are
-false. `Window_Contracts` draws `questInfo.currencyInfo.GetCurrencyInfo()` as the price and
+`Window_Contracts` draws `questInfo.currencyInfo.GetCurrencyInfo()` as the price and
 routes accept through `AcceptQuestByInterface` → `QuestGiverManager.ActivateQuest`, whose
 fourth statement is `questInfo.currencyInfo?.Buy(questInfo)` **[V]**. `CanAcceptQuest` is
 one guard among several, not the whole gate.
-
-**The methodological point, recorded because it is the reusable half.** That claim was
-marked **[I]** and the marker was treated as covering it. It does not.
-[`docs/agents/capability-research.md`](../agents/capability-research.md) defines **[I]** as
-*"inferred from a name, a blurb or a folder structure"* — a licence to say *"this might
-carry it"*, never a licence to say *"this does not carry it"* or *"this is what its code
-does."* **A negative asserted from a tier-3 sweep is not [I]; it is unverified, and it
-must either be read at tier 4 or stated as an unclosed gap.** The same error produced the
-Rim War readout claim recorded in `docs/data/MOD-VERDICTS.md`.
 
 **What VEF does *not* carry, stated precisely so the remaining build is honest:**
 
@@ -1976,7 +1929,7 @@ it** — all **[V]**:
   physically launch off the map. It is a trade, not a debit, and it is why the donor's
   Intel must sit on a powered orbital trade beacon to exist at all.
 
-### The ordered-operation surface, and why it is not this document's
+### The ordered-operation surface
 
 `VFED.WorldComponent_Deserters.InitializePlots` builds `List<PlotMissionInfo>` once, and `Notify_PlotQuestEnded` (reached from the `Quest.End` postfix `HarmonyPatches.MiscPatches.CheckForPlotEnd`) advances by **index**. On `EndedSuccess` it generates `PlotMissions[IndexOf(info) + 1]`; on `EndedFailed` or `EndedInvalid` it regenerates *the same index*. `EndedOfferExpired` is not handled and needs no handling, because steps are shelved with `acceptanceExpireTick = -1` **[V]**. **Each step but the endgame is bought**: `DeserterTabWorker_Plots.DoMainPart` spends Intel before `Accept`; `VFED_DeserterEndgame` starts free after a confirmation **[V]**. This is the donor for Route A of *The Schism catalogue*, which owns the chain's routes.
 
@@ -1995,9 +1948,9 @@ a numeric Intel balance into a delivered Instruction item, and at what cost?**
 |---|---|---|
 | **Vanilla trade with a non-silver currency** | `enum TradeCurrency { Silver, Favor }`; `TraderKindDef.tradeCurrency`; only Royalty's `Empire_Caravan_TributeCollector` sets `Favor`. `Tradeable_RoyalFavor.CountHeldBy` returns `99999` for the trader and **`0` for the colony**, `Interactive => false`, and `ResolveTrade` acts only on `PlayerBuys` — the player *receives* favor. **The engine has never shipped a trade in which the player spends a non-`Thing` number.** The currency is chosen by equality in `TradeDeal.CurrencyTradeable`, `TradeDeal.AddAllTradeables`, `Dialog_Trade`'s cached currency row and `TradeUtility.GetPricePlayerSell`; `GetPricePlayerBuy` has no currency parameter at all. Multiplayer replaces the session with `MpTradeSession`, and its transferable serializer addresses a `Tradeable` by `(FirstThingTrader ?? FirstThingColony).thingIDNumber` — a non-`Thing` row has nothing to address (favor escapes only by being non-interactive **[I]**). | **Rejected.** A dedicated Intel-currency trader for the Traders Guild is ≥4–6 Harmony patches (~150 lines) in Multiplayer's most-patched window, for what one venue class does in 30. |
 | **Orbital traders' techprint stock** | `Orbital_CombatSupplier` and `Orbital_Exotic` (`<faction MayRequire="Ludeon.RimWorld.Odyssey">TradersGuild</faction>`) carry `StockGenerator_Techprints`. A passing ship generates stock with **no** `makingFaction` (`TradeShip.GenerateThings` sets only `traderDef` and `tile`; `ThingSetMaker_TraderStock.Generate` passes it through), so `GetResearchProjectsNeedingTechprintsNow` skips the tag filter entirely. | **Rejected, and a leak to prevent.** It sells for **silver**, and it would sell *every* unfinished `techprintCount` project's techprint regardless of `heldByFactionCategoryTags` — which is why the exclusion postfix is mandatory (**T-99**). The same bypass is what keeps Empire-tagged techprints on sale after the Church turns hostile: the tag-gated Church trader route needs the Church non-hostile and a colonist holding Knight (Baron for its orbital trader) — [`RELIGION.md`](RELIGION.md) § *Verification* § *Exaltation*. |
-| **Faction Territories — `FactionTerritories.Vassalise.Dialog_Vassalage`** (`jaeger972.factionterritories`, `3626725895/Assemblies/FactionTerritories.dll`) | **A real carrier.** `DoWindowContents` reads `VassalagePointsComponent.GetPoints`; the *Buy* button builds goods with `ThingMaker.MakeThing`, delivers to `Find.AnyPlayerHomeMap` through `TryDeliverToMapSinglePod` (reflected `DropCellFinder.TradeDropSpot` → `DropPodUtility.MakeDropPodAt`) or to a caravan via `TryDeliverToCaravan`, and only then `TrySpendPoints` — logging *"Delivery succeeded but points could not be deducted (state changed)"* when that fails. All from a draw method. | **Not adoptable — the mod is declined** (map #2 *out of scope*, settled on [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)), its balance is keyed per faction and accrued passively (see *The wide pass*), and its purchase is unsynced. **Donor for `ExchangeVenue_Faction.Deliver`**: home-map choice and a single pod at `TradeDropSpot`. The original #54 survey recorded these points as spent *"on pawns, items and roads"* and this table initially omitted it. |
+| **Faction Territories — `FactionTerritories.Vassalise.Dialog_Vassalage`** (`jaeger972.factionterritories`, `3626725895/Assemblies/FactionTerritories.dll`) | **A real carrier.** `DoWindowContents` reads `VassalagePointsComponent.GetPoints`; the *Buy* button builds goods with `ThingMaker.MakeThing`, delivers to `Find.AnyPlayerHomeMap` through `TryDeliverToMapSinglePod` (reflected `DropCellFinder.TradeDropSpot` → `DropPodUtility.MakeDropPodAt`) or to a caravan via `TryDeliverToCaravan`, and only then `TrySpendPoints` — logging *"Delivery succeeded but points could not be deducted (state changed)"* when that fails. All from a draw method. | **Not adoptable — the mod is declined** (map #2 *out of scope*, settled on [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)), its balance is keyed per faction and accrued passively (see *The wide pass*), and its purchase is unsynced. **Donor for `ExchangeVenue_Faction.Deliver`**: home-map choice and a single pod at `TradeDropSpot`. The points are spent *"on pawns, items and roads"*. |
 | **Royal aid** — `RoyalTitlePermitWorker_DropResources` — **a real carrier** | `CallResources(IntVec3)` makes `royalAid.itemsToDrop`, `DropPodUtility.MakeDropPodAt`, messages with `LookTargets`, `TryRemoveFavor`. Multiplayer syncs it through the `OrderForceTarget` sweep and `CallResourcesToCaravan` explicitly. | **Adopt the shape, not the worker.** It is `ExchangeVenue_Faction.Deliver` plus a debit; the favor is per pawn and bound to the title ladder (see *Vanilla and the DLC*). |
-| **VEF `QuestGiverDef`** — this document's #106 Build A | Sells a *quest*: `QuestGiverManager.ActivateQuest` adds, accepts and then debits. | ⚠ **SUPERSEDED — 2026-09-23, by *Shop entries*, from [#144](https://github.com/cjd721/Rimworld-Archinity/issues/144).** This row read *"Rejected for items; kept for Intel missions — an item through it is a contract whose accept fires a drop pod, a letter, a quest-tab entry and a generator run per item, with T-76 and T-77 in the way."* Every cost it names is real and still is. What it did not have is `QuestNode_AddItemsReward`, which builds the `QuestPart_Choice` T-76 prunes for and the `QuestPart_DropPods` that delivers, so an item entry is an ordinary reward row rather than a contract wearing one **[V]**. **The current verdict is route A of *Shop entries*: items through `QuestGiverDef` are the recommended shape**, because the requirement asks one shop to hold quests and items together. The rejection stands only as the case for route D (two shelves), which is kept as the fallback. |
+| **VEF `QuestGiverDef`** — this document's #106 Build A | Sells a *quest*: `QuestGiverManager.ActivateQuest` adds, accepts and then debits. | **Recommended for items** (*Shop entries* route A, [#144](https://github.com/cjd721/Rimworld-Archinity/issues/144)). `QuestNode_AddItemsReward` builds the `QuestPart_Choice` **T-76** prunes for and the `QuestPart_DropPods` that delivers, so an item entry is an ordinary reward row **[V]**. Its costs — a generator run, a quest-tab entry and a letter per item — are route A's consequences. |
 | **Bills** — a `RecipeDef` producing `Techprint_X` at a bench | The product resolves in XML (implied defs precede cross-references). But no ingredient takes a non-`Thing` (`RecipeWorker.ConsumeIngredient(Thing, …)`); `RecipeWorker.AvailableOnNow` is reached through `RecipeDef.AvailableOnNow` from `ITab_Bills` (listing and pasting) and `PlayerItemAccessibilityUtility` **[V]**, and from the health-tab surgery lists **[I]** — never from `WorkGiver_DoBill`, which tests `bill.ShouldDoNow()` / `PawnAllowedToStartAnew`; and `RecipeWorker.Notify_IterationCompleted` — the only per-iteration hook — runs **after** `GenRecipe.MakeRecipeProducts` in `Toils_Recipe.FinishRecipeAndStartStoringProduct`. | **Rejected as the default.** ~70 lines plus a Harmony postfix on `Bill_Production.ShouldDoNow`, **grant-before-debit**, and two bills can both pass the gate against one balance. Worth revisiting only if #117 wants a colonist to *work* the exchange — and then as a Job on the table venue, not a bill. |
 | **Comms-console `DiaOption`** — `FactionDialogMaker` | The vanilla surface for talking to a faction. | **Rejected.** Multiplayer syncs a `DiaOption` click by index and re-resolves the dialog client-locally (**T-82**), a `Dialog_NodeTree` subclass drops out of its bindings (**T-95**), and a missing `resolveTree` strands the dialog (**T-97**). D1 rows gated on `CanUseCommsNow` do the same job with none of that. |
 | **VFE Deserters' contraband shop** — the only corpus shop that already exchanges Intel for techprints | `ContrabandManager`'s static constructor runs `TryGiveExtension` over every `ThingDef` and registers each one carrying `CompProperties_Techprint` into `VFED_Imperial`, priced by `SetCostIfMissing` at `BaseMarketValue / 100` Intel. `DeserterTabWorker_Contraband` draws the `(applied/required)` suffix, and its purchase either generates `VFED_DeadDrop` with `itemStashThings` (a site to collect from) or, at double price, `DropPodUtility.DropThingGroupsNear(DropCellFinder.TradeDropSpot(Parent.Map), …)` — **both from the tab's draw method**. | **Donor for the row layout and both delivery ideas; not a dependency** (see *The named donor*). **And a leak:** if VFED ships, every Glitterite techprint is on its shelf. The dead-drop quest is a real faction-venue variant, but its script uses VFED's own nodes (`QuestNode_GetEmpire`, `QuestNode_GetDeserters`, `QuestNode_HiddenDelay`), so it is not free. |
@@ -2033,10 +1986,10 @@ best net for that, and it found only VFED spending Intel.
 
 ### Three Intel delivery options — priced mechanisms, not a selection
 
-**All three are verified available mechanisms.** *The build* carries **(b)** because it is what the
-requirements as written need; **(a)** and **(c)** are recorded here, priced, so a later ticket can
-switch to either without re-running this research. **Which one ships is a story-beat decision
-Conrad will take later** — nothing in this section recommends changing the current build.
+**All three are verified available mechanisms.** (b) is the exchange mechanism; route A of
+*Shop entries* is the current item-shelf recommendation. **(a)** and **(c)** are recorded here,
+priced, so either can be taken without re-running this research. Which one ships is selected
+on [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map).
 
 Every line count is **[I]**: an estimate of unwritten code. Every mechanism claim is **[V]** unless
 marked otherwise.
@@ -2092,7 +2045,7 @@ it silently.
 
 #### (b) The stored balance plus our own exchange worker — ~230 new C#, 1 Harmony patch, `purchaseCount`
 
-**The current build**, specified above and unchanged by this section: *The build* § *The Intel
+**The exchange mechanism**, specified above: *The build* § *The Intel
 exchange* and § *Cost*. What it trades away and what it buys, stated against (a):
 
 - **Forfeits** the free `ResourceReadout` row — D1 and D3 are ours to write.
@@ -2169,14 +2122,11 @@ defines** — a currency type defined by a `Def`, with
 `ResearchManager.ApplyKnowledge(KnowledgeCategoryDef, float)` routing income and an
 `overflowCategory` **[V]**, read from `Assembly-CSharp.dll`.
 
-**Read the scope of that claim carefully, because an earlier draft overstated it.** The
-*type* exists in `Assembly-CSharp.dll` **[V]**. **Zero instances of it exist anywhere in the
-corpus:** Anomaly is not on disk — `Data/` holds Biotech, Core, Ideology, Odyssey and Royalty
-only — and an XML sweep for `KnowledgeCategoryDef` over both corpus roots returns **0 files**
-**[V]**. The familiar pair (Basic, Advanced) is Anomaly content, and asserting it is
-**[I], knowledge from outside the corpus**. It was previously written here as "instanced twice
-(Basic, Advanced) **[V]**", which was unsupported: *"instanced twice in the entire corpus"* is
-a statement the corpus cannot make.
+The *type* exists in `Assembly-CSharp.dll` **[V]**. **Zero instances of it exist anywhere in
+the corpus:** Anomaly is not on disk — `Data/` holds Biotech, Core, Ideology, Odyssey and
+Royalty only — and an XML sweep for `KnowledgeCategoryDef` over both corpus roots returns
+**0 files** **[V]**. The familiar pair (Basic, Advanced) is Anomaly content, and asserting it
+is **[I], knowledge from outside the corpus**.
 
 It is a progress meter rather than a held pool in any case. The narrower point survives intact
 and is the one worth keeping: **currency-as-a-`Def` is a shape RimWorld's own code already
@@ -2187,12 +2137,11 @@ understands.**
 is a `bool` per senator; RimPacts' favor is a 0–100 reputation clamp consumed only by
 thresholds; Worksites Expanded and VFE Medieval 2 charge silver.
 
-**Achievements Expanded's `TryPurchasePoints` / `AvailablePoints` is 1.4-only.** Two details
-in the earlier statement of this were wrong. It is bundled inside **six** unique mod ids —
-`1814987817`, `1914064942`, `2134308519`, `2562018758`, `3014906877`, `3014915404` — not
-seven; and `1814987817` ships **1.2** and **1.3** copies as well, so "every copy is at `1.4/`"
-is false **[V]**. The part that matters is confirmed and unchanged: **no 1.6 copy exists in
-either root** **[V]**, so it is dead for this game version.
+**Achievements Expanded's `TryPurchasePoints` / `AvailablePoints` has no 1.6 copy.** It is
+bundled inside **six** unique mod ids — `1814987817`, `1914064942`, `2134308519`,
+`2562018758`, `3014906877`, `3014915404` — at `1.4/`, and `1814987817` ships **1.2** and
+**1.3** copies as well **[V]**. **No 1.6 copy exists in either root** **[V]**, so it is dead
+for this game version.
 
 **Residual gaps, stated rather than papered over:**
 
@@ -2278,10 +2227,9 @@ this document.
   `minGoodwill`, and un-greys when that clears.
 
 - A quest offering `Reward_Currency` shows an Influence row in the quest-choice list
-  *before* acceptance, alongside a Reverence row on the alternative approach — the
-  *"different approaches, different reward profiles"* requirement, visible.
-- Decoding a recovered artifact destroys it and raises the Intel readout by the def's
-  amount, with no research project involved.
+  *before* acceptance, alongside a Reverence row on the alternative approach.
+- Studying a recovered artifact to completion destroys it and raises the Intel readout by
+  the def's amount, with no research project involved.
 - A purchase debits the readout and the catalogue entry goes on cooldown; **a favour purchase
   does not move the Schism chain's index; only a step's quest outcome does** — checkable by grep as well as by play, per *Structural
   separation*.
@@ -2307,20 +2255,17 @@ this document.
 
 | Question | Consequence | Owner |
 |---|---|---|
-| **Every number** — earn rates, prices, starting balances, caps | Balance. `RELIGION.md` says *"exact catalogs are implementation work"*; `GLITTERTECH.md` says *"project costs… remain implementation/authoring work"*. | Whoever authors the catalogues. |
-| **Does either currency decay or expire?** Neither requirements file says. The donor's Intel rots **[V]**; Reverence decays by requirement. | A balance that never decays is a different economy from one that does, and it changes whether hoarding is a strategy. | **Requirements gap, no ticket** → [`RELIGION.md`](../requirements/RELIGION.md) for Influence, [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) for Intel. |
-| ~~**Does any Analysis project cost Intel on top of its exemplar?**~~ | **Answered: no.** Research and hacking never debit Intel; Intel is exchanged for Instruction items. | **Closed** by [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) (2026-09-13 correction). |
+| **Every number** — earn rates, prices, starting balances, caps | Balance. `GLITTERTECH.md` § *Saved state and remaining work* leaves project costs and catalogues to authoring. | Whoever authors the catalogues. |
+| **Does either currency decay or expire?** The donor's Intel rots **[V]**; Reverence decays by requirement. | A balance that never decays is a different economy from one that does, and it changes whether hoarding is a strategy. Influence decaying below a step's price can strand the Schism plot (*Failure and recovery*). | Capability: yes — item rot (*Three Intel delivery options* (a)/(c)) or a tick debit on `WorldComponent_Currencies` ([`TRACE.md`](TRACE.md) § *What changes it* › *Decay* has the shape). Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (Intel with [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)). |
 | **Which venue carries each Instruction item — table, faction or both** | A Spine item at a faction venue alone can softlock the campaign on hostility or a missing faction (**T-07**). Both venues are built either way. | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). |
 | **The exchange catalogue, its Intel prices and its cadence** (`cooldownDays`, `maxIssued`, the table's own research gate, `minGoodwill`) | Balance and pacing. Every one is an XML field. | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). |
-| **Does Trace raise exchange prices?** | [`TRACE.md`](TRACE.md)'s `intelCostModifier` applies wherever `CurrencyPurchaseDef.currency == Archinity_Intel`, which **includes every exchange entry by construction** — so aggression is taxed twice, in pursuit and in the price of Instruction. That may be the intent; no requirement says. A per-entry opt-out is ~2 lines. | **Requirements gap** → [`GLITTERTECH.md`](../requirements/GLITTERTECH.md) / [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). |
+| **Does Trace raise exchange prices?** | [`TRACE.md`](TRACE.md)'s `intelCostModifier` applies wherever `CurrencyPurchaseDef.currency == Archinity_Intel`, which **includes every exchange entry by construction** — so aggression is taxed twice, in pursuit and in the price of Instruction. | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) (exchange prices and Trace exposure); mechanism: a per-entry opt-out, ~2 lines. |
 | **Is the exchange instant, or does a colonist work it?** | Instant is the build. A Job on the table venue — `JobDriver_ApplyTechprint`'s shape — is ~40 more lines; a bill is rejected (see *Delivery surfaces*). | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) (*exchange cadence*). |
-| **When is the Traders Guild contactable?** | `ORBIT.md` hides it until its orbit reveal and records that WTL can drop it from the roster; the faction venue respects `Faction.Hidden`, so it is dark until then. | [`ORBIT.md`](ORBIT.md)'s hide-versus-zero decision ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14), [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)). |
+| **When is the Traders Guild contactable?** | Hidden until the orbit reveal ([`ORBIT.md`](ORBIT.md), Conrad 2026-09-15); the faction venue respects `Faction.Hidden`. Remaining risk: WTL dropping it from the roster (`ORBIT.md` § *Failure and recovery*, **T-07**). | [`ORBIT.md`](ORBIT.md). |
 | **Does VFE Deserters ship?** | Its contraband manager registers every techprint `ThingDef` as Intel-priced stock, a second exchange this document cannot see. | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14). |
-| **Which of the three Intel delivery options ships** — (a) VFED's contraband economy wholesale, (b) the stored balance and our exchange worker, (c) our own Intel item with our own vendor | All three are verified available mechanisms and are priced at *Available mechanisms* § *Three Intel delivery options*. (a) costs ~15 lines of ours but imports VFED's Empire-keyed extraction, its `JoinDeserters` force-hostility, VFED visibility pricing (displacing Trace), **T-18**, rot/loot/mass, beacon-only spending and the loss of site-inspection grants; (b) is the current build; (c) buys back the free `ResourceReadout` row without VFED's war or dependencies but still cannot grant Intel by site inspection. **The T-99 exclusion postfix is owed under all three if VFED ships.** | **A story-beat decision Conrad will take later.** Not a research question — nothing below the fiction changes the answer. |
-| ~~**Does sharing one dictionary between Influence and Intel couple Intel to Church standing?**~~ | **Answered: no. The dictionary stays shared; the escape hatch is not taken.** The real coupling was elsewhere — a band price modifier that reaches the whole shop — and it is scoped to `Archinity_Intel`. | **Closed** by [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md) § *Decoupling from Church politics*. |
-| **How many offers sit in each currency's pool, and what each is worth** | Pool size is save weight; `costPerMarketValue` is the exchange rate between a mission's payout and its price. | Balance, fog on [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2). |
-| **Whether a shelved offer should ever rotate out** | VFE Deserters never rotates, so its shop goes stale. **Build A already has the lever** — `QuestGiverDef.resetEveryTick`, which clears and regenerates the pool **[V]** — so this is a number, not a mechanism. What it is *set to* is still unanswered. | **Requirements gap, no ticket** → [`docs/requirements/QUESTS.md`](../requirements/QUESTS.md), whose *Purchase* channel does not say whether offers are standing or perishable. |
+| **Which of the three Intel delivery options ships** — (a) VFED's contraband economy wholesale, (b) the stored balance and our exchange worker, (c) our own Intel item with our own vendor | All three are verified available mechanisms and are priced at *Available mechanisms* § *Three Intel delivery options*. (a) costs ~15 lines of ours but imports VFED's Empire-keyed extraction, its `JoinDeserters` force-hostility, VFED visibility pricing (displacing Trace), **T-18**, rot/loot/mass, beacon-only spending and the loss of site-inspection grants; (b) is the exchange mechanism; (c) buys back the free `ResourceReadout` row without VFED's war or dependencies but still cannot grant Intel by site inspection. **The T-99 exclusion postfix is owed under all three if VFED ships.** | Selected on [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map). |
+| **How many offers sit in each currency's pool, and what each is worth** | Pool size is save weight; `costPerMarketValue` is the exchange rate between a mission's payout and its price. | Balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); Intel prices [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). |
 | **Does VEF ship?** | Build A is ~95 lines of new C#; Build B is ~290 and re-derives the pool, persistence, refill, price display, challenge-rating row, choice resolution and accept sequence. | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14). **VEF is already required** by [`PRESSURE.md`](PRESSURE.md) § 4 and by [`HACKING.md`](HACKING.md)'s carrier, so this adds no new mod — but the ledger owns the decision, not this document. |
-| **Is the always-visible readout (D3) the right surface, or does the campaign UI absorb it?** | D3's layout arithmetic is the maintenance cost; a tab of our own removes it. | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) rules on the shape; D1 and D2 ship regardless. |
+| **Is the always-visible readout (D3) the right surface, or does the campaign UI absorb it?** | D3's layout arithmetic is the maintenance cost; a tab of our own removes it. | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map); every surface has a route ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)). D1 and D2 ship regardless. |
 | **Which quests are purchasable, and what each contains** | Decides what the catalogue actually holds. The machinery is built here and the membership test is one `DefModExtension`; the contents are not this document's. | Authoring, alongside the era content. [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106) settled the mechanism. |
-| **Which route carries the Schism chain, and which marking act commits the founders?** | Routes A–D and the marking-act comparison are in *The Schism catalogue — a spend that advances the plot*. | Selection on the next map. The banking-clause tension is handed to [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122). |
+| **Which route carries the Schism chain, and which marking act commits the founders?** | Routes A–D and the marking-act comparison are in *The Schism catalogue — a spend that advances the plot*. *First plot spend* breaks `RELIGION.md`'s banking clause; *first Influence gained* meets it by construction. | Selection on the next map ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)). |

@@ -10,6 +10,19 @@ available and when (`docs/progression/`). **It is also not yet the buildable spe
 is the destination of the next map, which starts from a *selected* route and a written
 beat; a spec here answers what is possible before anyone has chosen what to build.
 
+## Index
+
+| Area | Specs |
+|---|---|
+| Faith | [The altar](ALTAR.md) · [Religion](RELIGION.md) · [The psychic track](PSYCHIC.md) · [Transcendence](TRANSCENDENCE.md) |
+| Politics | [Faction politics](POLITICS.md) · [Territory](TERRITORY.md) · [Pressure](PRESSURE.md) · [Encounters](ENCOUNTERS.md) |
+| Glittertech | [Trace and the Glitterite pursuit](TRACE.md) · [Spendable currencies](CURRENCIES.md) · [Hacking](HACKING.md) · [Androids](ANDROIDS.md) · [Research](RESEARCH.md) |
+| World and space | [Era](ERA.md) · [Charting](CHARTING.md) · [World infrastructure](WORLD-INFRASTRUCTURE.md) · [Orbit](ORBIT.md) · [Gravship](GRAVSHIP.md) |
+| Colony | [Colony management](COLONY.md) · [Shipped defaults and presets](DEFAULTS.md) · [Items and gear](ITEMS.md) · [Specialisation](SPECIALISATION.md) |
+
+[The integration register](INTEGRATION.md) lists the capability gaps still open across all of
+these specs.
+
 ## Organize by system, not by mod or by ticket
 
 Several capability tickets contribute to one spec. `RELIGION.md` can absorb the findings
@@ -36,7 +49,7 @@ build work, it is the next map's, and it cost this map two weeks.
 
 The test for a paragraph: **would a narrative session writing a beat need it to know what is
 possible?** If yes, it belongs. If it only matters once someone has decided to build this
-route, it does not — stop and name it as an open build question instead.
+route, it does not — stop there; it is the next map's.
 
 Depth is still owed. **An unread assumption is wrong far more often than a read one**; the
 evidence rules in `docs/agents/capability-research.md` stand in full. Verify that a route
@@ -115,8 +128,9 @@ What is verified and what is inferred. The evidence class, and links to the capa
 issues that established it.
 
 ## Open questions
-Requirement gaps (hand to the owning requirements ticket), unverified route claims,
-and build questions deferred to the next map — each with an owner or marked unowned.
+Capability questions only: a requirement clause no route answers yet, or a route claim
+not yet verified — each pointing at the ticket that answers it. Decisions (which route,
+which value, which shape) are not listed; choosing is the next map's.
 ```
 
 ## Specs written before the routes rule

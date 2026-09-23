@@ -14,7 +14,7 @@ tile changes hands (§ *A gravship en route when its landing tile changes hands*
 [#177](https://github.com/cjd721/Rimworld-Archinity/issues/177)).
 
 It does not own: the Ultra pursuit that the defenses answer to
-([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)); which mods ship
+([`TRACE.md`](TRACE.md), [`PRESSURE.md`](PRESSURE.md)); which mods ship
 ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)); when each tier unlocks
 (`docs/progression/`, which is empty today — see *Outstanding decisions*); or where the altar lives
 ([#10](https://github.com/cjd721/Rimworld-Archinity/issues/10), **closed**). Verified engine
@@ -48,19 +48,21 @@ with the weapon ladder spread across Ultra. `PatchOperationReplace` on `Research
 in a new `Patches/Gravship_Retier.xml`. `docs/progression/` is meant to set the actual era
 boundaries; this spec only says the patch is the carrier.
 
-### (b) Orbit incident whitelist — XML
+### (b) Orbit incident and game-condition whitelist — XML
 
 **This is the largest content consequence of the ship becoming home, and it is not about the ship.**
 The Orbit layer sets `onlyAllowWhitelistedIncidents`, and across the merged vanilla + DLC database
-that leaves **18 of 91 `IncidentDef`s and 18 of 139 `QuestScriptDef`s** able to fire. **[V]** A
-campaign act played from an orbital home loses wanderers, refugees, visitors, manhunter packs,
-infestations, solar flares, toxic fallout and every walk-in social event — silently. See *Living on
-the orbit layer*, below, and T-48.
+that leaves **18 of 91 `IncidentDef`s** able to fire; its game-condition gate passes **4 of 32**
+(§ *The four gates, and what passes them today*). **[V]** A campaign act played from an orbital home
+loses wanderers, refugees, visitors, manhunter packs, infestations, solar flares, toxic fallout and
+every walk-in social event — silently. See *Living on the orbit layer*, below, and T-48. Quests are
+gated elsewhere, by `QuestGen_Get.GetMap(canBeSpace)`, not by this whitelist; they are Routes C and D
+(§ *Quests are gated somewhere else entirely*).
 
-`PatchOperationAdd` of `<layerWhitelist><li>Orbit</li></layerWhitelist>` onto each def the campaign
-wants alive. **~80 lines** **[I]**, one `<li>` per def, in a new `Patches/Orbit_Incidents.xml`. The
-list of *which* incidents belong in Ultra is a requirements question with no owner — see
-*Outstanding decisions*.
+`PatchOperationAdd` of `<layerWhitelist><li>Orbit</li></layerWhitelist>` onto each incident and game
+condition the campaign wants alive. **~80 lines** **[I]**, one `<li>` per def, in a new `Patches/Orbit_Incidents.xml`. Which
+defs pass is content for [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)
+(§ *Ordinary colony life on an orbital home*, Routes A–G and the four gates).
 
 ### (c) `Alert_SubstructureOverBudget` — new C#
 
@@ -88,10 +90,10 @@ under any mod set — which is exactly the property a hand-computed budget does 
 ### (d) `Find_RandomSurfacePlayerHomeMap_Patch` — new C#, only if needed
 
 `Find.RandomSurfacePlayerHomeMap` is wired to `Game.RandomRootSurfacePlayerHomeMap`, so
-`QuestNode_GetSiteTile`, `QuestNode_Root_WandererJoin` and `QuestPart_SpawnMonolith` return null
-once the only home is in orbit (T-49). **[V]** A Harmony postfix returning
-`Current.Game.RandomSurfacePlayerHomeMap` is **~8 lines** **[I]**. Needed only if Archinity content
-uses those three nodes; otherwise avoid them and skip the patch.
+`QuestNode_GetSiteTile` and `QuestPart_SpawnMonolith` return null once the only home is in orbit
+(T-49). **[V]** A Harmony postfix returning `Current.Game.RandomSurfacePlayerHomeMap` is **~8 lines**
+**[I]**. Needed only if Archinity content uses those two nodes; otherwise avoid them and skip the
+patch. Joiners fail elsewhere, at `CanBeSpace` (T-128; § *Nobody joins*).
 
 ### What we reuse, unchanged
 
@@ -115,7 +117,7 @@ All **[V]**.
 | `Alert_SubstructureOverBudget` | new C# | ~30 lines | the shipped assembly |
 | `Find_RandomSurfacePlayerHomeMap_Patch` | new C#, optional | ~8 lines | same |
 | Research retier | XML patch | ~60 lines | `Patches/Gravship_Retier.xml` |
-| Orbit incident whitelist | XML patch | ~80 lines | `Patches/Orbit_Incidents.xml` |
+| Orbit incident and game-condition whitelist | XML patch | ~80 lines | `Patches/Orbit_Incidents.xml` |
 
 Every estimate in that table is **[I]**. The mechanisms composed above are **[V]**. That they
 compose into a liveable ship is **[I]** until one is built and flown.
@@ -212,9 +214,7 @@ Savings against the 1,790-cell deck above. Each mod's def values are **[V]**; ea
 | More Gravship Workbenches (`lts.mgw`) | 0–15, conditional | eight compact 2×1 / 3×1 benches, hard-dependent on VGE, each `MayRequire`-gated on a *different* donor (Anomaly, Jewelry, Vanilla Recycling Expanded, Integrated Implants, VRE Androids, VVE, Vanilla Nutrient Paste Expanded). Only the `LTS_CompactNutrientPasteGrinder` (3×1, **acts as its own hoppers**) bears on the Galley row as drawn; the rest are Workshop savings *if* their donors ship. See [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
 | Biotech for Gravship compact line | ~20 | **not counted** — only if a mech bay flies, and a mech bay costs more than it saves |
 
-**Re-derived: 1,790 − (160 + 62 + 40 + 16) = 1,512, call it ≈ 1,510 cells.** **[I]** The earlier
-≈1,480 figure rested on a halved `Shelf` capacity and a crate saving inflated with it; it is
-withdrawn.
+**1,790 − (160 + 62 + 40 + 16) = 1,512, call it ≈ 1,510 cells.** **[I]**
 
 And the ceiling itself moves — **in both directions**:
 
@@ -225,11 +225,6 @@ And the ceiling itself moves — **in both directions**:
 | **VGE alone** | **≈ 1,625** | offsets 250 + 10 × 100 = 1,250, × 1.30 (six `LargeThruster` at +0.05 each). **Below Odyssey alone, and below the un-modded 1,790-cell deck** |
 | + `als.gravtech` **and** VGE | **≈ 3,850 – 4,500** | offsets 250 + 10 × 100 + 3 × 130 + 500 = **2,140**, × 1.80 (no thrusters) to × 2.10 (six `LargeThruster`) |
 | the deck as drawn, GravTech + VGE, six extenders only | **3,132** | offsets 250 + 6 × 100 + 3 × 130 + 500 = 1,740, × 1.80 |
-
-The published **~6,100** figure is withdrawn. It summed offsets of 3,390 from four inputs of which
-**three were un-patched def values** — a 500 engine that is 250, a 250 extender that is 100, and a
-1,000 reactor that is 500 — and then applied a multiplier that omitted the thruster term entirely.
-That is precisely the error T-50 exists to name, made in the document that cites it.
 
 **Every input to that table is a patched value, and that is the whole lesson of T-50.** With
 `vanillaexpanded.gravship` loaded: **[V]** on each
@@ -268,8 +263,7 @@ picks rather than facts:
 ≈1,625 ceiling leaves ~110 cells, 7% margin — but the reason the deck is ≈1,510 is that ~160 cells
 of it are `VGE_GravshipSubscaffold` corridor floor the budget never charges. Count them and the
 deck draws ≈1,670, which **does not fit**. **[I]** Anyone who ships VGE without GravTech is flying
-on the subscaffold exemption, and the spec's earlier framing — that VGE only ever raises the
-ceiling — was backwards.
+on the subscaffold exemption: VGE alone lowers the ceiling.
 
 **The binding constraint is not cells. It is `Gravcore`.** Six extenders, a signal jammer and twelve
 power cells cost **19** **[V]**, and gravcores are not generically sellable — they arrive from
@@ -277,8 +271,8 @@ power cells cost **19** **[V]**, and gravcores are not generically sellable — 
 (`MinTimeBetweenSubquests` 900,000 ticks, `MaxTime` 1,800,000, one gravcore per site). **[V]**
 Fitting out the ship is therefore a **300–500 day** arc **[I]** whether or not the player hurries,
 and GravTech's pylons and reactor add ten more gravcores on top, amplifiers eight more again.
-`docs/progression/` was to own whether that pacing is acceptable; it is empty. This spec records
-that the constraint exists and that no amount of cell efficiency changes it.
+Whether that pacing is acceptable is balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+This spec records that the constraint exists and that no amount of cell efficiency changes it.
 
 ## Life support
 
@@ -296,9 +290,10 @@ ship: 5 oxygen pumps and 8 heaters. [I]** Warnings on the launch dialog, not gat
   vanilla gene that does exactly what the founders should be able to do. **[V]** But it is
   `biostatArc 1` and `displayCategory Archite` **[V]**, so it is not free: an archite gene cannot be
   assembled into a xenogerm without **archite capsules**, which are themselves quest/trade-gated.
-  The *code* cost is zero; the *delivery* cost is an archite-capsule supply line, and that is a
-  campaign decision. **[#10](https://github.com/cjd721/Rimworld-Archinity/issues/10) is closed**, so
-  no live ticket owns whether the founders get this gene. It is a gap — see *Outstanding decisions*.
+  The *code* cost is zero; the *delivery* cost is an archite-capsule supply line. The founders'
+  vacuum immunity is required by [`docs/requirements/SPACE.md`](../requirements/SPACE.md)
+  § *The gravship as home* ([#127](https://github.com/cjd721/Rimworld-Archinity/issues/127)); how it
+  is delivered is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 - **Hull material is load-bearing and fails silently.** Only Steel, Plasteel, Silver, Gold and
   Uranium set `stuffProps.isAirtight`. Stone, wood, and **`Obsidian`** (Stony + Metallic, no
   `isAirtight`) do not. **[V]** Build from `GravshipHull`, which is airtight outright. See T-47.
@@ -348,7 +343,7 @@ Two constraints worth designing around:
 
 ## Defenses
 
-Not the pursuit — [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) owns that. This is
+Not the pursuit — [`TRACE.md`](TRACE.md) and [`PRESSURE.md`](PRESSURE.md) own that. This is
 the ladder the hull can mount, and it is entirely XML retiering. All rows **[V]**.
 
 | Tier | Piece | Cells | Numbers |
@@ -372,9 +367,7 @@ Any pursuit design should know both.
 that almost all of those readers keep working: the storyteller targets the ship, `WealthUtility`
 counts it, every `Alert_Need*` fires, `ForbidUtility` stops forbidding, pens and roaming work,
 royal-title expectations apply. **[V]** **Retiring the planetside base does not break the home-map
-machinery.** (An earlier draft quoted a count of vanilla *source files* reading the flag. That is
-not reproducible against a shipped single assembly and is withdrawn; the named consumers above are
-the reproducible claim.)
+machinery.**
 
 Five things do change, and four of them are the *layer*, not the flag. All **[V]**.
 
@@ -382,11 +375,12 @@ Five things do change, and four of them are the *layer*, not the flag. All **[V]
    and `Biome.inVacuum`; `BiomeDef Space` also sets `canExitMap false`.
 2. **No caravans in orbit at all** — `PlanetLayerDef Orbit` sets `canFormCaravans: false`. Caravan
    trade, caravan quests and caravan rescue arms all go.
-3. **The incident pool collapses to 18 of 91**, and quests to 18 of 139 (T-48). This is the one that
-   needs a patch pack, and it is build (b).
+3. **The incident pool collapses to 18 of 91** (T-48). This is the one that needs a patch pack,
+   and it is build (b). Quests are gated by `QuestGen_Get.GetMap(canBeSpace)`, not the whitelist —
+   Routes C and D (§ *Quests are gated somewhere else entirely*).
 4. **`Find.RandomSurfacePlayerHomeMap` returns null** once the only home is off the root surface
-   (T-49), taking `QuestNode_GetSiteTile`, `QuestNode_Root_WandererJoin` and
-   `QuestPart_SpawnMonolith` with it.
+   (T-49), taking `QuestNode_GetSiteTile` and `QuestPart_SpawnMonolith` with it. Joiners fail
+   elsewhere: T-128, not T-49 (§ *Nobody joins*).
 5. **An orbital home is not a `Settlement`.** `GravshipUtility.ArriveNewMap` only calls
    `SettleUtility.AddNewHome` where the layer's `DefaultWorldObject == SettlementWorldObjectDef`;
    `Orbit` has `Space` and `SpaceSettlement`. So the orbital home does not count against
@@ -412,8 +406,8 @@ buys them back.
 - **Possible? Partly, and the split is sharp.** Everything the colony *does to itself* works in
   orbit unchanged — food, production, research, recreation, beauty, temperature, life support,
   penned animals, prisoners held and recruited, pregnancy, birth, graves and Ideology rituals.
-  Everything that *arrives* is shut, by **four separate gates** rather than the one build (b)
-  prices, and **every walk-in path in the game is structurally dead in orbit**, so the obvious XML
+  Everything that *arrives* is shut, by **four separate gates**, of which build (b) prices
+  two, and **every walk-in path in the game is structurally dead in orbit**, so the obvious XML
   fix for visitors and trader caravans is a silent no-op. **No vanilla joiner quest can generate at
   all.** All of it is reachable; most of it by XML.
 - **Multiplayer? Yes** for every route but F. MP Compat carries `vanillaexpanded.gravship` and does
@@ -432,8 +426,9 @@ buys them back.
 | **G** | *(not recommended)* Remove the standing cabin-fever penalty | `PatchOperationReplace` on `NeedOutdoors` stage 2 | XML | Easy | Yes |
 
 Every mechanism cited below is **[V]**. Every claim that they compose into the described behaviour
-is **[I]** by construction. **Nothing is selected** — which incidents and which factions belong in
-the orbital act is a requirements question, and it has no owner (see *Outstanding decisions*).
+is **[I]** by construction. **Nothing is selected.** `docs/requirements/SPACE.md` § *Living in orbit*
+asks for ordinary colony life wherever the fiction allows; which defs pass each gate is content for
+[the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 
 **The recommendation, not a selection: A + B + C.** B is free content that already opens both of
 the gates it needs, A is the only thing that makes the storyteller's orbital pool non-trivial, and
@@ -443,7 +438,7 @@ the fiction wants *vanilla's* people rather than ours.
 ### The four gates, and what passes them today
 
 `PlanetLayerDef Orbit` sets **four** whitelist flags, each with a different reader and a different
-XML key — `docs/TRAPS.md` **T-48** and build (b) describe only the first. All **[V]**.
+XML key — `docs/TRAPS.md` **T-48** carries all four; build (b) covers the first two. All **[V]**.
 
 | Gate | Reader | Opened by | Passing today |
 |---|---|---|---|
@@ -479,7 +474,8 @@ sufficient.
   reproduces #71's count exactly from an independent parse of the merged def tree with
   `ParentName` resolved. **[V]**
 - The 4 conditions are `Aurora`, `Eclipse`, `PsychicDrone`, `PsychicSoothe`. **No vanilla weather,
-  fallout, solar flare or blight exists in orbit at all**, and this gate is not build (b)'s.
+  fallout, solar flare or blight exists in orbit at all**; build (b) opens this gate alongside
+  incidents.
 - The 5 arrival modes are `EdgeDrop`, `EdgeDropGroups`, `RandomDrop`, `MechClusterDrop`,
   `SpecificDropDebug`. **`CenterDrop` is `Surface`-only** — nothing drops on top of you in orbit.
 - The 4 factions are Odyssey's `TradersGuild` and `Salvagers`, Core's `Mechanoid` and Royalty's
@@ -507,15 +503,10 @@ and only the second is silent. All **[V]**.
    `World`-targeted `GiveQuest*` incidents `IncidentWorker_GiveQuest.CanQuestOccurOnTile`
    short-circuits to `true` and never applies.
 
-**This contradicts build (b) above, and the contradiction is declared rather than merged.** Build
-(b) attributes the whole orbital content collapse — incidents *and* quests — to
-`onlyAllowWhitelistedIncidents`, and prices one `~80`-line patch against it. For **incidents** that
-is right. For **quests** it is not: `Orbit` never sets `onlyAllowWhitelistedQuests`, and the feed is
-emptied by `QuestGen_Get.GetMap(canBeSpace: false)` instead — a C# default that no `<li>Orbit</li>`
-reaches. **A whitelist-only patch pack will restore the incidents and leave the quest feed as empty
-as it found it.** Build (b)'s own text is left unedited so the two readings stay visible; when the
-next map selects a route, (b) should be re-scoped to incidents and game conditions, with quests
-taken by Route C or D.
+**So build (b) covers incidents and game conditions, not quests.** `Orbit` never sets
+`onlyAllowWhitelistedQuests`, and the feed is emptied by `QuestGen_Get.GetMap(canBeSpace: false)` — a
+C# default that no `<li>Orbit</li>` reaches. **A whitelist-only patch pack restores the incidents and
+leaves the quest feed as empty as it found it**; quests are Route C or D.
 
 **The 18 is not the same measurement as `ORBIT.md`'s ten, and both are correct.** **[V]**
 `docs/specs/ORBIT.md` counts quest scripts that **place a site on** the Orbit layer — a destination
@@ -571,19 +562,17 @@ Four things make this load-bearing:
   the table above already sets `autoAccept`, **`!autoAccept` short-circuits both tests before the
   flag is ever reached**, so setting or clearing `everAcceptableInSpace` on them changes nothing.
   Its net effect here is nil; its effect elsewhere, on the 60-odd non-`autoAccept` roots that carry
-  it, is real. An earlier draft of this section said the field "never runs", which was the right
-  conclusion for the wrong reason.
+  it, is real.
 - Even when a joiner letter is produced, `ChoiceLetter_AcceptJoiner` **disables the Accept option**
   when the target map's layer `isSpace`. **[V]** The path is barred three times: once silently at
   generation, once at acceptance by the quest part, once at the letter.
 
-**This corrects T-49 and this document.** *Living on the orbit layer* item 4 names
-`Find.RandomSurfacePlayerHomeMap` as what takes `QuestNode_Root_WandererJoin` down. In 1.6 that
-member appears in the node **only inside the `CanBeSpace == true` branch, which nothing reaches**;
-the live path is `QuestGen_Get.GetMap`. T-49's other two consumers, `QuestNode_GetSiteTile` and
-`QuestPart_SpawnMonolith`, do read it and stand — so build (d) is still the right patch for those
-two, and it is the wrong patch for joiners. **[V]** A correction to T-48 and T-49 is proposed on
-#147 and is the orchestrator's to merge.
+**T-49 does not reach joiners.** In 1.6 `Find.RandomSurfacePlayerHomeMap` appears in
+`QuestNode_Root_WandererJoin` **only inside the `CanBeSpace == true` branch, which nothing
+reaches**; the live path is `QuestGen_Get.GetMap`. T-49's other two consumers,
+`QuestNode_GetSiteTile` and `QuestPart_SpawnMonolith`, do read it and stand — so build (d) is the
+right patch for those two, and the wrong patch for joiners. **[V]** Registered as T-128; T-48
+carries the four gates.
 
 ### What no route can do
 
@@ -634,9 +623,7 @@ All **[V]** unless marked.
 
 **Two passes, because the gates have an XML half and a C# half and an XML sweep cannot see the
 second.** Construction is reported in full under *Verification — the wide pass behind the orbital
-negatives*, below; an earlier draft of this section ran only the XML half, without `-i` and without
-a validator, and carried a C# negative on it. That draft's count of "exactly ten mods" was wrong by
-one, and is corrected here.
+negatives*, below.
 
 **Eleven mods on disk match the layer-field sweep; ten touch the four layer gates, and none of
 them widens one for orbit beyond its own content.** All rows **[V]**.
@@ -880,13 +867,11 @@ follows the tile through a recreation.
 - **Cannot:**
   - **skip for good** keeps the advance from being whole (the CF-D objection), and lets either
     player freeze a settlement by pointing a ship at it;
-  - **defer until touchdown** runs into two clauses of `ERA.md` § *The era advance*. *"Nothing
-    else may change on a delay"* is the first; its illustration is twenty days, but the rule
-    itself names no threshold. The second is *"a single, indivisible act"*: *"a world half
-    re-authored — some settlements transferred, others not"* is the failure it names, and a
-    deferred tile is exactly that for the window, **however short**. Whether either clause
-    admits this is a requirement call, not ours. Neither clause binds the Schism, a revolt or
-    conquest, which are not the advance;
+  - **defer until touchdown** is not admitted for the era advance by `ERA.md` § *The era
+    advance*. *"Nothing else may change on a delay"* names no threshold, and *"a single,
+    indivisible act"* names *"a world half re-authored — some settlements transferred, others
+    not"* as the failure; a deferred tile is exactly that for the window, **however short**.
+    Neither clause binds the Schism, a revolt or conquest, which are not the advance;
   - neither form can stop a Rim War settler or a quest site from taking the tile without also
     patching them.
 - **Consequences:**
@@ -960,8 +945,6 @@ follows the tile through a recreation.
 - GF-F's marker shape costs no dialog-sync work, since Multiplayer already syncs that UI.
 - If a stored launch snapshot is unwanted, **GF-B + GF-C (home again)** is the smallest answer
   for our own transfers.
-- GF-D's *defer* is worth raising with the ERA requirement's owner. The window is hours, not
-  days, but deferring one tile also leaves the advance divisible for that window (see GF-D).
 
 ### Constraints
 
@@ -1068,11 +1051,10 @@ the destination tile can **gain** a settlement or site, because nothing reserves
 
 ### Open questions
 
-- **Does `ERA.md` § *The era advance* admit a deferral of one tile until a committed ship lands?**
-  Two clauses apply. One is *"nothing else may change on a delay"*, which names no threshold. The
-  other is *"a single, indivisible act"*, and it is broken for the window however short that is.
-  The answer decides whether GF-D's *defer* form is admissible for the advance. *Requirements;
-  ERA.md's owner.*
+- **Era advance while a ship is in flight.** GF-D's *defer* form holds one tile's change until
+  touchdown, which `ERA.md` § *The era advance* does not admit for the advance; it remains
+  available for the Schism, a revolt or conquest. Capability: GF-A to GF-G. Choice:
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **Transfer shape per beat** no longer matters for gravships, but still matters for caravans.
   *[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).*
 - **Build questions for the next map**, all owned by [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):
@@ -1112,7 +1094,7 @@ Nothing else in this system reads `Rand`, threads, or holds static collections k
 | **Room never pressurises** — stone, wood or obsidian walls (T-47) | the vacuum overlay, and pawns taking `VacuumExposure` indoors | replace the walls with `GravshipHull` or steel |
 | **Crop dies** — breach puts the farm cell at vacuum ≥ 0.5; the plants take dying damage, not merely a growth stall | `MessagePlantDiedOfRot_ExposedToVacuum` per plant, but `Alert_LowOxygen` fires only once a *pawn* reaches `VacuumExposure` stage 2 — the plants die first | seal, **resow**, and absorb a full grow cycle. `VGE_SealantPopper` as prevention; two independently sealed farm rooms as insurance |
 | **Orbital act runs dry** — 18 incidents (T-48) | none; the storyteller simply has nothing to pick | build (b) |
-| **Quest never generates** — `Find.RandomSurfacePlayerHomeMap` null (T-49) | none | build (d), or avoid the three nodes |
+| **Quest never generates** — `Find.RandomSurfacePlayerHomeMap` null (T-49) | none | build (d), or avoid the two nodes |
 | **Shield does not charge** — grav engine destroyed or unlinked | the generator's own inspect string | repair the engine |
 | **Gravcore starvation** — the fit-out stalls | visible in the build menu as unaffordable | none; it is a pacing fact at one gravcore per 15–30 days, and nothing currently owns planning around it |
 
@@ -1137,9 +1119,9 @@ Odyssey/Core/DLC defs, decompiled `VanillaGravshipExpanded.dll`, and the raw pat
 - **Selected:** nothing. This is a verified available mechanism set and a priced build, not an
   implementation commitment.
 
-Established by [#71](https://github.com/cjd721/Rimworld-Archinity/issues/71) and corrected by its
-close-out audit, which independently reproduced the geometry and food arithmetic to the cell and
-found the two published mod-ceiling numbers wrong.
+Established by [#71](https://github.com/cjd721/Rimworld-Archinity/issues/71); its close-out audit
+independently reproduced the geometry and food arithmetic to the cell, and the mod ceilings above
+are the audited figures.
 
 **One STUB attempt was inconclusive, and the root cause is now known.** `tools/xpath.py` reported
 `GravEngine`'s `linkableFacilities` as the ten vanilla entries, showing neither VGE's seventeen
@@ -1151,10 +1133,8 @@ nothing while `report.patch_ops_applied` still increments, reporting success. Th
 - Every STUB-derived figure in this document is **provisional** until #102 is fixed and the merged
   tree is re-read. In practice the STUB tier settled nothing in this spec — the raw patch XML is the
   primary source throughout and is what is cited.
-- Filing the gap as a tooling item rather than a verdict was procedurally right, but it buried it:
-  **the one thing the STUB could not settle is exactly the number that was published wrong** — the
-  composed ceiling. A merged-tree read would have caught the un-patched engine, extender and
-  reactor values immediately.
+- The composed ceiling is the number most exposed to this: only a merged-tree read catches an
+  un-patched engine, extender or reactor value (T-50).
 
 ## Available mechanisms
 
@@ -1176,7 +1156,7 @@ Everything cited above, in one place, with what it does not do. All rows **[V]**
 | `lts.mgw` compact benches | eight 2×1 / 3×1 gravship bench variants | hard VGE dependency; each `MayRequire`-gated on a different donor mod |
 | `GravshipShieldGenerator` | 500 HP, radius 24.9, ground and air | 100 s up, 4 h charge, EMP-disarmed, dies with the engine |
 | `VGE_PointDefenseTurret` | intercepts hostile drop pods | `VGE_GravshipWeaponry` |
-| `GeneDef VacuumResistance_Total` | a pawn immune to vacuum | `biostatArc 1`, `displayCategory Archite` — needs archite capsules, and no live ticket owns the decision |
+| `GeneDef VacuumResistance_Total` | a pawn immune to vacuum | `biostatArc 1`, `displayCategory Archite` — needs archite capsules; required for the founders by `SPACE.md` (#127), delivery is #119's |
 
 **What does not exist anywhere in the 155-mod corpus:** a warning before the substructure budget is
 exceeded; a shield that holds continuously rather than in bursts; and any life-support mechanism
@@ -1233,11 +1213,10 @@ reproduce it.
 
 | Question | Consequence | Owner |
 |---|---|---|
-| Which incidents and quests are whitelisted for orbit | decides whether the orbital act has a world | **No owner.** A requirements question with no ticket; the patch is build (b). This is a gap, not a hand-off |
-| …and it is **four** lists, not one — incidents, game conditions, factions-that-may-arrive, arrival modes — plus a judgement on whether the orbital act keeps the standing −5 cabin fever | decides who can reach the ship at all, and what the crew's baseline mood is | **No owner.** Widened by [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147); belongs in `docs/requirements/SPACE.md` § *Living in orbit* under [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127) |
-| Cabin size — 3×4, 4×4 or shared | 22–40% of the whole deck budget, and a standing mood cost either way | **No owner.** A requirements question with no ticket |
-| Whether the founders get `VacuumResistance_Total` | decides whether hull work needs suits, and commits to an archite-capsule supply line | **No live owner** — [#10](https://github.com/cjd721/Rimworld-Archinity/issues/10) is closed |
-| Whether one gravcore per 15–30 days is acceptable pacing | decides how long the fit-out arc runs, and whether GravTech's pylons, reactor and amplifiers are reachable at all | nominally `docs/progression/`, **which is empty**. No document and no ticket owns it today |
+| Which defs pass orbit's **four** gates — incidents, game conditions, factions-that-may-arrive, arrival modes — and whether the orbital act keeps the standing −5 cabin fever | decides whether the orbital act has a world, who can reach the ship, and the crew's baseline mood | Capability: § *Ordinary colony life on an orbital home*, Routes A–G and the four gates ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)); requirement `docs/requirements/SPACE.md` § *Living in orbit*. Which defs pass: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
+| Cabin size — 3×4, 4×4 or shared | 22–40% of the whole deck budget, and a standing mood cost either way | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (playtest / balance; `SPACE.md` states no target) |
+| How the founders' `VacuumResistance_Total` is delivered | commits to an archite-capsule supply line | Required by `docs/requirements/SPACE.md` § *The gravship as home* ([#127](https://github.com/cjd721/Rimworld-Archinity/issues/127)); how it is delivered is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s |
+| Whether one gravcore per 15–30 days is acceptable pacing | decides how long the fit-out arc runs, and whether GravTech's pylons, reactor and amplifiers are reachable at all | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (playtest / balance; `SPACE.md` states no target) |
 | Which of GravTech / VGE / BfG / Gravship Storage / MGW ship | decides whether the ceiling is 2,000, ≈1,625, 4,500 or ≈3,850–4,500 — and VGE alone is *lower* than vanilla | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) (open) |
-| How the defense ladder maps onto pursuit intensity | this spec lists the rungs; nothing says when they are climbed | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) (open) |
+| How the defense ladder maps onto pursuit intensity | this spec lists the rungs; nothing says when they are climbed | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (build map); `TRACE.md` owns the bands it would key on |
 | Whether `tools/defdb.py` can be trusted to confirm any of the above offline | every STUB-tier figure in this spec is provisional until it can | [#102](https://github.com/cjd721/Rimworld-Archinity/issues/102) (open) |

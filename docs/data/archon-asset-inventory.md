@@ -111,7 +111,7 @@ Vanilla Races Expanded – Android); source mods are attributed individually.
 | `Apparel_PsyfocusVest` | eltex vest | Royalty (DLC) | As above. |
 | `Apparel_PsyfocusShirt` | eltex shirt | Royalty (DLC) | As above. |
 | `VREA_PsychicStorm` (WeatherDef + IncidentDef) | psychic storm | Vanilla Races Expanded - Archon | Not a ThingDef — a bespoke *weather* for Archon presence. Strongly recommended for the ruin map itself. |
-| `VRE_Transcendent` (GeneDef) | transcendent | Vanilla Races Expanded - Archon | Archite gene. Loot as a genepack. |
+| `VRE_Transcendent` (GeneDef) | transcendent | Vanilla Races Expanded - Archon | Archite gene. Reserved for the final rite (`plot/ENDING.md`); never loot. |
 | `VRE_InnatePsylink` (GeneDef) | natural psylink | Vanilla Races Expanded - Archon | Archite gene; born-psychic. |
 | `VRE_PsychicAbility_MoreExtreme` (GeneDef) | extremely psy-sensitive | Vanilla Races Expanded - Archon | Archite gene. |
 

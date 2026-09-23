@@ -134,7 +134,7 @@ grants jobs, gizmos and designators rather than recipes.
 
 | Project | Cost | Change |
 |---|---:|---|
-| `Devilstrand` | 800 | Keep the project, but `sys/02` records it as a **circular Neolithic deadlock** under More Realistic Research — `BuildForProject` returns null at `techLevel <= Neolithic`, so its auto-generated gate cannot be satisfied. Needs an explicit empty `ManualAnalysisDef`. |
+| `Devilstrand` | 800 | Keep the project. Under More Realistic Research its gate is MRR's own hand-authored `ManualAnalysisDef` (`experimentalMaterials: DevilstrandCloth`, 9 points), which `BuildRegistry` applies before the tier filter runs — so it is not an auto-generation deadlock ([`docs/specs/RESEARCH.md`](../specs/RESEARCH.md); `docs/engine/research-and-tech-tiers.md`). |
 
 ### Retier down from Medieval — 6 projects, 2,200 points
 

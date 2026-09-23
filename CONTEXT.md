@@ -159,11 +159,16 @@ _Avoid_: meditation, training
 **The rite**:
 An altar ceremony. Willing-devotion rites advance psychic capacity; the final
 rite combines Life, aligned Devotion and Self. [Altar](docs/requirements/ALTAR.md)
+Not the Church's title ceremony, which is the **bestowing** (vanilla's).
 
 **Core vector** · **Augment vector**:
 The two named-gene classes. **Core** is the path-to-divinity set and is mark-locked;
-**augment** is specialisation and works on anyone.
+**augment** is a non-core ability gene and works on anyone.
 _Avoid_: main genes, side genes
+
+**Specialisation**:
+A pawn's small numeric advance inside a skill it is deeply (major) passionate about —
+earned and chosen, or held as a bounded specialist post. [Colony](docs/requirements/COLONY.md)
 
 **Lottery capsule**:
 An Archon capsule converted by Industrial research into something usable.
@@ -259,10 +264,15 @@ _Avoid_: offer, catalogue (which reads as quests only)
 
 **Reverence**:
 Adoption of the player's ideology among a faction's people. Persistent, slowly
-decaying and sustained by institutions; not spendable. [Religion](docs/requirements/RELIGION.md)
+decaying and sustained by institutions; whether it is ever spent is the build map's
+(#176). [Religion](docs/requirements/RELIGION.md)
+
+**Reverence band**:
+A named Reverence range with what it enables and risks; the global one is the attention
+band. Not **the band**.
 
 **Exaltation**:
-Church service currency whose thresholds unlock title rites and institutional
+Church service currency whose thresholds unlock title bestowings and institutional
 privileges, independently of psychic rank.
 
 **Influence**:

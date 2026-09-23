@@ -144,11 +144,16 @@ statement of this arc.
   [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119). The road ladder
   and the vehicle ladder must be set in one sitting, because they multiply — and a
   per-vehicle road cost can override the road ladder outright.
-- **Ancient vehicle wrecks on a roadless map** moved to [`ERA.md`](ERA.md)'s open questions,
-  with ancient dangers and the mechanitor's crashed ship part — one behaviour, three carriers.
+- **Ancient vehicle wrecks on a roadless map** moved to [`ERA.md`](ERA.md), with ancient
+  dangers and the mechanitor's crashed ship part — one behaviour, three carriers — and are
+  answered in [`docs/specs/ERA.md`](../specs/ERA.md) § *Above-era content seeded on the player's
+  own map* ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)).
 - **Whether vehicles ship at all** is [the sourcing ledger's](https://github.com/cjd721/Rimworld-Archinity/issues/14).
 - **Whether completed mobility feeds Charting's reach** is
-  [cross-spec integration's](https://github.com/cjd721/Rimworld-Archinity/issues/118).
+  [the build map's](https://github.com/cjd721/Rimworld-Archinity/issues/119) route selection;
+  the rung routes are in [`docs/specs/CHARTING.md`](../specs/CHARTING.md) § 4 and
+  [`docs/specs/WORLD-INFRASTRUCTURE.md`](../specs/WORLD-INFRASTRUCTURE.md) § *Charting reach
+  rungs — offered, not selected*.
 
 ---
 

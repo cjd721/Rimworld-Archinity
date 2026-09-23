@@ -23,8 +23,8 @@ home delivery) joins it. Charting's quest machinery is cited, not restated.
 
 Whether the campaign keeps the encounter is
 [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s call. Pacing of optional
-content belongs to [`PRESSURE.md`](PRESSURE.md) and
-[#60](https://github.com/cjd721/Rimworld-Archinity/issues/60); quest presentation to
+content belongs to [`PRESSURE.md`](PRESSURE.md) (numbers:
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)); quest presentation to
 [`QUESTS.md`](../requirements/QUESTS.md).
 
 ## Verdict
@@ -191,8 +191,8 @@ temporary factions — filtered by `IsGoodFaction` **[V]**. Neutral-or-better is
   `allowAlly` default to `false`** — omit them and the node finds nothing, which under T1 is the
   silent miss.
 - *Note:* "neutral" here is the **relation kind**, which is latched, not a function of the
-  number: a faction coming down from +10 stays Neutral until −75 (`docs/engine/quests.md`,
-  *XML cannot reach a goodwill number*). Neutral-or-better in the requirement's words is exactly
+  number: a faction coming down from +10 stays Neutral until −75 (`docs/engine/quests.md` §
+  *The accept-time gate is one abstract base, with a quest-wide half and a per-pawn half*). Neutral-or-better in the requirement's words is exactly
   "not Hostile" in the engine's.
 
 **G2.** Vanilla's asker idiom, `Royalty/.../Scripts_Utility.xml` `Util_DecideRandomAsker`
@@ -351,8 +351,8 @@ All node fields **[V]**, `Assembly-CSharp.dll`. Notes:
 - **The hediff must be inert** — a label and a description, or a cosmetic effect. Nothing that
   touches psylink or the psychic ladder ([`ALTAR.md`](../requirements/ALTAR.md)).
 - **"A remembered fact" costs no storage.** Ended quests are never pruned, so the quest *is*
-  the flag; but no XML node reads quest history (`docs/engine/quests.md`, *VEF's quest-giver
-  path*), so whatever consults it is C#.
+  the flag; but no XML node reads quest history (`docs/engine/quests.md` §
+  *`QuestScriptDef.CanRun` has 16 non-debug vanilla callers*), so whatever consults it is C#.
 
 ## Constraints
 

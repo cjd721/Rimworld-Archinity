@@ -151,7 +151,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-34 | Editing a `HediffDef`'s `comps` list drops the comp; its fields read as defaults on the next load |
 | T-35 | The Permits tab is gated on `Faction.OfEmpire`, and the switcher that would fix it is drawn inside the gated card |
 | T-38 | A `CompScanner` find that generates no quest still zeroes the guaranteed-find timer |
-| T-41 | `analysisID` is a hand-picked int with no uniqueness check — a duplicate silently merges two Analysis gates |
+| T-41 | `analysisID` is a hand-picked int with no uniqueness check — a duplicate silently merges two Exemplar gates |
 | T-46 | Substructure cells past `SubstructureSupport` are silently dropped on launch, outermost first |
 | T-47 | Only five stuffs are `isAirtight`; a stone, wood or obsidian room never pressurises |
 | T-56 | `Thing.SmeltProducts` discards `efficiency` for a literal `0.25f` — and the info card prints the stat anyway |

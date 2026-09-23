@@ -2,15 +2,6 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** Transcendence grants the existing
-> `VRE_Transcendent` gene and a scene; it never despawns or later returns the pawn. The
-> Administrator choice is **Enter the new reality** (terminal credits/end game) or
-> **Stay in this reality** (close the scene and continue with the pawn unchanged). There
-> is no repeatable departure/return cycle and no `departureCount`. Sections below retain
-> useful multiplayer and credits evidence, but every build or cost based on crossings,
-> re-entry or non-terminal credits is superseded. [#48](https://github.com/cjd721/Rimworld-Archinity/issues/48)
-> owns the final authored scene.
-
 How a founder claims a self-authored title, receives `VRE_Transcendent`, meets the
 Administrator and chooses whether to enter the new reality or stay — and how that
 one-time state is recorded per founder and survives a save.
@@ -22,50 +13,46 @@ Requirements, both halves:
   That sentence covers the **claimed title** and nothing else this document builds.
 - [`docs/plot/ENDING.md`](../plot/ENDING.md) § *Ascension, the Administrator and the
   Postgame*, which owns the **Administrator encounter** and terminal **enter-or-stay**
-  choice. There is no standing departure re-offer.
+  choice. There is no standing re-offer. [#48](https://github.com/cjd721/Rimworld-Archinity/issues/48) owns the final authored scene.
 
 Established by [#50](https://github.com/cjd721/Rimworld-Archinity/issues/50), which
 absorbed [#79](https://github.com/cjd721/Rimworld-Archinity/issues/79).
 
-**One thing ALTAR.md demands that this document does not deliver.** Founder
-**psylink/channel progression** — named in the same requirements sentence as the claimed
-title — has no field in `CompFounderRecord`, no design here, and no ticket that has
-accepted it. It is listed as a **gap with no owner** in *Outstanding decisions*. The comp
-is its natural home when someone builds it; that is not the same as it being built.
-*(2026-09-23: `docs/specs/PSYCHIC.md` now carries the psychic track's capability answer —
-a founder-only path ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162)) and
-what raises psylink rank besides the altar
-([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)). The design stays with
-[#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) /
-[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); no field here yet.)*
+**Founder psylink progression.** The same requirements sentence names founder
+psylink/channel progression beside the claimed title. Its capability is in
+[`PSYCHIC.md`](PSYCHIC.md) ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162),
+[#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)); its design and any field here are
+[#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) / [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 **This document owns the per-founder state store.**
-[#59](https://github.com/cjd721/Rimworld-Archinity/issues/59) (the altar as a gene
-author) and [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) (volunteer
-eligibility) both write into it; neither builds a second one *for founder state*. The
-existing `VRE_Transcendent` gene needs no authored payload or return-after-death fields.
+[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)'s route A1 ([`RELIGION.md`](RELIGION.md)
+§ *Founders — who they are, beats that require them, flows that refuse them*) and
+[`PSYCHIC.md`](PSYCHIC.md) F1 read it; nothing builds a second one *for founder state*.
+`VRE_Transcendent` is a shipped gene and needs no fields here.
 
-Adjacent systems take over at: the tiers of godhood conferred by `RoyalTitleDef` — which
-must sit on a faction **other than the Church**, because `Pawn_RoyaltyTracker.titles` holds one
-title per (pawn, faction) and a godhood rung on the Church's ladder would silently overwrite the
-Church title ([`RELIGION.md`](RELIGION.md) § *Outstanding decisions* § *Exaltation* 7) — the altar's charge and vector
-machinery (`Archinity.Altar`), and the Devotion/volunteer rule (#49).
+Adjacent systems take over at: psychic-rank titles, if the ranks carry titles at all — a
+`RoyalTitleDef` rung must sit on a faction **other than the Church**, because
+`Pawn_RoyaltyTracker.titles` holds one title per (pawn, faction) and a rung on the Church's
+ladder would silently overwrite the Church title ([`PSYCHIC.md`](PSYCHIC.md) § *What raises
+psylink rank besides the altar* › *Open questions*) — the altar's charge and vector machinery
+(`Archinity.Altar`), and volunteer eligibility ([#49](https://github.com/cjd721/Rimworld-Archinity/issues/49)
+closed; volunteer-side state is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s).
 
 ---
 
-## The build — title and encounter state; departure cycle superseded
+## The build — title and encounter state
 
 Three verified vanilla mechanisms carry almost all of this, and one small comp is
 the only new state.
 
 | | |
 |---|---|
-| **Mechanism** | A `HediffComp` on a founder-only `HediffDef`, implementing `Verse.IRenameable`; a `Dialog_Rename<T>` subclass for the epithet; a vanilla `Dialog_NodeTree` for the Administrator and enter-or-stay choice. The enter action uses terminal credits; stay closes the tree with no pawn mutation. |
+| **Mechanism** | A `HediffComp` on a founder-only `HediffDef`, implementing `Verse.IRenameable`; a `Dialog_Rename<T>` subclass for the epithet; a vanilla `Dialog_NodeTree` for the Administrator and the enter-or-stay choice. *Enter* rolls credits by the verified non-terminal route (§4; ending the game under Multiplayer is [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182)); *Stay* closes the tree with no pawn mutation. |
 | **State** | `CompFounderRecord` — one instance per founder, living on the `Archinity_FounderRecord` hediff. Plus `Pawn_StoryTracker.title`, a vanilla per-pawn string, as the display projection of the epithet. |
 | **Persistence** | `HediffWithComps.ExposeData` → `CompExposeData()` for the comp; `Scribe_Values.Look(ref title, "title")` in `Pawn_StoryTracker.ExposeData` for the display copy. A save that predates the feature has no hediff and no `title`; both read as "nothing claimed". **No migration code.** |
 | **Change** | The `RenamableLabel` setter (claim); the altar's rite completion (grant `VRE_Transcendent`); the Administrator dialog's terminal *Enter the new reality* option. *Stay* changes nothing beyond recording that the scene was seen. |
 | **Display** | `Pawn.LabelNoCount` renders `"Name, TitleShortCap"`, so the epithet is free on the **inspect-pane header** (`InspectPaneUtility.AdjustedLabelFor` → `Thing.LabelCap` → `LabelNoCount`) and in anything built from `LabelCap` / `LabelNoCountColored` [V]. It is **not** on the colonist bar and **not** on the in-world map label — both draw `LabelShortCap`, which carries no title [V]. Letters and tooltips are per-surface **[I]**. Plus the hediff row in the Health tab, the altar's refusal text, and the credits screen. |
-| **Cost** | ~205 lines of new C# in the assembly we already ship (`ArchinityAltar.dll`), and ~65 lines of XML. No new assembly, and no third-party reference — see *Persistence and multiplayer* for the one we would need only if the recommended design fails. |
+| **Cost** | ~185 lines of new C# in the assembly we already ship (`ArchinityAltar.dll`), and ~65 lines of XML. No new assembly, and no third-party reference — see *Persistence and multiplayer* for the one we would need only if the recommended design fails. |
 
 ### 1. The store — `CompFounderRecord`
 
@@ -89,7 +76,13 @@ errors at load, not as silent misbehaviour. They are listed because the sketch w
 them does not work, not because they are subtle.
 
 Applied to a founder the first time anything needs to record something about
-them — normally at *Claim Yourself*, earlier if #49 or #59 needs it sooner.
+them — normally at *Claim Yourself*. Under [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)'s
+route A1 (recommended, not selected; selection [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119))
+the record is stamped at game start and lazy creation becomes migration. A1 also needs
+`duplicationAllowed: false` (**T-113**). See [`RELIGION.md`](RELIGION.md) § *Founders — who
+they are, beats that require them, flows that refuse them* › *A1 — founder record stamped at
+game start*, and
+[`PSYCHIC.md`](PSYCHIC.md) F1.
 
 **Fields, v1.** Every Scribe key carries the `archinity_` prefix, for the reason
 in *Persistence* below.
@@ -100,26 +93,24 @@ in *Persistence* below.
 | `bool titleClaimed` | `archinity_titleClaimed` | *Claim Yourself* has been performed. **The gate reads this, never the string** — see below. |
 | `int transcendedTick` | `archinity_transcendedTick` | `-1` until the final rite completes on this founder. |
 | `bool administratorSeen` | `archinity_administratorSeen` | The once-only Administrator encounter has been shown to this founder. |
-| `int departureCount` | `archinity_departureCount` | **Crossings performed** by this founder. `0` means none. Incremented **at the crossing**, before any return — it is not a count of returns, and it has no unset sentinel, because "never crossed" and `0` are the same fact by construction. |
 
 **Why the flag and the string are different facts.** `Pawn_StoryTracker.title` is
 writable by vanilla's own rename-colonist window (`Dialog_NamePawn` sets
 `pawn.story.Title = CurPawnTitle`), so a non-empty title proves nothing about the
 rite. `titleClaimed` is the only prerequisite the altar may read.
 
-**For #59 and #49 — the two rules for extending this store.**
+**For anyone extending this store — the two rules.**
 
 1. **Add fields to `CompFounderRecord`. Do not create a second store *for founder
    state*.** The comp already travels with the pawn across maps, caravans and corpses, is
    already scribed, and is already multiplayer-serializable.
 
-   **Scope caveat, and it matters for #49.** `Archinity_FounderRecord` is a *founder-only*
-   hediff. #49's volunteer eligibility is evaluated on pawns who will never carry it —
-   `ALTAR.md` § *Conversion and certainty* scopes #49 to "volunteer eligibility against
-   the final rite, including volunteers sent by reverent factions". Rule 1 does not reach
-   those pawns and must not be read as forbidding a per-volunteer store; choosing that
-   home is #49's, not this document's. What #49 reads *here* is the founder side of the
-   rite.
+   **Scope caveat.** `Archinity_FounderRecord` is a *founder-only* hediff. Volunteer
+   eligibility is evaluated on pawns who will never carry it (`requirements/ALTAR.md`
+   § *Conversion and certainty*). Rule 1 does not reach those pawns and does not forbid a
+   per-volunteer store; volunteer-side state is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s
+   ([#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) closed with the capability answered). What a
+   volunteer rule reads *here* is the founder side of the rite.
 2. **Prefix every new Scribe key `archinity_`, and never remove or reorder the
    `comps` list on `Archinity_FounderRecord`.** `HediffWithComps.ExposeData` calls
    `comps[i].CompExposeData()` in a **flat, shared Scribe namespace with no
@@ -190,8 +181,8 @@ open it from inside a synced method; a window added there opens on every client.
 **Two players cannot end up with two strings.** Both may open the dialog; both
 dialogs are local; both submissions go through the same registered setter; the
 server orders them; both clients apply both in the same order and converge on the
-same final value. Whether a second claim should be refused outright is a
-requirement, not a mechanism — see *Outstanding decisions*.
+same final value. The setter can also guard on `titleClaimed` and refuse a second claim;
+either way is trivial (see *Outstanding decisions*).
 
 ### 3. The gate
 
@@ -211,27 +202,17 @@ vector and charge clauses, returning a translated refusal
 "SelectPawn")`) — *not* in `SyncMethods` — and which `Building_Altar` does not override,
 so the gate needs no synchronisation work at all.
 
-### 4. Superseded design — departure, return and repeated crossing
+### 4. The Administrator and the choice
 
-**There are two surfaces, in this order, and `ENDING.md` states both.** § *Ascension, the
-Administrator and the Postgame*:
+[`plot/ENDING.md`](../plot/ENDING.md) § *Ascension, the Administrator and the Postgame* gives
+one choice, after the Administrator encounter:
 
-> After the Administrator encounter, the player receives the final choice:
-> **Leave this universe**: cross the opened threshold and trigger the true
-> victory/end-game condition. **Return**: continue the colony indefinitely.
+> **Enter the new reality**: trigger RimWorld's victory/end-game condition and roll credits.
+> **Stay in this reality**: close the scene and continue the colony indefinitely. The founder
+> remains present and transcendent; no pawn state, map state or inventory changes.
 
-and then, separately:
-
-> If the player returns, the ending remains available. Whenever they are finished with the
-> sandbox, the transcendent founder can return to the altar/threshold and leave the
-> universe.
-
-So the **first** choice rides on the Administrator's `Dialog_NodeTree` as two
-`DiaOption`s, and the altar is the **standing** re-offer afterwards: a transcended founder
-(`transcendedTick >= 0`) becomes an acceptable occupant of the altar with no vector
-loaded, and entering in that state is leaving. Two surfaces, no third. An earlier draft of
-this document collapsed the first into the second and deleted the explicit choice; that
-was wrong, and #50's own body forbids it ("do not silently replace the agreed victory").
+The choice rides on the Administrator's `Dialog_NodeTree` as two `DiaOption`s. There is no
+standing re-offer at the altar.
 
 **The Administrator encounter itself** is a vanilla `Dialog_NodeTree`, shown once per
 founder behind `administratorSeen`, opened from synced code with a map context.
@@ -257,39 +238,35 @@ founder behind `administratorSeen`, opened from synced code with a map context.
 > [`docs/engine/determinism.md`](../engine/determinism.md) § *MP serialises the
 > comms-console dialogue, options included* [V].
 >
-> **Two rules for the Administrator's options, therefore:**
+> **Three rules for the Administrator's options, therefore:**
 >
-> 1. ***Return*** **carries no action at all** — `resolveTree = true` and nothing else.
->    A delegate-free option is scribed as plain values (`text`, `resolveTree`, `disabled`,
->    `disabledReason`, `clickSound`) and cannot fail this check. Returning *is* closing the
->    dialog, so this costs nothing to arrange.
-> 2. ***Leave this universe*** **carries the only delegate, and it must be declared on an
+> 1. ***Stay in this reality*** **carries no action at all** — `resolveTree = true` and
+>    nothing else. A delegate-free option is scribed as plain values (`text`, `resolveTree`,
+>    `disabled`, `disabledReason`, `clickSound`) and cannot fail this check. Staying *is*
+>    closing the dialog, so this costs nothing to arrange.
+> 2. ***Enter the new reality*** **carries the only delegate, and it must be declared on an
 >    allowed type.** The cheapest host is a `ThingComp` on the altar's `ThingDef` —
 >    `ThingComp` is on the array — so the lambda's outermost declaring type is
 >    `Archinity.CompAltarThreshold`, whose base chain reaches `ThingComp` and passes. Do
 >    **not** declare it on `Building_Altar` or on `CompFounderRecord`. The field-type rule
 >    applies on top: capture only the founder `Pawn` (an `ILoadReferenceable`) and
 >    primitives.
-> 3. ***Both*** **options set `resolveTree = true`** — **T-97**. An earlier draft gave it to
->    *Return* alone, on the reasoning that returning *is* closing the dialog while *Leave*
->    has work to do. That is backwards for the option that carries a delegate.
->    `Multiplayer.Client.WindowStackTryRemove` is the **only** path that removes a
->    `PersistentDialog` from `mapDialogs`, and it fires from `WindowStack.TryRemove` only when
->    `Multiplayer.InInterface` is false — which, inside the `[SyncMethod]`
->    `PersistentDialog.Click`, it is. What actually triggers that close is
+> 3. ***Both*** **options set `resolveTree = true`** — **T-97** — and the option with the
+>    delegate needs it most. `Multiplayer.Client.WindowStackTryRemove` is the **only** path
+>    that removes a `PersistentDialog` from `mapDialogs`, and it fires from
+>    `WindowStack.TryRemove` only when `Multiplayer.InInterface` is false — which, inside the
+>    `[SyncMethod]` `PersistentDialog.Click`, it is. What actually triggers that close is
 >    `Verse.DiaOption.Activate`'s `if (resolveTree) OwningDialog.Close();`, which runs
->    **before** `action()` [V], so the cleanup does not depend on the crossing succeeding.
->    **Without `resolveTree`, *Leave this universe* runs the crossing and strands its
->    `PersistentDialog`**, and `Multiplayer.Client.ForceShowDialogs` re-adds it on every
+>    **before** `action()` [V], so the cleanup does not depend on *Enter*'s action
+>    succeeding. **Without `resolveTree`, *Enter the new reality* runs its action and strands
+>    its `PersistentDialog`**, and `Multiplayer.Client.ForceShowDialogs` re-adds it on every
 >    `MapDrawer.DrawMapMesh` — re-offering an answered ending forever, and, because
 >    `ForceShowDialogs` only ever shows `mapDialogs.First()`, hiding every later dialog on
 >    that map behind it. Silent, with no log line on either client.
 
-On *Leave this universe* — and identically on each later altar entry by a transcended
-founder — from the synced tick:
+**What *Enter* calls.** The verified route is non-terminal. From the synced tick:
 
 ```csharp
-record.departureCount++;   // crossings performed; 0 meant "never crossed"
 ShipCountdown.InitiateCountdown("Archinity_TranscendenceCredits".Translate(...));
 ```
 
@@ -298,14 +275,15 @@ What that vanilla call actually does: fades to white over 7.2s, then
 `ShowCredits`'s `exitToMainMenu` parameter **defaults to `false`**, and
 `Screen_Credits.PostClose` only calls `GenScene.GoToMainMenu()` when it is true.
 Closing the credits sets `Find.TickManager.CurTimeSpeed = TimeSpeed.Normal` and
-**returns the player to the live colony.**
+**returns the player to the live colony.** The overload taking a string touches no ship and
+destroys nothing, `InitiateCountdown` resets `timeLeft` on every call, and two mods in the
+corpus already ship this exact pattern (VFE Deserters' flagship ending; RimPacts' strategy
+victory).
 
-**Vanilla's victory is already declinable and resumable.** Nothing about it is
-one-shot: the overload taking a string touches no ship and destroys nothing,
-`InitiateCountdown` resets `timeLeft` on every call, and two mods in the corpus
-already ship this exact pattern (VFE Deserters' flagship ending; RimPacts' strategy
-victory). The only thing we have to build is *the record that it happened*, which
-is `departureCount` on the comp.
+Whether *Enter* can instead end the game for both players under Multiplayer — credits that
+exit both clients to the main menu, or the `GameEnder` / `GenGameEnd` path — is
+[#182](https://github.com/cjd721/Rimworld-Archinity/issues/182). If no ending route proves safe, `ENDING.md`'s
+fallback frames the same scene as the founder staying until ready.
 
 ### 5. Where the player sees it
 
@@ -317,14 +295,15 @@ is `departureCount` on the comp.
 | Vanilla letters and tooltips generally | **[I], per surface.** Vanilla mixes `LabelShort`, `Name.ToStringShort` and `LabelCap`; only the `LabelCap` ones carry the epithet, and which is which has not been enumerated | none |
 | Health tab row, "Transcendent" | the `Archinity_FounderRecord` hediff, `CompLabelInBracketsExtra` | ~10 lines |
 | "X has not claimed a title" when the altar refuses | `Building_Altar.CanAcceptPawn` refusal string | ~5 lines |
-| The claim, the transcendence, the Administrator and the leave/return choice | letters + one `Dialog_NodeTree` with two `DiaOption`s | ~30 lines + XML |
-| The crossing | `Screen_Credits`, with our text above the credit roll | ~5 lines |
+| The claim, the transcendence, the Administrator and the enter-or-stay choice | letters + one `Dialog_NodeTree` with two `DiaOption`s | ~30 lines + XML |
+| *Enter the new reality* | `Screen_Credits`, with our text above the credit roll (the ending beyond the credits is [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182)) | ~5 lines |
 
 The claimed epithet and any Church title **coexist without contention**: nothing in
 `Pawn.LabelNoCount` reads `pawn.royalty`, and `RoyalTitleDef` titles render in the
 bio tab's own Titles section via `royalty.MainTitle()`. They occupy different
-surfaces. Whether the founder should *renounce* the Church title at Claim Yourself
-is a requirement — see *Outstanding decisions*.
+surfaces. Stripping the Church title at Claim Yourself is also possible: VFED's
+`JoinDeserters` strips Church titles ([`RELIGION.md`](RELIGION.md) § *The Schism — revealed, taking the Church's
+ground, allied for good* › *Route C — VFE Deserters as shipped*) [V]; the vanilla call it uses is [I].
 
 ### Cost
 
@@ -337,11 +316,11 @@ is a requirement — see *Outstanding decisions*.
 | `FounderRecord` static accessors (`For`, `HasClaimedSelf`, `Ensure`) | new C# | ~30 | same file |
 | `Dialog_ClaimSelf : Dialog_Rename<CompFounderRecord>` | new C# | ~25 | same file |
 | Claim gizmo on the founder | new C# | ~20 | `Archinity.Altar/Source/Patches.cs` |
-| `CanAcceptPawn` clause + post-transcendence entry branch | new C# | ~25 | `Archinity.Altar/Source/Building_Altar.cs` |
+| `CanAcceptPawn` clause (the claimed-title gate) | new C# | ~5 | `Archinity.Altar/Source/Building_Altar.cs` |
 | Rite completion: set `transcendedTick`, build the Administrator `Dialog_NodeTree`, `InitiateCountdown` | new C# | ~20 | `Archinity.Altar/Source/Building_Altar.cs` |
-| `CompAltarThreshold : ThingComp` — the allowed declaring type hosting the *Leave* option's action | new C# | ~15 | `Archinity.Altar/Source/Building_Altar.cs` |
+| `CompAltarThreshold : ThingComp` — the allowed declaring type hosting the *Enter* option's action | new C# | ~15 | `Archinity.Altar/Source/Building_Altar.cs` |
 
-**~205 lines of C# into the assembly we already ship, plus ~65 lines of XML. No
+**~185 lines of C# into the assembly we already ship, plus ~65 lines of XML. No
 new assembly of ours, and — on the recommended design — no reference to
 Multiplayer at all.**
 
@@ -376,9 +355,9 @@ deliberately client-local — with one exception, the Administrator's options.**
 | Our comp being serializable | MP registers `HediffComp` with `isImplicit: true` and identifies an instance as (parent `HediffWithComps`, `props.compClass` index). `CompSerialization.hediffCompTypes` is built from `AllSubclassesNonAbstractOrdered(typeof(HediffComp))`, so our class is in it. |
 | Entering the altar | `Multiplayer.Client.SyncDelegates`, `SyncMethod.Register(typeof(Building_Enterable), "SelectPawn")`; `Building_Altar` inherits it unmodified. |
 | The rite completing | `Building_Altar.Tick` — the synced tick, already the altar's home. |
-| The crossing | MP prefixes out `ShipCountdown.ShipCountdownUpdate` (the real-time path) and drives the countdown from `ConstantTicker.TickShipCountdown` instead, calling `CountdownEnded()` on every client from the synced tick. `CancelCancelCountdown` blocks cancellation during play. |
+| *Enter the new reality* (credits) | MP prefixes out `ShipCountdown.ShipCountdownUpdate` (the real-time path) and drives the countdown from `ConstantTicker.TickShipCountdown` instead, calling `CountdownEnded()` on every client from the synced tick. `CancelCancelCountdown` blocks cancellation during play. Ending the game beyond the credits under MP is [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182). |
 | The Administrator scene — **the dialog** | A `Dialog_NodeTree` opened from synced code becomes a map-scoped MP `PersistentDialog` and is replayed to every client. Free. |
-| The Administrator scene — **the two options** | **Not free.** `DelegateSerialization.IsDeclaringTypeAllowed` admits only 15 declaring types, and neither `Building_Altar` (`Building → Thing`) nor `HediffComp` is among them; a delegate declared on either throws `"Delegate deserialization: method not allowed"` on load. *Return* is built with **no action**; *Leave this universe* hosts its action on `CompAltarThreshold : ThingComp`, and `ThingComp` **is** on the list. Constraint and array recorded in [`docs/engine/determinism.md`](../engine/determinism.md) § *MP serialises the comms-console dialogue, options included* [V]; §4 above states the two rules. |
+| The Administrator scene — **the two options** | **Not free.** `DelegateSerialization.IsDeclaringTypeAllowed` admits only 15 declaring types, and neither `Building_Altar` (`Building → Thing`) nor `HediffComp` is among them; a delegate declared on either throws `"Delegate deserialization: method not allowed"` on load. *Stay in this reality* is built with **no action**; *Enter the new reality* hosts its action on `CompAltarThreshold : ThingComp`, and `ThingComp` **is** on the list. Constraint and array recorded in [`docs/engine/determinism.md`](../engine/determinism.md) § *MP serialises the comms-console dialogue, options included* [V]; §4 above states the rules. |
 | The credits themselves | `Screen_Credits` is pure UI; `MakeEndCredits` only reads shared state, so both clients build identical text. Its `CurTimeSpeed` write on close is inert — MP replaces `TickManager.TickManagerUpdate` wholesale and drives time by server vote. |
 
 **Divergence gate.** The claim dialog reads nothing that differs between machines:
@@ -402,10 +381,9 @@ anywhere it is relied on. **T-53.** Two precisions from the register entry: beca
 and MP's single read suppresses only the four speed-change hotkeys, since `TogglePause`
 is handled above the guard and still fires.
 
-**Owed to `docs/engine/`.** MP's blanket registration of every `IRenameable`
-`RenamableLabel` setter is a reusable engine fact, not a Transcendence fact, and belongs
-in `docs/engine/determinism.md`. **It is not there yet.** That entry is owed and is
-another agent's to write; this document cites it as absent rather than duplicating it.
+**The engine fact.** MP's blanket registration of every `IRenameable` `RenamableLabel`
+setter is [`docs/engine/determinism.md`](../engine/determinism.md) § *Every `IRenameable` label
+setter is a sync method*, and its trap is **T-52** (`docs/traps/multiplayer.md`).
 
 **If a future piece of this system needs a sync method we cannot get for free**,
 the route is `Multiplayer.API` — `0MultiplayerAPI.dll` ships inside the Multiplayer
@@ -423,12 +401,10 @@ the cost table.**
 |---|---|---|
 | Comp is unsynced (MP changed its registration, or `RenamableLabel` is declared on a base class rather than the comp) | Dev action *Dump IRenameable types* lists it under "Unsynced" | Register explicitly with `MP.RegisterSyncMethod` behind `MP.enabled` |
 | A `DiaOption` action is declared on `Building_Altar` or `CompFounderRecord` | **Loud, but late** — `"Delegate deserialization: method not allowed"`, thrown on *load*, not at click, so it survives a whole playtest that never reloads | Move the action onto `CompAltarThreshold : ThingComp`, or drop the action and make the option `resolveTree`-only. §4 |
-| *Leave this universe* built without `resolveTree = true` | **Silent — T-97.** The crossing runs, the dialog never closes inside the synced `Click`, so `WindowStackTryRemove` never fires and `ForceShowDialogs` re-offers the answered ending on every map draw — and hides every later `PersistentDialog` behind it, since only `mapDialogs.First()` is shown | §4 rule 3. `resolveTree = true` on **both** options, without exception |
+| *Enter the new reality* built without `resolveTree = true` | **Silent — T-97.** *Enter*'s action runs, the dialog never closes inside the synced `Click`, so `WindowStackTryRemove` never fires and `ForceShowDialogs` re-offers the answered ending on every map draw — and hides every later `PersistentDialog` behind it, since only `mapDialogs.First()` is shown | §4 rule 3. `resolveTree = true` on **both** options, without exception |
 | A player renames the founder with vanilla's rename window and wipes `story.title` | The label reverts to the backstory title | Nothing breaks: `claimedTitle` is authoritative and `titleClaimed` still gates the rite. Re-mirror on load, or leave it; both are correct |
 | The `comps` list on `Archinity_FounderRecord` is edited and the comp is dropped | **Silent.** Fields read as defaults on the next load and the founder appears never to have claimed anything | Prevention only: never edit that list. **T-34** |
 | `hediffClass` left at its default `Verse.Hediff` | Loud — `ConfigErrors`: "has comps but hediffClass is not HediffWithComps or subclass thereof". The store never initialises | Set `hediffClass: HediffWithComps`. §1 |
-| Departing founder is the **last free colonist** and the design later despawns them | `GameEnder.CheckOrUpdateGameOver` fires 400 ticks later with a `GameOverEveryoneDead` letter — a wrong and ugly ending | The recommended design does not despawn. If despawn is chosen, call `GameVictoryUtility.ShowCredits(text, song, exitToMainMenu: true)` in that case instead |
-| Credits shown, player closes them, campaign over but save still running | By design | `departureCount` records it; the altar re-offers the crossing indefinitely |
 | Both founders claim titles in the same tick | Two commands, server-ordered | Both apply; each founder's comp is a different target. No interaction |
 
 **No campaign softlock exists on this path.** Every gate reads a stored boolean,
@@ -458,7 +434,8 @@ alone:
 - Multiplayer's 15-type delegate allowlist as a **hard constraint** on `DiaOption` actions
   inside a `PersistentDialog`, recorded in `docs/engine/determinism.md`.
 - `ShipCountdown.InitiateCountdown(string)` → `GameVictoryUtility.ShowCredits(…,
-  exitToMainMenu: false)` as a non-terminal victory, and MP's synced ticking of it.
+  exitToMainMenu: false)` as a non-terminal victory, and MP's synced ticking of it. Ending
+  the game from *Enter* under Multiplayer is not verified: [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182).
 - `RoyalTitleDef.Awardable => favorCost > 0` — **confirmed at source**, closing the
   "corroborated, not verified" flag [#21](https://github.com/cjd721/Rimworld-Archinity/issues/21)
   left open.
@@ -466,8 +443,7 @@ alone:
 **Proposed, and [I] until compiled**: that `CompFounderRecord` composes these into
 the behaviour described. The mechanisms are each [V]; the composition is not.
 
-**Selected**: nothing yet. This is the design #50 returned; the commitment is
-Conrad's.
+**Selected**: nothing; selection is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 ---
 
@@ -592,7 +568,7 @@ solely on "no free colonists anywhere", never on a victory.
   allowed delegate host.)
 - **A custom `Window` with a text field.** Buys nothing over `Dialog_Rename<T>` and
   loses MP's automatic registration, the focus handling and the validation report.
-- **A custom `ChoiceLetter` for the leave/return offer.** MP registers letter
+- **A custom `ChoiceLetter` for the enter-or-stay choice.** MP registers letter
   options one type at a time (`SyncMethod.LambdaInGetter(typeof(ChoiceLetter_…),
   "Choices", n)`); a custom letter's options are **not** synced and would need
   explicit registration. The Administrator's `Dialog_NodeTree` carries the choice
@@ -600,8 +576,9 @@ solely on "no free colonists anywhere", never on a victory.
   cheaper constraint than per-option sync registration.
 - **`Pawn_RoyaltyTracker.SetTitle` for the epithet.** Confirmed unusable, as #21
   said: `SetTitle(Faction, RoyalTitleDef, bool, bool, bool)` takes a **def**. It
-  remains the right mechanism for the *tiers of godhood* (see `RELIGION.md` — on a
-  faction other than the Church), which is a different thing on a different surface.
+  remains the carrier if psychic ranks carry titles (`PSYCHIC.md` § *What raises psylink
+  rank besides the altar* › *Open questions*; on a faction other than the Church), which is
+  a different thing on a different surface.
 
 ---
 
@@ -643,12 +620,10 @@ solely on "no free colonists anywhere", never on a victory.
    `Dialog_NodeTree` appears on both clients with both options. **Save while the dialog is
    open and reload** — this is the only way the delegate allowlist is exercised, and a
    wrongly-hosted action throws `"Delegate deserialization: method not allowed"` here and
-   nowhere else. Then take *Leave this universe*: confirm both see the fade and the
-   credits, both return to the live colony on close, and the altar still offers the
-   crossing afterwards.
-4. **Save/load.** Claim, save, quit, reload; confirm the epithet, the flag and
-   `departureCount` all survive, and that loading a pre-feature save produces no
-   error and no claimed title.
+   nowhere else. Then take *Enter the new reality* and confirm both clients see the fade and
+   the credits; what follows the credits is #182's route.
+4. **Save/load.** Claim, save, quit, reload; confirm the epithet and the flag survive, and
+   that loading a pre-feature save produces no error and no claimed title.
 
 ---
 
@@ -656,33 +631,8 @@ solely on "no free colonists anywhere", never on a victory.
 
 | Question | Consequence | Owner |
 |---|---|---|
-| Is *Claim Yourself* **one-way**, or may the founder re-type the epithet later? | Decides whether the setter guards on `titleClaimed`. Mechanically trivial either way; narratively load-bearing. | unassigned † |
-| Maximum epithet length | `Dialog_Rename`'s constant is 28 and the real cap is **27**; `Pawn_StoryTracker` imposes none, and `Pawn.LabelNoCount` will render whatever it is given. Overflow risk is on the inspect pane and in letter text, not the colonist bar. | unassigned † |
-| Does the founder **renounce** the Church title at Claim Yourself, or keep both? | They coexist without contention mechanically. `ENDING.md` says only that the founder no longer *receives* a title, not that the old one is stripped. | unassigned † |
-| Does the departing founder **leave the map**, or is the crossing narrative only? | Recommended: narrative only, which avoids the last-colonist `GameEnder` edge and costs nothing. Despawn is ~10 more lines plus the `exitToMainMenu: true` guard. | unassigned † |
-| Do the credits replay in full on every crossing, or is the second one abbreviated? | Text-only; `InitiateCountdown` takes whatever string we pass and `departureCount` already distinguishes the cases. | unassigned † |
-| What the authored Transcendent gene is, and what return-after-death costs | Reserved in this store. **No vanilla donor is named here** — see the note below. | [#59](https://github.com/cjd721/Rimworld-Archinity/issues/59) point 3 |
-| Volunteer eligibility as a rite prerequisite | Reads `CompFounderRecord` for the *founder* side. Volunteer-side state needs its own home — see rule 1's scope caveat. | [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) |
-| **Founder psylink / channel progression** | `ALTAR.md` § *Saved state and remaining work* requires it tracked, in the same sentence that requires the claimed title. **This spec has no field for it and no design for it.** The comp is its natural home under rule 1. Capability answer: `PSYCHIC.md` ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162), [#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)), 2026-09-23. | **gap** — design stays with [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) / [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
-
-† **These five are unassigned on purpose.** An earlier draft routed all of them to
-[#49](https://github.com/cjd721/Rimworld-Archinity/issues/49). #49 exists and is open, but
-it is titled *The altar's choosing, and the anti-habituation gates*, it is `hitl` /
-`layer:requirements`, and `docs/requirements/ALTAR.md` § *Conversion and certainty* scopes
-it to "volunteer eligibility against the final rite, including volunteers sent by reverent
-factions". Epithet length, one-way-ness, renunciation, "does the founder leave the map" and
-credits replay are not obviously inside that scope, and nobody asked #49's owner. Each
-needs confirming with #49's owner or a requirements ticket of its own. **A deferral to a
-ticket that has not accepted the question is a gap, not a hand-off.**
-
-**On `Gene_Deathless`, and why it is not named as a donor.** An earlier draft called
-`GeneDefOf.Deathless` "the nearest vanilla donor" for return-after-death. It is not one,
-and it points the wrong way. `Verse.Gene_Deathless` holds only `lastSkillReductionTick` and
-re-checks state on removal; it grants no return after death. And per
-[#11](https://github.com/cjd721/Rimworld-Archinity/issues/11) and
-`docs/plot/NEOLITHIC.md` § *Neolithic III*, the founders are **already** deathless before
-the rite — brain destruction kills them permanently until the altar authors the
-Transcendent Archogene, after which death becomes temporary absence. Naming `Deathless`
-names the state they are leaving, not the state they are entering. Handed to
-[#59](https://github.com/cjd721/Rimworld-Archinity/issues/59) point 3 with **no donor
-suggested** [I].
+| *Claim Yourself*: one-way, or re-typeable later | Both are possible: the setter guards on `titleClaimed`, or it does not (§2). Mechanically trivial either way | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); capability answered here |
+| Maximum epithet length | `Dialog_Rename`'s constant is 28 and the real cap is **27**; `Pawn_StoryTracker` imposes none, and `Pawn.LabelNoCount` will render whatever it is given. Overflow risk is on the inspect pane and in letter text, not the colonist bar. | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
+| The Church title at *Claim Yourself* | Keeping both needs nothing — they coexist without contention (§5). Stripping is possible: VFED's `JoinDeserters` strips Church titles (`RELIGION.md` § *The Schism — revealed, taking the Church's ground, allied for good* › *Route C — VFE Deserters as shipped*) [V]; the vanilla call it uses is [I]. `ENDING.md` says only that the founder no longer *receives* a title | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); capability answered here |
+| Volunteer eligibility as a rite prerequisite | Reads `CompFounderRecord` for the *founder* side. Volunteer-side state needs its own home — see rule 1's scope caveat. | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) ([#49](https://github.com/cjd721/Rimworld-Archinity/issues/49) closed with the capability answered) |
+| **Founder psylink / channel progression** | `requirements/ALTAR.md` § *Saved state and remaining work* requires it tracked, in the same sentence that requires the claimed title. **This spec has no field for it.** Capability: `PSYCHIC.md` ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162), [#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)); the comp is its natural home under rule 1. | Design and any field here: [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) / [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |

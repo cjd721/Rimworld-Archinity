@@ -368,34 +368,29 @@ sentinel. WTL ships exactly this pattern for VFE Empire in
 `Settings.FactionsExcluded`, which reaches the same array through `ApplyExclusions`
 but is a **mod setting** — per-install, and therefore T-18.
 
-**The same mechanism is worse one type over.** `FactionDef` is the *only* def type
+**The genstep leg is a separate filter, and narrower.** `FactionDef` is the *only* def type
 that gets an `ApplyExclusions` pass at all;
 `Patch_MapGenerator.GenerateContentsIntoMap_Prefix` filters `GenStepDef` through the
 same `Levels` array and **rewrites the `ref` parameter**, with no exclusion escape
-hatch. An Archinity map genstep whose derived level sits above the world level
-therefore never runs, on any map, in silence. `ApplyOverrides` does cover
-`GenStepDef`, so the `TechLevelConfigDef` fix works there too — and unlike the
-faction leg, this one is recoverable once you find it, because it is re-evaluated per
-map rather than baked into the world.
+hatch. But no genstep has a derived level: `DefTechLevels.Initialize` runs
+`TechLevelDatabase<GenStepDef>.Initialize()` with no level function, so each is
+`Undefined` and passes at every world level unless a `TechLevelConfigDef` row (by name,
+glob or null `defName`) or `Settings.Overrides` raises it [V]. WTL's own rows name only
+vanilla gensteps, and no other mod in either root ships a `GenStepDef` row [V, sweep]. An
+Archinity genstep is therefore removed only if someone names it — the exposure is
+`Settings.Overrides` (T-18), not a default — and a named one never runs, on any map, in
+silence. `ApplyOverrides` covers `GenStepDef`, so the `TechLevelConfigDef` fix works there
+too, and unlike the faction leg this one is recoverable once you find it, because it is
+re-evaluated per map rather than baked into the world. What the genstep leg does and misses
+when it is on is **T-165**.
 
-Both patches sit in `[PatchGroup("Filters")]` behind
-`[HarmonyPrepare] IsFilterEnabled() => WorldTechLevel.Settings.Filter_Factions`, so
-this is a T-18 surface as well: two clients with different settings build different
-rosters.
-
-> **Correction — 2026-09-23, [#153](https://github.com/cjd721/Rimworld-Archinity/issues/153).**
-> Only the faction leg is behind `Filter_Factions`. `Patch_MapGenerator` has its own
-> `[HarmonyPrepare] IsFilterEnabled() => WorldTechLevel.Settings.Filter_GenSteps` — the
-> toggle the settings UI labels **"Ancient debris"**, which #7 § 5 froze **off** — so while
-> that toggle is off the genstep leg does not exist and every `GenStepDef` row is inert [V].
-> What the genstep leg does and misses when it is on is **T-165**.
-> **And the leg is narrower than stated above.** `DefTechLevels.Initialize` runs
-> `TechLevelDatabase<GenStepDef>.Initialize()` with no level function, so no genstep has a
-> "derived level": each is `Undefined` and passes at every world level unless a
-> `TechLevelConfigDef` row (by name, glob or null `defName`) or `Settings.Overrides` raises it [V].
-> WTL's own rows name only vanilla gensteps, and no other mod in either root ships a `GenStepDef`
-> row [V, sweep]. An Archinity genstep is therefore removed only if someone names it — the
-> exposure is `Settings.Overrides` (T-18), not a default.
+**Each leg has its own toggle.** Both patches sit in `[PatchGroup("Filters")]`, each behind
+its own `[HarmonyPrepare] IsFilterEnabled()`: the faction leg reads
+`WorldTechLevel.Settings.Filter_Factions`; `Patch_MapGenerator` reads
+`WorldTechLevel.Settings.Filter_GenSteps`, the toggle the settings UI labels **"Ancient
+debris"**, which #7 § 5 froze **off** — so while that toggle is off the genstep leg does not
+exist and every `GenStepDef` row is inert [V]. So each leg is a T-18 surface as well: on
+the faction leg, two clients with different settings build different rosters.
 
 Treat the faction leg as effectively permanent. `Window_AddFactions.OpenIfAnyAvailable`
 is a real post-worldgen addition path that WTL itself drives from the world faction
@@ -411,8 +406,9 @@ world, and the only way back is a post-hoc addition that carries no history.
 `WorldTechLevel.TechLevelConfigDef`, `WorldTechLevel.Window_AddFactions`
 (`3414187030`, `1.6/Lunar/Components/WorldTechLevel.dll`);
 `RimWorld.FactionGenerator.ConfigurableFactions`,
-`Page_CreateWorldParams.ResetFactionCounts`. T-07, T-18.
-[#70](https://github.com/cjd721/Rimworld-Archinity/issues/70). 1.6.4871.*
+`Page_CreateWorldParams.ResetFactionCounts`. T-07, T-18, T-165.
+[#70](https://github.com/cjd721/Rimworld-Archinity/issues/70),
+[#153](https://github.com/cjd721/Rimworld-Archinity/issues/153). 1.6.4871.*
 
 ### T-68 — `SetFactionDirect` leaves a seized turret mis-indexed in the attack-target cache
 
@@ -1228,7 +1224,7 @@ these holds: `giverFaction == null`, `asker.royalty == null`,
 def.HasRoyalTitles`) never gets a vote.
 
 So a Church (Empire) quest whose asker is untitled offers **no Exaltation option**. It gets
-goodwill and items instead, with no message. `docs/specs/RELIGION.md` §4 stated only the
+goodwill and items instead, with no message. `docs/specs/RELIGION.md` § *The build — Exaltation* › *4. Exaltation, and the rite* stated only the
 generator's gate. Royalty's scripts ask for a titled asker with
 `QuestNode_GetPawn.mustHaveRoyalTitleInCurrentFaction`, for example in `Scripts_Utility.xml`,
 `Scripts_RewardRaid.xml` and `Script_PawnLend.xml`. A hand-built Church deed must do
@@ -1276,7 +1272,10 @@ So a storyteller that adds `storytellerThreat` for any of its **other** fields
 `raidWarningRange`) also pins every faction's natural goodwill to 0. That discards every
 `GoodwillSituationWorker.GetNaturalGoodwillOffset` term the vanilla sum would have produced:
 `NaturalEnemy`'s −130, `SameIdeo`, every Ideology meme situation, and any worker of ours,
-including the Church suspicion offset (`docs/specs/RELIGION.md` § *The build — Exaltation* §6).
+including the Schism alliance's H2 offset and route D of *Reverence scales the Goodwill a
+faction gains* (`docs/specs/RELIGION.md` § *The Schism — revealed, taking the Church's ground,
+allied for good*; § *Reverence scales the Goodwill a faction gains* › *D — Reverence as natural
+goodwill (partial)*).
 
 Every reader goes through the patched getter:
 

@@ -2,11 +2,6 @@
 
 ## Purpose and scope
 
-> **Boundary correction — 2026-09-13.** Charting never builds, upgrades, finances or
-> times roads. Those behaviors belong to world infrastructure. The reach-rung registry
-> may consume completed mobility state if cross-spec integration later selects that
-> relationship, but it is not a road-system contract and does not determine road tiers.
-
 How the discovery system in [`docs/requirements/CHARTING.md`](../requirements/CHARTING.md)
 will be built: the apparatus, the two work accumulators, search-band placement, spine
 ordering, travel- and tenure-based discovery, the inspectable lore inside the sites it places,
@@ -17,11 +12,15 @@ the player may see or refuse is requirements and stays there.
 [Currencies](CURRENCIES.md) owns the Intel that reading site lore pays out; §10 supplies the
 object that calls `Credit` and does not duplicate the store.
 [Quests](../requirements/QUESTS.md) owns quest presentation and the parent/sub-quest
-relationship; [the Chronicle's authoring mechanism](https://github.com/cjd721/Rimworld-Archinity/issues/40)
-owns which def carries an individual beat and the parent quest's root node;
-[the political and campaign UI surfaces](https://github.com/cjd721/Rimworld-Archinity/issues/61)
-owns whether the player sees Charting progress, given that this document establishes they
-*can*.
+relationship. Which def carries an individual beat and the parent quest's root node are
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s (answered at route depth here,
+[#40](https://github.com/cjd721/Rimworld-Archinity/issues/40)). Whether the player sees Charting
+progress, given that this document establishes they *can*, is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s (routes verified on
+[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)).
+
+Charting never builds, upgrades, finances or times roads (world infrastructure). A mobility
+reach rung is optional; see § 4 *The rung registry*.
 
 ## The build
 
@@ -190,7 +189,8 @@ Four overrides:
 - `CanGenerateSubquest` — widened to count **per beat**. The base's `maxActiveSubquests` is a
   single global count, and leaving it global is a quiet stall; see *Failure and recovery*.
 
-**[#40](https://github.com/cjd721/Rimworld-Archinity/issues/40) owns the parent quest** — a
+**[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) owns the parent quest**
+(answered at route depth here, [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40)) — a
 `QuestScriptDef` with `isRootSpecial`, `autoAccept` and no `expireDaysRange`, plus the
 bespoke `QuestNode_Root_*` (~25 lines) that instantiates our part.
 `docs/engine/quests.md` establishes that `QuestPart_SubquestGenerator` has no generic
@@ -230,14 +230,11 @@ Writing it from `InitSlate()` imposes the band on **every** beat script whether 
 script knows bands exist. A beat wanting a narrower band declares one on its
 `ChartingBeatDef` and we intersect.
 
-Two further facts, one of which was previously stated too strongly:
+Two further facts:
 
 - **[V] The draw inside the band is uniform on the path our sites actually take, and the
-  requirements' weighting wish is therefore UNMET.** An earlier draft claimed
-  `TileFinderMode.Near` weights the band by
-  `1f - (traversalDistance - minDist) / ((maxDist - minDist) + 0.01f)` and that
-  *"weighting the draw within a band is desirable, not required"* was satisfied by a `bool`.
-  **That weight exists only in `TileFinder.TryFindPassableTileWithTraversalDistance` and
+  requirements' weighting wish is therefore UNMET.** `TileFinderMode.Near`'s weight,
+  `1f - (traversalDistance - minDist) / ((maxDist - minDist) + 0.01f)`, **exists only in `TileFinder.TryFindPassableTileWithTraversalDistance` and
   `TileFinder.TryFindTileWithDistance`.** `TryFindNewSiteTile`'s **primary** path is
   `layer.FastTileFinder.Query(query, null, allowedLandmarks)`, an optional `validator` sweep,
   then `tile = list.RandomElement()` — **uniform over every tile in the band**. The
@@ -245,7 +242,7 @@ Two further facts, one of which was previously stated too strongly:
   `TryFillFindTile`, which runs solely on the `list.Empty()` fallback. So a band that has any
   valid tiles at all is drawn from flat, and `tileFinderMode` is dead weight there.
   **Consequence:** the requirements' *"weighting the draw within a band is desirable, not
-  required"* stands **re-opened as unmet**, not satisfied. It is still optional by its own
+  required"* is **unmet**, not satisfied by a `bool`. It is still optional by its own
   wording, and buying it costs a `validator` predicate biased by distance or a bespoke draw
   over the returned list — not a `bool`. **[I]** on the cost, **[V]** on the mechanism.
 - **[V]** Content can narrow the band itself: `clampRangeBySiteParts` walks `sitePartDefs`
@@ -280,14 +277,15 @@ band's code does not change.** That is this document's contract with
 integers and a condition**, and neither needs to know the band exists.
 `docs/specs/WORLD-INFRASTRUCTURE.md` § *Charting reach rungs — offered, not selected* offers
 per-tier `ReachRungExtension` rung shapes against it rather than a `float` factor of its own;
-whether any of them ships is [#118](https://github.com/cjd721/Rimworld-Archinity/issues/118)'s.
+whether any of them ships is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s
+route selection.
 
 > **What roads can actually carry today.** Road **presence** is a real signal and worth a
 > rung: a road edge costs `0.5` against `1f` off-road, a flat 2× on travel time. Road
 > **tier** carries no information at all — **T-42**: all five vanilla `RoadDef`s ship
 > `movementCostMultiplier 0.5`, so upgrading a road is a silent no-op and a per-tier rung
 > ladder would be describing a difference the engine does not make. WORLD-INFRASTRUCTURE offers
-> the rung shapes and #118 decides whether any ships; until T-42 is addressed, expect one
+> the rung shapes and #119's route selection decides whether any ships; until T-42 is addressed, expect one
 > presence rung rather than a ladder.
 
 Precedents: **[V]** `RimWorld.SitePartDef.ExtraGenSteps` is vanilla's "scan `DefDatabase<X>`
@@ -356,8 +354,15 @@ this half only.
 > folded in. Two clients whose Outposts `TimeMultiplier` differs schedule tenure finds at
 > different intervals, and neither the setting nor the resulting cadence surfaces anywhere the
 > player would look. This is the one place the travel/tenure half is not simply *"on the synced
-> tick, therefore fine"*, and it is inherited rather than ours: `Outpost_Charting.Produce()`
-> cannot fix it, only avoid depending on the interval's exact value.
+> tick, therefore fine"*, and it is inherited rather than ours. It is closed by
+> [`TERRITORY.md`](TERRITORY.md) § 2c's harness (B2–B4), which forces the multipliers to `1f`.
+>
+> Tenure also requires [`TERRITORY.md`](TERRITORY.md) § *An outpost that consumes its pawns and
+> runs on its own* ([#179](https://github.com/cjd721/Rimworld-Archinity/issues/179)): an unstaffed
+> outpost is otherwise deleted.
+
+**Natural finds are placed next to the finder, not banded from home** — § *Natural discovery*,
+Routes A and E.
 
 **It feeds the survey pool, and there is no case for the return pool.** The return pool's
 contents are selected against a cursor and a declared band; a caravan has neither. Routing
@@ -383,7 +388,7 @@ both supported; each beat chooses"* lands for a non-quest find.**
 | Per-tile colony presence | `WorldComponent_Charting`, `Dictionary<PlanetTile,int>` | Nothing shipped carries it |
 | Caravan's last tile + cooldown | `Comp_ChartingPresence.PostExposeData` | The one place Faction Territories got wrong |
 | Waystone presence | `WorldComponent_Charting`, `bool` | Requirements: colony-level, not a hauled item |
-| **Lore records already read** | `WorldComponent_Charting`, `HashSet<string>` of `loreKey` | **World-scoped, not per-`Thing`** — a re-entered site regenerates its map and its murals; see §10 |
+| **Lore records already read** | `WorldComponent_Charting`, `HashSet<string>` of `loreKey` | **World-scoped, not per-`Thing`** — a failed quest or an M2 site can present the record again; see §10 |
 | Current reach | **Nowhere — derived**, cached `[Unsaved]` | A stored band is how a stale band strands a beat |
 
 ### 7. What changes it
@@ -460,7 +465,7 @@ Three further surfaces, all required and all cheap:
   band is the same call twice, ~25 lines.
 
 **Whether the player should see any of it is
-[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s call.** This document
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (routes verified on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61))'s call.** This document
 establishes only that all of it is expressible, cheaply, at the fidelity the requirements
 want.
 
@@ -477,33 +482,32 @@ want.
 | `WorldComponent_Charting` | new C# | ~60 | same |
 | `Comp_ChartingPresence` + properties (travel) | new C# | ~35 | same |
 | `Outpost_Charting` (tenure) | new C# | ~25 | same |
-| Two-ring band display | new C# | ~25 | optional, #61's call |
-| `QuestNode_Root_Chronicle` (the parent quest) | new C# | ~25 | **#40** |
+| Two-ring band display | new C# | ~25 | optional, #119 (routes verified on #61) |
+| `QuestNode_Root_Chronicle` (the parent quest) | new C# | ~25 | **#119** (answered at route depth here, #40) |
 | 3 apparatus `ThingDef`s + 3 `WorkGiverDef`s + 3 `ResearchProjectDef`s | XML | ~180 | new def files |
 | `ReachRungExtension` per mobility rung | XML | ~6 each | defs that already exist |
 | Caravan `<comps>` patch (Rim War's idiom) | XML patch | ~15 | new patch file |
 | Survey-pool opt-in per existing quest | XML patch | 1 op each | new patch file |
-| `ChartingBeatDef`s + beat `QuestScriptDef`s | XML | per beat | authoring, #40 |
+| `ChartingBeatDef`s + beat `QuestScriptDef`s | XML | per beat | authoring, #119 (answered at route depth here, #40) |
 
 **[I] ~505 lines of C# in the one assembly we already ship, and zero Harmony patches.** The
-table sums to that, and the arithmetic is worth stating because the previous headline of
-~485 did not match it:
+table sums to that:
 
 | Slice | Lines | Rows |
 |---|---|---|
 | Core mechanism — apparatus, spine, beats, reach, survey, Waystone readout | **385** | the first six new-C# rows |
 | Travel and tenure — `WorldComponent_Charting` + presence comp + outpost | **120** | the deferrable half |
 | **Subtotal, this build** | **505** | |
-| Two-ring band display | +25 | optional, #61's call |
-| `QuestNode_Root_Chronicle` | +25 | **not ours** — #40 |
+| Two-ring band display | +25 | optional, #119 (routes verified on #61) |
+| `QuestNode_Root_Chronicle` | +25 | **not ours** — #119 (answered at route depth here, #40) |
 
 **§10 adds ~50 to the committed figure, taking it to ~555.** Its rows are tabled in that
 section rather than folded in here, because the lore verb is separable from the discovery
 engine — it is what a site *contains*, not how a site is *found* — and a reader pricing the
 engine alone should be able to stop at this table.
 
-So: **~505 committed, ~530 with the ring, ~555 counting #40's root node**, of which ~120 is
-the travel/outpost half that could be deferred. Every figure is an estimate **[I]**; the
+So: **~505 committed; +~50 lore (§ 10) = ~555; the ring (+25) and the root node (+25, #119)
+are optional extras.** Of the ~505, ~120 is the travel/outpost half that could be deferred. Every figure is an estimate **[I]**; the
 mechanisms they price are **[V]**.
 
 **The three apparatus tiers cost no C# at all.** **[V]** `WorkGiverDef.scannerDef` is a plain
@@ -547,19 +551,15 @@ build never designates anything, because the base class's own leak is what it cl
 `base.Study(pawn)` for the `buildingLeft` swap and the sound.
 
 **State, and why it is world-scoped rather than per-`Thing`.** The requirement is *"a
-re-visited site does not pay twice."* A scribed `bool` on the building does not deliver that:
-a site whose map has been abandoned is **regenerated** on re-entry, and the mural that comes
-back is a new `Thing` with a fresh `false`. The one-shot therefore lives in
+re-visited site does not pay twice."* A scribed `bool` on the building does not deliver that.
+A quest site is destroyed when left (`Site.ShouldRemoveMapNow` sets `alsoRemoveWorldObject` and
+`CheckRemoveMapNow` destroys it [V]; `ORBIT.md` § *A stronghold a quest generates → Map
+lifetime*); a standing settlement or an M2 site regenerates on re-entry, and a failed quest can
+generate the same content again — each time as a new `Thing` with a fresh `false`
+([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)). The one-shot therefore lives in
 `WorldComponent_Charting` as `HashSet<string> readLore`, keyed on `loreKey` — the component
 §6 already establishes, and the same component the Waystone `bool` sits in. `<buildingLeft>`
 handles *"this mural, in this map, is now read"* for free and needs no state at all.
-
-> **Correction, 2026-09-23 ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)):**
-> a vanilla quest site the player leaves is **destroyed**, not regenerated.
-> `Site.ShouldRemoveMapNow` sets `alsoRemoveWorldObject` and `CheckRemoveMapNow` destroys it [V].
-> Re-entry regenerates only a `Settlement`, or a site kept by a `SitePartWorker_AncientAltar`-type
-> part. The world-scoped `readLore` key still stands, because a failed quest can generate the same
-> content again. See `ORBIT.md` § *A stronghold a quest generates → Map lifetime*.
 
 **Persistence.** `Scribe_Collections.Look(ref readLore, "readLore", LookMode.Value)` —
 **strings, not `LookMode.Def`**, per the T-04 note in *Persistence and multiplayer*. Added to a
@@ -592,14 +592,14 @@ only from `CompUsable` / `JobDriver_UseItem` and is never reached from
 `StudiableBuilding.Study` **[V]**. This section supplies the studiable object; it does not
 duplicate the store.
 
-**Display — and `StudiableBuilding` supplies none of it.** An earlier draft counted the
-pulsing overlay as a free "unread" marker. It is not one: `StudiableBuilding.DrawAt` draws
+**Display — and `StudiableBuilding` supplies none of it.** The pulsing overlay is not an
+"unread" marker: `StudiableBuilding.DrawAt` draws
 the `<overlayTexture>` `MetaOverlay` **only while the thing sits in `studiables_InMap`**
 **[V]**, which is a *designated-for-study* marker — the player sees it only after acting on
 an object they have already noticed, and never before. **The Display leg therefore stands on
 the two surfaces that are ours anyway**, the archived letter and the read-variant
 `<description>`; both persist, and neither depends on the overlay. A genuine unread marker,
-if #61 wants one, is a `DrawAt` override on `LoreRecord` keyed on `readLore` rather than on
+if #119 selects one (routes verified on #61), is a `DrawAt` override on `LoreRecord` keyed on `readLore` rather than on
 the designated set — ~10 lines **[I]**, optional, and not in the committed figure below.
 
 - **The passage itself — an archived letter.** `Find.LetterStack.ReceiveLetter(label, text,
@@ -610,8 +610,9 @@ the designated set — ~10 lines **[I]**, optional, and not in the committed fig
   tick, so both clients receive it identically and it needs no `[SyncMethod]`.
   > This is not the mandatory-letter exposition the requirements exclude. That doctrine
   > constrains *"the mandatory research/completion messages"*; this letter exists only because
-  > a player ordered a pawn to go and read something. **Which surface carries the passage is
-  > nonetheless a requirements question, not a capability one** — see *Outstanding decisions*.
+  > a player ordered a pawn to go and read something. **A lore record can always be read
+  > again (requirement); which surface carries the passage is a route, chosen on #119** — see
+  > *Outstanding decisions*.
 - **The permanent in-world record — `<buildingLeft>`, zero code.** The spent mural is replaced
   by a "read" `ThingDef` whose `<description>` carries the lore and renders in the inspect pane
   and the info card. **[V]** VQE Ancients ships exactly this idiom:
@@ -626,7 +627,7 @@ the designated set — ~10 lines **[I]**, optional, and not in the committed fig
 
 Optionally, and cheaply: `readLore.Count` against the count of `loreKey`s declared in the
 `DefDatabase` is an "N of M records recovered" line for whatever surface
-[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) settles on. ~5 lines. It reads
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (routes verified on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)) selects. ~5 lines. It reads
 only defs and a scribed set, so unlike the Waystone readout it is safe from client-local code
 (**T-39** does not apply — no `CanRun` on this path).
 
@@ -638,17 +639,16 @@ only defs and a scribed set, so unlike the Waystone readout it is safe from clie
 | `GetGizmos` override dropping VEF's designation gizmo (see *Persistence and multiplayer*) | new C# | ~5 | same |
 | `readLore` set on `WorldComponent_Charting` | new C# | ~5 | **counted in §9's `WorldComponent_Charting` row, not added again here** |
 | Per record: the `ThingDef`, its read variant, the extension block | XML | ~35 each | authoring, [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
-| An unread-before-designation marker (`DrawAt` override) | new C# | +10 | optional, #61's call |
-| "N of M records recovered" | new C# | +5 | optional, #61's call |
+| An unread-before-designation marker (`DrawAt` override) | new C# | +10 | optional, #119 (routes verified on #61) |
+| "N of M records recovered" | new C# | +5 | optional, #119 (routes verified on #61) |
 
 **~50 lines of new C# on the committed route — the first two rows — taking this document's
 committed total from ~505 to ~555. [I]** on the estimate; the mechanisms are **[V]**. The
-previous headline of ~55 / ~560 double-counted the `readLore` row, which is marked as living
-inside §9's `WorldComponent_Charting` row and must not also be added to this one. Neither
-optional row is in the ~555.
+`readLore` row lives inside §9's `WorldComponent_Charting` row and is not added again here.
+Neither optional row is in the ~555.
 
-**If VEF leaves in [#15](https://github.com/cjd721/Rimworld-Archinity/issues/15), the
-replacement is ~120 lines and is understood.** What would have to be rewritten is
+**VEF is retained ([#15](https://github.com/cjd721/Rimworld-Archinity/issues/15)); were it ever
+vendored away, the replacement is ~120 lines and is understood.** What would have to be rewritten is
 `JobDriver_StudyBuilding` (~50), `WorkGiver_StudyBuilding` (~40) and the map component that
 holds the designated set (~30) — all five types were read for this section and none of them is
 subtle. The `Study` override, the extension, the world-scoped key and every display surface
@@ -739,8 +739,7 @@ precedent, overriding `Tick`, `GetInspectString` and `ExposeData`.
 
 A `Book` def in a `LootableBuilding`'s `<contents>` list is therefore an authored record that
 is looted (with the signal), hauled home, read for research or Intel, and kept — **but not at
-zero C#.** An earlier draft priced the item itself at nothing; the private fields make it
-**~20 lines [I]**: a `Book` subclass whose `GenerateBook` override stops the grammar pass,
+zero C#.** The private fields make it **~20 lines [I]**: a `Book` subclass whose `GenerateBook` override stops the grammar pass,
 plus a reflected write of `title` and `description` from a `DefModExtension`. Once written,
 persistence is free — both fields are scribed per instance **[V]**. **That ~20 is not in this
 document's committed ~555**: this half is flagged, not designed. What those records say is
@@ -776,8 +775,7 @@ from reading rather than from decoding is [`CURRENCIES.md`](CURRENCIES.md)'s *Cr
 
 ## Persistence and multiplayer
 
-**The return pool's entire state is derived**, which is the single biggest difference between
-this build and the one this document previously anticipated. There is no cursor to scribe, no
+**The return pool's entire state is derived.** There is no cursor to scribe, no
 resolved-beat set to migrate, and no version skew to handle.
 
 What is scribed: the comp's accumulators (`CompScanner.PostExposeData`'s three
@@ -841,8 +839,7 @@ UTF-16 string literal in 1.6's `Multiplayer_Compat.dll` and `Multiplayer_Compat_
 was extracted byte-exactly, in **both** encodings, from the **md5-identical** copies under both
 corpus roots: **65 distinct `VEF.*` names are present — 11 of them `VEF.Buildings.*`** — while
 `StudiableBuilding`, `LootableBuilding`, `AddStudiablesToMap` and
-`MapComponent_InteractableBuildingsInMap` are all **absent**. (An earlier draft said
-"forty-odd", which understated the control set and therefore the strength of the negative.)
+`MapComponent_InteractableBuildingsInMap` are all **absent**.
 Unsynced, one client designates a mural and the other's colonists never see it, and the
 divergence is in the save.
 
@@ -961,20 +958,8 @@ against `Assembly-CSharp.dll` (1.6.4871), `Multiplayer.dll`, `VanillaGravshipExp
 `Multiplayer_Compat{,_Referenced}.dll`, decompiled with `ilspycmd` 8.2.0 at the versions
 pinned in `docs/data/MOD-SNAPSHOT.md`, plus the shipped XML under `common/RimWorld/Data/`.
 
-What changed relative to this document's previous draft:
-
-- The scanner grammar is **confirmed in all six links** and should not be re-checked.
-- The payload selector is **an abstract method**, not something to be worked around.
-- The spine cursor is **derived, not stored** — the `WorldComponent` that was going to hold
-  it is not needed for that purpose.
-- **Neither named fallback is needed.** Two accumulators and a hard band filter are both
-  expressible. Whether the requirements document retires the fallbacks is its call, not
-  this document's.
-- Vanilla's inspect string **shows an estimate the requirements forbid** and must be
-  overridden rather than adopted.
-- **The band is filtered but not weighted** on the path our sites take. Corrected in §4
-  against an earlier draft that claimed otherwise; the requirements' optional weighting wish
-  is unmet, not satisfied.
+Vanilla's inspect string **shows an estimate the requirements forbid** and must be
+overridden rather than adopted.
 
 §10 was added on [#80](https://github.com/cjd721/Rimworld-Archinity/issues/80), evidence class
 **READ**, against `VEF.dll`, `VanillaQuestsExpandedAncients.dll`, `VanillaBooksExpanded.dll`,
@@ -1079,9 +1064,9 @@ nothing for discovery.
 It is a one-client check. The two-client Multiplayer test belongs to
 [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16), the standing regime.
 
-**Settled by reading, no longer a RUN: that a `CompScanner` subclass binds its
-`WorkGiverDef`.** An earlier draft carried this as a second RUN because the failure mode
-(*"the pawn never comes"*) is silent. It is not a risk, on three counts, all **[V]**:
+**Settled by reading: that a `CompScanner` subclass binds its `WorkGiverDef`.** The failure
+mode (*"the pawn never comes"*) would be silent, but it is not a risk, on three counts, all
+**[V]**:
 
 - `Verse.ThingWithComps.GetComp<T>()` misses in `compsByType.TryGetValue(typeof(T))` for a
   subclass, but only *returns* on that miss when `typeof(T).IsSealedWithCache()`; otherwise it
@@ -1096,52 +1081,34 @@ It is a one-client check. The two-client Multiplayer test belongs to
 ## Outstanding decisions
 
 - **Whether the player sees Charting progress, and on which surfaces** —
-  [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61). This document establishes
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (routes verified on
+  [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)). This document establishes
   that all of it is expressible cheaply; the choice is not ours.
 - **Which def carries a beat, and the parent quest's root node** —
-  [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40).
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (answered at route depth
+  here, [#40](https://github.com/cjd721/Rimworld-Archinity/issues/40)).
 - **The reach-rung table's numbers** — which minTiles/maxTiles each rung reaches, and where
-  the rungs sit relative to travel time. Parameters, not mechanism, and they sit in the
-  **balance deferral** on [map #2](https://github.com/cjd721/Rimworld-Archinity/issues/2)
-  — *"costs, durations, threat magnitudes and progression rates. Last, after the structure is
-  concrete."* Shared with `docs/specs/WORLD-INFRASTRUCTURE.md` and with roads (#68); the
+  the rungs sit relative to travel time. Parameters, not mechanism: balance,
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). Shared with `docs/specs/WORLD-INFRASTRUCTURE.md` and with roads (#68); the
   mechanism does not wait on them.
 - **The apparatus ladder's numbers** — `scanFindMtbDays`, `scanFindGuaranteedDays` and
   `maxAcceptedBand` per tier. `docs/progression/` is where they belong and is currently empty
   — the same gap [#87](https://github.com/cjd721/Rimworld-Archinity/issues/87) found.
-- **Whether the draw inside a band should be distance-weighted at all.** Re-opened by §4's
-  correction: the requirements call it *desirable, not required*, and the engine does not
-  supply it on our path. Nobody owns the answer; it is a gap, and a small one.
-- **The rules for travel and tenure discovery** — probability per tile entered, per tenure
-  cycle, whether re-entering a known tile re-rolls, whether travel discovery is band-limited
-  at all. **These are requirements, and this is a gap with no owner.**
-  [#39](https://github.com/cjd721/Rimworld-Archinity/issues/39) is closed and **its successor
-  does not exist** — no ticket has been opened for these rules. Saying "a successor ticket
-  owns it" would be a hand-off to nothing; it is flagged here rather than invented, and the
-  mechanism half is built and waiting for numbers.
-- **Where a lore passage actually appears to the player, and whether reading one is worth
-  Intel at all.** `docs/requirements/GLITTERTECH.md` says the player *"can inspect if
-  interested"* and that investigation *"can provide Intel progress/bonuses"*, and never says
-  which surface carries the text or what the bonus is. §10 builds the archived letter plus the
-  read-variant description because something must be chosen and those two are the surfaces that
-  persist; the choice is a requirement and the amount is a balance number.
-  **This is a gap with no owner.** [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)
-  is open and authors *what the lore says*; the currency is
-  [`CURRENCIES.md`](CURRENCIES.md)'s, its ticket
-  [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) being **closed**. Neither
-  owns the surface — which is the same shape of hole
-  [#52](https://github.com/cjd721/Rimworld-Archinity/issues/52) fell into, so it is written down
-  here rather than deferred to a ticket that does not exist. The mechanism does not wait on it.
-- **Whether a lore record may be read more than once for no further reward, or should become
-  inert.** §10 assumes the former — the passage stays readable, the payment does not repeat —
-  because *"the richer history remains in the places being raided"* reads as a standing
-  invitation rather than a consumable. A requirement, one line, currently unwritten.
-- **Whether map generation must be cross-client identical.** Nothing in `docs/requirements/`
-  states it, [#88](https://github.com/cjd721/Rimworld-Archinity/issues/88) named the hole, and
-  it is now owned by
-  [#104 — must both clients generate the same map](https://github.com/cjd721/Rimworld-Archinity/issues/104).
-  Load-bearing for every Charting site, and the reason the T-33 authoring lever in
-  *Persistence and multiplayer* is worth taking regardless of how #104 lands.
+- **Whether the draw inside a band should be distance-weighted at all.** Per §4, the
+  requirements call it *desirable, not required*, and the engine does not
+  supply it on our path. Capability: a `validator` biased by distance, or a bespoke draw (§ 4).
+- **Where a lore passage appears to the player.** Settled by requirement: records are always
+  re-readable (`docs/requirements/GLITTERTECH.md`). Capability: § 10 (the archived letter, the
+  read-variant description, a carried book). Choice:
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). What the lore says is
+  [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)'s; the currency is
+  [`CURRENCIES.md`](CURRENCIES.md)'s.
+- **Whether a second read pays again, and how much Intel reading pays.** Balance,
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). § 10's world-scoped
+  `readLore` key keeps the passage readable and pays once.
+- **Cross-client map generation is an engineering trap, not a requirement**
+  ([#104](https://github.com/cjd721/Rimworld-Archinity/issues/104)): T-120, T-33. The T-33
+  authoring lever in *Persistence and multiplayer* stands.
 - **The mundane table** — a Waystone-less apparatus feeding only the survey pool. Open in the
   requirements document; mechanically it is one more `ThingDef` + `WorkGiverDef` with
   `maxAcceptedBand` set and the return pool disabled, so capability does not constrain the
@@ -1157,14 +1124,8 @@ Added by [#146](https://github.com/cjd721/Rimworld-Archinity/issues/146), from
 defs and decompiled 1.6 assemblies; no STUB, no RUN.
 
 This section follows the routes shape in [`docs/specs/README.md`](README.md)
-§ *Lead with the answer*. It **supersedes §4's premise for natural finds only**: a find
-placed next to a caravan is not placed by the quest tile node, and is not measured from
-home. §4 continues to govern apparatus finds, which are.
-
-It also **closes one bullet in *Outstanding decisions*** above: that bullet says #39's
-successor does not exist. It does now — the rules for travel and tenure discovery are
-[#126](https://github.com/cjd721/Rimworld-Archinity/issues/126)'s, and the mechanism half is
-this section.
+§ *Lead with the answer*. § 4 governs apparatus finds only; natural finds are measured from
+the finder, not placed by the quest tile node from home.
 
 ### Verdict
 
@@ -1183,7 +1144,7 @@ this section.
 | **A** | Every tile a player caravan actually enters — on foot *or* in vehicles — rolls once; pods, shuttles, aerial vehicles and the gravship excluded by the seam itself; the find lands on a tile we choose | vanilla + our assembly | C# — one Harmony postfix on `WorldObject.PositionChanged`, one `WorldComponent` | Medium | Yes |
 | **B** | The same rolls with **zero Harmony**, state scribed per caravan; costs one `<comps>` patch per caravan def and a self-managed last-tile compare | vanilla + Rim War's XML idiom + our comp class | patch + C# | Medium | Yes |
 | **C** | The shipped donor, already written by someone else | Faction Territories `FactionTerritories.dll` (donor only) | C# | Medium | Yes — **not recommended** |
-| **D** | The outpost half whole: which types search, each type's chance and distance, tenure cadence, and a scribed "unresolved find" latch | VEF `Outposts.dll`, donors in `VOE.dll` | C# + XML | Medium | With work |
+| **D** | The outpost half whole: which types search, each type's chance and distance, tenure cadence, and a scribed "unresolved find" latch | VEF `Outposts.dll`, donors in `VOE.dll` | C# + XML | Medium | With work — [`TERRITORY.md`](TERRITORY.md) § 2c's harness (B2–B4) |
 | **E** | A find delivered as a *quest* rather than a bare world object, still anchored on the finder | vanilla `QuestNode_GetSiteTile`, subclassed | C# (small) | Easy–Medium | Yes |
 
 A, B and C are three ways to get the same caravan event. **D is orthogonal** and is always
@@ -1332,7 +1293,12 @@ different tenure cadences, and nothing on screen says so. §5 records
 `GenTypes.AllSubclasses(typeof(Outpost))` and `GenTypes.AllSubclasses(typeof(OutpostExtension))`,
 so **a plain `DefModExtension` of our own is never touched by the settings writer**. Declare
 our chance and distance there rather than on an `OutpostExtension` subclass. **[I]** that this
-isolates us completely — it composes two verified facts.
+isolates us completely — it composes two verified facts. The settings writer itself is closed
+by [`TERRITORY.md`](TERRITORY.md) § 2c's harness (B2–B4).
+
+**Tenure requires [`TERRITORY.md`](TERRITORY.md) § *An outpost that consumes its pawns and runs
+on its own* ([#179](https://github.com/cjd721/Rimworld-Archinity/issues/179)):** an unstaffed
+outpost is otherwise deleted.
 
 **[V] MP Compat does not cover the outpost tick, and does not need to.**
 `Multiplayer.Compat.VanillaOutpostsExpanded` (`[MpCompatFor("vanillaexpanded.outposts")]`)
@@ -1376,9 +1342,7 @@ public `TileFinder` overload. Small, but it is code, not XML.
   `TicksPerProduction` gives 12 files, UTF-16 `ticksTillProduction` gives 8.
   **Whatever records presence is ours.**
 - **[V] `GeneratedLocationDef` is NOT vanilla-only, and the corpus population is mostly a
-  mod's.** An earlier draft of this section claimed the opposite at [V], from a `.dll` sweep
-  that returned zero mods. **The sweep was correct and the conclusion was wrong**: a def
-  family is authored in XML, and a DLL sweep cannot see one
+  mod's.** A def family is authored in XML, and a DLL sweep cannot see one
   (`docs/agents/capability-research.md` § *Searching what the mods actually ship*). The metadata
   hit count in `Assembly-CSharp.dll` proves only that the type exists. Re-run over `*.xml`
   across both roots and `Data/`, the true population is:
@@ -1395,8 +1359,7 @@ public `TileFinder` overload. Small, but it is code, not XML.
   re-scoped. **No route in this section is affected**, because none registers a
   `GeneratedLocationDef`: Route A and Route D call `WorldObjectMaker.MakeWorldObject`
   directly and set the tile themselves, taking `GenerateLocationForLayer` as a *donor shape*
-  rather than as a def type to enlist. Had a route enlisted one, this correction would have
-  changed it.
+  rather than as a def type to enlist.
 - **[V] The `PositionChanged` zero stands, and for a reason the above does not undermine.**
   That claim is about an overridden or patched **C# member**, whose name necessarily sits in
   the overriding assembly's `#Strings` heap — a `.dll` sweep is the right instrument for it,
@@ -1439,16 +1402,15 @@ been compiled.
 
 ### Open questions
 
-- **Requirement, to [#126](https://github.com/cjd721/Rimworld-Archinity/issues/126).** The
+- **Balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).** The
   re-roll timer's length, and whether it is one global value, per outpost type, or per find
   kind. All three are expressible; the number is balance.
-- **Requirement, to [#126](https://github.com/cjd721/Rimworld-Archinity/issues/126).**
+- **Balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).**
   *"Placed right next to whatever found it"* gives no distance. `TryFindNewSiteTile` takes a
   min and a max in tiles and draws flat between them (§4), so "next to" is two integers nobody
   has picked.
-- **Requirement, unowned.** Does a caravan find anything while *stationary* on a tile whose
-  timer has since expired? The requirement is silent, and vanilla's foraging analogue
-  explicitly **doubles** its rate when the caravan is not moving.
+- **Settled by requirement: a stationary caravan does not re-roll**
+  (`docs/requirements/CHARTING.md` § *Natural discovery*). Route A already behaves so.
 - **Build, next map.** Whether the tile ledger prunes, and on what.
 - **Build, next map.** Whether the outpost's "unresolved find" latch holds a reference or a
   counter. Both are verified available.
@@ -1465,8 +1427,8 @@ two-root sweeps of all 155 mods in both string heaps.
 - **Possible?** **Yes, every way.** One apparatus can serve both layers, the scanner can carry
   Charting's content, or the two can stay apart — no engine fact forces any of them. **Charting can
   deliver Odyssey's six orbital quests with no Harmony and no re-authoring**: the quests are
-  giver-agnostic and the giver tag is public to read. What no route escapes is #148's rule (whose
-  closure list [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180) now re-examines) —
+  giver-agnostic and the giver tag is public to read. What no route escapes is #148's rule (its closure list
+  answered in [`ORBIT.md`](ORBIT.md) § *Holding every `OrbitalScanner` giver shut* ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180))) —
   *closing orbit means closing givers* — and **the `OrbitalScanner` tag has more givers than we
   knew** (see *Constraints*).
 - **Multiplayer?** **Yes.** Every discovery path here — vanilla's scanner, Charting's comp, any
@@ -1565,9 +1527,8 @@ wants an existing model.
 
 **What it cannot do.**
 - **It is not labor.** No pawn works the scanner, and research skill does nothing to it. *"Discovery
-  becomes labor"* and *"skill buys more"* do not hold in orbit under B. That is a requirement
-  change, not a capability gap, and it goes to Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2)
-  and `docs/requirements/CHARTING.md`.
+  becomes labor"* and *"skill buys more"* do not hold in orbit under B, so B needs those
+  clauses of `docs/requirements/CHARTING.md` amended. It is not a capability gap.
 - **A spine beat must never ride the tag.** The tag has a second giver (the uplink, *Constraints*).
   It draws by random weight with no `CanRun` and no ordering, so a return beat on it could arrive
   out of order from a hacked ruin.
@@ -1592,7 +1553,7 @@ countdown.
 **Consequences:**
 - It collides with `docs/requirements/CHARTING.md` § *Constraints*: *"Charting is the only systemic
   source of unannounced sites."* A scanner is a second source unless the requirements call it part
-  of Charting. **That is a requirements call, handed to Conrad via #2.**
+  of Charting, so C needs that clause amended.
 - It sets up the same collision for Route D.
 
 **Route D — what it gets us:** nothing to build, and Odyssey's orbital loop exactly as Ludeon ships
@@ -1631,12 +1592,13 @@ one requirements amendment.
     `required` and forced **[V]**, so landmark-attached uplinks are refused too.
   - **The patch group exists only when the `Filter_WorldGenSteps` setting is on (`[HarmonyPrepare]`).**
     That setting is a mod setting and part of the sync surface (**T-18**).
-  - **The ruin-room path is not covered.** The nine ancient-ruins layouts are used by several defs
-    beyond those three mutators **[I]**.
+  - **The ruin-room path is covered at worldgen only.** WTL marks the five structure mutators too,
+    but quest sites, Scarlands and Glacial Plain maps and gravcore sites add the room directly
+    ([`ORBIT.md`](ORBIT.md) § *Holding every `OrbitalScanner` giver shut* **[V]**).
 - **With the filter off, or through a ruin room, a Neolithic colony that hacks an uplink can open the
   Orbit layer.** No scanner, no `OrbitalTech`, no grav engine. This is an opener that
   [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148) did not list. Holding orbit shut
-  against it is now [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)'s question.
+  against it is answered in [`ORBIT.md`](ORBIT.md) § *Holding every `OrbitalScanner` giver shut* ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)).
 
 **The corpus adds two more givers and two more quests.**
 - **Givers:** VGE's `VGE_GravshipScannerCluster` carries `CompScannerCluster_OrbitalScannerModule`,
@@ -1693,18 +1655,13 @@ The sweeps covered both roots with `obj/` excluded:
 
 ### Open questions
 
-- **Requirement, to Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) and
-  `docs/requirements/CHARTING.md`.** Routes B, C and D each put a non-labor, Waystone-less discovery
-  source in orbit, which contradicts *"Charting is the only systemic source of unannounced sites"*
-  and *"discovery becomes labor"*. Only A leaves the requirements untouched. (#127 is closed; the map
-  carries the fog patch on `SPACE.md`'s conflicting clauses.)
-- **Requirement, to Conrad via #2.** Whether the ancient uplink stays in the game at all. After the
-  reveal it is harmless flavour. Before it, it opens orbit wherever the WTL filter does not reach.
-  Its carriers (the mutator, the ruin room, and VLE's landmarks) are all XML.
-- **To [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** How to hold orbit shut
-  against every giver of these quests. The closure list in `ORBIT.md`'s Route A (*"`givenBy` tags and
-  `subquestDefs` entries"*) needs to gain the uplink and the two corpus givers. Clearing `givenBy`
-  alone is the error path above.
-- **Build, next map (unowned).** Whether A's orbital tier is a new building or A′'s re-skin. Whether
+- **Capability: Routes A–D.** A keeps `docs/requirements/CHARTING.md`'s *"only systemic source of
+  unannounced sites"* and *"discovery becomes labor"* intact; B, C and D each put a non-labor,
+  Waystone-less discovery source in orbit and need that clause amended.
+- **The ancient uplink.** Capability: [`ORBIT.md`](ORBIT.md) § *Holding every `OrbitalScanner`
+  giver shut*, R1–R5. Before orbit opens no route may reveal anything in orbit
+  (`docs/requirements/SPACE.md` § *The reveal*). After the reveal the uplink is harmless flavour;
+  its carriers (the mutator, the ruin room, and VLE's landmarks) are all XML.
+- **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).** Whether A's orbital tier is a new building or A′'s re-skin. Whether
   the `CanUseNow` override lifts the roof ban outright or tests `Room.ExposedToSpace`. How far E1's
   six weigh against authored orbital survey content.

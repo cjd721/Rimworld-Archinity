@@ -176,6 +176,8 @@ looking. Both can turn up survey-pool content on their own, alongside the appara
   whatever found it, and it is never guaranteed. Nothing about it can reach the return pool.
 - **A tile can roll again once a timer on it has run out.** If a per-tile timer is not
   possible, the fallback is that a tile rolls only the first time the colony enters it.
+- **A caravan that stays on one tile does not roll again**, even after that tile's timer has
+  run out; finds come from entering tiles. (Conrad, #118, 2026-09-23)
 - **The outpost decides.** Each outpost type declares whether it searches at all, its
   chance and its distance — a scout post always looks; a mining camp does not. An outpost
   with an unresolved find finds nothing more.
@@ -279,7 +281,8 @@ announcements and nobody is in a position to tell the colony about them.
   selection, construction time, player funding and direct road building belong to
   [world infrastructure](WORLD-INFRASTRUCTURE.md). Charting never creates, upgrades or pays
   for a road. Whether completed mobility infrastructure later contributes a reach rung is
-  a cross-spec integration choice, not part of the road-building requirement.
+  [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s route selection,
+  not part of the road-building requirement.
 - **Map generation must be cross-client identical, and that is an engineering trap, not a
   requirement.** Both clients generate every map and Multiplayer's checksum cannot see it, so
   a divergent map is a delayed desync. Registered as T-120 by

@@ -30,7 +30,7 @@ mechanisms; [#116](https://github.com/cjd721/Rimworld-Archinity/issues/116) choo
 catalogue and milestones. Archinity still does not prescribe the faith's theology or
 presentation.
 
-Per-faction Reverence is shown beside Goodwill in the custom political UI. A Global Reverence view summarizes how much of the planet follows the player’s ideology and surfaces the current attention band and major consequences. Diplomatic actions are visibly gated by Reverence so the player can see the carrot before reaching it rather than discovering the system accidentally.
+Per-faction Reverence is shown beside Goodwill on the political surface. A Global Reverence view summarizes how much of the planet follows the player’s ideology and surfaces the current attention band and major consequences. Diplomatic actions are visibly gated by Reverence so the player can see the carrot before reaching it rather than discovering the system accidentally.
 
 Reverence trends slowly back toward zero if neglected. Religion has inertia, but movements fade when no one carries them. The main acquisition loop should happen through actual people and normal RimWorld events rather than generic religion XP.
 
@@ -64,7 +64,7 @@ in [the spec](../specs/RELIGION.md) (#160, routes A and A2).
 
 Reverence has benefits and consequences. The Storyteller can use Global and faction Reverence as an attention weight when selecting incidents: higher religious penetration makes founder-related politics louder, increases the chance that threatened enemies act, can scale the frequency/intensity of politically motivated attacks, and also increases positive events such as pilgrims, aid, offerings and volunteers.
 
-The relationship must be explicit to the player. The political UI should show the current Reverence band and what it broadly enables or risks; major hostile incidents should say why the attackers are reacting. The player does not need the hidden formula, but they should be able to connect “the world increasingly worships us” to both the power and the danger that follow.
+The relationship must be explicit to the player. The player should see the current Reverence band and what it broadly enables or risks; major hostile incidents should say why the attackers are reacting. The player does not need the hidden formula, but they should be able to connect “the world increasingly worships us” to both the power and the danger that follow.
 
 ## The Church Path — Exaltation and Titles
 
@@ -87,6 +87,12 @@ direct the Church's diplomacy. Safe passage is not a title perk; it belongs to e
 **Titles carry decrees.** As in vanilla, the Church lays obligations on titled colonists. What
 failing one costs is set per decree: a mood penalty, lost Exaltation or lost Goodwill with the
 Church. [#137](https://github.com/cjd721/Rimworld-Archinity/issues/137)
+
+**Decrees stop while the Church is hostile.** A decree is the Church asking, and it asks only
+while it feels the colony is under its thumb: no decree is issued while the Church is hostile,
+and running decrees stop when it turns hostile. Resuming them when peace returns and ending
+them for good are both possible ([the spec](../specs/RELIGION.md) § *Decrees — what failing one
+costs, set per decree*). (2026-09-23, Conrad, #118)
 
 The Church also reveals the missing half of the altar. Willingly given blood/anima behaves differently and widens the psychic channel. This is where the first psylink belongs. Early Church titles and early psychic states may share language or symbolism so the institution can plausibly present itself as the source of the founders’ divinity before the two ladders visibly diverge.
 
@@ -165,8 +171,9 @@ hostile Church remnant the player may finish or leave.
 
 **The successor is a permanent ally, not a vassal.** Drift never breaks the alliance; attacking
 it can. It worships the founders and shows it — goodwill, tribute, quests — and follows them into
-orbit. [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120) owns what a friendly
-faction can pay the colony.
+orbit. What a friendly faction can pay the colony is
+[`specs/TERRITORY.md`](../specs/TERRITORY.md) § *3. Vassals — every shape, by route*
+([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120)).
 
 **A beat can require the founders.** A Schism or Church deed that shows the founders to the world
 can require one or both of them to attend, and says so before the player accepts.
@@ -188,8 +195,9 @@ routes. What holds whichever route is chosen:
   government in an independent faction, settlements passing to another faction, or a change of
   faith alone are others. How much of the faction follows may reflect Reverence and what the
   player committed. A revolt never needs a faction the world was not created with.
-  [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131) answers what is possible;
-  the choice waits for its routes.
+  The routes are [`specs/RELIGION.md`](../specs/RELIGION.md) § *Revolt*
+  ([#131](https://github.com/cjd721/Rimworld-Archinity/issues/131)); which ships is the build
+  map's.
 - **What a vassal is, is now stated in [territory](TERRITORY.md).** There are two kinds: a
   **holding**, a single settlement taken by force, and a **sworn faction**, a whole faction
   that has given itself. A revolt can only ever produce the second kind, because a holding
@@ -274,8 +282,8 @@ and [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) (Trace) each d
 the political systems, starting from its candidate Empire/Deserters machinery.
 
 The Schism, revolt and the Church's faith were stated on
-[#122](https://github.com/cjd721/Rimworld-Archinity/issues/122). Their capabilities are open at
-route depth: [the Schism's reveal, ground and alliance](https://github.com/cjd721/Rimworld-Archinity/issues/130),
+[#122](https://github.com/cjd721/Rimworld-Archinity/issues/122). Their capabilities were answered at
+route depth on [the Schism's reveal, ground and alliance](https://github.com/cjd721/Rimworld-Archinity/issues/130),
 [revolt](https://github.com/cjd721/Rimworld-Archinity/issues/131),
 [Influence moving the plot](https://github.com/cjd721/Rimworld-Archinity/issues/132),
 [NPC faith changes](https://github.com/cjd721/Rimworld-Archinity/issues/133),
@@ -288,7 +296,13 @@ Title perks, decrees, betrayal and the Church's ending were stated on
 `docs/specs/RELIGION.md` §5; betrayal's permanent hostility has a named route (one saved bit and a
 goodwill cap, #130 route A);
 [decrees with a chosen failure cost](https://github.com/cjd721/Rimworld-Archinity/issues/137)
-is open. Whether Church titles grant psylinks is Conrad's to decide later; every shape is
-already possible.
+is answered ([the spec](../specs/RELIGION.md) § *Decrees — what failing one costs, set per
+decree*).
+
+**Church titles never grant psylinks.** Psychic rank comes only from the altar's rite. The
+willing sacrifice is that rite; the campaign's authored breakthroughs also grant rank, and in
+the story each is a rite done at the altar, though in play it need not be a literal ritual.
+Titles are strictly a political lever. The Church imitates the rite to an extent — some of its
+own people are psychic — but never reaches the founders' level. (2026-09-23, Conrad, #118)
 
 Final volunteer alignment is defined in [the ending](../plot/ENDING.md#the-alignment-rule--faith-cannot-be-borrowed-dishonestly).

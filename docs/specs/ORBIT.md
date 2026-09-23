@@ -2,12 +2,6 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** The planetary outcome is selected from live
-> campaign state when the political resolution occurs; it is not a binary route chosen at
-> world creation. It may name multiple factions. That result is frozen as an immutable
-> snapshot before orbit is revealed, so later goodwill, settlement losses or faction
-> changes cannot rewrite the orbital roster already created.
-
 How the Odyssey orbit layer is populated, gated and revealed — and what that costs at
 world creation.
 
@@ -31,10 +25,10 @@ It does not own the political resolution that *decides* the reveal — that is
 [`POLITICS.md`](POLITICS.md) and `docs/requirements/POLITICS.md`. It **does** own the
 component that records the outcome's orbital consequence and fires the command; POLITICS.md
 declines the state explicitly ("zero new saved state", correct for the goodwill ripple it is
-about) and `docs/requirements/POLITICS.md` states no orbit requirement at all. The missing
-requirement — that the planetary resolution yields a machine-readable outcome naming the
-surviving institution — is
-[#100](https://github.com/cjd721/Rimworld-Archinity/issues/100).
+about). `docs/requirements/POLITICS.md` states the outcome requirement (§ *Required
+behavior*, *The planetary resolution produces an immutable outcome*); its route predicates
+and tie rules are [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100)'s, a content
+decision on the build map ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
 
 It does not own which orbital powers exist or what they are for — that is
 [the faction grid](https://github.com/cjd721/Rimworld-Archinity/issues/34). It does not own
@@ -47,40 +41,25 @@ Established on [Deferred orbital instantiation](https://github.com/cjd721/Rimwor
 
 ## The reveal gate — what closes orbit, and what opens it
 
-> **Amended 2026-09-23 —
-> [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** Route A's second switch —
-> the scanner quests — is answered in full in § *Holding every `OrbitalScanner` giver shut*,
-> below. It replaces the closure text that
-> [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)'s evidence overturned. The tag
-> has **four** givers and **eight** quests. Clearing `givenBy` is an error path, not a
-> closure. Three claims are corrected in place, each with a dated note: *"four of the ten need
-> no scanner"*, *"Route A's list is a list of `givenBy` tags"*, and the scanner's row in *What
-> the player obtains*. #148's verdict, its three routes and Route A's other four switches stand.
-
 > Established on [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148), answering
 > `docs/requirements/SPACE.md` § *The reveal*: **before the reveal there is no view of the
-> orbital map, no flight to it and no orbital sites of any kind.** Evidence class **READ**,
-> against decompiled 1.6 `Assembly-CSharp.dll`, Odyssey's defs, `Multiplayer.dll`, and
-> two-root corpus sweeps of all 155 mods in both metadata heaps.
+> orbital map, no flight to it and no orbital sites of any kind.** Route A's scanner-quest
+> switch is answered on [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)
+> (§ *Holding every `OrbitalScanner` giver shut*). Evidence class **READ**, against decompiled
+> 1.6 `Assembly-CSharp.dll`, Odyssey's defs, `Multiplayer.dll`, and two-root corpus sweeps of
+> all 155 mods in both metadata heaps.
 
-> ⚠️ **This section corrects § *The build* 2 below.** That section says the Orbit layer
-> "generates with tiles and zero world objects" and that vanilla "already draws the locked
-> door." **It does not.** Odyssey populates every planet layer at world creation, orbit
-> included, so the view-orbit gizmo is **enabled from the first tick of a fresh world**. The
-> *settlement* half of § *The build* 2 stands exactly as written — hidden factions still get
-> neither the freebie nor a lottery slot — but the display conclusion drawn from it does not.
->
-> **Three claims elsewhere in this document are struck or corrected in place**, so that no stale
-> [V] survives behind this banner: § *The build* 2's "zero world objects", § *The build* 2's
-> "six shipped `QuestScriptDef`s… the bound on them is a research gate", and § *Verification*'s
-> RUN item expecting an empty orbit layer. Each carries a dated note pointing here.
+Odyssey populates every planet layer at world creation, orbit included, so the view-orbit
+gizmo is **enabled from the first tick of a fresh world** (§ *Constraints*). Hidden factions
+still get neither the freebie settlement nor a lottery slot (§ *The build* 1); what opens the
+gizmo is asteroids and quest sites, not settlements.
 
 ### Verdict
 
 - **Possible?** **Partly.** Every surface can be shut and the reveal is one synced call — but
   three of the four things that put an object into orbit before the reveal are **ours to
-  switch off by content decision**, not vanilla gates, and the gate this document previously
-  relied on is already open in a fresh Odyssey world.
+  switch off by content decision**, not vanilla gates, and vanilla's own gate,
+  `OrbitLayer.CanSelectLayer`, is already open in a fresh Odyssey world.
 - **Multiplayer?** **Yes.** The reveal is a `[SyncMethod]` on a `WorldComponent`; MP ships a
   `WorldComponent` sync worker and already treats gravship travel as a pausing session. Layer
   *selection* is client-local UI and needs no sync at all.
@@ -195,8 +174,7 @@ Nothing else gives these quests. No mod assembly references `CompAncientUplink`,
 `VFEPD_OrbitalScanner` are props and carry no comp [V].
 
 **Every uplink comes through one `PrefabDef AncientUplink`, and there are eight ways it
-arrives** [V] *(six as resolved; the Glacial Plain and ancient-mercenaries rows were added on
-review, 2026-09-23)*:
+arrives** [V]:
 - `TileMutatorWorker_AncientUplink` spawns `PrefabDefOf.AncientUplink`.
 - `LayoutRoomDef AncientOrbitalUplink` lists `<prefabs><AncientUplink>`. That entry is a
   `LayoutPrefabParms.def`, so it points to the same `PrefabDef`.
@@ -365,8 +343,10 @@ Scarlands or Glacial Plain maps or at gravcore sites.
   nothing** (**T-174**).
 - **Hacking has no research gate.** `CompHackable.CanHackNow` checks hacked and locked-out only.
   The skill test sits on the float menu [V].
-- **This does not settle whether the uplink stays in the game.** That is still the requirement
-  question #149 raised (below).
+- **Before orbit opens, no route may let the uplink reveal anything in orbit**
+  (`docs/requirements/SPACE.md` § *The reveal*). R1 (strip it, so a hack reveals nothing), R2 (bank
+  the coordinate and deliver it once orbit opens), R3 (skip), R4 (a sink quest) and R5 (an era gate
+  only) are the routes.
 
 #### Status
 
@@ -400,25 +380,21 @@ Zeros:
 - ASCII `givenBy` hits only Medieval Overhaul, which has its own `givenByFinder` field.
 - XML `<givenBy` across both roots and `Data` returns the eight and no patch.
 
-Corrected on this ticket:
-- *"WTL marks `AncientUplink`, `AncientRuins` and `AncientRuins_Frozen` Industrial"* is incomplete.
-  WTL marks 16 mutators, including the five structure mutators, so the room is closed at worldgen.
-- *"The ruin-room path is not covered [I]"* is now [V], and split. Worldgen is covered; quest
-  sites (ancient structures and ancient mercenaries), Scarlands and Glacial Plain maps, and
-  gravcore sites are not.
-- The scanner is not the only giver (*What the player obtains*).
-- Clearing `givenBy` throws, and so does zeroing the weights.
+Also read [V]:
+- WTL marks 16 mutators, including `AncientUplink`, `AncientRuins`, `AncientRuins_Frozen` and
+  the five structure mutators, so the ruin room is closed at worldgen.
+- The ruin-room path splits: worldgen is covered; quest sites (ancient structures and ancient
+  mercenaries), Scarlands and Glacial Plain maps, and gravcore sites are not.
 
 #### Open questions
 
-- **Requirement, to Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).**
-  Does the ancient uplink stay in the game? If it does, does a hack made before the reveal pay off
-  at the reveal (R2's banked coordinate), or is it simply dead?
 - **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).** Which route applies
-  to each giver. What R4's sink says, if R4 is taken. Whether R3's inspect-string postfix is
-  wanted.
-- **[#153](https://github.com/cjd721/Rimworld-Archinity/issues/153).** Whether uplinks spawn on
-  the home map, the Scarlands and Glacial Plain `extraGenSteps` cases in particular.
+  to each giver, the uplink included; the requirement bounds them all (§ *Constraints* above:
+  nothing in orbit is revealed before orbit opens). Capability for the uplink: R1 strips it, R2
+  banks a pre-reveal hack's coordinate for the reveal, R3 skips, R4 sinks, R5 gates by era.
+- **Uplinks on the home map**, the Scarlands and Glacial Plain `extraGenSteps` cases in
+  particular: answered in [`ERA.md`](ERA.md) § *Above-era content seeded on the player's own map*
+  ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)).
 - **[#20](https://github.com/cjd721/Rimworld-Archinity/issues/20).** Where `OrbitalTech`,
   `AdvancedGravtech` and `AdvShipParts` sit matters only for a giver no route closes.
 - **Unverified [I], one-client RUN, optional.** Under R5, confirm that a refused scanner quest
@@ -433,7 +409,7 @@ The requirement wants the unlock to be a thing the player earns. Every candidate
 | A world flag on the reveal `WorldComponent` | C# | Easy — one bool on the component § *The build* 5 already owns | **Yes, by construction** |
 | A research project (ours, or `OrbitalTech` repointed) | XML + hook | Easy–Medium | **Yes** — no un-complete path; a techprint reduces to this |
 | A quest reward or one-off event | XML | Easy | **Yes if it writes the flag**; the reward item itself is losable |
-| The orbital scanner | XML | Easy | **No** — a building, and not even the only giver. ~~Lose it and no *new* scanner quests arrive~~ — **corrected 2026-09-23, [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180):** the `AncientUplink`, VGE's scanner cluster and GravTech's computer core give the same quests. See § *Holding every `OrbitalScanner` giver shut* |
+| The orbital scanner | XML | Easy | **No** — a building, and not even the only giver: the `AncientUplink`, VGE's scanner cluster and GravTech's computer core give the same quests ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180); § *Holding every `OrbitalScanner` giver shut*) |
 | The signal jammer | XML | Easy | **No** — `Building_GravEngine.HasSignalJammer` reads the *live* ship, so a destroyed jammer re-closes every jammer-gated destination |
 
 **The rule that falls out:** make the *carrier* whatever the fiction wants; make the *state* a
@@ -464,8 +440,7 @@ the component's constructor from `world.PlanetCoverage`, times
 
 **So a fresh world holds 3–20 claimable asteroids in orbit before a tick is spent** — 8–20 at any
 ordinary coverage, and **3 even at the 5% floor.** The floor is the number that matters: no
-coverage setting produces an empty layer, so no world-creation choice makes § *The build* 2's
-assumption true. `AnyWorldObjectOnLayer` applies no filter of any kind [V], so one asteroid is as
+coverage setting produces an empty layer, so no world-creation choice empties it. `AnyWorldObjectOnLayer` applies no filter of any kind [V], so one asteroid is as
 good as twenty for opening the gizmo. Vanilla Gravship Expanded – Ch.1 ships four more orbital
 `GeneratedLocationDef`s [V]. This is a def-patch fix, not a worldgen irreversible — the generator
 reads the `DefDatabase` live.
@@ -496,22 +471,19 @@ chemfuel** [V]. `IsValidTileForNewSettlement` passes on an empty orbit tile: `Bi
 defaults true and Odyssey's `Space` biome, which `Orbit` inherits, does not set it [V]. The only real
 friction is `PlanetLayerDef.rangeDistanceFactor = 20` for Orbit [V], and it does not bite at distance 0.
 
-**Ten quest scripts place on Orbit, not six.** Six scanner-given `OpportunitySite_*`
+**Ten quest scripts place on Orbit.** Six scanner-given `OpportunitySite_*`
 (`randomlySelectable false`, `<givenBy>OrbitalScanner</givenBy>`) [V]; **three gravcore subquests** —
 `Gravcore_OrbitalAncientPlatform` (`requiredSubquestsGiven 3`), `Gravcore_OrbitalMechanoidPlatform`
 (`5`), `Gravcore_Mechhive` — all `autoAccept true`, driven by `QuestPart_SubquestGenerator_Gravcores`,
 whose `CanGenerateSubquest` asks only that some map hold a colonist-owned `GravEngine` [V]; and
 **`OrbitalFugitive`**, `rootSelectionWeight 1`, `minRefireDays 30`, storyteller-selectable, placing a
-`ClaimableSpaceSite` via `QuestNode_Root_Site` with `layerWhitelist [Orbit]` [V]. ~~**Four of the ten
-need no scanner and no `OrbitalTech`.**~~ § *Failure and recovery*'s "the real gate is when `OrbitalTech`
-becomes reachable" does not hold.
-
-> **Corrected 2026-09-23, [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** It is
-> not four of the ten; **all ten can arrive with no scanner and no `OrbitalTech`**. The six scanner
-> quests also come from a hacked `AncientUplink` (Intellectual 6, no research), VGE's scanner cluster
-> and GravTech's computer core. The corpus adds at least two orbit-placing scripts on the same tag,
-> from VGE and from Worksites Expanded. No sweep was run for orbit-placing scripts outside the tag.
-> See § *Holding every `OrbitalScanner` giver shut*.
+`ClaimableSpaceSite` via `QuestNode_Root_Site` with `layerWhitelist [Orbit]` [V]. **All ten can arrive
+with no scanner and no `OrbitalTech`** ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)).
+The six scanner quests also come from a hacked `AncientUplink` (Intellectual 6, no research), VGE's
+scanner cluster and GravTech's computer core; the gravcore three need only a grav engine;
+`OrbitalFugitive` needs nothing. The corpus adds at least two orbit-placing scripts on the same tag,
+from VGE and from Worksites Expanded. No sweep was run for orbit-placing scripts outside the tag. See
+§ *Holding every `OrbitalScanner` giver shut*.
 
 **How a quest is *fired* decides whether it can reach orbit at all — and the two paths differ by
 almost an order of magnitude.** This is the hardest constraint in this section, and it binds on both
@@ -533,11 +505,10 @@ Two consequences, and they pull in opposite directions:
   Only `OrbitalFugitive` can arrive by natural roll. Everything else that opens orbit — the six
   scanner quests, the three gravcore subquests — arrives through a `CanRun` path that exempts
   `autoAccept` entirely. **Closing orbit means closing givers, not tuning storyteller weights**,
-  which is why Route A's list is a list of ~~`givenBy` tags and~~ givers and `subquestDefs` entries
-  and not a single incident-weight patch. *(Corrected 2026-09-23,
-  [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180): clearing `givenBy` or zeroing
-  the tag's weights makes the givers throw. The scanner quests are closed at their four givers, or
-  by keeping a sink quest on the tag. See § *Holding every `OrbitalScanner` giver shut*.)*
+  which is why Route A's list is a list of givers and `subquestDefs` entries and not a single
+  incident-weight patch. The scanner quests are closed at their four givers, or by keeping a sink
+  quest on the tag; clearing `givenBy` or zeroing the tag's weights makes the givers throw
+  (§ *Holding every `OrbitalScanner` giver shut*).
 - **After the reveal, the ceiling is 18 and the storyteller delivers 2 of them.** An orbital colony
   fed by the ordinary quest flow gets `OrbitalFugitive` and `SurveySite` and nothing else; the other
   sixteen need a giver to exist. That is a constraint on *living in orbit*, which is
@@ -581,12 +552,12 @@ layer, not the gravship.
 
 **The orbital trade beacon and comms console never touch the layer.** `IncidentWorker_OrbitalTraderArrival`
 builds a `TradeShip` into `map.passingShipManager`, creates no `WorldObject` and names no `PlanetLayer`
-[V]. Both buildings sit behind `MicroelectronicsBasics`. Orbital traders cannot open the view — but they
-*are* voices from orbit, which is a fiction call for `docs/requirements/SPACE.md`, not a capability
-problem.
+[V]. Both buildings sit behind `MicroelectronicsBasics`. Orbital traders cannot open the view, but they
+are contact from orbit, which `docs/requirements/SPACE.md` § *The reveal* holds shut until the colony
+can reach or talk to orbit. The routes that hold them are in § *Open questions* below.
 
-**No `WorldObject` can hide — re-read and confirmed** [V], with the scope correction that it was never
-load-bearing: `AnyWorldObjectOnLayer` consults no visibility concept at all.
+**No `WorldObject` can hide** [V], and nothing here depends on it: `AnyWorldObjectOnLayer` consults
+no visibility concept at all.
 
 ### Available mechanisms
 
@@ -619,35 +590,37 @@ one world, both founders**.
 
 ### Open questions
 
-- **Build, next map (unowned):** whether the gate lives on `CanSelectLayer` alone, the layer class or the
-  selection setter; whether the reveal component removes pre-existing asteroids or the defs are simply
-  never enabled.
-- **Requirement, [#127](https://github.com/cjd721/Rimworld-Archinity/issues/127):**
-  `docs/requirements/SPACE.md` says orbit holds "no orbital sites of any kind" before the reveal *and*
-  that the campaign adopts Odyssey's gravship arc "as shipped." **Those conflict.** The gravcore chain
-  places orbital sites by design from the moment a grav engine exists. Closing orbit costs three of its
-  nine leads plus `OrbitalFugitive`. Whether that price is acceptable is a design call.
-- **Requirement, #127 or `GLITTERTECH.md`:** whether orbital traders may hail the colony before the reveal.
+- **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):** whether the gate lives on
+  `CanSelectLayer` alone, the layer class or the selection setter; whether the reveal component removes
+  pre-existing asteroids or the defs are simply never enabled.
+- **Settled by requirement — the gravcore chain** (`docs/requirements/SPACE.md` § *The reveal*,
+  2026-09-23). The chain's planet-side leads exist once the colony has a grav engine; its orbital
+  leads are what closing orbit holds shut. Capability: closing orbit costs three of the chain's nine
+  leads plus `OrbitalFugitive` (§ *Constraints*; #148).
+- **Settled by requirement — orbital traders** (`docs/requirements/SPACE.md` § *The reveal*): nothing in
+  orbit makes contact until the colony can reach or talk to orbit. Capability: the comms console and
+  trade beacon stage is vanilla (§ *Constraints*); any later stage can be laid on the arrival incident by
+  the `StorytellerComp.IncidentChanceFinal` postfix ([`PRESSURE.md`](PRESSURE.md) § *The build* › 4), or
+  the incident removed outright by `ScenPart_DisableIncident` (§ *The build* › 7) [V];
+  [`RELIGION.md`](RELIGION.md) already gates `IncidentWorker_OrbitalTraderArrival.CanSpawn`.
 - **Settled — [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149) and
   [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** #149 answered what
   `OrbitalScanner` is for (`CHARTING.md` § *The orbital scanner and Charting*). #180 answered how
   the scanner quests are held shut against all four givers (§ *Holding every `OrbitalScanner` giver
   shut*).
-- **[#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)** no longer bounds the reveal. The
+- **[#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)** does not bound the reveal. The
   `OrbitalTech` gate bounds only the building `OrbitalScanner`, not the quests it gives (#180).
 - **[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18)** gains a pre-worldgen line if route B is
   taken.
 - **Unverified number, RUN, one client.** Start a fresh Odyssey world on the Archinity scenario and open
   the gizmo bar. Expected: view-orbit **enabled**, orbit holding named asteroids — **3 at the 5% coverage
-  floor, 8 / 12 / 20 as coverage crosses 5.1% / 30.1% / 50.1%.** This replaces the struck RUN item under
-  § *Verification*, which expected the opposite. It confirms a count; the mechanism is read end to end and
+  floor, 8 / 12 / 20 as coverage crosses 5.1% / 30.1% / 50.1%.** It confirms a count; the mechanism is read end to end and
   the verdict does not depend on the number. **The floor is the interesting reading** — if 5% coverage
   still shows asteroids, no world-creation setting can produce an empty layer.
 - **Settled, not open — [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147) / T-48's
   "18 of 139" reproduces exactly**, and so does the "18 of 91" incident half; this section's ten are a
-  strict subset. An earlier draft of this section called the 18 irreproducible — that was wrong, and
-  wrong in an avoidable way: it tested the two `CanQuestOccurOnTile` methods *whole* instead of
-  isolating the layer-whitelisting clause the figure actually names. Both documents agree. See
+  strict subset. The figure reproduces only by isolating the layer-whitelisting clause it names;
+  testing the two `CanQuestOccurOnTile` methods whole does not. Both documents agree. See
   § *Constraints → Ten, or eighteen?*.
 
 ## The build
@@ -674,8 +647,10 @@ trap (`docs/TRAPS.md` **T-07**) [V].
 
 ⚠️ **"In the world-creation faction list" is a stronger condition than "shipped as a def".**
 `Current.CreatingWorld.info.factions` is built from `FactionGenerator.ConfigurableFactions`,
-and that enumerable is patchable — World Tech Level postfixes it and can empty the orbital
-roster outright. See *Failure and recovery*; it is the single largest risk this spec carries.
+and that enumerable is patchable — World Tech Level postfixes it and, **when its
+`Filter_Factions` setting is on** (frozen off by #7 § 3; `ERA.md` § *The build* › 6 (b)), can
+empty the orbital roster outright. See *Failure and recovery*; it is the single largest risk
+this spec carries.
 
 Every one of them ships `<hidden>true</hidden>`. `Faction.Hidden` is `hidden ?? def.hidden`
 [V], and a hidden faction is excluded from both of the two ways a settlement reaches the
@@ -687,13 +662,10 @@ layer:
 | The bulk lottery, in `GenerateFactionsIntoWorldLayer` | local `Validator`: `!x.def.isPlayer && !x.Hidden && !x.temporary && CanExistOnLayer(...)` |
 
 Both [V]. With no non-hidden orbit faction, `source.Any()` is false and the lottery loop never
-runs, so **the Orbit layer generates with no *settlements***.
-
-> ~~**the Orbit layer generates with tiles and zero world objects** [V]~~ — **struck, 2026-09-23,
-> [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148).** The settlement half above
-> is correct and stands. The "zero world objects" conclusion drawn from it is **false**:
-> `WorldComponent_LocationGenerator` places 3–20 asteroids on the layer at world creation,
-> outside the worldgen step list entirely. See § *The reveal gate → Constraints*.
+runs, so **the Orbit layer generates with no *settlements***. It is not empty:
+`WorldComponent_LocationGenerator` places 3–20 asteroids on the layer at world creation, outside
+the worldgen step list entirely ([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148);
+§ *The reveal gate → Constraints*).
 
 The factions themselves are fully built: `loadID`, name, colour, ideo, leader and initial
 relations against every other faction, all rolled at worldgen inside worldgen's seeded
@@ -705,30 +677,30 @@ Odyssey's hidden `Salvagers` raid you. Raid gating stays where it already is:
 `earliestRaidDays` on the def plus Ignorance Is Bliss's tech band, with `docs/TRAPS.md`
 **T-17** on the fail-open pool.
 
-### 2. Before the reveal — vanilla already draws the locked door
+### 2. Before the reveal — the door is open unless we close it
 
 `OrbitLayer.CanSelectLayer()` returns `"CannotSelectOrbitReason".Translate()` whenever
 `!Find.WorldObjects.AnyWorldObjectOnLayer(this)`, and `WorldGrid.GetGizmos` renders the
 view-orbit command **disabled with that reason** [V]. The string is Odyssey's own —
-**"No discovered orbital locations."** — shipped in eighteen languages.
+**"No discovered orbital locations."** — shipped in eighteen languages. That greyed, explained
+button is Route A's door, and it costs nothing once the layer is empty.
 
-So the pre-reveal state is a visible, greyed, explained button. That is the display half of
-this spec and it costs nothing.
+**The layer is not empty at worldgen.** Odyssey places 3–20 asteroids in orbit at world
+creation ([#148](https://github.com/cjd721/Rimworld-Archinity/issues/148); § *The reveal gate →
+Constraints*), so in a fresh world the gizmo is **enabled from the first tick**. The door
+is shut only by Route A's switches — generated locations, the gravcore `subquestDefs`,
+`OrbitalFugitive`'s weight, the zoom shortcut — plus § *The reveal gate → Holding every
+`OrbitalScanner` giver shut*.
 
-⚠️ It costs nothing **and it is not exclusively ours**. `AnyWorldObjectOnLayer` counts any
-world object, including Odyssey's own orbital quest sites. ~~Six shipped `QuestScriptDef`s can
-open the gate before the politics do; the bound on them is a research gate, not a design
-guarantee.~~ See *Failure and recovery*.
+⚠️ **It is not exclusively ours.** `AnyWorldObjectOnLayer` counts any world object, including
+worldgen asteroids and Odyssey's own orbital quest sites. **Ten** shipped `QuestScriptDef`s place
+on Orbit, and **all ten can arrive with no scanner and no `OrbitalTech`**: the six scanner quests
+through four givers, one of which (the ancient uplink) needs no research; three `autoAccept`
+gravcore subquests that need only a `GravEngine` on the map; and storyteller-selectable
+`OrbitalFugitive` ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)). See
+*Failure and recovery*.
 
-> **Corrected, 2026-09-23, [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148).**
-> **Ten** shipped `QuestScriptDef`s place on Orbit, and **four of them are behind no research
-> gate at all** — three `autoAccept` gravcore subquests that need only a `GravEngine` on the
-> map, plus storyteller-selectable `OrbitalFugitive`. And the gate is open before any of them
-> fire, because worldgen already put asteroids on the layer. "The bound is a research gate" is
-> withdrawn. See § *The reveal gate → Constraints*.
-
-**`viewGizmoOnlyVisibleWithDirectConnection` is a different and much weaker gate**, and we
-have been reading it as this one. It tests
+**`viewGizmoOnlyVisibleWithDirectConnection` is a different and much weaker gate.** It tests
 `Find.WorldSelector.SelectedLayer.HasConnectionFromTo(layer)` — a **scenario-declared layer
 connection**, not player presence [V]. `ScenarioBase` declares `Surface → Orbit` and
 `Orbit → Surface` at worldgen, `Archinity_SeedOfArchinity` inherits both (list children are
@@ -797,12 +769,11 @@ its leak list: null `Settlement.cachedMat` by reflection (**T-12**), null
 
 ### 5. The gate state — ours, and it is new code
 
-**This document owns the reveal-gate `WorldComponent`.** Earlier drafts hung it on
-"the political `WorldComponent`, if it exists by then". No such component is planned:
-`docs/specs/POLITICS.md` § *The build* declines it outright — *"Zero maintenance, zero new
-saved state… A `WorldComponent` is tick-safe but the ripple is event-driven; nothing needs
-polling."* That statement is correct about the goodwill ripple, and it means the reveal gate
-has no host. It gets one here.
+**This document owns the reveal-gate `WorldComponent`.** There is no political
+`WorldComponent` to host it: `docs/specs/POLITICS.md` § *The build* declines one outright —
+*"Zero maintenance, zero new saved state… A `WorldComponent` is tick-safe but the ripple is
+event-driven; nothing needs polling."* That is correct about the goodwill ripple, and it leaves
+the reveal gate to be hosted here.
 
 A `WorldComponent` holding the immutable outcome, reveal state and the synced command:
 
@@ -822,10 +793,13 @@ PlanetaryOutcome
 This is **new code in a new component**, not a free field on someone else's. It needs no
 ticking. `ResolveOutcome` refuses a second write; `RevealOrbit` reads only the snapshot.
 
+Requirement: `docs/requirements/POLITICS.md` § *Required behavior* (*The planetary resolution
+produces an immutable outcome*).
+
 **What sets it is partially settled.** The political resolution evaluates authored rules
 against live state and writes the snapshot once. [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100)
-still owns the exact conditions and priority/tie rules; it no longer needs to choose one
-hard-coded faction or decide whether the result stays live. The reveal beat itself is
+owns the exact conditions and priority/tie rules; it does not choose one hard-coded faction,
+and the result does not stay live. The reveal beat itself is
 [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46).
 
 ### 6. The stronghold interior — Odyssey generates it, and every knob is XML
@@ -888,24 +862,17 @@ It needs `roomDefs` (Odyssey's own shipped `LayoutRoomDef`s are usable unchanged
 entry if we want breaches.
 
 ⚠️ **The roofs come from the room defs, not from a `roofs:` argument — and the argument is
-dead code.** An earlier draft credited `LayoutWorker.Spawn(…, roofs: true, …)` with roofing
-and therefore de-fogging the interior. It does not:
-**`LayoutWorker_Structure.Spawn` ignores its own `roofs` argument and calls
+dead code.** **`LayoutWorker_Structure.Spawn` ignores its own `roofs` argument and calls
 `base.Spawn(…, roofs: false, …)` unconditionally**, and `LayoutWorker_OrbitalPlatform`
-inherits that override [V]. What roofs the interior is the sketch —
-`LayoutRoomDef.roofDef`, with `noRoof` to suppress it — applied per room as the layout
-spawns [V]. **A `roomDefs` entry that leaves `roofDef` unset, or sets `noRoof`, is an
-unroofed room; an unroofed room is `ExposedToSpace` and can never pressurise.**
-> **Correction, 2026-09-23 ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)):**
-> the `roofDef`-unset half is wrong. A room def with no `roofDef` **is roofed**:
-> `RoomContentsWorker.TrySetRoof` uses `roofDef ?? RoofDefOf.RoofConstructed`, unless the room def
-> or the layout sets `noRoof` [V]. Only `noRoof` makes an open bay. See § *A stronghold a quest
-> generates → Constraints*.
+inherits that override [V]. What roofs the interior is the sketch, applied per room as the
+layout spawns: `RoomContentsWorker.TrySetRoof` roofs every cell with
+`roofDef ?? RoofDefOf.RoofConstructed` unless the room def or the layout sets `noRoof` [V]
+([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)). **Only a room def or layout
+that sets `noRoof` is unroofed; an unset `roofDef` roofs with `RoofConstructed`. An unroofed
+room is `ExposedToSpace` and can never pressurise.**
 
-Check
-`roofDef` on every Odyssey room def before borrowing it into a layout, and read the fog
-behaviour below as *unproven* rather than settled: it follows from roofs existing, and the
-roofs are now known to arrive by a different route than the one the claim was built on.
+Check `noRoof` on every room def and layout before borrowing it, and read the fog behaviour
+below as *unproven* rather than settled: it follows from roofs existing.
 
 ⚠️ **`<temperature>20</temperature>` on the genstep is mandatory.**
 `PostMapInitialized` calls `MapGenUtility.SetMapRoomTemperature(map, layoutDef, SpawnTemp)`
@@ -976,8 +943,7 @@ is the second lever, for a deliberately open bay. **No blanket decision is neede
 is `Building_HackableDoor` [V]. **Every orbital stronghold's outer doors are hackable by
 vanilla default**, and `StructureLayoutDef.ensureOneDoorUnlocked` is the switch deciding
 whether a hack is required to get in at all. The lever is recorded here; the mechanism is
-[#58](https://github.com/cjd721/Rimworld-Archinity/issues/58)'s and lives in
-`docs/specs/HACKING.md`.
+`docs/specs/HACKING.md`'s ([#58](https://github.com/cjd721/Rimworld-Archinity/issues/58)).
 
 #### State, change and display — the remaining three legs, all of them vanilla's
 
@@ -1013,8 +979,7 @@ splinters and exile restoration [V].
 ⚠️ **The shipped precedent is for the wrong overload.** Both call sites in
 `RimPacts.WorldComponent_RimPacts` use the **single-argument
 `CreateFactionAndAddToManager(FactionDef)`**, which hardcodes `Find.WorldGrid.Surface` [V].
-The **layer-taking overload** — the one this spec would need, and the one earlier drafts
-named — has **no shipped precedent anywhere in the corpus** [V]. So the route is verified by
+The **layer-taking overload** — the one this spec would need — has **no shipped precedent anywhere in the corpus** [V]. So the route is verified by
 reading and by a surface-layer production precedent, and by nothing at all on a non-surface
 layer.
 
@@ -1032,14 +997,14 @@ documented as available; do not build on it.
 | `<hidden>true</hidden>` on our two orbit factions | XML edit | 2 lines | `Factions_FreeCompanies.xml`, `Factions_Glitterites.xml` |
 | **Delete `Orbit_AlwaysViewable.xml`** | deletion | — | `Archinity.Pacing/Patches/` |
 | Correct `Orbit_LayerSize.xml`'s arithmetic, re-decide 6 vs 5 | XML comment | ~8 lines | `Archinity.Pacing/Patches/Orbit_LayerSize.xml` |
-| Lock the six orbital opportunity quests out of the pool, if #20 puts `OrbitalTech` before the resolution | XML patch | ~15 lines | `Archinity.Pacing/Patches/` (new) |
+| Close the four `OrbitalScanner` givers, per § *Holding every `OrbitalScanner` giver shut* R1–R5 | XML (R1) to Medium C# (R2/R3) | per route | #119 selects |
 | `RevealOrbit(List<Faction>, int)` synced command | **new C#** | **~60–80 lines** | the assembly we already ship |
 | Reveal-gate `WorldComponent` — two scribed fields, no tick | **new C#** | ~15 lines | the assembly we already ship, **owned by this spec** |
 | `StructureLayoutDef` per stronghold flavour, reusing Odyssey's `LayoutRoomDef`s | XML | ~40–60 lines each | `Defs/StructureLayoutDefs/` (new) |
 | `GenStepDef` wrapping `GenStep_OrbitalPlatform` | XML | ~15 lines each | `Defs/GenStepDefs/` (new) |
 | `MapGeneratorDef` + `WorldObjectDef` (route A), or `SitePartDef` + quest patch (route B) | XML | ~30 lines each | `Defs/` (new) |
 | Bespoke `LayoutRoomDef` — the vault, the archive | XML **content** | ~60–120 lines each | `Defs/LayoutRoomDefs/` (new) |
-| `TechLevelConfigDef` rows for every Archinity orbital `GenStepDef` | XML patch | ~10 lines | the same file as the faction exemption (**T-54**; insurance against a per-install `Settings.Overrides` row, not a default removal — see T-54's 2026-09-23 correction) |
+| `TechLevelConfigDef` rows for every Archinity orbital `GenStepDef` | XML patch | ~10 lines | the same file as the faction exemption (**T-54**; insurance against a per-install `Settings.Overrides` row, not a default removal) |
 | Per-faction `WorldObjectDef` selection inside `RevealOrbit` | **new C#** | **~1 line** | inside the command already costed above |
 
 **~76–96 lines of new C#** (60–80 + 15 + 1), no new assembly. The component is new; nothing
@@ -1207,11 +1172,11 @@ the throne by `GenStep_PlotRaid` [V].
 
 | Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
 |---|---|---|---|---|---|
-| **R1 — Layout guarantees only** | The objective room is never breached, has no outer doors, and one outer door can be pre-hacked | Odyssey / vanilla layout | XML | Easy | Yes |
-| **R2 — Verify and repair after generation** | A checker confirms the objective exists and can be reached, and re-places it if not. This is also the only loud detector of the "void" failure | our `SitePartWorker.PostMapGenerate` | C# | Medium | Yes |
-| **R3 — Reward on arrival** | The prize is a quest reward on `site.MapGenerated`, so it cannot fail to generate — and nothing has to be carried out | Odyssey gravcore pattern | XML | Easy | Yes |
+| **RA1 — Layout guarantees only** | The objective room is never breached, has no outer doors, and one outer door can be pre-hacked | Odyssey / vanilla layout | XML | Easy | Yes |
+| **RA2 — Verify and repair after generation** | A checker confirms the objective exists and can be reached, and re-places it if not. This is also the only loud detector of the "void" failure | our `SitePartWorker.PostMapGenerate` | C# | Medium | Yes |
+| **RA3 — Reward on arrival** | The prize is a quest reward on `site.MapGenerated`, so it cannot fail to generate — and nothing has to be carried out | Odyssey gravcore pattern | XML | Easy | Yes |
 
-**R1 is "usually", not "always".** The important room gets `noExteriorDoors` [V]. Its interior doors
+**RA1 is "usually", not "always".** The important room gets `noExteriorDoors` [V]. Its interior doors
 come from `CreateDoors`, which skips a connection when no good door cell exists, with no log [V]. A
 room placed by the fallback has no adjacency test at all [V]. The result can be a sealed vault
 inside `OrbitalAncientFortifiedWall` — **7,500 HP, not deconstructible** [V]. Obtainable with
@@ -1220,12 +1185,12 @@ produces `Log.ErrorOnce("Layout failed to spawn all required rooms…")` and gen
 (**T-154**).
 `ensureOneDoorUnlocked` pre-hacks one exterior `Building_HackableDoor` [V].
 
-**R2.** `Site.PostMapGenerate` calls `PostMapGenerate(map)` on every part's worker [V], after every
+**RA2.** `Site.PostMapGenerate` calls `PostMapGenerate(map)` on every part's worker [V], after every
 genstep, so it sees the finished station. It can test that the quest thing is spawned and reachable
 from outside, then re-place it by `GenStep_AncientAltar`'s cannot-fail rule. It also catches T-54's
 void (§ *Failure and recovery*), because a missing platform means a missing objective.
 
-**R3.** `QuestNode_Root_Gravcore_OrbitalAncientPlatform` ends the quest **`Success` on
+**RA3.** `QuestNode_Root_Gravcore_OrbitalAncientPlatform` ends the quest **`Success` on
 `site.MapGenerated`** with a gravcore in its `RewardChoice`. The grav engine in `AncientEngineRoom`
 is scenery for the fiction [V]. That is a guarantee by construction, and it is not a raid.
 
@@ -1245,7 +1210,7 @@ there, or while a transporter is inbound. Otherwise it removes the map. It sets
 site. An objective not taken is lost with the map.** The scripts choose the outcome. The hack
 complex and Odyssey's `Gravcore_Mechhive` end `Fail` on `site.MapRemoved` [V]. Odyssey's two
 gravcore platforms carry an `Unknown` end on `site.MapRemoved`, but they end `Success` on
-`site.MapGenerated` first, so that part never fires (R3) [V]. This matches the requirement's
+`site.MapGenerated` first, so that part never fires (RA3) [V]. This matches the requirement's
 *"discarded on leaving, with only the outcome persisting."*
 
 **M2 comes free from one type test.** `Site.ShouldRemoveMapNow` keeps the world object whenever any
@@ -1304,26 +1269,21 @@ record the plot needs is C2.
 **The difference:** the layout spawns buildings with the **site faction**, and `RoomPart_CornerThing`
 falls back to `AncientsHostile` [V]. So every placed record meets **T-62**, which `CHARTING.md` § 10
 already routes around.
-**A factual correction to that section** (dated inline there). It says an abandoned site's map *"is regenerated on
-re-entry."* For a quest site that is not so: the site is destroyed (M1). It holds only for a
-standing settlement (S2) and for M2. The world-scoped `readLore` key is still right, because a
-regenerated *stronghold* (F1) can present the same record again.
+**Re-entry.** A quest site the player leaves is destroyed (M1), not regenerated; only a standing
+settlement (S2) and an M2 site present a fresh map on re-entry. The world-scoped `readLore` key
+is still right, because a regenerated *stronghold* (F1) can present the same record again.
 
 ### Constraints
 
-- ⚠ **§ 6's roof claim is wrong, and it matters for every room def borrowed.** § 6 says a
-  `LayoutRoomDef` that leaves `roofDef` unset is unroofed. **It is roofed:**
-  `RoomContentsWorker.TrySetRoof` roofs every cell unless the room def or the layout sets `noRoof`,
-  using `RoomDef.roofDef ?? RoofDefOf.RoofConstructed` [V]. Only `noRoof` makes an open bay. The fog
-  claim § 6 demoted rests on this; the roofs arrive by this route.
 - **Givers, not weights.** A stronghold quest reaches orbit through a `CanRun` path (a parent
   generator or our own giver) with `autoAccept`, never through the storyteller's roll (§ *The reveal
   gate → Constraints*). **Our giver must itself be gated on the reveal flag**, or it opens orbit
   early — #148's *closing orbit means closing givers* applies to our quests too.
 - **Silent skips are the norm in layout generation.** Required rooms log once and carry on; crates,
   prefabs, corner things and BTG's mech return quietly; `RoomPart_AncientEngine` and
-  `RoomPart_SentryDrone` log an error and carry on [V]. Only R2 turns any of it into a guarantee.
-- **T-54** removes an orbital `GenStepDef` silently; R2 is the in-game detector (§ *Failure and
+  `RoomPart_SentryDrone` log an error and carry on [V]. Only RA2 turns any of it into a guarantee.
+- **T-54** removes an orbital `GenStepDef` silently, only if a `TechLevelConfigDef` row or
+  `Settings.Overrides` names it; RA2 is the in-game detector (§ *Failure and
   recovery*).
 
 ### Available mechanisms — the corpus
@@ -1359,12 +1319,12 @@ for its placement half.
 | Question | Kind | Owner |
 |---|---|---|
 | Per stronghold: carry a quest item or not, and does leaving without it lose it (M1) or keep the site (M2)? | Requirement | `docs/requirements/GLITTERTECH.md` § *Strongholds*; beats [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) |
-| What counts as the objective obtained: pickup, extraction (M2's signal) or arrival (R3)? | Requirement | same |
+| What counts as the objective obtained: pickup, extraction (M2's signal) or arrival (RA3)? | Requirement | same |
 | Who re-offers a failed stronghold, and after how long: a Glitterite campaign parent, the Charting spine, or the quest itself? | Requirement + capability overlap | GLITTERTECH; [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149) for orbital givers |
 | Which room kinds and flavours each stronghold presents | Content | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | Whether the boss is a mech kind (E5 as shipped) or a named character carried in the quest | Requirement | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) |
-| One worker class carrying C2's placement, R2's check and M2's keep; where the quest thing lives (`relicThing` or `SitePart.things`); garrison scaling | Build | next map |
-| **RUN, one client, optional:** generate the candidate layout 20× in dev mode and count `Layout failed to spawn all required rooms` and sealed objective rooms. This prices R1 against R2; it does not change the verdict | Measurement | next map |
+| One worker class carrying C2's placement, RA2's check and M2's keep; where the quest thing lives (`relicThing` or `SitePart.things`); garrison scaling | Build | next map |
+| **RUN, one client, optional:** generate the candidate layout 20× in dev mode and count `Layout failed to spawn all required rooms` and sealed objective rooms. This prices RA1 against RA2; it does not change the verdict | Measurement | next map |
 
 ## Persistence and multiplayer
 
@@ -1450,7 +1410,8 @@ builds `Current.CreatingWorld.info.factions` from precisely that enumerable, and
 `WorldGenStep_Factions.GenerateFresh` consumes `Current.CreatingWorld.info.factions`** [V].
 The world-creation list **is** the generation input; there is no second, unfiltered path.
 
-So on a **Neolithic** world-tech-level start with World Tech Level active, every Spacer
+So on a **Neolithic** world-tech-level start with World Tech Level active **and
+`Filter_Factions` on** (frozen off by #7 § 3; `ERA.md` § *The build* › 6 (b)), every Spacer
 orbital faction — `TradersGuild`, `Salvagers`, `Archinity_Glitterites`,
 `Archinity_FreeCompanies` — drops out of `info.factions` before `WorldGenStep_Factions` ever
 runs. Silently, permanently, with no error, no warning and no log line, and no repair short
@@ -1464,7 +1425,8 @@ surface faction that was never filtered.
 
 **World Tech Level is currently inactive in `config/ModsConfig.xml`.** That is not a
 defence. The enabled set is an accident of the last playtest, and this decision is taken
-once, irrevocably, at world creation.
+once, irrevocably, at world creation. The live defence is the frozen `Filter_Factions`; the
+exemption below is insurance against that toggle (**T-18**).
 
 **The mitigation is one XML file, and it is the mod's own shipped pattern.** Read end to end
 against `3414187030/1.6/Lunar/Components/WorldTechLevel.dll` (the real assembly; `1.6/Assemblies/`
@@ -1511,8 +1473,9 @@ the exemption.
 **A second instance of the same mechanism — louder in consequence, but recoverable.**
 `Patch_MapGenerator.GenerateContentsIntoMap_Prefix` filters `GenStepDef` through the *same*
 `MinRequiredTechLevel` array and **rewrites the ref parameter** [V]. Any Archinity map genstep
-resolving above the world level silently never runs, with no log line. Two qualifications
-that ORBIT previously stated too harshly, both from **T-54**:
+resolving above the world level, when a `TechLevelConfigDef` row or `Settings.Overrides` names
+it (a `GenStepDef` is otherwise `Undefined` and passes), silently never runs, with no log line.
+Two qualifications, both from **T-54**:
 
 - **It is gated, like every `Filter_*` patch in that assembly, on a mod setting** — this one
   on `WorldTechLevel.Settings.Filter_GenSteps`, through the `[PatchGroup("Filters")]` /
@@ -1522,13 +1485,15 @@ that ORBIT previously stated too harshly, both from **T-54**:
   exclusion list cannot reach it and a `TechLevelConfigDef` override is the only lever — but
   `ApplyOverrides` *does* cover `GenStepDef`, and the filter is re-evaluated **per map**
   rather than baked into the world. A stronghold that generated as a void is repaired by
-  shipping the override; only maps already generated keep what they were generated with.
+  correcting the row or override that named its genstep, or by turning `Filter_GenSteps` off;
+  only maps already generated keep what they were generated with.
   **The faction leg is the permanent one; this one is a bug you can fix after the fact.**
 
-**[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) needs a checklist line that
-does not exist yet:** *is World Tech Level active at world creation, at what level, and does a
-`TechLevelConfigDef` exempt every orbital `FactionDef` and every Archinity `GenStepDef`?* This
-spec does not edit #18.
+**World Tech Level is active by design** (`ERA.md` § *The build* › 2–3,
+[#7](https://github.com/cjd721/Rimworld-Archinity/issues/7)); the roster leg is armed only by
+`Filter_Factions`, frozen off (#7 § 3, `ERA.md` § *The build* › 6 (b), **T-54**).
+[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) owns recording the frozen set.
+This spec does not edit #18.
 
 **A shipped post-worldgen faction-addition path exists, and it qualifies the escape hatch below.**
 `Window_AddFactions.OpenIfAnyAvailable(previousLevel)` offers the player any faction whose
@@ -1544,46 +1509,42 @@ T-07's body.
 
 ### Vanilla content can open the reveal gate before the politics do
 
-`OrbitLayer.CanSelectLayer` triggers on **any** world object on the layer, and Odyssey ships
-six that a player can cause. `Odyssey/Defs/QuestScriptDefs/Script_SpaceSites.xml` defines
+`OrbitLayer.CanSelectLayer` triggers on **any** world object on the layer. Worldgen's
+asteroids already open it (§ *The build* 2); Route A's switches close that. Beyond them,
+Odyssey ships six quest sites that a player can cause.
+`Odyssey/Defs/QuestScriptDefs/Script_SpaceSites.xml` defines
 `OpportunitySite_Asteroid`, `OpportunitySite_OrbitalItemStash`,
 `OpportunitySite_AbandonedPlatform`, `OpportunitySite_OrbitalWreck`,
 `OpportunitySite_MechanoidPlatform` and `OpportunitySite_Satellite`; each roots on
 `QuestNode_Root_Asteroid` with `<layerDef>Orbit</layerDef>` and places a `SpaceMapParent`
 there [V]. **The first one to fire enables the view-orbit gizmo whatever the political state**
-— and the entire *Display* leg of this spec rests on that layer being empty.
+— and Route A's display leg rests on that layer being empty. The three gravcore subquests and
+`OrbitalFugitive` place on Orbit too (§ *The reveal gate → Constraints*).
 
-~~The gate is bounded, not open.~~ All six are `randomlySelectable false` with
-`<givenBy><li>OrbitalScanner</li></givenBy>` [V], so the storyteller never picks them. ~~They
-arrive only from a built, powered, un-roofed `OrbitalScanner`.~~ The scanner
-(`CompOrbitalScanner`, `PlaceWorker_NotUnderRoof`) costs 180 steel, 6 industrial and **2 spacer
-components** and requires the `OrbitalTech` research project [V].
+All six are `randomlySelectable false` with `<givenBy><li>OrbitalScanner</li></givenBy>` [V], so
+the storyteller never picks them. **The gate is open, not bounded**: four things give these
+quests ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)):
+- the scanner (`CompOrbitalScanner`, `PlaceWorker_NotUnderRoof`), which costs 180 steel,
+  6 industrial and **2 spacer components** and requires the `OrbitalTech` research project [V];
+- a hacked `AncientUplink`, which needs Intellectual 6 and no research, and which generation
+  places, from the Neolithic on;
+- VGE's scanner cluster;
+- GravTech's computer core.
 
-> **Corrected 2026-09-23, [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).**
-> **The gate is open, not bounded.** Four things give these quests:
-> - the scanner;
-> - a hacked `AncientUplink`, which needs Intellectual 6 and no research, and which generation
->   places, from the Neolithic on;
-> - VGE's scanner cluster;
-> - GravTech's computer core.
->
-> The tag also carries two corpus quests. Clearing `givenBy` throws. The routes are in § *The
-> reveal gate → Holding every `OrbitalScanner` giver shut*. Items 1 and 2 below are struck and
-> restated.
+The tag also carries two corpus quests. The routes are in § *The reveal gate → Holding every
+`OrbitalScanner` giver shut*.
 
-~~Two things follow.~~
+Two things follow.
 
-1. ~~**The real gate is when `OrbitalTech` and `ComponentSpacer` become reachable.**~~ Research
-   placement ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)) bounds only the
-   buildings. It cannot bound the uplink, which no research gates. The reveal-gate item is the
-   **tag's four givers**, and #180 owns closing them.
-2. **The mitigation is not frozen at worldgen**, unlike everything else in this spec. Every #180
-   route is a def patch or ordinary code that can land after the world exists, but ~~clearing
-   `givenBy` on the six~~ clearing `givenBy` is the error path, not a mitigation. **Locking
-   `OrbitalScanner` out of the build menu** in the lockout pattern
-   (`Archinity.Pacing/Patches/Lockout_AlphaMechs.xml`) must not rely on removing
-   `designationCategory`, because Better Architect Menu adds one back (#180). The severity is a
-   design one, not a T-07 one.
+1. **Research placement ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)) bounds
+   only the buildings.** It cannot bound the uplink, which no research gates. The reveal-gate
+   item is the **tag's four givers**, answered at route depth on #180.
+2. **Closing is not a worldgen decision**, unlike everything else in this spec. Every #180
+   route is a def patch or ordinary code that can land after the world exists. Clearing
+   `givenBy` is the error path, not a mitigation. **Locking `OrbitalScanner` out of the build
+   menu** in the lockout pattern (`Archinity.Pacing/Patches/Lockout_AlphaMechs.xml`) must not
+   rely on removing `designationCategory`, because Better Architect Menu adds one back (#180).
+   The severity is a design one, not a T-07 one.
 
 Note what the early reveal produces: unowned quest sites on the layer, not stations. Orbit
 becomes *selectable* early; it does not become *populated* early. That is a weaker failure
@@ -1593,26 +1554,19 @@ than the roster one, and it is loud rather than silent.
 
 Three silent failures, all on the map-generation half.
 
-1. **T-54's second leg deletes our gensteps.** `WorldTechLevel`'s
-   `Patch_MapGenerator.GenerateContentsIntoMap_Prefix` filters `GenStepDef` through the
-   `MinRequiredTechLevel` array and rewrites the ref parameter, and unlike `FactionDef`,
-   `GenStepDef` gets **no `ApplyExclusions` pass** [V]. An Archinity orbital `GenStepDef`
-   resolving above the world tech level therefore **never runs, with no log line**, and the
-   player enters a bare `GenStep_Space` void — 200×200 of impassable, vacuum-exposing
-   nothing. `TechLevelConfigDef` is the only lever; the patch is gated on
-   `WorldTechLevel.Settings.Filter_GenSteps`, so it is a **T-18** surface too. **Unlike the
-   roster failure this one is recoverable** — the filter runs per map, not at worldgen, so
-   shipping the override repairs every stronghold not yet generated (**T-54**). Every
-   `GenStepDef` in the cost table must appear in the same file as the faction exemption, and
-   the [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) line covering it still
-   does not exist.
-   > **Narrowed 2026-09-23 by [#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)'s
-   > review — see T-54's correction note.** The genstep leg exists only while
-   > `Filter_GenSteps` ("Ancient debris", frozen **off** by #7 § 5) is on, and a `GenStepDef` has
-   > no derived level: it is `Undefined`, and passes, unless a `TechLevelConfigDef` row or
-   > `Settings.Overrides` names it [V]. No mod ships a row naming an Archinity genstep. So our
-   > orbital gensteps are **not** deleted by default; the exposure is a per-install override
-   > (T-18). The `TechLevelConfigDef` rows in the cost table become insurance, not a requirement.
+1. **T-54's second leg can delete our gensteps — only if `Filter_GenSteps` is on and a
+   `TechLevelConfigDef` row or `Settings.Overrides` names the genstep** (**T-54**, **T-18**).
+   `WorldTechLevel`'s `Patch_MapGenerator.GenerateContentsIntoMap_Prefix` filters `GenStepDef`
+   through the `MinRequiredTechLevel` array and rewrites the ref parameter, and unlike
+   `FactionDef`, `GenStepDef` gets **no `ApplyExclusions` pass** [V]. A `GenStepDef` has no
+   derived level: it is `Undefined`, and passes, unless a row or `Settings.Overrides` names it
+   [V]. No mod ships a row naming an Archinity genstep, and `Filter_GenSteps` ("Ancient debris")
+   is frozen **off** by #7 § 5 ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)).
+   When the leg is armed, a named genstep resolving above the world tech level **never runs,
+   with no log line**, and the player enters a bare `GenStep_Space` void — 200×200 of
+   impassable, vacuum-exposing nothing. **Unlike the roster failure this one is recoverable** —
+   the filter runs per map, not at worldgen, so correcting the setting or the row repairs every
+   stronghold not yet generated. The cost table's `TechLevelConfigDef` rows are insurance.
 2. **A missing `<temperature>` generates the interior at −75 °C.** `SpawnTemp` is
    `temperature ?? -75f` [V]. Nothing warns.
 3. **A KCSG layout placed on an orbit map produces a structure that can never
@@ -1657,8 +1611,15 @@ why the WTL check belongs before world creation rather than at the reveal.
 ### A hidden faction raids before the reveal
 
 Not a failure of this design — `IncidentWorker_RaidEnemy` ignores `Hidden` by intent — but
-it is the one way an orbital power can reach the player before orbit does. Raid gating is
-the def's and Ignorance Is Bliss's job, not this spec's.
+it is the one way an orbital power can reach the player before orbit does.
+
+**Capability: can the hidden `Salvagers` be held back until the reveal? Yes, by composition.**
+[`PRESSURE.md`](PRESSURE.md) § *Hostility-scaled pressure* › *G — which faction the storyteller
+draws* verifies a validator-wrapping prefix on raid-faction selection, shipped by RimPacts to keep
+treaty factions out of the draw [V]; its predicate can read § *The build* 5's reveal flag [I].
+**T-17** applies: excluding a faction this way is how the raid pool empties silently. The levers
+already in place, `earliestRaidDays` on the def and Ignorance Is Bliss's tech band, gate by days
+and by era, not by the reveal [V].
 
 ## Status
 
@@ -1666,37 +1627,34 @@ the def's and Ignorance Is Bliss's job, not this spec's.
 
 Evidence class **READ**, against decompiled RimWorld 1.6.4871, `Multiplayer.dll`,
 `RimPacts.dll`, `WorldTechLevel.dll` and `KCSG.dll`, Odyssey's shipped defs, plus two-root
-corpus sweeps of all 155 mods.
-Re-verified adversarially on 2026-09-12; every load-bearing engine claim below reproduced,
-and five claims were corrected in place (the WTL postfix, the `CreateFactionAndAddToManager`
-overload, the `Find.WorldGrid.Orbit` condition, the `State` leg's owner, and two STUB-grade
-numbers reported as [V]).
-
-A second adversarial pass the same day corrected the map half: the `roofs:` argument is dead
-code and roofing comes from `LayoutRoomDef.roofDef` (which demotes the fog claim to a RUN
-item), `Settlement.MapGeneratorDef` has three branches rather than two, the WTL `GenStepDef`
-leg is settings-gated and recoverable rather than terminal, the BTG counts were 17/3 and are
-19/2, and the § 6 cost arithmetic read ~80–95 for 76–96.
+corpus sweeps of all 155 mods. Re-verified adversarially twice on 2026-09-12, the world half and
+the map half; every load-bearing engine claim below reproduced.
 
 - **Verified:** T-07 applies per layer and therefore to orbit; `Faction.hidden` is a
   scribed instance override; hidden factions get neither the freebie nor a lottery slot;
-  `OrbitLayer.CanSelectLayer` is vanilla's reveal gate; `layerWhitelist` is read at one
+  `OrbitLayer.CanSelectLayer` greys the view-orbit button only while the layer holds no world
+  object, and worldgen's asteroids mean it opens from the first tick unless Route A empties the
+  layer; `layerWhitelist` is read at one
   worldgen-only site; `WorldObject` has no hide flag, and no mod supplies one; layer geometry
   is scribed (**T-45**); `CreateFactionAndAddToManager` is a real runtime route, with a
   shipped precedent **only for the surface-layer overload**; MP syncs `PlanetLayer` and
   patches `FactionManager.Add`; World Tech Level's `ConfigurableFactions` postfix reaches
   worldgen; `GenStep_OrbitalPlatform` builds a floored, heated, pressurised,
-  life-supported interior from an XML-only `StructureLayoutDef`, **roofed per room from
-  `LayoutRoomDef.roofDef` rather than from the dead `roofs:` argument**, and its whole
+  life-supported interior from an XML-only `StructureLayoutDef`, **roofed per room —
+  `roofDef ?? RoofConstructed`, open only under `noRoof` — rather than from the dead `roofs:`
+  argument**, and its whole
   pipeline is
   `Verse.Rand`; `Room.ExposedToSpace` and `VacuumUtility.IsRoomAirtight` are different
   rules with different callers; `Breached` is a shipped per-layout `RoomPartDef`; three
   corpus mods already use Odyssey's layout system, one of them for custom-faction orbital
   settlements.
 - **Proposed [I]:** that these compose into the reveal described above. Nothing is built.
-- **Open, and owned elsewhere:** the machine-readable political outcome that fires the reveal
-  ([#100](https://github.com/cjd721/Rimworld-Archinity/issues/100), with the beat at
-  [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46)); which orbital powers exist and
+- **Open, and owned elsewhere:** the predicates and tie rules that fill the political outcome
+  snapshot that fires the reveal — the requirement is `docs/requirements/POLITICS.md`
+  § *Required behavior*; the predicates are
+  [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100)'s, a content decision on the
+  build map ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)), with the beat at
+  [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46); which orbital powers exist and
   how many settlements each gets
   ([#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)); when `OrbitalTech` becomes
   reachable ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)); what a
@@ -1722,23 +1680,25 @@ before world creation — see *Verification*.
 
 ## Available mechanisms
 
-**Vanilla/Odyssey supplies the entire reveal gate and we are currently defeating it.**
+**Vanilla/Odyssey supplies the reveal gate's greyed button, but it greys only an empty layer,
+and worldgen does not leave orbit empty.** Closing orbit is Route A's switches plus § *The reveal
+gate → Holding every `OrbitalScanner` giver shut*.
 
 | Mechanism | What it gives | Limitation |
 |---|---|---|
 | `Faction.hidden` (`bool?`, scribed) | per-instance hide that overrides the def and survives save/load [V] | does not gate hostile raids [V] |
 | `FactionGenerator` hidden gates | a hidden faction costs no map presence on any layer [V] | decided at worldgen for placement purposes |
-| `OrbitLayer.CanSelectLayer` | the greyed "No discovered orbital locations." button [V] | triggers on *any* world object on the layer, including Odyssey's six scanner-given orbital quest sites — see *Failure and recovery* |
+| `OrbitLayer.CanSelectLayer` | the greyed "No discovered orbital locations." button [V] | triggers on *any* world object on the layer: worldgen's 3–20 asteroids, and the ten orbit-placing quests, the six scanner quests among them from four givers — see § *The reveal gate → Constraints* and *Failure and recovery* |
 | `PlanetLayerDef.SettlementWorldObjectDef` | `SpaceSettlement`, with jammer gate and platform map generator [V] | one base type per layer; Better Traders Guild's `PatchOperationSequence` is the worked example of specialising it |
 | `WorldObject.SetFaction` | bare field write, `Settlement` does not override [V] | notifies nothing; not MP-synced |
 | `FactionGenerator.CreateFactionAndAddToManager(FactionDef)` | full runtime faction creation; the overload RimPacts actually ships [V] | hardcodes `Find.WorldGrid.Surface` — no use to orbit |
 | `FactionGenerator.CreateFactionAndAddToManager(layer, def)` | full runtime faction creation on a named layer [V] | `Rand`-heavy; places a freebie settlement the caller must destroy; **zero shipped precedent in the corpus** [V] |
-| `GenStep_OrbitalPlatform` | floor, procedural rooms, roofs (per room, from `LayoutRoomDef.roofDef`), 20 °C, life support, docks, cannons, exterior prefabs, debris — every field XML [V] | `temperature` defaults to −75 °C; needs a `StructureLayoutDef`; its `roofs:` argument is dead code, so an unroofed `roomDefs` entry silently fails to pressurise [V] |
+| `GenStep_OrbitalPlatform` | floor, procedural rooms, roofs (per room: `roofDef`, or `RoofConstructed` when unset), 20 °C, life support, docks, cannons, exterior prefabs, debris — every field XML [V] | `temperature` defaults to −75 °C; needs a `StructureLayoutDef`; its `roofs:` argument is dead code; only a room def or layout that sets `noRoof` is unroofed, and an unroofed room silently fails to pressurise [V] |
 | `StructureLayoutDef` + `LayoutRoomDef` | a *generator*, not a floor plan — size, rotation, room set, corridor shape and dock arrangement all re-roll per map [V] | vanilla rooms are Ancient-flavoured; bespoke rooms are content |
 | `RoomPartDef Breached` / `Gore` | per-room, weighted hull breach and gore, applied through `LayoutDef.parts` [V] | refuses the `importantRoomDef` and wall-protected rooms [V] |
 | `Building_LifeSupportUnit` | pumps a sealed room to zero vacuum and 20 °C, and **generates** 3200 W [V] | no-ops on any room that is `ExposedToSpace` [V] |
 | `AncientFortifiedWall` / `OrbitalAncientFortifiedWall` | `isAirtight` on the def, so **T-47** does not bite the generated hull [V] | `neverBuildable`, `deconstructible: false` — the player cannot extend or repair with it [V] |
-| `AncientBlastDoor` | `Building_HackableDoor` exterior door, shipped on the orbital base layout [V] | the design lever is `ensureOneDoorUnlocked`; the mechanism is [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58)'s |
+| `AncientBlastDoor` | `Building_HackableDoor` exterior door, shipped on the orbital base layout [V] | the design lever is `ensureOneDoorUnlocked`; the mechanism is `HACKING.md`'s ([#58](https://github.com/cjd721/Rimworld-Archinity/issues/58)) |
 
 **The corpus precedent.** A two-root sweep of all 155 mods found **three** mods using
 Odyssey's layout system: **Better Traders Guild** (`shunter.bettertradersguild`) ships
@@ -1864,22 +1824,12 @@ sweep having run, not of its completeness.
 
 ### Observable checks
 
-1. **The one RUN item — empty orbit at worldgen, under the real load order.** Generate a
-   world with every orbit-whitelisted faction hidden and confirm three things in the same
-   run:
-   - ~~`Find.WorldObjects.AllWorldObjectsOnLayer(Find.WorldGrid.Orbit)` is empty, and the
-     view-orbit gizmo is present, greyed, and reads *"No discovered orbital locations."*
-     The mechanism is read end to end; what a run confirms is that no other gen step or mod
-     places a world object on Orbit, which no grep can prove. Orbit's `worldGenSteps` are
-     only `Tiles` and `Factions` [V], so the expected answer is yes.~~
-
-     > **Struck, 2026-09-23, [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148).
-     > The expected answer is no.** The reasoning was right and the premise was too narrow:
-     > the layer's `worldGenSteps` really are only `Tiles` and `Factions`, but
-     > `WorldComponent_LocationGenerator` populates layers from `FinalizeInit`, which is not a
-     > gen step and is not in that list. Expect the gizmo **enabled** and the layer holding
-     > 3–20 asteroids. The replacement RUN item is in § *The reveal gate → Open questions*.
-   - **With World Tech Level active and the world tech level set to Neolithic**, whether
+1. **The one RUN item — the orbital roster at worldgen, under the real load order.** Generate a
+   world with every orbit-whitelisted faction hidden and confirm two things in the same run.
+   (The asteroid count the layer holds at creation is the RUN item under § *The reveal gate →
+   Open questions*.)
+   - **With World Tech Level active, `Filter_Factions` on and the world tech level set to
+     Neolithic**, whether
      `Current.CreatingWorld.info.factions` still contains all four orbital factions, and
      whether adding them to `Settings.FactionsExcluded` restores them if it does not. This is
      the WTL hazard above, and it is the check that decides a #18 line. Compare against the
@@ -1904,16 +1854,17 @@ sweep having run, not of its completeness.
      is the check, not a settled claim — read it as unproven [I].** The reading half is
      solid: `GenStep_FogSpace` flood-unfogs from the four map corners through a validator
      that rejects any cell with an edifice **or a roof** [V], so a roofed hull stops the
-     fill. What is *not* solid is the premise — an earlier draft rested it on
-     `LayoutWorker.Spawn(…, roofs: true, …)`, which is dead code (see § *The build → 6*);
-     roofing actually arrives per room from `LayoutRoomDef.roofDef`, so the fog outcome is
-     only as good as the room defs in the layout. A layout carrying an unroofed room will
-     leak the fill into the interior, silently. *(The recon's separate claim that `FogSpace`
+     fill. What is *not* solid is the premise: roofing arrives per room
+     (`roofDef ?? RoofConstructed`, open only under `noRoof`; the `roofs:` argument is dead
+     code, § *The build → 6*), so the fog outcome is only as good as the room defs in the
+     layout. A layout carrying a `noRoof` room will leak the fill into the interior, silently. *(The recon's separate claim that `FogSpace`
      "reveals essentially everything" is true of an all-vacuum map with no roofs — the
      failure case — and not of a correctly roofed platform.)*
    - **With World Tech Level active at a Neolithic world level**, confirm the map is a
-     platform and not a void. If it is a void, the `TechLevelConfigDef` exemption is
-     missing (**T-54**). There is no log line either way; the map is the readout.
+     platform and not a void. A void means `Filter_GenSteps` is on and a `TechLevelConfigDef`
+     row or `Settings.Overrides` names one of our gensteps (**T-54**, **T-18**); by default a
+     `GenStepDef` is `Undefined` and passes. There is no log line either way; the map is the
+     readout.
 
    **Multiplayer needs no separate run for the map half.** Determinism rests on vanilla's
    per-genstep `Rand` seeding, which this route inherits with no `System.Random` anywhere
@@ -1926,14 +1877,14 @@ sweep having run, not of its completeness.
 |---|---|---|
 | Which orbital powers exist, and their weights | **Frozen at worldgen.** SPACER.md's "at least two additional Spacer powers" are unauthored and cannot be added later | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | How many settlements each revealed faction gets | The reveal's only real parameter; a balance number, not a mechanism | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
-| **Is World Tech Level active at world creation, at what level, and is every orbital faction exempt?** | **The orbital roster exists or does not.** Silent, permanent, and taken before the first tick | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) — the line does not exist yet |
+| **World Tech Level at world creation, and the orbital roster exemption** | WTL is active by design (`ERA.md` § *The build* › 2–3, #7); the roster leg is armed only by `Filter_Factions`, frozen off (#7 § 3, `ERA.md` § *The build* › 6 (b), T-54). If that toggle is ever on, **the orbital roster exists or does not** — silent, permanent, and taken before the first tick. The `TechLevelConfigDef` exemption (four orbital factions + `Empire`) is insurance against that toggle | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) owns recording the frozen set |
 | Which live-state predicates select each route and ascending faction, and how ties compose | The immutable snapshot can hold multiple factions; this decides its contents | [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100) |
 | What fires the reveal, as a beat | The narrative moment the command hangs off | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) |
-| Which route closes each of the four `OrbitalScanner` givers (§ *Holding every `OrbitalScanner` giver shut*), and whether the uplink stays | Whether a player can select the Orbit layer before the politics resolve. Research placement ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)) bounds only the buildings | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (route); Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (uplink); answered at route depth on [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180) |
+| Which route closes each of the four `OrbitalScanner` givers, the uplink included (§ *Holding every `OrbitalScanner` giver shut*, R1–R5) | Whether a player can select the Orbit layer before the politics resolve. `docs/requirements/SPACE.md` § *The reveal* bounds every route: nothing in orbit is revealed before orbit opens. Research placement ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)) bounds only the buildings | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); answered at route depth on [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180) |
 | Whether the surviving institution also swaps `Faction.def` | If yes, pay #8's leak list | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | Orbit `subdivisions` — 6, or back to 5 | ~27 frozen orbital settlements versus ~9 | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) |
 | **How many stronghold *flavours* the campaign distinguishes** | ~40–60 lines of XML each; the mechanism does not wait on the number, and each flavour re-rolls per encounter | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | **Which room kinds a Glitterite stronghold must present** — the exemplar vault, the archive, the command core | The bespoke `LayoutRoomDef`s cannot be authored without it. `docs/requirements/GLITTERTECH.md` § *Strongholds* now lists what a stronghold's map must present; the capability answer is § *A stronghold a quest generates* ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)) | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
-| Whether the outer blast doors must be hacked to enter, per flavour | `ensureOneDoorUnlocked` on the layout def; free either way | [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) |
+| Whether the outer blast doors must be hacked to enter, per flavour | `ensureOneDoorUnlocked` on the layout def; free either way | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (content); mechanism `HACKING.md` |
 | Breach chance per flavour, and whether any stronghold is deliberately derelict | One weight in `LayoutDef.parts`; costs nothing | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | Whether Glittertech Expansion's art is reused inside our `LayoutRoomDef`s | Content reuse without KCSG — GTE `ThingDef`s referenced from vanilla room defs. Its surface quests are unaffected either way | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |

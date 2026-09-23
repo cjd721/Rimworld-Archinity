@@ -18,12 +18,19 @@ Requirements answered here:
   stay above them by holding paths nobody else may enter. Whether that door is built at all
   is [the power grid](https://github.com/cjd721/Rimworld-Archinity/issues/31)'s Q2.
 
+**The sanctioned writer.** The altar's rite: `CompPsylinkable` on the altar, whose
+`FinishLinkingRitual` calls `ChangePsylinkLevel(1)` (census R2, [V] 1.6.4871). `CanPsylink`
+requires the comp's `requiredFocus` to be one the recipient can use
+([`docs/engine/psycasts-and-meditation.md`](../engine/psycasts-and-meditation.md) § *A
+meditation focus's backstory gate has exactly one XML bypass*) [V]. No vanilla focus is open to
+every pawn, so that means a hediff-listed focus such as F1's. A rite can gate on the giver's
+faith and certainty ([#49](https://github.com/cjd721/Rimworld-Archinity/issues/49)). The focus, rites, counts and costs are the build map's.
+
 **Why a document of its own and not a section of `ALTAR.md`.** `ALTAR.md` owns the altar's
-builds: the gene author, the lottery and the charge. The psychic track reaches past the
+builds: the final rite, the lottery and the charge. The psychic track reaches past the
 altar. VPE's path gates, the XP loop that writes psylink rank
 ([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)), disciples and NPC casters
-all live outside it. `TRANSCENDENCE.md` already lists founder psylink progression as a gap
-with no owner. This document is where those answers land.
+all live outside it. `TRANSCENDENCE.md` points founder psylink progression here.
 
 Adjacent systems take over at these points:
 
@@ -31,7 +38,7 @@ Adjacent systems take over at these points:
   `TRANSCENDENCE.md` and [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)
   route A1;
 - the altar's gene installation — `ALTAR.md`;
-- android psylinks — `ANDROIDS.md`;
+- android psylinks — `ANDROIDS.md`, and by kind of android [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181);
 - engine facts on focus gates and VPE's Multiplayer hooks — `docs/engine/psycasts-and-meditation.md`.
 
 ---
@@ -391,9 +398,11 @@ kit becomes a design output. That is a story cost as much as a technical one.
 
 - **Requirement, [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) Q2.** Does
   the founders-only door exist, and behind which path?
-- **Requirement, #134's owner (unowned since #122 closed).** Is an Anomaly duplicate of a
-  founder a founder? F1 says no by flag. F2, F3 and F6 say yes unless patched. Moot at the
-  DLC floor ([#6](https://github.com/cjd721/Rimworld-Archinity/issues/6) rules Anomaly out);
+- **An Anomaly duplicate of a founder.** Capability: it inherits the founder record or not,
+  set by `duplicationAllowed` on the record hediff (**T-113**; `RELIGION.md` § *Founders — who
+  they are, beats that require them, flows that refuse them* › *A1 — founder record stamped
+  at game start*). F1 says no by flag. F2, F3 and F6 say yes unless patched. Moot at the DLC
+  floor ([#6](https://github.com/cjd721/Rimworld-Archinity/issues/6) rules Anomaly out);
   live only if Anomaly is added.
 - **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):**
   - whether VPE and Technomancer ship;
@@ -524,8 +533,8 @@ The load-bearing ones:
   (`RELIGION.md` §4 already plans the Church's).
 - **Remove the XP abilities** `VPE_TimeskipMeditation`, `VPE_DrainPsyessence`,
   `VPEP_Ascension` and `VPEP_MindJump`. Use the pattern `RESEARCH.md` uses for
-  `VPE_ReverseEngineer` (remove the ability and its path slot), coordinated with
-  [#33](https://github.com/cjd721/Rimworld-Archinity/issues/33)'s path set.
+  `VPE_ReverseEngineer` (remove the ability and its path slot), coordinated with the
+  surviving path set ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); #33 closed).
 - **`duplicationAllowed false`** on `PsychicAmplifier` and `VPE_PsycastAbilityImplant`.
   `GameComponent_PawnDuplicator` skips such hediffs [V], so an Anomaly duplicate is born
   unlinked. Only needed if Anomaly is added; it is outside the DLC floor (#6).
@@ -805,14 +814,24 @@ only.
 
 ### Open questions
 
-- **Requirement, [#31](https://github.com/cjd721/Rimworld-Archinity/issues/31):**
-  - Does cultivation advance rank at all? This decides D1, D2 or D3. `ALTAR.md` says
-    "willing-devotion rites and later campaign breakthroughs" and frames meditation as
-    cultivation; #10 §4 says rank is the altar's.
-  - Should `VRE_InnatePsylink` stay in the altar's genetic lottery? `ALTAR.md` keeps psychic
-    progression distinct from genetic augmentation, and this gene is a psylink by gene.
-- **Requirement, unowned:** does a captured or recruited caster keep its rank (I1/I2)? #31 is
-  the nearest owner.
+- **Cultivation and rank.** Answered by the requirement: rank comes only from the altar's rite,
+  the authored breakthroughs included
+  ([`requirements/ALTAR.md`](../requirements/ALTAR.md) § *One apparatus and separate rewards*;
+  [`requirements/RELIGION.md`](../requirements/RELIGION.md) § *Saved state and remaining work*).
+  Capability to keep meditation XP from raising rank: D1 (XP to zero), D2 (XP levels only up to a
+  ceiling the altar writes) or D3 (XP buys points, never rank).
+- **`VRE_InnatePsylink` in the altar's genetic lottery** (R14). `requirements/ALTAR.md` keeps
+  psychic progression distinct from genetic augmentation, and this gene is a psylink by gene.
+  Capability: it is one entry in our own `GenePool_Archite.xml`, kept or removed in XML
+  ([#31](https://github.com/cjd721/Rimworld-Archinity/issues/31)'s pool rows).
+- **A captured or recruited caster's rank.** Capability: I1 strips generated casters in XML and
+  I2 clamps rank on joining, so it can be kept or lost; with neither, it is kept.
+- **Psychic-rank titles** ([#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) / [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
+  The requirement's *Psychic Rank* row does not make the ranks titles. Capability: they can
+  carry titles as a `RoyalTitleDef` ladder conferred by `Pawn_RoyaltyTracker.SetTitle`
+  (**T-28**), on a faction **other than the Church** — `titles` holds one title per (pawn,
+  faction), so a rung on the Church's ladder would silently overwrite the Church title
+  (`RELIGION.md` § *Outstanding decisions* › *Exaltation* 7).
 - **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):**
   - whether VPE, VPE-Puppeteer, Prepare Carefully, Worksites Expanded and More Archotech
     Garbage ship;

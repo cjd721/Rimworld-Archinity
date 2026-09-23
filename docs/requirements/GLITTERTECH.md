@@ -15,11 +15,14 @@ post-vanilla technology from nothing.
 
 Ultra also opens advanced android manufacture. The campaign does not treat artificial bodies as inherently inferior; that distinction is essential to the final cosmology.
 
-**Whether an android can hold a psylink is open.** If a route lets it, the campaign may take it;
-if none does, the asymmetry
-stands and the fiction leaves the reason to interpretation — the soul, not the body, is what
-connects to the channel. [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141) answers
-what is possible. [#124](https://github.com/cjd721/Rimworld-Archinity/issues/124)
+**Whether androids hold psylinks is a capability question.** Routes exist
+([`ANDROIDS.md`](../specs/ANDROIDS.md) § *Psylinks — verdict and routes*,
+[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)); what they leave open — by
+kind of android, and Glitterite deafness under each — is on
+[#181](https://github.com/cjd721/Rimworld-Archinity/issues/181). Glitterites never receive
+psylinks (§ *Trace*). If no route is taken, the asymmetry stands and the fiction leaves the
+reason to interpretation — the soul, not the body, is what connects to the channel.
+[#124](https://github.com/cjd721/Rimworld-Archinity/issues/124)
 
 ## Intel Is Capability, Not Exposition
 
@@ -33,11 +36,17 @@ route above.
 Research does not spend Intel directly. At an authored table or through an appropriate
 faction—potentially the Traders Guild—the player exchanges an Intel balance for a
 techprint or other unlocking item. Research then consumes that ordinary Instruction gate.
-The conversion surface, exchange cadence and which faction can provide it remain capability
-questions on reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54); the
-separation between Intel and research is settled.
+The conversion surface is answered on [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)
+([`CURRENCIES.md`](../specs/CURRENCIES.md) § *The Intel exchange*); the catalogue and cadence
+are [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)'s. The separation between
+Intel and research is settled.
 
 World lore is separate. Glitterite sites contain murals, terminals, persona records, strange writings, conversations and environmental evidence that the player can inspect if interested. Optional investigation can provide Intel progress/bonuses, giving mechanical value to curiosity. The mandatory research/completion messages provide only the minimum story needed to follow the campaign, while the richer history remains in the places being raided.
+
+A lore record can always be read again. It may stay where it was found (a mural, a terminal)
+or be a physical thing brought home (a book, a plaque, a data disk). Where the text appears is a
+route; how much Intel reading pays, and whether a second read pays again, is balance.
+(Conrad, #118, 2026-09-23)
 
 This lets the emotional story ride on top of the logistical ladder. Intel gates what the
 colony can learn through an explicit conversion into instruction; the locations that
@@ -46,9 +55,12 @@ produce Intel reveal what the Glitterites are.
 The player controls Ultra aggression. More raids and more destructive analyses produce
 more Intel sooner, but also more Trace. A cautious player can advance slowly with fewer
 exposures; an aggressive player can reach the largest nodes sooner while forcing more
-relocations and pursuit. [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)
-owns the destructive-analysis carrier; [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)
-owns the later catalogue and balance session.
+relocations and pursuit. The carriers are answered: [`RESEARCH.md`](../specs/RESEARCH.md)
+([#67](https://github.com/cjd721/Rimworld-Archinity/issues/67),
+[#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)) and
+[`HACKING.md`](../specs/HACKING.md) ([#58](https://github.com/cjd721/Rimworld-Archinity/issues/58));
+[#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) owns the later catalogue and
+balance session.
 
 ## Hacking Becomes a Second Technology Front
 
@@ -96,9 +108,10 @@ nothing more: it is never recruited, enslaved or converted. It is never hackable
 console. [#142](https://github.com/cjd721/Rimworld-Archinity/issues/142)
 
 **Exploring, not chosen: the jailbreak.** A captured Glitterite taken home, opened up and given back
-the persona and free will it removed may become an ordinary android colonist. Whether this ships, and
-what it would mean for the Ultra revelation, waits for its routes
-([#143](https://github.com/cjd721/Rimworld-Archinity/issues/143)).
+the persona and free will it removed may become an ordinary android colonist. Capability:
+[`ANDROIDS.md`](../specs/ANDROIDS.md) § *Jailbreaking a captured Glitterite into an android
+colonist* ([#143](https://github.com/cjd721/Rimworld-Archinity/issues/143)) — turn or open,
+awakened or basic, able to fail or not, and which faith.
 [#124](https://github.com/cjd721/Rimworld-Archinity/issues/124)
 
 ## Strongholds — where the raiding happens
@@ -110,16 +123,20 @@ from the reveal, visible alongside every other power's, hostile to everyone and 
 normal diplomacy. They behave as vanilla settlements behave — including the map being
 discarded when the player leaves. What persists is the **outcome**: a settlement
 destroyed or taken stays that way. **A Glitterite settlement can never become a vassal** —
-they are orbital, hostile, outside diplomacy and believe nothing, and
-[#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) struck the earlier phrase
-saying otherwise. See [territory](TERRITORY.md).
+they are orbital, hostile, outside diplomacy and believe nothing
+([#35](https://github.com/cjd721/Rimworld-Archinity/issues/35)). See [territory](TERRITORY.md).
+
+**Nothing in orbit, the Glitterites included, makes contact with the colony until the colony
+can reach or communicate with orbit** ([space](SPACE.md) § *The reveal*). (Conrad, #118,
+2026-09-23)
 
 **A Glitterite stronghold** is the campaign kind: their most powerful sites, the ones the
 raids and heists are aimed at. A stronghold is **generated by the quest that needs it**
 rather than standing on the map beforehand, it lasts until the quest resolves, and a
 failed quest may generate it again. That is the simplest shape and the one the campaign
-leads with; whether it survives contact with the routes is
-[#151](https://github.com/cjd721/Rimworld-Archinity/issues/151).
+leads with. It has routes: [`ORBIT.md`](../specs/ORBIT.md) § *A stronghold a quest
+generates* ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)) — M1 discards the
+site on leaving, M2 keeps it while the item remains.
 
 A stronghold's map must be able to present all of:
 
@@ -144,22 +161,23 @@ not every one holds a guaranteed item, but none is a copy of the last.
 
 Record the first analytical-key unlock, surviving exemplars by branch, consumed analysis
 artifacts, Intel balance, issued instruction items and research/hacking gates. Trace needs a level,
-response band and tracking/pursuit state. The research carrier and remote hacking
-implementation remain to be verified against the available mods.
+response band and tracking/pursuit state.
 
 The exact exemplar and technical-artifact catalogs, Intel exchange catalogue, protocol
-rewards, hacking targets, project costs and pressure-stat name remain implementation/authoring work.
+rewards, hacking targets and project costs remain implementation/authoring work.
 The pursuit rules are settled in [difficulty and pursuit](PRESSURE.md#glitterite-pursuit):
 Trace continuously controls search speed; sufficient relocation resets search
 progress without reducing Trace. The pursuit quest reveals the countdown, and
 detection starts repeated raids until the colony escapes.
 
 Defensive loot and research access also need an acquisition pass so the intended
-raid-and-recover loop remains useful. The pressure rule belongs to [#9](https://github.com/cjd721/Rimworld-Archinity/issues/9); the
-surviving exemplar carrier to [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67),
-destructive analysis to [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115),
-Intel exchange to reopened [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54),
-and the hacking unlocks to [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58). Act V
+raid-and-recover loop remains useful. The pressure rule came from [#9](https://github.com/cjd721/Rimworld-Archinity/issues/9); the
+surviving exemplar carrier from [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67) and
+destructive analysis from [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)
+([`RESEARCH.md`](../specs/RESEARCH.md)), the Intel exchange from
+[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) ([`CURRENCIES.md`](../specs/CURRENCIES.md)
+§ *The Intel exchange*), and the hacking unlocks from
+[#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) ([`HACKING.md`](../specs/HACKING.md)). Act V
 ([#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)) authors the encounters inside those answers and does not own the
 questions.
 The civilization and its final revelation are in [Ultra](../plot/ULTRA.md).

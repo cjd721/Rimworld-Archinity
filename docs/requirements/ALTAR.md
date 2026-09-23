@@ -31,8 +31,11 @@ progression does not itself alter their genes. The final transformation is descr
 in [the ending](../plot/ENDING.md), not a pre-existing capsule granted by the mark.
 
 The psychic ladder measures channel capability, independently of Church titles.
-Willing-devotion rites and later campaign breakthroughs advance it. The first
-psylink is Medieval; the unresolved final rank becomes Claim Yourself in Ultra.
+Willing-devotion rites and later campaign breakthroughs advance it. Rank comes
+only from the altar's rite: the willing sacrifice is that rite, and each authored
+breakthrough is, in the story, a rite done at the altar. Church titles never grant
+psylinks ([religion](RELIGION.md#saved-state-and-remaining-work)). (2026-09-23,
+Conrad, #118) The first psylink is Medieval; the unresolved final rank becomes Claim Yourself in Ultra.
 Exact intermediate rites, requirements and levels remain to be specified.
 Cultivation is the framing for meditation at the altar and its dead.
 

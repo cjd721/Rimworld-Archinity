@@ -54,7 +54,7 @@ the next line throws **inside a ritual outcome**. VRE – Android does exactly t
 androids (below).
 
 **Zeroing `maxPsylinkLevel` on the title does not avoid it**: the null branch runs
-before any level arithmetic **[V]**. Bears on `docs/specs/RELIGION.md` §4's Church-title
+before any level arithmetic **[V]**. Bears on `docs/specs/RELIGION.md` § *The build — Exaltation* › *4. Exaltation, and the rite*'s Church-title
 design wherever an android could be the honoree.
 
 ## VRE – Android's two psychic gates are independent, and each does nothing alone

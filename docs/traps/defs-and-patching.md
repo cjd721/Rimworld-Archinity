@@ -94,7 +94,7 @@ For a stored balance or any campaign state, use
 ### T-40 — `requiredAnalyzed` is nulled without Biotech, and the project becomes free
 
 `ResearchProjectDef.PostLoad` executes
-`if (!ModLister.BiotechInstalled) requiredAnalyzed = null;`. The Analysis gate does not
+`if (!ModLister.BiotechInstalled) requiredAnalyzed = null;`. The Exemplar gate does not
 warn, does not error and does not degrade — it ceases to exist:
 `RequiredAnalyzedThingCount` becomes 0, `AnalyzedThingsRequirementsMet` returns true,
 and a project gated on having analysed a named item is free to start. Two precisions
@@ -343,18 +343,18 @@ each widening the pool the same way.
 
 **The one condition that does still bind is `PrerequisitesCompleted`.** The book cannot reach a
 project whose prerequisites are unpaid, so the bypass opens the moment the *prerequisite* is
-finished — not from the start of a save. That is still a bypass of the Analysis gate, because an
-Analysis exemplar and a research prerequisite are independent locks: paying the cheap one unlocks
+finished — not from the start of a save. That is still a bypass of the Exemplar gate, because an
+exemplar and a research prerequisite are independent locks: paying the cheap one unlocks
 the expensive one.
 
-**The failure:** a project you deliberately gated behind an Analysis exemplar is advanced to
+**The failure:** a project you deliberately gated behind an exemplar is advanced to
 completion by a colonist reading a book. There is no message, no log line and nothing in the
 research UI that distinguishes a project reached legitimately from one reached this way. The gate
 still *looks* present, because `MainTabWindow_Research` honours it — only the book path does not.
 
 **The shipped instance:** `VREA_AndroidTech` declares `<tab>VanillaExpanded</tab>`, sets
 `generalRules` nowhere, and VRE – Android **hard-depends on VEF** — so all three of the picker's
-def-side conditions are satisfied for it by VEF's own startup pass. An Analysis gate on Ultra
+def-side conditions are satisfied for it by VEF's own startup pass. An Exemplar gate on Ultra
 android manufacture is bypassable as soon as its prerequisite `HighMechtech` is complete, unless
 the fix below ships with it. **[V]**
 
@@ -370,8 +370,8 @@ worse: it deletes the item's purpose.
 
 *[#83](https://github.com/cjd721/Rimworld-Archinity/issues/83) (mechanism),
 [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78) (composition, and the shipped
-instance). `docs/specs/RESEARCH.md` § *The `Schematic` book*, `docs/specs/ANDROIDS.md` § *The Intel
-gate*. `RimWorld.ReadingOutcomeDoerGainResearch.OnBookGenerated` / `.OnReadingTick` /
+instance). `docs/specs/RESEARCH.md` § *The `Schematic` book*, `docs/specs/ANDROIDS.md` § *5. The
+Exemplar gate*. `RimWorld.ReadingOutcomeDoerGainResearch.OnBookGenerated` / `.OnReadingTick` /
 `.IsProjectVisible`, `RimWorld.BookOutcomeProperties_GainResearch.usesHiddenProjects`,
 `RimWorld.ResearchProjectDef.CanStartNow` / `.generalRules` / `.PrerequisitesCompleted`;
 `VEF.Research.ResearchProjectUtility.AutoAssignRules` from `VEF.dll`

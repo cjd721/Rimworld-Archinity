@@ -19,8 +19,9 @@ that no other spec owns, at route depth.
 
 Answers [`docs/requirements/COLONY.md`](../requirements/COLONY.md) § *The add-bill menu
 shows what matters now*: a bench's add-bill list foregrounds the recipes of the colony's
-current era. **Presentation, never a content gate** — research alone decides what can be made,
-and above-era recipes already drop out because their research is locked. Established by
+current era. **Presentation, never a content gate** — research alone decides what can be made;
+an above-era recipe drops out when its research is locked, and one with no prerequisite does
+not until the grids give it one (see *Open questions*). Established by
 [#161](https://github.com/cjd721/Rimworld-Archinity/issues/161), building on
 [#87](https://github.com/cjd721/Rimworld-Archinity/issues/87) (the menu mods) and
 [#96](https://github.com/cjd721/Rimworld-Archinity/issues/96) (what an era shows). The
@@ -223,7 +224,7 @@ still empty.
 | Multiplayer | `rwmt.multiplayer` | 2606448745 | Syncs the add-bill delegate and `AddBill` [V] | — |
 
 - **Absent** [V]: Nicer Bills, Dubs Mint Menus, `kathanon.searchablemenus`.
-- **Correction to #87** [V]: Glittertech's `Source/ITab_BillsMemoryCell.cs` is not in the
+- **Glittertech's 1.6 menu** [V]: Glittertech's `Source/ITab_BillsMemoryCell.cs` is not in the
   1.6 `GlittertechExpansion.dll`. The same shape ships renamed as
   `ITab_MemoryCellMods.BuildRecipeOptions` → `DoListing`. **A wrap at `DoListing` reaches
   this menu too; a patch on vanilla's local `OptionsMaker` would miss it.** Its option
@@ -255,18 +256,25 @@ the FloatSubMenu API and the whole-bin counts.
 
 - **Which key is the truth** (K1–K4), and whether a recipe's era follows its research tab:
   owned by the progression grids ([#30](https://github.com/cjd721/Rimworld-Archinity/issues/30)).
-- **Default filter state and whose it is**: current era alone, or plus one below; per
-  player, or shared. A requirement call for Conrad, via
-  [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2); carried in #96's hand-back.
+- **Default filter state and whose it is**: current era alone or plus one below; per player
+  or shared. Capability: per-player draw-time state is MP-safe (*Constraints*); shared state
+  needs a synced field (*Verdict*); per-player state can live for the session only, with no
+  mod setting, or be saved in a mod setting.
 - **"Superseded" as well as "older"**, from #96 row 3: whether a Neolithic recipe still in
-  use ranks as current. A requirement gap for Conrad, via #2.
+  use ranks as current. [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s,
+  per #96's hand-back.
 - **A ratified carve-out for client-local UI state** in `CODING_STANDARDS.md`, which every
   per-player route needs. Owned by [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119),
   before any per-player route is built.
 - **FloatSubMenu's licence**, and whether to depend on Nice Bill Tab's copy of it or
   re-vendor it: a build question for #119.
-- **Recipes with no prerequisite escape the research ceiling** (#96). That is a content-gate
-  job for the grids and sourcing. A menu filter must not be mistaken for it.
+- **Recipes with no prerequisite escape the research ceiling** (334 of 1,420). Capability:
+  an XML `researchPrerequisite` closes each one — `RecipeDef.AvailableNow` keys on
+  `researchPrerequisite(s)`, and `RecipeDefGenerator` copies `recipeMaker` prerequisites [V]
+  (`docs/engine/facilities-and-recipes.md`; `ITEMS.md` § *New code and defs* › 3, the
+  venue). Which recipes get which project is the progression grids'
+  ([#30](https://github.com/cjd721/Rimworld-Archinity/issues/30)). A menu filter must not be
+  mistaken for it.
 
 ## Recreation follows a pawn's passions
 
@@ -486,17 +494,18 @@ dictionaries [V].
 
 ### Open questions
 
-- **The passion gate and the factor.** Is minor passion enough, and how strong is major against
-  minor? The gate is a requirement question for the COLONY requirement (Conrad, via
-  [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2)). The factor is balance for
+- **The passion factor.** The requirement settles the gate: any passion, major first. How
+  strong major is against minor is balance for
   [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119), and it must be judged
   against the tolerance curve.
 - **Drift or hard preference** (A versus B). This is a story call, owned by
   [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
-- **Do textbooks count as "recreation that trains a skill"?** If yes, D is in scope and reach
-  is complete. Owner: the COLONY requirement, via #119.
-- **Should boredom soften for a passion?** Nothing in the requirement asks for it. If the
-  playtest wants it, it is a separate patch and a new requirement clause. Unowned.
+- **Textbooks as "recreation that trains a skill".** Capability: route D (*Routes*); with it,
+  reach is complete.
+- **Softening boredom for a passion.** Not asked for by the requirement. Capability: the
+  bored-skip and the tolerance multiplier both sit in `JobGiver_GetJoy.TryGiveJob` (route B's
+  gate override, route F's line); separate `joyKind`s for training content spread boredom in
+  XML.
 - **Build questions for #119:** whether A also reads VFE Furniture's `extraJoySkill`; the
   def or extension that carries the numbers; whether a pawn whose passion skill is at its cap
   still prefers it, since books already skip maxed skills and joy jobs do not.

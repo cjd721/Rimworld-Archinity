@@ -53,8 +53,10 @@ without new research or story progress.
 
 Pressure remains dynamic, with good luck, bad luck and uneven stretches of danger.
 There is no required fixed recovery period after an attack. Human political
-reactions retain the benefits and consequences described in [religion](RELIGION.md);
-Reverence is not a universal multiplier on unrelated enemies. Glitterites use Trace.
+reactions retain the benefits and consequences described in [religion](RELIGION.md).
+Reverence may raise the size of every threat, including from enemies with no stake in
+the faith; it is one input to overall difficulty (Conrad, #118, 2026-09-23).
+Glitterites use Trace.
 
 ### Raid objectives
 
@@ -85,20 +87,20 @@ free. It is recorded here so that it is neither assumed available nor forgotten.
 [`docs/specs/TRACE.md`](../specs/TRACE.md), which has read the field and returned
 its verdict.
 
-An earlier draft of this paragraph preferred Odyssey's gravship pursuit mechanic.
-That preference was investigated and **declined**: what Odyssey ships cannot
-express rules 1, 3, 4, 5 or 7 below, and
+An earlier preference for Odyssey's gravship pursuit was declined on
+[#56](https://github.com/cjd721/Rimworld-Archinity/issues/56);
 [`docs/specs/TRACE.md`](../specs/TRACE.md) § *Available mechanisms* carries the
-per-rule evidence ([#56](https://github.com/cjd721/Rimworld-Archinity/issues/56)).
-The correction is recorded rather than silently dropped, because the preference had
-already been read as a commitment — but the carrier's name and its internals stay
-in the spec, which is where a carrier belongs.
+evidence.
 
 1. A qualifying relocation starts a fresh search for the colony's location without
-   reducing Trace. Escape requires sufficient distance. A short move does not
+   reducing Trace. A qualifying relocation means moving the colony's base — by
+   gravship, or by caravanning out, founding a new settlement and abandoning the old
+   (Conrad, #118, 2026-09-23). Escape requires sufficient distance. A short move does not
    grant a fresh safe window and permits rapid reacquisition. **A jump between the
    planet and orbit, in either direction, always qualifies**
    ([space](SPACE.md), [#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)).
+   A move between two places in orbit counts the same way, past a threshold (Conrad,
+   #118, 2026-09-23).
 2. Search initially proceeds invisibly. Landing does not reveal a countdown.
    The pursuit quest later announces the approaching threat and reveals the
    estimated time remaining at current Trace.
@@ -152,10 +154,9 @@ management; movement and fighting remain meaningful alternatives.
 
 ## Open questions
 
-- [The storyteller](https://github.com/cjd721/Rimworld-Archinity/issues/60)
-  investigates available measurements and control over strength, composition and
-  frequency, including world/caravan scope and Multiplayer timing. Capability
-  results must distinguish available mechanisms from selected design.
+- **The storyteller is answered** in [`docs/specs/PRESSURE.md`](../specs/PRESSURE.md)
+  ([#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)); weights, curves and
+  cadences are [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 - **Trace and the pursuit are answered**, not open:
   [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) settled variable
   search speed, hidden-then-revealed pursuit, sufficient-distance escape and
@@ -167,7 +168,7 @@ management; movement and fighting remain meaningful alternatives.
   against `docs/specs/PRESSURE.md` § 8. Which objectives the campaign authors, at
   which era and with what weights, is balance and belongs to
   [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
-- [The faction pressure prototype](https://github.com/cjd721/Rimworld-Archinity/issues/13)
-  develops political behavior within these requirements, including the effect of
-  alliances. Exact input measurements and any necessary era-transition handling
-  remain design choices informed by capability research.
+- **The effect of alliances.** Capability:
+  [`docs/specs/PRESSURE.md`](../specs/PRESSURE.md) § *4. Composition* and § *5. The
+  positive half*. Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+  [#13](https://github.com/cjd721/Rimworld-Archinity/issues/13) is closed.

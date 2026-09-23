@@ -38,6 +38,10 @@ factions the same call is durable. This is recorded here rather than in
 `docs/TRAPS.md` because **it is loud**: the revert is announced by vanilla's own
 primary-ideo letter. Vanilla's use in `Page_ChooseIdeoPreset.AssignIdeoToPlayer` is
 safe only because it runs at worldgen, where the recalculation early-returns.
+`AssignIdeoToPlayer` — the three lines that set the primary, clear every other
+`Ideo.initialPlayerIdeo` and add to the manager — is **`private`** [V]: trivially
+reimplemented, and recorded because it looks callable
+([#75](https://github.com/cjd721/Rimworld-Archinity/issues/75)).
 
 ## Moving a pawn's ideology
 
@@ -50,6 +54,19 @@ faction directly is not.
 A colonist holding an NPC faction's `Ideo` is an ordinary vanilla state, not an exotic
 one: `InteractionWorker_ConvertIdeoAttempt.ConversionSelectionFactor` gives an
 `NPC_Free → Colonist` conversion a weight of 0.5 [V].
+
+**`SetIdeo` draws `Rand`**: `Certainty = Mathf.Clamp01(ConversionTuning.InitialCertaintyRange.RandomInRange)`
+[V]. Inside the synced tick — a ritual outcome, a quest part — that is safe by the standing rule
+([`determinism.md`](determinism.md) § *Why `Rand` inside a synced tick is safe*); from a gizmo or
+a `DiaOption` action it is not ([#75](https://github.com/cjd721/Rimworld-Archinity/issues/75)).
+
+**An accidental conversion is loud but leaves the same state as a deliberate one.**
+`InteractionWorker_ConvertIdeoAttempt.Interacted` → `Pawn_IdeoTracker.IdeoConversionAttempt`
+converts any colonist whose `Certainty` reaches zero, and certainty decays on
+`ConversionTuning.CertaintyPerDayByMoodCurve` [V]. Vanilla announces it with
+`LetterLabelConvertIdeoAttempt_Success` [V], but the resulting `Pawn.Ideo` is identical to one set
+on purpose, so a campaign gate must never read a pawn's `Ideo` as proof of an act — store the act
+([#75](https://github.com/cjd721/Rimworld-Archinity/issues/75)).
 
 `Ideo` identity survives a doctrine change:
 `IdeoDevelopmentUtility.ApplyChangesToIdeo` mutates the instance in place, so
@@ -93,6 +110,16 @@ still prints it whenever it is not −1 [V].
   then the activation branch both fire in the same call. That happens every world tick,
   sending `LetterLabelRoleInactive` and `LetterLabelRoleActive` and unseating the holder each
   time.
+
+**How a single-holder seat is lost** [V, `Precept_RoleSingle`;
+[#75](https://github.com/cjd721/Rimworld-Archinity/issues/75)]:
+- `Notify_MemberChangedFaction` calls `Assign(null, addThoughts: false)` when the holder leaves the
+  player faction, and `RecacheActivity` nulls the holder whenever `ValidatePawn` fails — dead,
+  destroyed, no longer a free non-slave colonist, or no longer meeting a `RoleRequirement`.
+- Below `activationBelieverCount`, deactivation sends `LetterLabelRoleLost` /
+  `LetterLabelRoleInactive` when the player faction holds the ideo — but a role that has
+  **never** activated sends nothing, because the deactivation branch requires `active` to have
+  been true.
 
 ## Nothing restricts a ritual role to `Precept_RoleSingle`
 
@@ -326,6 +353,17 @@ is registered: `SyncMethod.Register(typeof(IdeoDevelopmentUtility), "ApplyChange
 multifaction ideo page (`Page_ChooseIdeo_Multifaction`) is **preset-only** — it filters
 Classic, Custom and Fluid out of the category loop [V]. MP Compat carries no ideology-editor
 compat class [V].
+
+- **The player's primary-ideo recalculation is bracketed.**
+  `Multiplayer.Client.Factions.RecalculateFactionIdeosContext` is a Harmony prefix/finalizer on
+  `FactionIdeosTracker.RecalculateIdeosBasedOnPlayerPawns` that pushes and pops `FactionContext`
+  around it [V, [#75](https://github.com/cjd721/Rimworld-Archinity/issues/75)].
+- **Joining an existing faction shows no ideo page.** The multifaction page is shown only to a
+  player *creating* a faction; its result is an `IdeologyData : ISyncSimple` record carried into
+  `[SyncMethod] FactionCreator.CreateFaction`. Joining an existing faction runs
+  `Multiplayer.Client.Factions.FactionsWindow` → `ClientSetFactionPacket`, with no ideo page on
+  the path [V, #75]. Under one shared player faction the ideo page runs once, on the host, at
+  worldgen.
 
 ## A pawn with no ideology
 

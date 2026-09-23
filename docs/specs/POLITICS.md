@@ -3,7 +3,7 @@
 ## Purpose and scope
 
 How the political consequences in [`docs/requirements/POLITICS.md`](../requirements/POLITICS.md)
-will be built. This document owns three capabilities, kept in separate parts below:
+will be built. This document owns four capabilities, kept in separate parts below:
 
 - **The political ripple** — propagating a single player act along a faction's alliances and
   rivalries, and the faction-relation graph it reads. Everything up to *Outstanding decisions*.
@@ -19,6 +19,11 @@ will be built. This document owns three capabilities, kept in separate parts bel
 It does not own Reverence, which is a second per-faction axis and belongs to
 [`RELIGION.md`](RELIGION.md) — but the **gate** that reads Reverence is here, not there, and
 `RELIGION.md` links to it rather than restating it.
+
+The planetary outcome snapshot and the orbital reveal are stored and fired by
+[`ORBIT.md`](ORBIT.md) § *5. The gate state — ours, and it is new code*; its route predicates and
+tie rules are [#100](https://github.com/cjd721/Rimworld-Archinity/issues/100)'s, a content
+decision on [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 
 ## The build
 
@@ -124,8 +129,7 @@ members, `allowRoyalFavorRewards` and `allowGoodwillRewards`, and there is no `S
 `TryAffectGoodwillWith` [V]. Confirmed from the other direction: zero hits across every
 assembly in the Multiplayer and MP-Compat folders.
 
-**No explicit synced command is needed for the ripple**, and the requirement to wrap every
-write in one is stricter than the real rule. `docs/engine/determinism.md` § *Why `Rand` inside
+**No explicit synced command is needed for the ripple.** `docs/engine/determinism.md` § *Why `Rand` inside
 a synced tick is safe*: the hazard is a mod consuming the shared stream a different number of
 times per client. The ripple is **already downstream of a synced action** — an arrest is
 simulated identically on both clients, so `Notify_MemberCaptured` fires on both at the same
@@ -140,7 +144,7 @@ What must hold:
    **Never iterate a `Dictionary` or `HashSet` of factions** to build the ripple set [I].
 4. **No cached ally/enemy set** — T-20 exactly.
 5. **A player-facing "run the ripple" button would need a synced command**, because a UI click
-   is not a simulated event. That is the case the "every write is synced" rule is actually
+   is not a simulated event. That is the case the requirement's synced-command rule is
    about [I].
 
 One shared player faction means one goodwill number per NPC faction, so letters are shared and
@@ -288,9 +292,10 @@ RimPacts' method bodies are [I] — identified from metadata names, not read.
 1. **Whether Reverence modulates the ripple — resolved** by the requirement text (2026-09-15)
    and by [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160): see [`RELIGION.md`](RELIGION.md) § *Reverence scales the Goodwill a
    faction gains*. The ripple's positive edge is a reasoned write (VEF
-   `GoodwillImpactDelayed.historyEvent`), so route A can include or exempt it by data. Which gains
-   count, exemptions and attribution are Conrad's, via
-   [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (#97 is closed); the route and numbers are
+   `GoodwillImpactDelayed.historyEvent`), so route A can include or exempt it by data. Gains and
+   losses scale, and the Church is exempt
+   ([#176](https://github.com/cjd721/Rimworld-Archinity/issues/176)); which reasons count,
+   attribution, the route and the numbers are
    [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s. The two capability tickets that established the halves, **#90 and #98, are both closed**
    and are named here as provenance, never as owners: #90 established propagation along the
    relationship graph writing Goodwill, and #98 established Reverence as a quantity, the events
@@ -307,20 +312,12 @@ A demand is a faction asking the colony for something specific, on a clock, with
 consequence for failing. This part owns the shape of one demand: the ask, the deadline, the
 consequence, refusal, and the second faction that moves when the demand resolves.
 
-It does not own **how large** a retaliation raid is — that is
-[the storyteller](https://github.com/cjd721/Rimworld-Archinity/issues/60)'s, and §4 takes the
-carrier [`PRESSURE.md`](PRESSURE.md) names so that the magnitude stays a def field #60 tunes.
+It does not own **how large** a retaliation raid is — that is [`PRESSURE.md`](PRESSURE.md)'s
+(numbers: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)), and §4 takes the
+carrier `PRESSURE.md` names so that the magnitude stays a def field.
 
-⚠ **It does own the cap on concurrent pending demands, and this reverses an earlier
-disclaimer.** An earlier draft said this document "does not own how often demands arrive —
-##60's", and then built `QuestNode_DemandBudget` (§5), which is a frequency cap. Meanwhile
-`PRESSURE.md`'s scope claims only *magnitude* for #91 — *"#91 says what a refusal fires, this
-document says how big it is"* — so both documents were disclaiming the same thing. **The cap is
-claimed here**: the mechanism, its evaluation point and its failure mode are §5's, and only the
-*number* is a requirement (*Outstanding decisions* 1). What remains genuinely unowned is
-narrower and is recorded as a gap there: the **arrival cadence** — how often the storyteller
-offers a demand in the first place — which `PRESSURE.md` does not claim for #91 and this
-document does not build.
+It owns the cap on concurrent pending demands (§5). It does not build an arrival cadence; that is
+[`PRESSURE.md`](PRESSURE.md) § *3. Frequency* (numbers: #119).
 
 It does not own the
 **ally-aid battle at a tile** ([#92](https://github.com/cjd721/Rimworld-Archinity/issues/92)),
@@ -342,7 +339,7 @@ Four of the five pieces the capability needs ship today, in pure XML:
 | The countdown the player sees | `Alert_QuestExpiresSoon`, the Quests-tab countdown, `QuestPart_Delay`'s red alert — automatic [V] |
 | **Goodwill with a faction other than the asker** | `QuestNode_ChangeFactionGoodwill`, naming any faction. Free [V] |
 
-**The fourth line is the one that was wrong everywhere else.** `QuestPart_FactionGoodwillChange`
+**The fourth line is free.** `QuestPart_FactionGoodwillChange`
 calls `Faction.OfPlayer.TryAffectGoodwillWith(faction, …)`. The hardcoded operand is the
 **player's** side; `faction` is a plain public field the XML node sets, guarded only against
 self-writes [V]. `SlateRef<Faction>` accepts a bare `FactionDef` defName, so `<faction>Empire</faction>`
@@ -433,9 +430,8 @@ requirement is trying to cap.
 #### 4. The refusal raid — what fires it, not how big it is
 
 `QuestPart_DemandRefused.Cleanup()` on the expiry path; `QuestNode_End { Fail }` on the
-post-accept path. **Magnitude and composition belong to
-[#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)**, whose spec is
-[`PRESSURE.md`](PRESSURE.md), and are not settled here. This document owns the **trigger** and
+post-accept path. **Magnitude and composition belong to [`PRESSURE.md`](PRESSURE.md)**
+(numbers: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)), and are not settled here. This document owns the **trigger** and
 nothing else about the raid.
 
 **The carrier is the one `PRESSURE.md` names, and this resolves a contradiction rather than
@@ -444,11 +440,12 @@ stating a preference.** `PRESSURE.md` § *The build* selects
 carrying `forcedFaction`, `forcedStrategy` and `forcedPointsRange`, and names *"a faction
 demand's refusal raid"* as one of its intended users [V]. An authored `IncidentDef` on that
 worker is pure XML, and — the load-bearing part — **its magnitude is a def field
-(`forcedPointsRange`) that #60 owns and tunes without touching anything in this document.**
+(`forcedPointsRange`) that `PRESSURE.md` owns, and #119 tunes, without touching anything in this
+document.**
 The refusal path's job is to fire that `IncidentDef`; the seam that fires it from a quest is
 the one piece not yet read — **[I]**, and the only open item in this section.
 
-> ⚠ **Inherit `PRESSURE.md`'s sentinel with the worker.** `IncidentDefExtension.forcedPointsRange`
+> ⚠ **Inherit `PRESSURE.md`'s sentinel with the worker (T-65).** `IncidentDefExtension.forcedPointsRange`
 > defaults to `IntRange.Zero` while `ResolveRaidPoints`'s fall-through test is `== IntRange.One`,
 > so an `IncidentDef` on this worker **without** an explicit `forcedPointsRange` gets a raid
 > budget of zero and reports nothing [V, `PRESSURE.md`]. A refusal that silently fires an empty
@@ -461,15 +458,14 @@ ownership, not quality.** `QuestNode_SpawnRaidOnFail` / `QuestPart_SpawnRaidOnFa
 `IncidentWorker_RaidEnemy.TryExecuteWorker` [V]. That is exactly what disqualifies it here:
 on that path `forcedPointsRange` never applies, and the shipped scaling is a hardcoded
 `QuestUtils.GeneratePawnKindList(faction, points * 1.5f, site)` [V]. Reimplementing it would
-put a magnitude constant in the section that says magnitude is #60's — which is the
-contradiction the audit caught, and `PRESSURE.md` is right on ownership.
+put a magnitude constant in the section that says magnitude is `PRESSURE.md`'s.
 
 It stays recorded as the **fallback**, because it also reads `site` / `siteFaction` / `map` off
 the slate and so is the shape a *site-shaped* demand would want —
 [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92)'s ally-aid battle is the obvious
-candidate. **If that fallback is ever taken, the `× 1.5` is handed to #60 as an open parameter,
-not reimplemented as a literal**: it ships as a def field with no default of ours, and #60 sets
-it alongside every other magnitude. The reimplementation is ~25 lines in the same shape.
+candidate. **If that fallback is ever taken, the `× 1.5` is handed to `PRESSURE.md` as an open
+parameter, not reimplemented as a literal**: it ships as a def field with no default of ours, and
+#119 sets it alongside every other magnitude. The reimplementation is ~25 lines in the same shape.
 
 #### 5. The notification budget — `QuestNode_DemandBudget`
 
@@ -488,10 +484,9 @@ The build is a `QuestNode` whose `TestRunInt` counts `Find.QuestManager.QuestsLi
 what keeps it out of `ModSettings` (**T-18**). Deterministic, allocation-free, no `Rand`.
 ~15 lines.
 
-**This document owns the cap.** It is a frequency control and *Purpose and scope* now says so:
-`PRESSURE.md` claims only magnitude for #91, so leaving this disclaimed would have stranded it
-between two specs. **Only the number is a requirement** — see *Outstanding decisions* 1, which
-also records the one frequency question neither document owns.
+**This document owns the cap.** It is a frequency control, and *The faction demand* says so.
+Only the number is balance ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)). Arrival cadence is [`PRESSURE.md`](PRESSURE.md)
+§ *3. Frequency*'s.
 
 ⚠ **The cap holds only on the paths that call `TestRun`.** A chain-granted demand never does —
 **T-71** — so if demands are granted through VEF's chain component, the cap must be enforced in
@@ -535,21 +530,14 @@ composition — nothing has been built on it yet.]
 | Paired mutually-exclusive rival demands | **New C#**, ~35 lines |
 | Skill-threshold ask | **New C#**, ~35 lines |
 | Embargo ask | **Patch** — 1 Harmony postfix (~6 lines) + listener part (~20) |
-| Refusal raid | **XML** — an `IncidentDef` on VEF's `IncidentWorker_RaidEnemySpecial` (§4). Magnitude → #60. The site-shaped fallback is ~25 lines, and hands its `× 1.5` to #60 as a def field |
-| Category cap on pending demands | **New C#**, ~15 lines; the number → requirements. **Owned here** |
+| Refusal raid | **XML** — an `IncidentDef` on VEF's `IncidentWorker_RaidEnemySpecial` (§4). Magnitude → `PRESSURE.md` (numbers: #119). The site-shaped fallback is ~25 lines, and hands its `× 1.5` to `PRESSURE.md` as a def field |
+| Category cap on pending demands | **New C#**, ~15 lines; the number → #119. **Owned here** |
 | Loaned specialist, delivery to a tile, silver | **Free** — vanilla |
 | Persistence | **Free** — `QuestPart.ExposeData` |
 | Multiplayer | **Free** |
 
 **Aggregate: ~176 lines of C# in the existing `ArchinityAltar.dll` (65 + 35 + 35 + 26 + 15),
 one Harmony postfix, and no new Def types.** No new assembly.
-
-**The aggregate was wrong in both figures and the table is what corrects it.** An earlier draft
-claimed "two Harmony postfixes, two new Def types", carried over from the ripple part's
-aggregate above. This part specifies exactly **one** postfix — `Faction.Notify_PlayerTraded`,
-for the embargo ask — and **zero** new Def *types*: the demand budget's cap is a field on a Def
-**instance** (§5), and everything else is a `QuestScriptDef`, a `QuestPart` or an `IncidentDef`,
-all of which are existing types. The line estimate was sound and is unchanged.
 
 **The expensive item is not code: authoring the demands.** An ask that is "inconvenient and
 pointed at something the colony could build but has not" is design work per faction per era.
@@ -563,7 +551,8 @@ to the world, nothing needs seeding, and a save that predates the feature loads 
 with no faction predicate** [V]. `SyncFields.SyncQuestDismissed` watches `Quest.dismissed` from
 `MainTabWindow_Quests.DoDismissButton` [V], so **one founder dismissing a demand hides it for
 both**. `PatchQuestChoices.Choose` is synced [V], so the rival-demand branch pick is MP-safe for
-free. Whether any of that needs an ownership or consent step is a *requirement* — see below.
+free. That is by design ([#125](https://github.com/cjd721/Rimworld-Archinity/issues/125);
+*Outstanding decisions (the demand)* 3).
 
 Everything in this build runs inside `QuestManagerTick` or `Quest.CleanupQuestParts`, already on
 the synced tick, and consumes no `Rand`, no `ModSettings` (**T-18**) and no client-local cache
@@ -589,15 +578,8 @@ binds to that map's clock and its deadline then runs at that map's speed [V on t
   that path [V]. Any cap that must hold for chain-granted demands has to be enforced in the grant
   path too. **T-71.**
 
-  ⚠ **One supporting claim behind that trap was wrong; the trap is not.** An earlier draft
-  supported it with *"only `IncidentWorker_GiveQuest.CanFireNowSub` and `NaturalRandomQuestChooser`
-  run `CanRun`"* and marked it [V]. That is false: **14 further non-debug vanilla callers** run
-  `CanRun`, among them `CompHackable`, `CompDissolutionEffect_Goodwill`, `FactionDialogMaker`,
-  `Pawn_RoyaltyTracker`, three `QuestPart_SubquestGenerator_*`, `RoyalTitleUtility` and
-  `StorytellerComp_RandomEpicQuest` [V]. **None of them is on VEF's chain-grant path**, which is
-  why the trap's core — that a chain-granted quest reaches `QuestGen.Generate` without ever
-  running `TestRun` / `CanRun` — is unaffected and confirmed. The corrected statement is *"the
-  chain-grant path runs neither"*, not *"almost nothing runs `CanRun`"*.
+  `CanRun` has 16 non-debug vanilla callers (`docs/engine/quests.md` § *`QuestScriptDef.CanRun`
+  has 16 non-debug vanilla callers*); none is on VEF's chain-grant path.
 - **VEF's `conditionFailQuests` never matches an expired offer.** `QuestExpired` writes only
   `tickExpired`; `QuestIsCompletedAndFailed` tests `outcome == QuestEndOutcome.Fail`, which only
   `QuestCompleted` writes [V]. A retaliation quest keyed that way is dead for exactly the refusal
@@ -667,7 +649,7 @@ See §6 above. VEF's `VEF.Storyteller` namespace carries `QuestChainDef`, `Quest
 
 See §4 above [V]. Surveyed and kept as the **site-shaped fallback only**: it bypasses
 `IncidentWorker_RaidEnemy.TryExecuteWorker`, so `forcedPointsRange` never applies on its path
-and magnitude would land here instead of with #60. The selected carrier is VEF's
+and magnitude would land here instead of with `PRESSURE.md`. The selected carrier is VEF's
 `IncidentWorker_RaidEnemySpecial`, which [`PRESSURE.md`](PRESSURE.md) already names.
 
 #### Prior art, and why none of it ships
@@ -711,25 +693,23 @@ reason; satisfying one rival demand visibly removes the other before the player 
 
 1. **"A manageable number of live diplomatic situations" names no number and no unit.** Concurrent
    offers or concurrent ongoing demands? Per faction, globally, or per era? The mechanism is ~15
-   lines and is specified in §5, **and this document owns it** (*Purpose and scope*); only the
-   number is outstanding, handed to
-   [`requirements/POLITICS.md`](../requirements/POLITICS.md).
+   lines and is specified in §5, **and this document owns it** (*The faction demand*); only the
+   number is outstanding: balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)
+   ([`requirements/POLITICS.md`](../requirements/POLITICS.md) § *Constraints*).
 
-   ⚠ **A narrower frequency question has no owner at all.** The cap is on demands *pending at
-   once*; nothing states how often a demand should be **offered**. This document does not build
-   an arrival cadence, and [`PRESSURE.md`](PRESSURE.md) scopes itself to *magnitude* for #91 —
-   *"#91 says what a refusal fires, this document says how big it is"* — so
-   [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60) does not claim it either.
-   **Gap, no owner.** It is recorded rather than handed off, because handing it to a ticket
-   whose own spec disclaims it is how the previous draft lost it.
+   Arrival cadence → [`PRESSURE.md`](PRESSURE.md) § *3. Frequency* (frequency levers; numbers
+   #119).
 2. **Nothing keeps the stated consequence and the actual consequence in sync.** There is no
    structured consequence field in the engine: what the player reads before answering is prose in
-   `questDescriptionRules`, what fires is a `QuestPart`, and no tool compares them. An
-   authoring-discipline requirement, currently unowned.
-3. **Quest-board ownership under Multiplayer** is already an open question on
-   `requirements/POLITICS.md` (from [#12](https://github.com/cjd721/Rimworld-Archinity/issues/12)).
-   It now also covers **dismiss** — `Quest.dismissed` is synced, so either founder can hide a live
-   demand from the other [V], which the current phrasing does not reach.
+   `questDescriptionRules`, what fires is a `QuestPart`, and no tool compares them, so keeping them
+   in sync is authoring discipline. Refusal deltas also land Reverence-scaled
+   ([#176](https://github.com/cjd721/Rimworld-Archinity/issues/176)), so under #160's route A the
+   stated number drifts from the landed one; route B keeps them together
+   ([`RELIGION.md`](RELIGION.md) § *Reverence scales the Goodwill a faction gains*). Route and
+   numbers: #119.
+3. **Quest-board ownership under Multiplayer.** Settled
+   ([#125](https://github.com/cjd721/Rimworld-Archinity/issues/125)): either founder accepts or
+   dismisses for both, by design.
 4. **Which demands exist, and what each asks for.** The real cost of this capability, and design
    work over the campaign's hand-authored factions.
 
@@ -876,8 +856,7 @@ quest defs that use it [V].)*
   player accepts. That is `requirements/POLITICS.md`'s carrot clause satisfied by vanilla's own UI
   at zero cost.
 
-⚠ **One precision, and *The faction demand* §3 above has been corrected to match.** That section
-used to say the requirement box *"disables Accept"*. It does not literally:
+**The Accept button is greyed, not disabled.**
 `MainTabWindow_Quests.DoAcceptButton` sets `GUI.color = Color.grey` and attaches the reason as a
 warning tooltip, but `Widgets.ButtonText` still fires. The **refusal** is in
 `AcceptQuestByInterface`, which re-runs `QuestUtility.CanAcceptQuest` and emits
@@ -932,8 +911,8 @@ dialogue*) [V]. The **enabled** action behind it is the constrained half, and th
 `Dialog_Negotiation.DoWindowContents` prints `Faction.GetInfoText` — *"goodwill: +N"* — in the same
 window, and `Faction.CommFloatMenuOption` appends *"(Neutral, +12)"* to the console's float-menu row
 before the dialogue is even opened [V]. A Reverence gate has no such companion until
-[`RELIGION.md`](RELIGION.md)'s D1/D2 or [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)
-ships one, which is why the gate's reason string must name **both** the threshold and the current
+[`RELIGION.md`](RELIGION.md)'s D1/D2 or a political surface ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (surface choice), per
+[#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s routes) ships one, which is why the gate's reason string must name **both** the threshold and the current
 value rather than the threshold alone.
 
 #### 4. A third surface exists, and it is the ritual gizmo
@@ -970,9 +949,9 @@ A negative worth stating, because four of them look like they should work [V]:
 | Surface | Verdict |
 |---|---|
 | `ResearchProjectDef` | `CanStartNow` is exactly eight clauses — not finished, prerequisites, techprints, bench, mechanitor, analysed things, **not hidden**, inspection — and **not one reads faction standing**. `heldByFactionCategoryTags` is consumed only by `TechprintUtility.GetResearchProjectsNeedingTechprintsNow`, comparing against the immutable `FactionDef.categoryTag`; it decides which faction's traders **stock** a techprint. The one real coupling is indirect and binary: `IncidentWorker_NeutralGroup.FactionCanBeGroupSource` rejects a faction hostile to the player, so a faction's techprints stop arriving at goodwill ≤ −75 — **a cliff, invisible in the research tab.** |
-| `ThingDef` buildability | `Designator_Build.Visible` gates on god mode, `min/maxTechLevelToBuild` against the player `FactionDef`'s static tech level, research, monolith level, difficulty, `PlaceWorker`, building and discovery prerequisites, and grav-engine inspection. **No relation term**, and `Visible` **filters out** rather than disables — so unbuildable content is invisible *in vanilla*, and the Architect menu shows no carrot. ⚠ **That is a fact about `Visible`, not a structural limit** — see §5a below, which corrects an earlier claim here. |
+| `ThingDef` buildability | `Designator_Build.Visible` gates on god mode, `min/maxTechLevelToBuild` against the player `FactionDef`'s static tech level, research, monolith level, difficulty, `PlaceWorker`, building and discovery prerequisites, and grav-engine inspection. **No relation term**, and `Visible` **filters out** rather than disables — so unbuildable content is invisible *in vanilla*, and the Architect menu shows no carrot *in vanilla*. **That is a fact about `Visible`, not a structural limit** — see §5a below. |
 | Trader stock | `TraderKindDef` has no relation field, `StockGenerator.HandlesThingDef(ThingDef)` takes no faction and is structurally incapable of one, and all 15 subclasses are clean of `goodwill` / `RelationKind` / `HostileTo`. `Settlement_TraderTracker.TraderKind` is a deterministic hash of the settlement. Relation enters trade only as binary `HostileTo`. **But the template we want is here:** `Settlement.GetInspectString` prints `"RequiresTradePermission"` **with the required title named, beside the live relation kind and goodwill number** — vanilla's one pre-announced, pre-reached trade gate, and the shape a standing-gated stock tier should copy. |
-| `GoodwillSituationDef` | **Not a gate and not a display.** `FactionUIUtility.GetNaturalGoodwillExplanation` lists only situations whose `naturalGoodwillOffset != 0`, `GetOngoingEvents` only those whose `maxGoodwill < 100` [V, and independently re-confirmed here] — so a situation worker becomes visible **exactly when, and only when, it moves goodwill.** It is a coupling mechanism; whether we want that coupling is [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s. Five vanilla workers, all blanket flags: `AttackingSettlement`, `MemeCompatibility`, `NaturalEnemy`, `PermanentEnemy`, `SameIdeo`. |
+| `GoodwillSituationDef` | **Not a gate and not a display.** `FactionUIUtility.GetNaturalGoodwillExplanation` lists only situations whose `naturalGoodwillOffset != 0`, `GetOngoingEvents` only those whose `maxGoodwill < 100` [V, and independently re-confirmed here] — so a situation worker becomes visible **exactly when, and only when, it moves goodwill.** It is a coupling mechanism: [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160) (routes, [`RELIGION.md`](RELIGION.md)); decided on [#176](https://github.com/cjd721/Rimworld-Archinity/issues/176). Five vanilla workers, all blanket flags: `AttackingSettlement`, `MemeCompatibility`, `NaturalEnemy`, `PermanentEnemy`, `SameIdeo`. |
 | `QuestNode_GetFaction` | Generation-time **selection**, not a gate: `storeAs`, `allowEnemy`/`allowNeutral`/`allowAlly`/`allowAskerFaction`/`allowPermanentEnemy`, `mustBePermanentEnemy`, `mustBeHostileToFactionOf`, `leaderMustBeSafe`, `exclude` and six more — **no goodwill range field**, and every relation flag is an exclusion. The player never sees a quest that was not generated, so it cannot show a carrot. |
 | `QuestNode_GetFieldValue` | The one generic reflection reader — `GetField(name, Instance\|Public\|NonPublic)` into the slate — and it **cannot reach goodwill**: `Faction.PlayerGoodwill` is a *property*, and the backing `List<FactionRelation> relations` is private and not a number. Combined with `QuestNode_Greater` / `_Less` / `_Equal` and their `OrFail` variants, this is the closest XML comes to a generic standing predicate, and it stops one step short. |
 
@@ -992,11 +971,7 @@ types — 301 `QuestNode_*` types in total, 70 of them `QuestNode_Root_*` — we
 searched for both `RequirementsToAcceptFactionRelation` and `PlayerGoodwill`. Zero hits for
 either. **No quest node anywhere in vanilla reads a goodwill number.**
 
-##### 5a. The Architect menu — an earlier claim here was wrong, and it foreclosed a real option
-
-⚠ **This section previously asserted, marked [V], that `Designator_Build` has "no `Disabled` /
-`disabledReason` member at all" and that the Architect menu "cannot show a carrot even in
-principle". Both are false, and the second is the damaging one.** The correction [V]:
+##### 5a. The Architect menu — a fourth surface, at the cost of a patch
 
 `Designator_Build : Designator_Place : Designator : Command : Gizmo`, and **`Verse.Gizmo` itself
 declares `protected bool disabled`, `public string disabledReason`, `public virtual bool Disabled`
@@ -1004,19 +979,18 @@ and `public void Disable(string reason = null)`.** `ArchitectCategoryTab.Designa
 draws the palette through `GizmoGridDrawer.DrawGizmoGrid`, and `Command.GizmoOnGUI` renders a
 disabled gizmo greyed, appends
 `"DisabledCommand".Translate() + ": " + disabledReason` to its tooltip colourised
-`ColorLibrary.RedReadable`, and on click emits that same string as a `RejectInput` message.
+`ColorLibrary.RedReadable`, and on click emits that same string as a `RejectInput` message [V].
 
 **So a Harmony gate on `Designator_Build` can produce exactly the locked-row-with-its-threshold the
 legibility requirement asks for.** The Architect menu is a fourth viable surface, not an impossible
 one.
 
-**The routing recommendation above is unchanged**, and now rests on the defensible reason rather
-than a false one: vanilla's own buildability gate is `Designator_Build.Visible`, which *filters*
+**The routing recommendation above stands**, for this reason: vanilla's own buildability gate is `Designator_Build.Visible`, which *filters*
 rather than disables, so nothing in vanilla ever greys a building with a reason — and
 `Designator_Build` reads no relation term, so the whole gate would be ours. Reaching a building
 through a quest or a dialogue option remains cheaper and needs no patch. But if a *building* is
 ever the thing that must visibly unlock at a standing threshold, **the surface exists and costs one
-`Disable` call inside a postfix**, and this document should not have said otherwise.
+`Disable` call inside a postfix**.
 
 #### Cost
 
@@ -1032,7 +1006,7 @@ ever the thing that must visibly unlock at a standing threshold, **the surface e
 | The `FactionDialogFor` postfix that hosts it | **Already costed** by [`RELIGION.md`](RELIGION.md) D2 — not double-counted here |
 | The ritual gate (§4) | **XML** — a `workerClass` on an existing `RitualBehaviorDef`; the worker is ~10 lines calling the same resolver, plus its `BlockingIssues` twin |
 | Multiplayer | **Free** — see below |
-| Thresholds | **Requirements / balance**, not here |
+| Thresholds | **Balance** — [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119), not here |
 
 **Aggregate: one new Def type, ~95 lines of C# in the existing `ArchinityAltar.dll`, and no new
 Harmony patch.** No new assembly. The mechanisms are [V]; **the claim that they compose into the
@@ -1060,8 +1034,8 @@ both. It consumes no `Rand`, reads no `ModSettings` (**T-18**) and holds no cach
 — either founder can accept any quest, and the gate is re-evaluated inside `AcceptQuestByInterface`
 on the accepting client before the command goes out.
 
-**A comms-console `DiaOption` click is already a synced command, and this is stronger than the
-"wrap every player write" rule assumed.** Two independent mechanisms in `Multiplayer.dll` [V]:
+**A comms-console `DiaOption` click is already a synced command.** Two independent mechanisms in
+`Multiplayer.dll` [V]:
 
 - `Multiplayer.Client.NodeTreeDialogSync` is a **Harmony prefix on `DiaOption.Activate`**. It
   suppresses the local activation and routes it through
@@ -1080,15 +1054,14 @@ So **#73's institution-planting option, and every other gated diplomatic action,
 *Reverence* says these "are the ones that need synced commands"; the *rule* is right and this
 *instance* is already covered.
 
-⚠ **But the sync is positional, and that is a hazard nothing in the repo records.** Both mechanisms
+⚠ **But the sync is positional — T-82.** Both mechanisms
 identify the clicked option by its **index in `curNode.options`** [V]. A postfix that appends
 options to the faction dialogue must therefore build **the same list, in the same order, on both
 clients** — otherwise index *n* activates one action on one machine and a different action on the
 other. A standing gate is safe: it reads world state, so both clients compute the same `disabled`
 flag and, critically, `Disable` **keeps the option in the list** rather than removing it.
 **Omitting an unavailable option instead of disabling it is what breaks this** — and it breaks
-silently, with no error on either client. Disable, never skip. *(Proposed trap; unnumbered, the
-orchestrator allocates.)*
+silently, with no error on either client. Disable, never skip.
 
 **The enabled action's host type is constrained, and the constraint is real.**
 `DelegateSerialization.CheckMethodAllowed` walks the delegate method's **outermost** declaring type
@@ -1131,12 +1104,14 @@ actionable by either (**T-21**). No per-player gate is possible, and none is wan
   messages and opens anyway; the reason must also appear in `RitualOutcomeComp.BlockingIssues`
   (§4).
 - ⚠ **Two silent defects in `GoodwillSituationDef`, and one loud one, if that route is ever taken
-  for the coupling #97 owns** [V]. **Silent:** `baseMaxGoodwill` is **declared and read nowhere in
+  for the Reverence↔Goodwill coupling** ([#160](https://github.com/cjd721/Rimworld-Archinity/issues/160)
+  (routes, [`RELIGION.md`](RELIGION.md)); decided on
+  [#176](https://github.com/cjd721/Rimworld-Archinity/issues/176)) [V]. **Silent:** `baseMaxGoodwill` is **declared and read nowhere in
   the assembly** — the identifier appears exactly once, at its own declaration — so setting it in
   XML does nothing, with no error; and `PreceptComp_GoodwillSituation` is **inert in 1.6**, its
   only reader appending to `Ideo.cachedPossibleGoodwillSituations`, a list that is only `Clear`ed,
-  `Contains`-tested and `Add`ed to and never read, with no vanilla XML using the comp. **Both are
-  proposed traps** (unnumbered; the orchestrator allocates). **Loud, and therefore an engine note
+  `Contains`-tested and `Add`ed to and never read, with no vanilla XML using the comp. **They are
+  T-83 and T-84.** **Loud, and therefore an engine note
   rather than a trap:** `workerClass` defaults to the **abstract** `GoodwillSituationWorker`, so an
   omitted `workerClass` throws in `Activator.CreateInstance` rather than producing a config error.
 
@@ -1150,7 +1125,7 @@ evidence class **READ** — a fresh decompile of `Assembly-CSharp.dll` at the ve
 **1.6** files), `RimPacts.dll`, `FactionTerritories.dll`, shipped DLC XML and keyed language files,
 and a wide pass over both corpus roots in ASCII and in a hand-typed null-interleaved UTF-16LE form.
 
-Three findings reframe the capability:
+Four findings reframe the capability:
 
 1. **The one gate the ticket names cannot express the question the ticket asks.** It is an enum
    equality with no number and no threshold in its reason text (§0).
@@ -1163,11 +1138,9 @@ Three findings reframe the capability:
 4. **There are three free gating surfaces, not one.** Quest accept, the comms dialogue and the
    ritual gizmo all refuse with a reason out of the box; research and trader stock read nothing
    relation-shaped and have no reachable locked-reason seam (§4, §5). That, not the quest gate, is
-   what decides where campaign content has to be *reached from*. ⚠ An earlier draft made this
-   finding stronger than the evidence by claiming the Architect menu "cannot show a carrot even in
-   principle" — **false**, and corrected in §5a: `Designator_Build` inherits `Gizmo.Disable(string)`
-   and `Command.GizmoOnGUI` renders the reason. It is a fourth viable surface that costs a patch,
-   not an impossible one.
+   what decides where campaign content has to be *reached from*. The Architect menu is a fourth
+   viable surface that costs a patch (§5a): `Designator_Build` inherits `Gizmo.Disable(string)` and
+   `Command.GizmoOnGUI` renders the reason.
 
 **Verdict for the sourcing ledger ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)):**
 
@@ -1219,7 +1192,7 @@ ours needs Harmony, not a `workerClass`.
 
 #### Vanilla — where a threshold is already drawn before it is reached
 
-Six surfaces, and the two worth copying are not the obvious ones [V]:
+Seven surfaces, and the two worth copying are not the obvious ones [V]:
 
 | Surface | Method | Shows a number? |
 |---|---|---|
@@ -1229,7 +1202,7 @@ Six surfaces, and the two worth copying are not the obvious ones [V]:
 | Permits tab | `PermitsCardUtility.DoLeftRect` → one line per requirement, `.Colorize(met ? Color.white : ColorLibrary.RedReadable)` | ✅ favour and title |
 | Quests tab | `MainTabWindow_Quests.DoAcceptanceRequirementInfo` | prose — the wealth variant prints money |
 | Factions tab | `FactionUIUtility.DrawFactionRow`, whose tooltip states the literal −75 / +75 thresholds | ✅ but purely **retrospective** — never "at N you unlock X" |
-| Architect menu | — | ❌ **no surface at all** |
+| Architect menu | `Designator_Build` inherits `Gizmo.Disable(string)`; vanilla never uses it (§5a) | ❌ in vanilla, ✅ with one postfix |
 
 Two gaps in vanilla's own work, both worth not reproducing:
 
@@ -1336,13 +1309,9 @@ comms-console action below its threshold is present, greyed, and names the numbe
 
 ### Outstanding decisions (the gate)
 
-1. **Every threshold is a balance number and none has an owner.** What "+50 with the Reach"
-   actually is, per gate and per era, is `docs/requirements/POLITICS.md`'s and
-   `docs/requirements/RELIGION.md`'s. The build does not wait on them — they are Def fields by
-   construction — but **the same gap [`RELIGION.md`](RELIGION.md) § *Outstanding decisions* §
-   *Reverence* item 4 records applies here**, and it is still a gap rather than a hand-off:
-   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)'s scope is the coupling, not the
-   values.
+1. **Every threshold is a balance number.** What "+50 with the Reach" actually is, per gate and
+   per era, is balance → [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). The build does not wait on it — thresholds are Def fields
+   by construction.
 2. **Whether standing gates are ever *spent* rather than merely read.** Vanilla's own precedent is
    both at once — `RequestTraderOption` gates on ally status **and** charges 15 goodwill [V] — and
    `requirements/RELIGION.md` asks for exactly that split for institutions: *"Reverence unlocks the
@@ -1452,7 +1421,7 @@ Read through the vanilla meeting, which both A and B use **[V]**:
   - A prefix that replaces the body keeps it, because MP's hook is a postfix **[I]**.
   - An ambush opens no dialog, so subclassing it is safe **[I]**.
 - **Trade from a meeting becomes an MP trade session.** `DialogTradeCtorPatch` builds an `MpTradeSession` inside the synced click **[V]**. The window opens by itself only for a `Settlement` trader in world view, or for a negotiator on the current map **[V]**. For a met caravan, whether the clicker sees the window is a RUN check.
-- **Safe passage is not yet whole.** Vanilla's random `Ambush` and `CaravanDemand` still fire from any hostile faction on any tile **[V]**. A caravan can be ambushed beside a friendly settlement unless those defs are retuned or gated. That decision is a requirement, not balance (see *Open questions*).
+- **Vanilla's random road encounters beside a friendly settlement.** Vanilla's random `Ambush` and `CaravanDemand` still fire from any hostile faction on any tile **[V]**. Capability: keep, retune or zero vanilla's random ambush and demand in XML, or suppress them within range of a non-hostile settlement through a `CanFireNowSub` gate. Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **Aircraft in flight meet nobody.** `AerialVehicleInFlight` is not a `Caravan` **[V]**.
 
 ### Available mechanisms
@@ -1491,7 +1460,7 @@ Read through the vanilla meeting, which both A and B use **[V]**:
 
 | Question | Owner |
 |---|---|
-| Does the random road ambush and demand survive? If it does, may a hostile faction ambush a caravan beside a non-hostile settlement, or does safe passage suppress it within range? | Requirements → `requirements/POLITICS.md` (Conrad) |
+| Does the random road ambush and demand survive, including beside a non-hostile settlement? | Capability: keep, retune or zero vanilla's random ambush and demand in XML, or suppress them within range of a non-hostile settlement through a `CanFireNowSub` gate. Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). |
 | Does a meeting trade from a met caravan's stock or the settlement's own? Does a neutral meeting keep vanilla's Attack option? | Story, on selection |
 | Range, reaction chance, per-settlement cooldown, per-biome MTB | Balance |
 | With a caravan trade opened from a meeting on two clients, does the clicker's window open? | RUN, on [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16) |

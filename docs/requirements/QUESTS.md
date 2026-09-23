@@ -115,7 +115,9 @@ exchange, paid in Intel. Both are in.
 
 [#144](https://github.com/cjd721/Rimworld-Archinity/issues/144) ·
 [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145), from
-[#126](https://github.com/cjd721/Rimworld-Archinity/issues/126).
+[#126](https://github.com/cjd721/Rimworld-Archinity/issues/126). Routes:
+[`docs/specs/CURRENCIES.md`](../specs/CURRENCIES.md) § *Shop entries* and § *A failed bought
+quest returns to the shop*.
 
 ## Player information and agency
 
@@ -158,9 +160,3 @@ exchange, paid in Intel. Both are in.
   ([Charting](CHARTING.md)) — so this is now only a question of whether the mechanism
   leaves us a choice. See the capability findings on
   [#12](https://github.com/cjd721/Rimworld-Archinity/issues/12).
-- **What carries a shop whose entries are quests or items**, each with its own eligibility
-  and shelf life — [shop entries](https://github.com/cjd721/Rimworld-Archinity/issues/144).
-  [The purchasable quest catalogue](https://github.com/cjd721/Rimworld-Archinity/issues/106)
-  answered quests only.
-- **Whether a failed bought quest returns to the shop, free or paid** —
-  [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145).

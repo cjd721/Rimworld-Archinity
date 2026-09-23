@@ -98,7 +98,7 @@ accumulator, never after** — any Archinity scanner-shaped clock included.
 
 *[#57](https://github.com/cjd721/Rimworld-Archinity/issues/57). 1.6.4871.*
 
-### T-41 — A duplicate `analysisID` silently merges two Analysis gates
+### T-41 — A duplicate `analysisID` silently merges two Exemplar gates
 
 `CompProperties_CompAnalyzableUnlockResearch.analysisID` is a bare `public int`,
 hand-picked at the def, with **no uniqueness check anywhere**: the properties class
@@ -352,8 +352,8 @@ overwrite is invisible because the cost row redraws from the same field
 touches a gene, and the wrong list is the one that gets saved.
 
 **The fix:** postfix `OnGenesChanged` itself and append there. Every other seam is downstream of a
-reassignment. This binds any Intel- or Glitterite-material price we put on android manufacture —
-see `docs/specs/ANDROIDS.md` § *The Intel gate*, Layer 2.
+reassignment. This binds any per-android ingredient price we put on android manufacture — see
+`docs/specs/ANDROIDS.md` § *5. The Exemplar gate*, Layer 2.
 
 *[#78](https://github.com/cjd721/Rimworld-Archinity/issues/78), `docs/specs/ANDROIDS.md`.
 `VREAndroids.Window_AndroidCreation.OnGenesChanged` / `.AcceptInner`,
@@ -405,7 +405,7 @@ on the building type. Live only if Medieval Overhaul ships
 ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)).
 
 *[#154](https://github.com/cjd721/Rimworld-Archinity/issues/154),
-`docs/specs/WORLD-INFRASTRUCTURE.md` § *The player's two verbs on a route*.
+`docs/specs/WORLD-INFRASTRUCTURE.md` § *The player's verb on a route — contribute*.
 `3219596926/1.6/Assemblies/MedievalOverhaul.dll` `MedievalOverhaul.Building_ScribeTable`;
 `RimWorld.Faction.TryOpenComms`, `RimWorld.FactionDialogMaker.FactionDialogFor`
 (`Assembly-CSharp.dll`). See `docs/engine/determinism.md` § *MP serialises the comms-console
@@ -422,9 +422,11 @@ the two recipes' `fixedIngredientFilter`s def-identical. Every other field paste
 materials.
 
 The same strict rule is what stops BWM producing an empty filter on a disjoint pair (plate →
-parka), so the fix is a choice of rule, not a bug to patch out: strict equality, intersect with an
-empty-result guard, or replay the player's edits relative to the source's default
-(`DEFAULTS.md`).
+parka), and it means the material **does** paste whenever the two fixed filters match.
+`docs/requirements/COLONY.md` has a pasted configuration never carry the material, so BWM's paste
+carries it on matching recipes, which the requirement forbids; a paste that meets the
+requirement leaves `ingredientFilter` out entirely (`DEFAULTS.md` § *A bill's configuration*,
+Route C).
 
 *[#157](https://github.com/cjd721/Rimworld-Archinity/issues/157), `docs/specs/DEFAULTS.md` § *A
 bill's configuration, pasted onto another bill*. `935982361/1.6/Assemblies/ImprovedWorkbenches.dll`
@@ -502,10 +504,13 @@ category `Tribal`, `AdultTribal` or `ChildTribal`. A pawn without one is simply
 never offered the linking ritual: no error, no message, no disabled button. The
 founders' backstories are therefore load-bearing on the Neolithic psychic on-ramp.
 
-Of the six vanilla focus types only three are ungated — `Morbid`, `Minimal` and
-`Flame` — and `Morbid` is the altar's.
+No vanilla focus type is ungated. `Morbid` is listed by seven Core traits (Bloodlust,
+Psychopath, Cannibal, Masochist, Jealous, Undergrounder, TorturedArtist), `Minimal` by
+Ascetic, `Flame` by Pyromaniac. A type is open to all only if no `TraitDef` and no
+`HediffDef` lists it (`MeditationFocusTypeAvailabilityCache.PawnCanUseInt`). The altar
+defines no focus. **[V]**
 
-*[#21](https://github.com/cjd721/Rimworld-Archinity/issues/21). 1.6.4871.*
+*[#21](https://github.com/cjd721/Rimworld-Archinity/issues/21); [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49). 1.6.4871; `Data/Core/Defs/TraitDefs/Traits_Singular.xml`.*
 
 ### T-28 — `RoyalTitleDef.Awardable` is `favorCost > 0`, and a title without one is invisible
 
@@ -608,12 +613,13 @@ tab, the info card or any list — with no error.
 reason**: it pulls its own genes out of the list and redraws them itself. That patch exists
 because the virtual property does not carry.
 
-This bites the altar directly. `docs/specs/ALTAR.md` authors the **instance**, not the def —
-founder A's Transcendent Archogene and founder B's are different objects with different
-stored contents — and the only free surface for that difference is the hover title. Every
-other readout of an authored gene is a patch we write, or it is the def's generic text.
+It binds any gene whose per-instance contents differ from its def's: the only free surface for
+that difference is the hover title, and every other readout is a patch we write or the def's
+generic text. The altar's final rite now grants the shipped `VRE_Transcendent` gene, with no
+per-founder instance (`docs/specs/ALTAR.md` § *The final rite*); the per-founder Transcendent
+Archogene this trap was found on is archived in `docs/archive/altar-transcendent-gene-build.md`.
 
-*[#59](https://github.com/cjd721/Rimworld-Archinity/issues/59), `docs/specs/ALTAR.md`.
+*[#59](https://github.com/cjd721/Rimworld-Archinity/issues/59), `docs/archive/altar-transcendent-gene-build.md`.
 `RimWorld.GeneUIUtility.DrawGene` / `.DrawGeneBasics` / `.DrawSection`, `Verse.Gene.Label`;
 `VanillaRacesExpandedStarjack.dll`. 1.6.4871.*
 

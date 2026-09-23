@@ -7,7 +7,7 @@ The colony's own people, benches and gear, and the friction of running them.
 This document exists because four specced systems had no requirement behind them at all.
 [#87](https://github.com/cjd721/Rimworld-Archinity/issues/87) established that **no
 requirements document owned menu legibility or crafting defaults**, and `docs/progression/`
-holds only a README; `docs/specs/ITEMS.md` records the same gap for item deprecation in its
+holds only a README; `docs/specs/ITEMS.md` recorded the same gap for item deprecation in its
 own words. Four stub documents would have been worse than one, so they share this one.
 
 Nothing here is a campaign system, and nothing here is fiction. These are the requirements
@@ -44,7 +44,9 @@ choice stays.
 ### A pawn's gear can be assigned as a set
 
 - **Gear sets are authored and shipped**, and are present in a fresh colony without being
-  rebuilt by hand: Cook, Farmer, Smith, Miner, Doctor, melee soldier, ranged soldier.
+  rebuilt by hand — for example Cook, Farmer, Smith, Miner, Doctor, melee soldier, ranged
+  soldier. These are examples, not a required roster; which sets ship is the progression
+  grids' (2026-09-23, Conrad, #118).
 - **A set covers what the pawn carries, including its weapon.** Apparel alone is the floor,
   not the target — the point of the system is that a pawn kitted as the cook *is* the cook.
 - **Assigning a set is one act**, after which the pawn equips itself without further
@@ -70,6 +72,7 @@ choice stays.
   high skill and the wrong specialisations is a real disappointment; one with the right
   specialisations is a real prize. This is the clause that makes looking at a pawn
   interesting.
+- **The colony's starting colonists do not arrive specialised** (2026-09-23, Conrad, #118).
 
 **This behavior may be delivered by scarcity instead of by progression.** A bounded set of
 named posts, each held by one pawn at a time and each carrying the same kind of bonus,
@@ -91,8 +94,10 @@ guaranteed fallback, and the choice waits for the routes.
   the gloves, the helmet and the boots must cost a paste, not ten clicks each. **This is the
   requirement; the defaults above are the floor beneath it, and both ship.**
 - The configuration carries: repeat mode and target count, the durability range, the quality
-  range, the material restriction, the allowed worker skill range, the pawn restriction and
-  the destination.
+  range, the allowed worker skill range, the pawn restriction and the destination. **It never
+  carries the material.** A setting the target bill cannot take is left out, or the copy is
+  refused where the two bills are set up differently; it is never forced on (2026-09-23,
+  Conrad, #118).
 
 The defaults half is already verified: [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95)
 established the mechanism in `docs/specs/DEFAULTS.md`, and what it lacked was this document
@@ -106,7 +111,7 @@ saying which values belong on which row. **Copy-paste is new ground.**
   research alone ([era](ERA.md) § *The acquisition gate*); nothing below the era ceiling is
   ever made unreachable by a menu. Older recipes stay available, only less prominent.
 - **The research tab is settled:** one tab per era, and the whole tree visible from the start
-  ([era](ERA.md) § *Player information and agency*).
+  ([era](ERA.md) § *The acquisition gate*).
 
 Established on [#96](https://github.com/cjd721/Rimworld-Archinity/issues/96). Whether this is
 a filter, a grouping, era-limited benches or search alone waits for the routes.
@@ -152,9 +157,9 @@ Specialisation wants to be reachable early enough that a low-skill recruit is wo
 because that is what makes weak captures worth the cost of keeping them.
 
 Reclamation is tied to the [era](ERA.md) boundary that makes gear obsolete in the first
-place. Which bench carries it, and from which era, belongs to
-[#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) and
-[#30](https://github.com/cjd721/Rimworld-Archinity/issues/30).
+place. Its era is the research gate ([era](ERA.md) § *The acquisition gate*), placed by
+[#30](https://github.com/cjd721/Rimworld-Archinity/issues/30); the bench is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 
 ## Player information and agency
 
@@ -190,21 +195,13 @@ displayed somewhere that does not actually govern the outcome is worse.
 
 ## Open questions
 
-- **A pawn's whole kit as one authored set, weapon included** —
-  [#155](https://github.com/cjd721/Rimworld-Archinity/issues/155). The apparel half is
-  already answered by [#28](https://github.com/cjd721/Rimworld-Archinity/issues/28); the
-  weapon, the authorability and the two verbs are not.
-- **A pawn specialising inside a skill it already has** —
-  [#156](https://github.com/cjd721/Rimworld-Archinity/issues/156), which also owns the
-  bounded-posts fallback and whether generated pawns can arrive specialised.
-- **Copying a bill's configuration onto another bill** —
-  [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157).
-- **The add-bill menu, filtered or grouped by era** —
-  [#161](https://github.com/cjd721/Rimworld-Archinity/issues/161).
-- **A pawn favouring recreation that trains its passions** —
-  [#159](https://github.com/cjd721/Rimworld-Archinity/issues/159).
+- **Answered at route depth:** gear sets and paste — `docs/specs/DEFAULTS.md`;
+  specialisation — `docs/specs/SPECIALISATION.md`; the menu and recreation —
+  `docs/specs/COLONY.md`; reclaim — `docs/specs/ITEMS.md`. Route selection is
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 - **The quality and durability floor values**, and whether they vary by era, are balance.
   They belong to [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)
   and an era-varying floor additionally waits on progression grids that do not yet exist.
 - **Whether a dedicated reclaim bench ships**, as against reusing existing benches, is a
-  build question for #119 once #22 and #30 place the eras.
+  build question for #119; the era is the research gate ([era](ERA.md) § *The acquisition
+  gate*), placed by [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30).

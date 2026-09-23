@@ -2,14 +2,6 @@
 
 ## Purpose and scope
 
-> **Authority correction — 2026-09-13.** This document's `requiredAnalyzed` mechanism is
-> the campaign's **Exemplar** route: studying a physical likeness unlocks a project and
-> the item survives. It does not add research progress, produce Intel or consume the
-> item. **Glitterite analysis** is a separate, destructive, long-running activity that
-> consumes a one-use artifact, produces Intel and raises Trace. Any section below that
-> prices this exemplar gate in Intel or treats the two activities as one is superseded.
-> [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115) owns the destructive carrier.
-
 How research is *earned* in this campaign. `CONTEXT.md` settles three routes to knowledge —
 **Practice** (resource cost alone), **Instruction** (a techprint, a book, a teacher) and
 **Exemplar** (a surviving physical example that the colony studies). Practice is the vanilla
@@ -27,7 +19,7 @@ It also owns **research bypasses** — every route in the bin that advances or c
 research project without the colony spending research points at a bench, and the shutoff for
 each ([#83](https://github.com/cjd721/Rimworld-Archinity/issues/83)). That half starts at
 [*Bypasses — the build*](#bypasses--the-build); a reader who came for it should jump there
-rather than read the Analysis gate first. The two halves meet in one place: a bypass that
+rather than read the Exemplar gate first. The two halves meet in one place: a bypass that
 ignores `CanStartNow` also ignores `requiredAnalyzed`, and one such route ships in **Core**.
 
 And it owns **granted capability** — what lets a research project unlock a *verb* rather than a
@@ -39,15 +31,17 @@ them is keyed on `ResearchProjectDef.IsFinished`, so a bypass that finishes a pr
 hands over the verbs it grants.
 
 It does **not** own the Intel balance or exchange surface
-([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)) — the interface between the two
+([`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange*;
+[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), closed) — the interface between the two
 is stated in *The build* § **The seam with Intel** and nothing more. The Exemplar gate is not
 priced in Intel. It does not own the
 exemplar **catalogue** — which artifact gates which branch is authoring work and belongs to
 [Act V](https://github.com/cjd721/Rimworld-Archinity/issues/47). It does not own research
 **pacing**, tier totals or the era ladder
-([`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md); **#5 and #7
-are closed and pacing has no owning ticket today**), the research **menu surface**
-([#96](https://github.com/cjd721/Rimworld-Archinity/issues/96)), or **the era clock** that the
+([`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md); pacing and
+balance are the build map's, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)), the
+research **menu surface** ([`COLONY.md`](COLONY.md),
+[#161](https://github.com/cjd721/Rimworld-Archinity/issues/161)), or **the era clock** that the
 capstones move ([`ERA.md`](ERA.md)). It does not own **which** verbs the Neolithic gates —
 that is the grid's ([#41](https://github.com/cjd721/Rimworld-Archinity/issues/41),
 [#37](https://github.com/cjd721/Rimworld-Archinity/issues/37)) — only what makes gating one
@@ -57,7 +51,7 @@ possible at all.
 
 ## The build
 
-**Vanilla already carries the Analysis gate, in pure XML, and we are not writing any code for
+**Vanilla already carries the Exemplar gate, in pure XML, and we are not writing any code for
 it.** `ResearchProjectDef.requiredAnalyzed` plus `CompProperties_CompAnalyzableUnlockResearch`
 on the exemplar item is the whole mechanism: the project cannot be started until a colonist
 has physically analysed the named thing at a research bench, and with
@@ -77,8 +71,7 @@ reimplemented in `Archinity.Core`.
 `ResearchProjectDef.CanStartNow` conjoins `AnalyzedThingsRequirementsMet` alongside
 `PrerequisitesCompleted`, `TechprintRequirementMet`, `PlayerMechanitorRequirementMet`,
 `!IsHidden`, `InspectionRequirementsMet` and — **only when `requiredResearchBuilding` is
-non-null** — `PlayerHasAnyAppropriateResearchBench` [V]. An earlier draft listed the bench test
-as unconditional and omitted `!IsHidden`; the corrected conjunction is
+non-null** — `PlayerHasAnyAppropriateResearchBench` [V]. The full conjunction is
 `!IsFinished && PrerequisitesCompleted && TechprintRequirementMet && (requiredResearchBuilding ==
 null || PlayerHasAnyAppropriateResearchBench) && PlayerMechanitorRequirementMet &&
 AnalyzedThingsRequirementsMet && !IsHidden && InspectionRequirementsMet` [V].
@@ -88,7 +81,7 @@ and `AnalyzedThingsCompleted` walks `requiredAnalyzed`, reads each entry's
 `AnalysisDetails.Satisfied` is true [V].
 
 **There is no tech-level filter anywhere on this path** — not in `PostLoad`, not in
-`ConfigErrors`, not in `CanStartNow` [V]. Analysis is available at every tier, Neolithic and
+`ConfigErrors`, not in `CanStartNow` [V]. The Exemplar gate is available at every tier, Neolithic and
 Archotech included. Vanilla demonstrates this itself rather than merely permitting it: the
 Ultra-flavoured `NanostructuringChip` gates the **Industrial**-tier `WastepackAtomizer` [V].
 See *Available mechanisms* for why that sentence is load-bearing.
@@ -175,17 +168,14 @@ All vanilla, all free [V]:
 
 **There is no display half left to build, and no UI ticket to defer to.**
 
-### 6. The seam with Intel ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54))
+### 6. The seam with Intel
 
-> **Corrected seam.** Research never calls `CanAfford` or `TrySpend` on Intel. Accumulated
-> Intel is exchanged elsewhere for a techprint or other unlocking item; the resulting
-> item then uses the ordinary Instruction path. The exemplar gate remains independent.
-
-What this gate needs to know about a recovered exemplar, stated as a contract so #54 can build
-against it:
+What this gate needs to know about a recovered exemplar, stated as a contract the Intel exchange
+([`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange*, from
+[#54](https://github.com/cjd721/Rimworld-Archinity/issues/54)) builds against:
 
 1. **The gate's entire input is a `ThingDef` on a colony map.** It cannot read a balance and
-   does not need to.
+   does not need to. Research never calls `CanAfford`/`TrySpend` on Intel.
 2. **Intel exchange and studying an exemplar are different acts.** Studying spends
    nothing and leaves the item intact. It flips one colony-global boolean per
    `analysisID`, permanently. Intel is an accumulated scalar exchanged elsewhere for
@@ -195,10 +185,10 @@ against it:
    obtain now*. One `requiredAnalyzed` entry may sit at a branch root; a techprint or
    authored unlock item may gate a different node. Destructive analysis belongs to
    [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115), not this manager.
-4. **What #54 may rely on.** `Find.AnalysisManager.TryGetAnalysisProgress(id, out details)` and
-   `details.Satisfied` are public, scribed and multiplayer-safe, callable from any C# #54 writes.
+4. **What the exchange may rely on.** `Find.AnalysisManager.TryGetAnalysisProgress(id, out details)` and
+   `details.Satisfied` are public, scribed and multiplayer-safe, callable from any C# `CURRENCIES.md` writes.
    That is the supported "this branch is unlocked" read, and it costs nothing.
-5. **What #54 must not do.** Do not store Intel in `AnalysisManager`. Its dictionary is keyed by
+5. **What the exchange must not do.** Do not store Intel in `AnalysisManager`. Its dictionary is keyed by
    a hand-chosen int with no uniqueness check (**T-41**), and `required` is frozen at first
    spawn. It is a latch, not a ledger.
 
@@ -210,7 +200,7 @@ against it:
 | Add `requiredAnalyzed` to each branch-root project | `PatchOperationAdd` | ~6 lines per project | `Archinity.Glitterites/Patches/Analysis_GlittertechGate.xml` |
 | Retire `Analysis_Glittertech.xml`, `Analysis_Unblock.xml`, `Fix_MoreRealisticResearch.xml` | deletion | −3 files, ~250 lines | `Archinity.Glitterites`, `Archinity.Pacing` |
 | Recommend dropping `sae.researchmod` | sourcing input | — | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) owns the verdict |
-| **New C#** | **none — conditional on Analysis staying unpriced (the Analysis-pricing question in [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2))** | **0 under the default.** If Analysis is ever priced, the completion path needs a `TrySpend` call and the gizmo needs a `CanAfford` disable reason — a Harmony postfix on `CompAnalyzable.OnAnalyzed` and one on `CompInteractable.CanInteract`, neither of which exists today | — |
+| **New C#** | **none** | **0** | — |
 
 ---
 
@@ -234,8 +224,7 @@ the list if it is null, and skipping projects that already carry a prerequisite 
 `spaTheory` / `ultTheory` / `arcTheory` [V]. The injected Theory def is therefore an ordinary
 prerequisite, and the whole ladder reduces to one predicate.
 
-**Two precisions, because an earlier draft of this section named the wrong def and overstated the
-reach.**
+**Two precisions.**
 
 - **The `TB_*TechLock` defs are never a prerequisite of anything.** They are prerequisites *of*
   the `TB_*Theory` defs, and TechBlock only rewrites their cost [V]. Their naming is also
@@ -282,7 +271,7 @@ nulled.
 
 | Carrier | Anchor | Shutoff |
 |---|---|---|
-| **VPE `VPE_ReverseEngineer`** | `VanillaPsycastsExpanded.Technomancer.Ability_ReverseEngineer.Cast` | `PatchOperationRemove` the `VEF.Abilities.AbilityDef` `VPE_ReverseEngineer` **and** its `AbilityExtension_Psycast` slot on the `VPE_Technomancer` path. Coordinate with [#33](https://github.com/cjd721/Rimworld-Archinity/issues/33), which owns the surviving path set |
+| **VPE `VPE_ReverseEngineer`** | `VanillaPsycastsExpanded.Technomancer.Ability_ReverseEngineer.Cast` | `PatchOperationRemove` the `VEF.Abilities.AbilityDef` `VPE_ReverseEngineer` **and** its `AbilityExtension_Psycast` slot on the `VPE_Technomancer` path. VPE in or out, and the surviving path set, are [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s; [`PSYCHIC.md`](PSYCHIC.md) carries the path gates ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162)) |
 | **Mechanoids: Total Warfare, on vanilla `CerebrexCore`** | `NCL.CompUnlockResearch.UnlockResearch` | `PatchOperationRemove` `/Defs/ThingDef[defName="CerebrexCore"]/comps/li[@Class="NCL.CompProperties_UnlockResearch"]`. **Archinity.Pacing must load after MTW** or the node is not there to remove |
 | **VFE Classical senator favours** | `VFEC.Senators.WorldComponent_Senators.GainFavorOf` | `PatchOperationReplace` the `senatorResearch` entries and `finalResearch` with projects already inside the era. **Do not remove them** — `FactionExtension_SenatorInfo.ConfigErrors` requires `senatorResearch.Count == numSenators` and a non-null `finalResearch` and `finalPerk` [V] |
 | **VFE Classical `Profectus` perk** | `VFEC.Perks.Workers.Profectus.DoResearch` | `PatchOperationReplace` `finalPerk` with any other `PerkDef`. It is Class B on the era test (below); it is listed here because the disposition lands in the same file |
@@ -298,10 +287,9 @@ one.** Left alone unless pacing wants them gone, and none of them is an era-arc 
 
 **Class C — produces research points into the player-selected project from a non-bench source.**
 A rate breach, not a gate breach: the project had to pass `CanStartNow` to be selected. These
-belong to pacing, and **pacing currently has no owning ticket** — #5 and #7, the two this survey
-was written to hand them to, are both closed and nothing has replaced them. The gap is stated
-here and left to be routed; the top two rows are large enough that whoever picks pacing up needs
-to see them.
+belong to pacing and balance, which are the build map's
+([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)); the top two rows are large
+enough that it needs to see them.
 
 | Def | Anchor | Rate |
 |---|---|---|
@@ -321,11 +309,11 @@ instead [V]. It is **not** a free-research route — `MainTabWindow_Research.Dra
 the button on `CanStartNow` before `DoBeginResearch` is ever reached [V], and
 `SetGravshipResearch` re-checks `PrerequisitesCompleted` [V]. It does force
 `PlayerHasAnyAppropriateResearchBench` true and `CostFactor` to 1 for those 11 [V]. Leave it; see
-*Bypasses — available mechanisms* § *The census* for why the ticket's framing of it is withdrawn.
+*Bypasses — available mechanisms* § *The census* for why it is not a bypass, whatever the ticket's framing.
 
 ### 2. The `Schematic` book
 
-The one shutoff the Analysis gate itself depends on, and the only one in **Core**.
+The one shutoff the Exemplar gate itself depends on, and the only one in **Core**.
 
 `ReadingOutcomeDoerGainResearch.OnBookGenerated` picks one project — two with 25 % chance — from
 projects that are `PrerequisitesCompleted && !IsFinished && TechprintCount == 0 &&
@@ -446,8 +434,8 @@ is worth saying out loud because premises in this repo have not always survived
 
 But [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) ruled the mod out on **T-15**
 (`VFET_OpportunitySite_WildMen` registers a faction at runtime against the frozen roster), and
-`docs/data/PARTS-BIN.md` § 5.3 independently files it **RESTAT leaning REBUILD** on a hard
-co-op desync and a twelve-building retier collision. **So we take the shape and write the code.**
+`docs/data/PARTS-BIN.md` § 5.3 independently files it **RESTAT leaning REBUILD** on a
+twelve-building retier collision (its cornerstone write is synced by MP Compat, § 6). **So we take the shape and write the code.**
 The whole of it fits in this document because — read end to end — the mod's mechanism turns out
 to be **stateless**: it holds nothing, scribes nothing and asks nothing of the save.
 
@@ -551,7 +539,7 @@ Patch 1 is the one with a wrinkle. `Pawn.GetDisabledWorkTypes(bool permanentOnly
 function** `FillList`, not a named method [V, `Verse.Pawn.GetDisabledWorkTypes`]. VFE Tribals
 reaches it by scanning `AccessTools.GetDeclaredMethods(typeof(Pawn))` for a name containing both
 `GetDisabledWorkTypes` and `FillList` [V]. **Target `GetDisabledWorkTypes` itself instead**,
-postfixed on `__result`. Two reasons, and neither is the one an earlier draft gave:
+postfixed on `__result`. Two reasons:
 
 1. **A public method is a stable anchor; a compiler-generated name is not.** The donor's search
    survives a recompile of the same source but not a refactor, and it is unciteable — there is no
@@ -568,14 +556,11 @@ postfixed on `__result`. Two reasons, and neither is the one an earlier draft ga
 The one thing to get right is that the returned list **is the cache**, so a postfix must add to
 it idempotently (`Contains` first) or it grows on every non-cached rebuild.
 
-> **The Loudness argument an earlier draft made for this choice was wrong and is withdrawn.** It
-> claimed a missing local function gives Harmony a silent null target while a missing public
-> method throws. **Both are loud.** `PatchClassProcessor.GetBulkMethods()` invokes
-> `[HarmonyTargetMethod]` through `RunMethod` with a `failOnResult` delegate
-> `method => method != null ? null : "null"`; a non-null result throws
-> `"Method … returned an unexpected result: null"`, which `ReportException` rethrows as
-> `HarmonyException` [V, `0Harmony.dll` **2.4.1.0**, `…/294100/2009463077/Current/Assemblies/`].
-> The recommendation is unchanged; the two reasons above are what actually support it.
+Loudness does not separate the two targets: **a missing target fails loudly either way.**
+`PatchClassProcessor.GetBulkMethods()` invokes `[HarmonyTargetMethod]` through `RunMethod` with a
+`failOnResult` delegate `method => method != null ? null : "null"`; a null target throws
+`"Method … returned an unexpected result: null"`, which `ReportException` rethrows as
+`HarmonyException` [V, `0Harmony.dll` **2.4.1.0**, `…/294100/2009463077/Current/Assemblies/`].
 
 Patches 5 and 6 are why **no designator cache has to be rebuilt**. VFE Tribals never removes a
 designator from its category; it lets the category resolve normally and **disables the gizmo in
@@ -668,21 +653,20 @@ covers.**
 - `Notify_DisabledWorkTypesChanged()` mutates only client-local caches; running it on both
   clients from the same synced tick is the deterministic case, and running it on one would
   desync nothing because the caches are derived.
-- **The donor's own defect is not inherited.** PARTS-BIN § 5.3 records that
-  `GameComponent_Tribals.AddCornerstone` mutates saved state from `DoWindowContents` with no
-  `[SyncMethod]` [V]. That is the cornerstone system, not the unlock system, and § 3 does not
-  copy it — but it is the reason a *restat* of VFE Tribals would have to be audited window by
-  window while a rebuild does not.
+- **The donor's cornerstone write is not inherited.** `GameComponent_Tribals.AddCornerstone`
+  mutates saved state from `Window_CustomizeCornerstones` and has no `[SyncMethod]` of its own;
+  MP Compat's `VanillaFactionsTribal` registers it as a sync method, with a points pre-check [V,
+  decompiled 1.6 `Multiplayer_Compat.dll`; [`SPECIALISATION.md`](SPECIALISATION.md) § *D. Point
+  board*]. That is the cornerstone system, not the unlock system, and § 3 does not copy it. A
+  *restat* of VFE Tribals leans on that third-party registration; a rebuild does not.
 
 ### 7. The cornerstone system — drop it
 
 The ticket asks. **Recommend dropping it**, and the recommendation is narrow: the mechanism is a
 stat-offset shop (`CornerstoneDef` → `StatWorker_GetValueUnfinalized` / `GetExplanationUnfinalized`
-postfixes, spent from `availableCornerstonePoints`, 88 authored defs) [V], it is the one piece of
-the mod carrying the unsynced-write defect, and the campaign already owns a register for
-permanent colony-wide boons — **the altar** ([`ALTAR.md`](ALTAR.md)), which #7 § 7 makes the
-home of era advancement anyway. Two registers doing one job is the thing `CODING_STANDARDS.md` §
-*The bar for a change* rejects.
+postfixes, spent from `availableCornerstonePoints`, 88 authored defs) [V], separate from the unlock
+mechanism § 2 rebuilds, which needs none of it (§ 6). Its one write is synced by MP Compat
+(§ 6), so keeping it is possible.
 
 **The missing Archotech `EraAdvancementDef` entry does not matter**, and for a sharper reason
 than "Archotech is never researched": `EraAdvancementDef` is looked up by
@@ -708,13 +692,10 @@ all. The verdict on the mod remains
 **~250–300 lines of C# in the assembly we already ship, and ~6 lines of XML per verb. No new
 assembly, no new saved state, no recompiled third-party DLL.**
 
-**An earlier draft of this section said ~155, and the correction is worth keeping visible.** The
-*Donor, measured* column is VFE Tribals' decompiled line count for the equivalent piece. Our
+The *Donor, measured* column is VFE Tribals' decompiled line count for the equivalent piece. Our
 column discounts decompiler verbosity (`//IL_` comments, explicit interface casts) and takes a
-postfix where the donor uses a transpiler — but four of the five rows still land above the first
-estimate, and the display stack lands far above it. **The same sentence this document applies to
-the ticket's ~30-line guess — low by roughly 5× — applies to ~155 at roughly 1.7×.** Estimating
-a rebuild without counting the thing being rebuilt is how both numbers went wrong.
+postfix where the donor uses a transpiler. The display stack is the largest single piece.
+Estimate a rebuild by counting the thing being rebuilt.
 
 **[I] on the composition.** Every mechanism above was read [V]; the claim that they compose into
 a working on-ramp is inferred until it is built and a colonist is watched failing to mine.
@@ -734,7 +715,7 @@ Answers [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) § 
 - The Trace number, which it reaches only through `Notify_Trace` ([`TRACE.md`](TRACE.md)).
 - The Exemplar gate (§§1–6 above, [#67](https://github.com/cjd721/Rimworld-Archinity/issues/67)). It shares no state with it.
 - The artifact catalogue, yields or Trace amounts ([#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)).
-- Where the pre-commit warning is drawn ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)).
+- Any readout of projected yield and Trace before commitment. No requirement asks for one; if one is built, its surface is the build map's ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61), closed: every surface has a route).
 
 ### Verdict
 
@@ -856,7 +837,6 @@ READ. Every mechanism cited is [V]. Each route's composition (payout comp → `C
 ### Open questions
 
 - **#117 (requirement):** whether "recoverable" means "paid so far is kept"; where analysis happens (in place or at a bench); what moves Trace (start, increments, completion) and by how much.
-- **#61 (requirement):** where the projected yield and the Trace warning appear before commitment.
 - **Build map ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)):**
   - where the record of paid increments lives and its save key;
   - how `stackLimit 1` is enforced;
@@ -904,7 +884,7 @@ the item predates our patch, no `AnalysisDetails` entry is ever created; `Analyz
 then cannot count it, and `OnAnalyzed` takes the `IsAnalysisComplete` branch — which returns
 **true** for an absent key [V].
 
-The symptom is quieter than an earlier draft of this spec claimed. That branch routes to
+The symptom is silent. That branch routes to
 `SendLetter(Props.repeatCompletedLetterLabel, …)`, and `SendLetter` no-ops on an empty label —
 which Biotech's chips have, and which any exemplar we author will have unless we go out of our
 way [V]. So there is no "already analysed" letter and no error: the **"Analyze…" gizmo stays
@@ -959,17 +939,16 @@ simply ceases to exist and the project becomes free. Two precisions worth statin
 Biotech is in the floor ([#6](https://github.com/cjd721/Rimworld-Archinity/issues/6)), so this is
 a floor dependency to record rather than a bug to fix.
 
-**`AddProgress` does not consult the gate — and the mod this spec accused of exploiting that
-does not.** `ResearchManager.AddProgress` checks `PrerequisitesCompleted` before auto-finishing
+**`AddProgress` does not consult the gate — but TechBlock, which calls it, never reaches a gated
+project.** `ResearchManager.AddProgress` checks `PrerequisitesCompleted` before auto-finishing
 and never checks `CanStartNow` [V], so the §1 claim that "enforcement is at project selection"
-is a claim about the *player's* route, not about every route. **An earlier draft named
-TechBlock's random-insight mechanic as the route that takes the other one. That is wrong and is
-withdrawn.** `TechBlock_Component.GetPossibleTechs` builds its candidate pool from
+is a claim about the *player's* route, not about every route. **TechBlock's random-insight
+mechanic is not one of the other routes.** `TechBlock_Component.GetPossibleTechs` builds its candidate pool from
 `!IsFinished && !IsHidden && CanStartNow && techLevel == <current tier> && !IsBlockTech` [V,
 `1970774610/1.6/Assemblies/TechBlock 1.2.1.dll`], and `CanStartNow` carries
-`AnalyzedThingsRequirementsMet` [V]. **TechBlock cannot touch an analysis-gated project**, the
-[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) "keep the Glittertech roots out of
-its tier pool" caveat is retired, and the *Outstanding decisions* row that carried it is struck.
+`AnalyzedThingsRequirementsMet` [V]. **TechBlock cannot touch an analysis-gated project**, so
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) needs no caveat keeping the
+Glittertech roots out of its tier pool.
 
 **Two routes in the bin genuinely do it, and one of them is vanilla.** `Find.ResearchManager`
 `.AddProgress` is reached with no `CanStartNow` test by `ReadingOutcomeDoerGainResearch`
@@ -1013,9 +992,14 @@ the vanilla mechanism delivers the Glitterite loop is **[I]** until something is
 - [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) — owns the `sae.researchmod`
   verdict and the TechBlock question.
 - [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54) — the Intel side of the seam.
-  **Resolved: Analysis is never priced in Intel.** Research and hacking never debit it; Intel is
-  exchanged for Instruction items ([`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange*). The
-  cost line above is unconditional.
+  **The Exemplar gate is never priced in Intel.** Research and hacking never debit it; Intel is
+  exchanged for Instruction items ([`CURRENCIES.md`](CURRENCIES.md) § *The Intel exchange*).
+  Destructive analysis produces Intel and Trace and does not satisfy `requiredAnalyzed`
+  ([#115](https://github.com/cjd721/Rimworld-Archinity/issues/115)). The cost line above is
+  unconditional.
+- **The exemplar survives** (`GLITTERTECH.md`: *"the item survives"*), and **no bypass survives as
+  an authored reward** ([#129](https://github.com/cjd721/Rimworld-Archinity/issues/129)) — the
+  lockout's assumption holds.
 - [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53) / [`RELIGION.md`](RELIGION.md) —
   Instruction *supply* for Empire-tagged techprints. The Church keeps `categoryTag Empire`, so its
   trader route stays open only while the Church is non-hostile and a colonist holds Knight (Baron
@@ -1038,20 +1022,18 @@ Every carrier in *Bypasses — available mechanisms* § *The census* is [V], and
 per-mod verdict — *restat*, *art only*, *block* — which this document does not make. Two rows
 carry a recommendation and nothing more: `USH_ResearchProbe` should be **kept** and restatted
 because the Glittertech tree needs it, and the vanilla `Schematic` one-liner should be **taken**
-because the Analysis gate in the first half of this document is otherwise open.
+because the Exemplar gate in the first half of this document is otherwise open.
 
 **Three of the ticket's own claims are corrected** in *Bypasses — available mechanisms* § *Three
-claims on the ticket that the assemblies contradict*, and two of this document's own claims about
-`Profectus` and TechBlock are withdrawn in place.
+claims on the ticket that the assemblies contradict*.
 
 - [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83) — this survey and the lockout.
-- [#33](https://github.com/cjd721/Rimworld-Archinity/issues/33) — owns the surviving VPE path set;
-  `VPE_ReverseEngineer` sits inside it.
+- [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) — VPE in or out, and the
+  surviving path set `VPE_ReverseEngineer` sits inside; [`PSYCHIC.md`](PSYCHIC.md) carries the
+  path gates ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162)). Also pacing and
+  balance, including the Class C rates.
 - [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) — owns every per-mod verdict, and
   the revalidation cadence § 5's audit script serves.
-- **The Class C rate question has no owner.** #5 and #7, the pacing tickets this survey was
-  written against, are both closed and nothing has replaced them. Recorded as a gap, not handed
-  off.
 - [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) — the freeze the lockout must
   precede.
 
@@ -1115,7 +1097,7 @@ Two things in that table are load-bearing beyond the "it ships and it works" poi
 `UltraMechtech`, and an item whose whole flavour is above-Spacer. One chip gates two projects at
 two different tiers, and the low-tier one is not special-cased. §1's "no tech-level filter
 anywhere on this path" therefore rests on a shipped positive as well as on a negative code read,
-which is the stronger footing for the *Outstanding decisions* row that wants Analysis at
+which is the stronger footing for the *Outstanding decisions* row on the Exemplar gate at
 Neolithic and Medieval.
 
 **One chip can gate several projects, and a tree's entry project need not be gated.** The shape
@@ -1155,17 +1137,14 @@ the def's own fields, and `requiredAnalyzed` is one of the fields it filters on:
 `VFEC.Perks.Workers.Profectus.CanResearch` rejects any project with `TechprintCount > 0`,
 `RequiredAnalyzedThingCount > 0`, `requiresMechanitor`, or a non-null `knowledgeCategory` [V].
 
-**Correction to an earlier draft of this section, which said *"it never consults
-`CanStartNow`"*. It does** — `CanResearch`'s last statement is `return proj.CanStartNow;` [V],
-read from `2787850474/1.6/Assemblies/VFEC.dll`. The conclusion above survives, and is now
-belt-and-braces: an analysis-gated project is excluded by the explicit
-`RequiredAnalyzedThingCount` test *and* by `CanStartNow`'s own
-`AnalyzedThingsRequirementsMet`. But the withdrawn sentence mattered for a different reason —
-it is what made `Profectus` look like an era-arc breach, and it is not one. See
-[*Bypasses — the build*](#bypasses--the-build) § *The census*.
+**It also consults `CanStartNow`** — `CanResearch`'s last statement is
+`return proj.CanStartNow;` [V], read from `2787850474/1.6/Assemblies/VFEC.dll`. So the exclusion
+is belt-and-braces: an analysis-gated project is excluded by the explicit
+`RequiredAnalyzedThingCount` test *and* by `CanStartNow`'s own `AnalyzedThingsRequirementsMet`.
+The same test is why `Profectus` is not an era-arc breach. See
+[*Bypasses — available mechanisms*](#bypasses--available-mechanisms) § *The census*.
 
-**That is the strongest in-repo argument for the vanilla carrier over More Realistic Research,
-and it was not part of the original comparison.** A `requiredAnalyzed` gate is *structurally
+**That is the strongest in-repo argument for the vanilla carrier over More Realistic Research.** A `requiredAnalyzed` gate is *structurally
 invisible* to `Profectus` — the project is skipped. An MRR gate is not: MRR's requirements live
 in `GameComponent_ResearchLegs.ProjectPoints`, not on the `ResearchProjectDef`, so a
 `Profectus` draw sees an ordinary ungated project and hands it over free. Under MRR, the
@@ -1179,8 +1158,9 @@ filter, and TechBlock calls it at random.
 
 ### Is recovery consumption? No.
 
-`docs/requirements/GLITTERTECH.md` says *"Want their armor? Bring home armor."* It says bring
-home, not burn. The exemplar is the proof you went; taking it apart and putting it back together
+`docs/requirements/GLITTERTECH.md` says *"Exemplar: a colonist studies a physical likeness to
+unlock the project; the item survives. A recovered shocktrooper suit can teach armor modifications
+this way."* It says study, not burn. The exemplar is the proof you went; taking it apart and putting it back together
 is what a researcher does, and destroying it converts a trophy into a receipt. The colony flies
 to orbit for a glitterheart and Ushanka already charges hearts to *build* glittertech — charging
 one again to *research* it is paying twice for one trip. `destroyedOnAnalyzed: false` [V].
@@ -1235,16 +1215,13 @@ and every one of the 34 entries is an `AUTO:` row [V]. Projects carrying techpri
 `requiredAnalyzed` are skipped [V], which is a small mercy and also the tell: the author knew
 vanilla's mechanism existed.
 
-**Correction to a claim carried in #67's own body and in
-[`docs/data/RESEARCH-NEO-MED.md`](../data/RESEARCH-NEO-MED.md)'s *Devilstrand* row:
-`Devilstrand` is not an auto-generation deadlock.** It is one of MRR's own hand-authored
+**`Devilstrand` is not an auto-generation deadlock**, though #67's body calls it one. It is one of MRR's own hand-authored
 `ManualAnalysisDef`s (`defName` `1`, `experimentalMaterials: DevilstrandCloth`, 9 points), and
 `BuildRegistry` applies hand-authored defs **first and unconditionally**, before the tier filter
 ever runs [V] — which is the only reason a Neolithic project has a live gate at all. Two
 different failure modes were being attributed to one cause. Both die with the mod.
-(`docs/engine/research-and-tech-tiers.md` does **not** make this error — it already states the
-manual-before-filter ordering and the nine `DevilstrandCloth` studies correctly. An earlier draft
-of this spec named it among the conflators; that was over-broad and is withdrawn.)
+(`docs/engine/research-and-tech-tiers.md` states the manual-before-filter ordering and the nine
+`DevilstrandCloth` studies correctly.)
 
 **2. Its reverse-engineering damage is not what the ticket believed.**
 `AnalysisEngine.GetReverseEngineeringDamagePercent` reads the studier's Intellectual level and
@@ -1266,10 +1243,10 @@ that `Patch_ResearchProjectDef_GetTip` busts by nulling `___cachedDescription` e
 purpose-built UI already drawn — and, per § *`Profectus` cannot see this gate*, invisible to a
 shipped free-research bypass that MRR's off-def storage walks straight into.
 
-**The three patches on mandatory research targets, now read.** **#67's own body** carried these
-as unverified — the attribution to `docs/data/MOD-VERDICTS.md` in an earlier draft of this spec
-was wrong: that file holds exactly one MRR reference, a two-column name/packageId row under
-*Cheap*, and says nothing about its patches. All three are live in today's load order and all
+**The three patches on mandatory research targets.** **#67's own body** carried these
+as unverified, and `docs/data/MOD-VERDICTS.md` is no source for them: that file holds exactly
+one MRR reference, a two-column name/packageId row under *Cheap*, and says nothing about its
+patches. All three are live in today's load order and all
 three are harmless in isolation — the harm is in the registry they consult, not the patch bodies:
 
 | Patch class | Target | Body |
@@ -1315,8 +1292,7 @@ Both roots, both encodings, `obj/` excluded throughout, attributed with `tools/c
 - `AnalysisManager` in `.dll`, ASCII → **zero**. `requiredAnalyzed` / `analysisID` /
   `AnalyzedThingsRequirementsMet` in `.dll`, UTF-16LE → **zero**.
 
-**On the residue.** An earlier draft described the two extra paths as *"the two vendored Biotech
-copies"*, which misreads them. They are
+**On the residue.** The two extra paths are
 `common/RimWorld/Mods/2973169158/1.5/Mods/Biotech/…` and `…/1.6/Mods/Biotech/…` — the **T-22**
 second copy of **Alpha Mechs**, whose `Mods/Biotech/` is a perfectly ordinary `IfModActive` load
 folder holding Alpha Mechs' own `AM_*` defs. No DLC is vendored anywhere in the corpus. Both
@@ -1351,8 +1327,7 @@ the end of this investigation.
 table below has **nineteen** rows. Exactly two are **Core** —
 `ReadingOutcomeDoerGainResearch.OnReadingTick` and
 `CompUseEffect_FinishRandomResearchProject.DoEffect`; `RitualOutcomeEffectWorker_TribalGathering`
-is VFE Tribals', not vanilla, and an earlier draft's count of three vanilla carriers contradicted
-this document's own table. 19 − 2 = **17** mod carriers, resolving to **14** distinct mods. The
+is VFE Tribals', not vanilla. 19 − 2 = **17** mod carriers, resolving to **14** distinct mods. The
 ticket's catalogue was one pass's worth, and the three it names are not the three that matter.
 Classified by the § 0 test; every anchor read from the 1.6 assembly the game loads.
 
@@ -1418,9 +1393,8 @@ snapshot at the start and the end.
 - **`.dll`, ASCII** — `FinishProject` → 13 mods, `AddProgress` → 7, `ResearchPerformed` → 7,
   `ApplyTechprint` → **0**. Every one was depth-read; the results are the census table.
 - **`.dll`, ASCII**, for two of `ResearchManager`'s private fields — `techprints` →
-  **`NiceBillTab.dll` only**; `anomalyKnowledge` → **zero files**. **An earlier draft filed this
-  row under the UTF-16LE pass**, and it is an ASCII result. Nothing is lost by the correction —
-  `NiceBillTab.dll` references no research API — so the conclusion stands; the labelling did not.
+  **`NiceBillTab.dll` only**, and it references no research API; `anomalyKnowledge` → **zero
+  files**.
 - **`.dll`, UTF-16LE**, for reflection into `ResearchManager`'s private fields — `currentProj` →
   **TechBlock only**. `progress` intersected with an ASCII `ResearchManager` reference → 11 mods, of which
   six were not already read. **All six resolve to one shared library**, `AchievementsExpanded.dll`,
@@ -1498,17 +1472,14 @@ try/catch [V]. **Vanilla ships the abstract class and zero subclasses** [V]. It 
 XML-authored "do this when the project finishes" hook, and it is the natural carrier for an
 *applied* design — which is precisely why the *derived* design in § 2 does not need it.
 
-> **Correction to an earlier draft, which had this exactly backwards.** That draft said
-> `ReapplyAllMods` has *"no load path"* and concluded that *"a `ResearchMod` that mutates state
-> is not re-applied on load"*, and marked it [V]. **It is re-applied on load.** There are
-> **three** callers, not two: `ResearchManager.FinishProject`,
-> `ResearchManager.DebugSetAllProjectsFinished`, and **`Verse.Game.FinalizeInit()`**, which calls
-> `researchManager.ReapplyAllMods()` two lines above `GameComponentUtility.FinalizeInit()` [V,
-> `Verse.Game.FinalizeInit`]. So a `ResearchMod` is idempotently re-run for **every finished
-> project on every load**, which makes it *more* attractive as an applied carrier, not less —
-> and note it is the same hook [`ERA.md`](ERA.md) § 4 builds its post-load repairs on, firing
-> immediately before them. The reason § 2 does not take it is unchanged and was never this: a
-> derived design needs no apply step at all.
+**`ReapplyAllMods` is re-applied on load.** It has **three** callers:
+`ResearchManager.FinishProject`, `ResearchManager.DebugSetAllProjectsFinished`, and
+**`Verse.Game.FinalizeInit()`**, which calls `researchManager.ReapplyAllMods()` two lines above
+`GameComponentUtility.FinalizeInit()` [V, `Verse.Game.FinalizeInit`]. So a `ResearchMod` is
+idempotently re-run for **every finished project on every load**, which makes it a good applied
+carrier — and it is the same hook [`ERA.md`](ERA.md) § 4 builds its post-load repairs on, firing
+immediately before them. § 2 does not take it because a derived design needs no apply step at
+all.
 
 ### VFE Tribals, read end to end
 
@@ -1658,10 +1629,9 @@ throw; `Game.FillComponents`; and every VFE Tribals anchor tabulated above.
 4. **A gated architect category.** Author `researchPrerequisites` on one `DesignationCategoryDef`
    and confirm the category button is **drawn, greyed, and clickable** before the project
    finishes, that clicking it produces the *"nothing available in category"* `RejectInput`
-   message, and that both revert after — with no code at all. **An earlier draft of this check
-   read "confirm the whole tab is absent before and present after" and would have failed**:
-   `DoWindowContents` iterates every cached panel unconditionally and `DoCategoryButton` only
-   greys it.
+   message, and that both revert after — with no code at all. **Do not expect the tab to be
+   absent before**: `DoWindowContents` iterates every cached panel unconditionally and
+   `DoCategoryButton` only greys it.
 5. **One two-client pass.** Finish a granting project on one client; both work tabs must change
    on the same tick and no desync.
 
@@ -1677,20 +1647,16 @@ the project finishes, all three change, in that order, without a reload.
 
 | Question | Consequence | Owner |
 |---|---|---|
-| **Which branch roots carry a gate, and which artifact gates each** | The whole shape of the Glitterite loop. The mechanism is settled; the catalogue is authoring. `GLITTERTECH.md` says only "every major Glittertech branch" and defers the catalogue itself | [Act V #47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
-| **Does analysis consume the exemplar** — as a stated rule, not an implementation default | Recommended here as **no**, on `GLITTERTECH.md`'s own "bring home armor" and on the double-charge argument. It is a gameplay rule and belongs in `docs/requirements/GLITTERTECH.md` as one line rather than living only in a spec | requirements gap, → [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
-| **Resolved: does the Exemplar gate cost Intel?** | No. Studying a surviving exemplar and exchanging accumulated Intel for an Instruction item are different acts. Destructive analysis produces Intel and Trace; it does not satisfy `requiredAnalyzed` | [#54](https://github.com/cjd721/Rimworld-Archinity/issues/54), [#115](https://github.com/cjd721/Rimworld-Archinity/issues/115) and [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) |
+| **Which branch roots carry a gate, and which artifact gates each** | The whole shape of the Glitterite loop. The mechanism is settled; the catalogue is authoring. `GLITTERTECH.md` says branches may use one route or combine them, and defers the catalogue itself | [Act V #47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | **`analysisRequiredRange` per exemplar, and `analysisDurationHours`** | Pacing dials only. Default `1~1` and 0.5 h match Biotech. A campaign-central exemplar may want `2~2` — **if it does, the three `progressedLetter*` fields become mandatory** (see *Failure and recovery*), which is a real authoring cost, not a dial | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) / [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30) |
 | **Our reserved `analysisID` block** | Collision with a third-party mod is silent (**T-41**). Pick a block, record it here when the first exemplar is authored | this document |
 | **Whether `requiredResearchFacilities` also gates the Glittertech tree** | Ushanka already imposes `MultiAnalyzer` on all 18 and `USH_ResearchProbe` on 14. Composing a second facility gate on top is a pacing choice, not a capability question | [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
-| **Analysis at Neolithic and Medieval** | Newly available: vanilla's gate has no tier filter — demonstrated, not merely permitted, by Industrial `WastepackAtomizer` on `NanostructuringChip` — where More Realistic Research exempted everything at or below Neolithic. *"Study the sword you took off a dead marauder"* is now buildable in the early campaign if the leaps want it | [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41), [#42](https://github.com/cjd721/Rimworld-Archinity/issues/42) |
-| ~~**Whether TechBlock stays in the load order**~~ — **struck**. TechBlock's random-insight pool filters on `CanStartNow` [V], so it cannot touch an analysis-gated project. The risk was misattributed; see *Failure and recovery* | none | — |
-| **Whether the `Schematic` book's doer gets `usesHiddenProjects`** | Vanilla's schematic feeds `AddProgress` with no `CanStartNow` test, so it can carry an exemplar-gated branch root to full progress. One XML line closes it, and it is the only shutoff in this document that the Analysis gate itself depends on | [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83), this document |
-| **Does any bypass survive as an authored reward** | The ticket asks, and it is a gameplay rule, not a mechanism. A one-off free project as a Church title privilege is legitimate; an infinite generator is not. The lockout above assumes **none survives**; if one should, the cheapest carrier is vanilla `TechprofSubpersonaCore` with its `thingSetMakerTags` kept and a hand-placed quest reward instead | requirements gap, → [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) for the ledger, and the owning requirements ticket for the rule |
+| **The Exemplar gate at Neolithic and Medieval** | Newly available: vanilla's gate has no tier filter — demonstrated, not merely permitted, by Industrial `WastepackAtomizer` on `NanostructuringChip` — where More Realistic Research exempted everything at or below Neolithic. *"Study the sword you took off a dead marauder"* is now buildable in the early campaign if the leaps want it | [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41), [#42](https://github.com/cjd721/Rimworld-Archinity/issues/42) |
+| **Whether the `Schematic` book's doer gets `usesHiddenProjects`** | Vanilla's schematic feeds `AddProgress` with no `CanStartNow` test, so it can carry an exemplar-gated branch root to full progress. One XML line closes it, and it is the only shutoff in this document that the Exemplar gate itself depends on | [#83](https://github.com/cjd721/Rimworld-Archinity/issues/83), this document |
 | **Per-mod disposition for the seventeen mod carriers** | *restat*, *art only*, *block* — each row of the census implies one and this document makes none of them. Two recommendations only: keep and restat `USH_ResearchProbe`; take the vanilla `Schematic` one-liner | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
-| **Whether the Class C rate producers are a pacing problem** | `MAG_AutoResearcher` at 5,000–15,000 points a cycle and the VQE-Ancients gene at **500/day** both outrun the 213/day single-researcher baseline in [`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md) § *Research rate, reconstructed*. They cannot skip an era; they can collapse one | **no owner** — #5 and #7 are closed; the gap is stated and awaits routing |
+| **Whether the Class C rate producers are a pacing problem** | `MAG_AutoResearcher` at 5,000–15,000 points a cycle and the VQE-Ancients gene at **500/day** both outrun the 213/day single-researcher baseline in [`docs/engine/research-and-tech-tiers.md`](../engine/research-and-tech-tiers.md) § *Research rate, reconstructed*. They cannot skip an era; they can collapse one | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (pacing and balance) |
 | **Whether `ScenPart_StartingResearch` is in scope** | Our own scenario grants starting research through the same vanilla `FinishProject` path, with its recursive prerequisite completion. Harmless if the grant is Neolithic; an era breach if anything above it is ever listed | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) |
 | **Which verbs the Neolithic actually gates, and in what order** | The ticket asks and this document deliberately does not answer. The mechanism supports any `WorkTypeDef`, any `WorkTags` flag and any `Designator` subclass; which of them start locked is a progression decision with a real cost — a colony that cannot haul or cook on day one is a different game from one that cannot mine. VFE Tribals' seven-project shape is tabulated in *Granted capability — the build* § 0 as a worked reference, not as a recommendation | [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41), [#37](https://github.com/cjd721/Rimworld-Archinity/issues/37), grid at [#30](https://github.com/cjd721/Rimworld-Archinity/issues/30) |
 | **What tier the on-ramp projects are authored at** | `Animal` puts them outside TechBlock's injected era ladder entirely (`GetBlock` indexes at `techLevel - 2`), which is what VFE Tribals does and is almost certainly right — an on-ramp that is itself era-locked is circular. Recorded because it is a one-word XML decision with a silent consequence | [#41](https://github.com/cjd721/Rimworld-Archinity/issues/41) |
-| **Patch 1's target — public `GetDisabledWorkTypes` or the local `FillList`** | Recommended: **the public method**, on two grounds — a public member is a citeable, refactor-stable anchor, and **only it can read `permanentOnly`**, so only it can avoid writing research gates into `cachedDisabledWorkTypesPermanent` the way the donor does. The cost is having to add idempotently to a list that *is* the cache. (The Loudness argument an earlier draft gave is withdrawn: both targets throw — `0Harmony` 2.4.1 `GetBulkMethods` fails on a null `[HarmonyTargetMethod]`) | this document |
-| **Whether the cornerstone system is rebuilt anywhere** | Recommended **dropped**: the altar is already the campaign's register for permanent colony-wide boons and #7 § 7 puts era advancement there. If a "what this era made us" mechanic is wanted, it belongs in [`ALTAR.md`](ALTAR.md), not here | design call → [`ALTAR.md`](ALTAR.md) / [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |
+| **Patch 1's target — public `GetDisabledWorkTypes` or the local `FillList`** | Recommended: **the public method**, on two grounds — a public member is a citeable, refactor-stable anchor, and **only it can read `permanentOnly`**, so only it can avoid writing research gates into `cachedDisabledWorkTypesPermanent` the way the donor does. The cost is having to add idempotently to a list that *is* the cache. (Loudness does not separate them: both targets throw — `0Harmony` 2.4.1 `GetBulkMethods` fails on a null `[HarmonyTargetMethod]`) | this document |
+| **Whether the cornerstone system is rebuilt anywhere** | Recommended **dropped**: the unlock rebuild in *Granted capability — the build* needs none of it (§ 7). MP Compat syncs its one write [V], so keeping it is possible | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119); the per-mod verdict is [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s |
