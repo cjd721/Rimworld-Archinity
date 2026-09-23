@@ -21,7 +21,8 @@ beat; a spec here answers what is possible before anyone has chosen what to buil
 | Colony | [Colony management](COLONY.md) · [Shipped defaults and presets](DEFAULTS.md) · [Items and gear](ITEMS.md) · [Specialisation](SPECIALISATION.md) |
 
 [The integration register](INTEGRATION.md) lists the capability gaps still open across all of
-these specs.
+these specs. [The capabilities document](../CAPABILITIES.md) summarises every spec as one card per
+system, and is what a narrative session reads first.
 
 ## Organize by system, not by mod or by ticket
 
