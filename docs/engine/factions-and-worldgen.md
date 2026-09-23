@@ -415,7 +415,34 @@ The general model — what desyncs, and why `Rand` is the axis — is in
 
 ---
 
+## Vanilla never prints an NPC faction's tech tier — its identity implies it
+
+`TechLevelUtility.ToStringHuman` is the only producer of the `TechLevel_*` strings. Its one non-debug
+caller that names a faction is `MainTabWindow_Research`'s `TechLevelTooLow`, for `Faction.OfPlayer`
+[V]. No settlement inspect line, tooltip, tab, info card or dialog prints an NPC faction's tier. It is
+implied by what reads `Faction.def`:
+- `Settlement.ExpandingIcon` (`FactionIcon`); `Settlement.Material` (`settlementTexturePath`, cached, T-12);
+- `FactionUIUtility.DrawFactionRow` (`LabelCap`, `Description`);
+- `FactionUIUtility.DrawFactionIconWithTooltip` (comms, reward prefs, Ideology, quests, research);
+- `Faction.GetReportText` (`description`);
+- the name makers.
+
+Vanilla's labels and descriptions are tier prose (*"gentle tribe"*, *"have lost most of the
+technology"*). A tier-neutral def therefore shows no tier anywhere in vanilla, and a climb by def swap
+goes unannounced unless the defs' labels differ. Every other settlement surface — inspect lines, the
+*"Trading here requires title"* line, `TraderKind`, gizmos — reads `Faction` live, so a change of
+hands changes them all at once with no event; only `cachedMat` lags (T-12). World Tech Level adds a
+tier line to every faction tooltip (`docs/engine/research-and-tech-tiers.md` § *World Tech Level*).
+([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187))
+
+---
+
 ## A settlement's map is thrown away and rebuilt
+
+**An NPC settlement has a map only during an assault or a landing.**
+`CaravanArrivalAction_VisitSettlement.Arrived` only sends a letter, and trade runs from the world
+[V]. The map generators are the caravan attack, pod or shuttle attack, gravship arrival and quest
+transport ships [I for exhaustiveness]. ([#188](https://github.com/cjd721/Rimworld-Archinity/issues/188))
 
 **Leaving a settlement discards its map.** `Settlement.ShouldRemoveMapNow` is true once the map is
 not a home and holds:
@@ -441,6 +468,45 @@ stay dead, and the goodwill damage stands).
 `Assembly-CSharp.dll` 1.6: `Settlement.ShouldRemoveMapNow`, `EnterCooldownComp`,
 `MapGenerator.GenerateMap`, `PawnGenerator.GenerateOrRedressPawnInternal`,
 `Settlement.PostMapGenerate`. [V] except as marked.*
+
+### Forcing the player off a settlement map, and waiting for it to close
+
+**The instant eject is vanilla's own forced reform** [V]:
+- `CaravanExitMapUtility.ExitMapAndCreateCaravan(pawns, Faction.OfPlayer, tile, tile,
+  PlanetTile.Invalid)`, followed by `map.Parent.CheckRemoveMapNow()`, lifts the given pawns into a
+  caravan on the tile. The map then closes if nothing else holds it.
+- `TimedForcedExit.ForceReform` (obsolete, used by no def, and counting down once per interval rather
+  than by `delta`) and the dev action `ForceReformInCurrentMap` both do this.
+- They take the pawns where `Faction == OfPlayer || HostFaction == OfPlayer`. Anything not in a pawn's
+  inventory stays behind.
+- The player-packing version is `Dialog_FormCaravan(map, reform: true, onClosed,
+  mapAboutToBeRemoved: true)`. It cannot be cancelled.
+- Vehicle Framework does not patch the vanilla call. It ships
+  `Vehicles.CaravanHelper.ExitMapAndCreateVehicleCaravan`.
+
+**Destroying the parent with the map open is not an eject** [V]:
+- `MapParent.PostRemove` → `DeinitAndRemoveMap` → `MapDeiniter.PassPawnsToWorld` loses the party, or
+  has the hostile parent faction kidnap it.
+- Re-pointing `map.info.parent` first keeps the map, which is how `CheckDefeated` hands a live map to
+  its ruin.
+
+**Waiting is a poll of `HasMap`** [V]:
+- Vanilla `TimeoutComp` removes its object only when `Passed && !ParentHasMap`.
+- Rim War resolves settlement combat, and so every conversion, only when `!ParentHasMap`
+  (`RimWarSettlementComp.CompTick`).
+- A settlement map closes on the world-object tick (`MapParent.TickInterval`), so on the world clock
+  under Async Time, once `Settlement.ShouldRemoveMapNow` allows it. That never happens while the
+  player's grav engine is on it (**T-180**). A `SetFaction` while it is open fakes a defeat (**T-179**).
+
+**Multiplayer** [V]:
+- `DialogFormCaravanCtorPatch` turns a reform dialog built from synced or tick code into a
+  `CaravanFormingSession`. The session pauses the map and **never invokes `onClosed`**.
+- `TimedForcedExitTickPatch` stops a forced-exit countdown while the map's async clock is paused.
+- `CheckRemoveMapNowPatch` suppresses map removal only for player-faction parents (other than `Camp`).
+- Ejected pawns change clock through `TimestampFixer`, which rebases four fields only (**T-175**) [V for the patch; I for the composition].
+
+*[#188](https://github.com/cjd721/Rimworld-Archinity/issues/188); `docs/specs/TERRITORY.md` § *A
+settlement changing hands while a player map on it is loaded*.*
 
 ---
 
@@ -729,6 +795,60 @@ restore the balance (**T-142**).
 - The gift dialog, quest reward stack, PeaceTalks letter and VEF's delayed-impact letter show
   the requested amount.
 
+## Ending a war — what vanilla ships
+
+Verified against RimWorld 1.6.4871 on [#189](https://github.com/cjd721/Rimworld-Archinity/issues/189).
+The system is `docs/specs/POLITICS.md` § *Ending a losing war*.
+
+**Peace is goodwill ≥ 0 and nothing else.** There is no treaty, truce or war state in vanilla. No
+type in `Assembly-CSharp.dll` matches `WarScore`, `WarState`, `Surrender` or `Losing`. Hostile
+returns to Neutral only at ≥ 0 (*Alliance hysteresis* above). Partial payment
+therefore changes nothing visible. "Losing" has no engine representation; the corpus's only war
+score is RimPacts' `WarPair.playerWarScore`.
+
+**Gifts** [V]:
+- `FactionGiftUtility.GetBaseGoodwillChange` = market value ÷ 40
+  (`Goodwill_BaseGiftSilverForOneGoodwill`), ×2 for a prisoner of that faction.
+- `PostProcessedGoodwillChange` scales by `GiftGoodwillFactorRelationsCurve` (1.0 at ≤ 0, 0.25 at
+  +75) and caps one gift at 200.
+- Carriers:
+  - `CaravanArrivalAction_OfferGifts.CanOfferGiftsTo` — **hostile factions only**, not
+    `permanentEnemy`, `!HasMap`, `CanTradeNow`, a negotiator with Social. A non-hostile faction takes
+    gifts through ordinary trade in gift mode.
+  - `TransportersArrivalAction_GiveGift.CanGiveGiftTo` — any relation, not `permanentEnemy`,
+    `!HasMap`, no quest lodgers.
+
+**Peace talks** [V]: `Script_PeaceTalks.xml` (`OpportunitySite_PeaceTalks`).
+- Quest: weight 1, `rootMinProgressScore 10`, auto-accepted. `QuestNode_GetFaction` sets `allowEnemy`
+  true and `allowPermanentEnemy` false. The site is 5–13 tiles out and times out in 12–28 days.
+- `PeaceTalks.Notify_CaravanArrived` rolls on `NegotiationAbility` (Ideology: ±5% for sending the
+  leader). Base weights and goodwill:
+
+  | Outcome | Base weight | Goodwill |
+  |---|---|---|
+  | Disaster | 0.05 | −50~−40, plus an ambush map |
+  | Backfire | 0.1 | −20~−10 |
+  | Flounder | 0.2 | none |
+  | Success | 0.55 | +60~70 |
+  | Triumph | 0.1 | +100~110, plus 500–1200 silver of items |
+
+  A titled faction also grants 1–4 royal favour.
+- The player never chooses the faction, and pinning one on the slate is **T-186**.
+
+**The comms console buys nothing** [V]. `FactionDialogMaker` disables the trader, orbital-trader and
+military-aid requests unless the faction is an Ally, and the AI-core ask needs goodwill 40. All of
+them *cost* goodwill. A hostile faction gets a greeting line and Disconnect.
+
+**Ransom moves no goodwill** [V]. `IncidentWorker_RansomDemand` needs a powered comms console and a
+colonist in any faction's `kidnapped` list. The fee is 1.2–2.2 × market value, and the letter has a
+60,000-tick timeout. `ChoiceLetter_RansomDemand` returns the pawn for silver.
+
+**Multiplayer syncs all of it** [V]:
+- gift trade (`MpTradeSession.giftsOnly`);
+- `FactionGiftUtility.OfferGiftsCommand` (`SyncDelegate.Lambda`);
+- the ransom letter (`SyncMethod.LambdaInGetter(typeof(ChoiceLetter_RansomDemand), "Choices", 0)`);
+- console clicks (`docs/engine/determinism.md` § *MP serialises the comms-console dialogue*).
+
 ## Royal titles and permits are per faction, not per Empire
 
 Verified on [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168) [V]:
@@ -752,6 +872,37 @@ Verified on [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168) [V]:
 
 *`docs/specs/TERRITORY.md` § *A sworn faction owes services*. `Assembly-CSharp.dll` 1.6;
 `2606448745/1.6/AssembliesCustom/Multiplayer.dll`.*
+
+## Who receives royal favour — the writer map
+
+Verified on [#184](https://github.com/cjd721/Rimworld-Archinity/issues/184) against 1.6.4871 [V].
+Every positive favour write reaches `Pawn_RoyaltyTracker.GainFavor`. Every direct title grant reaches
+`SetTitle` (`QuestNode_SetRoyalTitle`, `RecruitUtility`, `PawnGenerator`, the renounce button), and
+`PawnGenerator` also calls `SetFavor`. The first favour point on a player pawn is already a title
+(**T-184**). The writers, and who each pays:
+
+**Quest rewards** — three ways to name the recipient:
+- the accepter, picked from a menu at "Accept" (`QuestPart_GiveRoyalFavor.giveToAccepter`, filtered by
+  `QuestUtility.CanPawnAcceptQuest`, which vanilla and VEF's contracts window both use);
+- a letter-chosen colonist (`chosenPawnSignal` → `ChoiceLetter_ChoosePawn`, `CHOSEN` arg);
+- a named slate pawn (`giveTo`).
+
+**Other vanilla writers:**
+- **the bestowing ceremony** pays 0–3 bonus favour to the **honoree only**; participants get a mood
+  memory, not favour (`RitualOutcomeEffectWorker_Bestowing.Apply`);
+- **the tribute collector** (`tradeCurrency Favor`, `Tradeable_RoyalFavor.ResolveTrade`) pays the
+  trade negotiator;
+- **peace talks** pay the caravan's best diplomat (`PeaceTalks.TryGainRoyalFavor`);
+- **inheritance** pays the heir (**T-183**);
+- **`RecruitUtility.Recruit`** keeps a recruit's titles unless `replaceOnRecruited` is set (vanilla:
+  Stellarch → Consul alone).
+
+**No royalty code runs on `Pawn.SetFaction`**, and `Pawn_RoyaltyTracker` has no faction-change notify.
+A pawn that leaves the faction keeps its titles, favour and permits; only new rungs stop, because
+`ShouldGetBestowingCeremonyQuest` and the `AwardWorker` calls need `Faction.IsPlayer`.
+
+**Multiplayer** syncs `Quest.Accept` and `ChoiceLetter_ChoosePawn.Option_ChoosePawn`, plus the title
+writers listed above. It does not sync `GainFavor`, which runs in simulation.
 
 ## Vanilla saves who started the game
 

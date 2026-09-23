@@ -77,9 +77,15 @@ faction by swapping `Faction.def` instead.
 field is **never nulled anywhere in the assembly** and is not scribed, so a
 settlement whose faction changed keeps drawing the old faction's texture and colour
 indefinitely. Null it by reflection inside the same synced command that swaps the
-def.
+def — or that calls `SetFaction`.
 
-*`Settlement.cs:20,68-78`. 1.6.4566.*
+**It reaches the zoomed-out icon too.** `WorldObject.ExpandingIconColor => def.expandingIconColor
+?? Material.color`, and `Settlement.Material` returns `cachedMat`. So after a `SetFaction` or a
+`Faction.def` swap the expanded glyph — read live from `Faction.def.FactionIcon` — is drawn in the
+**old** owner's colour. It is not only the close-zoom mesh. [V code; I on-screen] (#187).
+
+*`Settlement.cs:20,68-78`. 1.6.4566. `Settlement.Material`, `WorldObject.ExpandingIconColor`
+re-read on [#187](https://github.com/cjd721/Rimworld-Archinity/issues/187), 1.6.*
 
 ### T-13 — `FactionUtility.DefaultFactionFrom` returns null once a faction climbs
 
@@ -672,6 +678,30 @@ a durable marker instead of writing the field. `docs/specs/ANDROIDS.md` § *A ca
 `3522676478/1.6/Assemblies/GlittertechExpansion.dll`,
 `3618306875/1.6/Assemblies/VanillaQuestsExpandedAncients.dll`. 1.6.4871.*
 
+### T-181 — Vetoing `KidnappedPawnsTracker.Kidnap` orphans the pawn
+
+`Kidnap` looks like the one seam for "this pawn may not be taken", and a Harmony prefix that
+returns `false` for a protected pawn looks correct. **But `Kidnap` itself is what despawns the pawn
+and passes it to the world, and every caller has already taken the pawn out of wherever else it was:**
+- `IncidentWorker_CaravanDemand.TakeFromCaravan` calls `caravan.RemovePawn` first, as do Rim War's
+  `IncidentWorker_WarObjectDemand`, VFE Deserters' `IncidentWorker_ImperialPatrol` and Worksites
+  Expanded's `PlayerOffer`;
+- `MapDeiniter.PassPawnsToWorld` calls `DeSpawnOrDeselect` first;
+- `Pawn.ExitMap` calls it while the victim is still in the leaving carrier's `carryTracker`.
+
+Skip it and the pawn is in no caravan, on no map and in no `WorldPawns` list. From `ExitMap` it goes
+wherever the carrier goes, still held and in no list. Either way it is gone from the game with no
+error, no letter and no "lost" thoughts.
+
+**Fix:** exclude the pawn where it is *chosen* — `KidnapAIUtility.TryFindGoodKidnapVictim` for raids,
+the demand or offer pickers for hand-overs. Or let the kidnap happen and govern what follows
+(`KidnappedPawnsTrackerTick`, **T-112**).
+
+*[#183](https://github.com/cjd721/Rimworld-Archinity/issues/183), `docs/specs/RELIGION.md` §
+Founders. `RimWorld.KidnappedPawnsTracker.Kidnap`, `RimWorld.IncidentWorker_CaravanDemand.TakeFromCaravan`,
+`Verse.MapDeiniter.PassPawnsToWorld`, `Verse.Pawn.ExitMap` (`Assembly-CSharp.dll` 1.6.4871); the mod
+callers from their 1.6 assemblies. [V].*
+
 ---
 
 ## Holdings, outposts and world objects changing hands
@@ -689,7 +719,8 @@ Everything attached survives a transfer and now belongs to the new owner, with n
 - **Every `WorldObjectComp`** comes with it. A holding record or a rebuild debt
   (`TradeRequestComp`) on an R2 settlement now marks the winner's settlement.
   - Bare-`SetFaction` transfers include RimPacts' `CedeOne` (#152) — its `TryRevertConquered` has
-    the same shape but is unreachable in 1.6, because its hold meter only rises (#172) — and FT&V's `Invasions.Utility.ApplyWinnerToSettlement` **only when a map is open**.
+    the same shape but is unreachable in 1.6, because its hold meter only rises (#172) — and FT&V's `Invasions.Utility.ApplyWinnerToSettlement` **only when a map is open** — where
+    the bare write then fake-defeats the settlement (**T-179**).
   - **Resolved in absentia** (`!mapStillOpen && !HasMap`), that same method destroys and recreates
     (`Remove` + `MakeWorldObject(def)` + `SetFaction` + `Add`), so it falls under half 2: the comps
     die and the ID is new.
@@ -890,6 +921,33 @@ producer. No letter, no error.
 `docs/specs/TERRITORY.md` § *An outpost's upkeep arrives as events* → OU-D4. `Outposts.Outpost.SatisfyNeeds`
 / `.OutpostHealthTickInterval` / `.IsCapable`, `2023507013/1.6/Assemblies/Outposts.dll`; `Verse.Hediff`
 (`Assembly-CSharp.dll` 1.6). [V code; the in-play outcome is I — RUN listed in the spec.]*
+
+### T-179 — `SetFaction` with the map loaded fakes a defeat
+
+**Symptom.** A settlement is transferred while the player's map on it is still loaded — mid-assault
+at an era advance, say, or by FT&V resolving an invasion. On the next world tick interval the
+settlement turns into a ruin of its **new** owner. The player gets the "settlement defeated" letter
+and +20 goodwill with every faction hostile to the new owner. If that was the new owner's only
+settlement, it is marked `defeated`. No error is raised.
+
+**Mechanism** [V]:
+- `Settlement.TickInterval` calls `SettlementDefeatUtility.CheckDefeated(this)` every interval while
+  `Map != null`.
+- `IsDefeated(map, settlement.Faction)` looks only at `SpawnedPawnsInFaction(faction)` that are
+  active threats. After `WorldObject.SetFaction`, a bare field write, the defenders still belong to
+  the old owner.
+- `CheckDefeated` returns early only when the owner is the player, so a transfer **to** the player is
+  exempt.
+
+**Fix.** Never transfer a settlement while its map is loaded: eject the player's pawns and close the
+map first (`docs/specs/TERRITORY.md` § *A settlement changing hands while a player map on it is
+loaded*, MO-F1). If a transfer with an open map is ever authored deliberately, block `CheckDefeated`
+for that settlement. The other half of a transfer's hazards is **T-140**.
+
+*[#188](https://github.com/cjd721/Rimworld-Archinity/issues/188). `SettlementDefeatUtility.CheckDefeated`
+/ `IsDefeated` / `HasAnyOtherBase`, `Settlement.TickInterval` (`Assembly-CSharp.dll` 1.6). FT&V
+`FactionTerritories.Invasions.Utility.ApplyWinnerToSettlement` takes this branch when
+`mapStillOpen || HasMap` [V for the branch; I for the outcome under FT&V's own invasion pawns].*
 
 ---
 
@@ -1640,5 +1698,24 @@ giver instead (`docs/specs/ORBIT.md` § *Holding every `OrbitalScanner` giver sh
 (`3414187030/1.6/Lunar/Components/WorldTechLevel.dll`); `RimWorld.QuestUtility.GenerateQuestAndMakeAvailable`,
 `RimWorld.CompOrbitalScanner.LocateSignal`, `RimWorld.CompAncientUplink.Notify_Hacked`
 (`Assembly-CSharp.dll` 1.6). Mechanism [V]; the two leaks [I]. T-18.*
+
+### T-186 — `QuestNode_GetFaction` silently replaces a pinned faction
+
+`QuestNode_GetFaction.RunInt` and `TestRunInt` first read `slate.TryGet<Faction>(storeAs)`. They keep
+that faction **only if** `IsGoodFaction` passes. Otherwise they pick a random faction that does pass
+and overwrite the slate.
+
+A vanilla script aimed at one faction by pre-filling the slate — `OpportunitySite_PeaceTalks` is the
+obvious one — therefore runs against a **different faction** whenever the named one fails any of the
+node's flags: `playerCantBeAttackingCurrently`, `leaderMustBeSafe`, `peaceTalksCantExist`,
+`allowEnemy`, `allowPermanentEnemy`, `mustHaveGoodwillRewardsEnabled` and the rest. Nothing is
+logged.
+
+**Fix:** check `IsGoodFaction`'s conditions before generating, and refuse rather than generate. Or
+pin with a node of ours that fails instead of substituting.
+
+*[#189](https://github.com/cjd721/Rimworld-Archinity/issues/189), `docs/specs/POLITICS.md` § *Ending
+a losing war* › P2. `RimWorld.QuestGen.QuestNode_GetFaction.RunInt` / `TestRunInt` / `IsGoodFaction`
+(`Assembly-CSharp.dll` 1.6.4871). [V].*
 
 ---

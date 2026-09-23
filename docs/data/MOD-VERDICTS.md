@@ -919,7 +919,7 @@ findings **[V]**, none changing its standing:
   and sync ourselves is strictly safer. ([#54](https://github.com/cjd721/Rimworld-Archinity/issues/54))
 - **Its plot tab is a paid ordered chain — the only shipped one — and it is Medieval-unreachable as shipped.** `WorldComponent_Deserters.InitializePlots` builds the chain from `VFEEmpire.WorldComponent_Hierarchy.Titles` ≥ Knight, so it targets the Church hierarchy under the reskin. `DeserterTabWorker_Plots.DoMainPart` runs `TrySpendIntel(approach.intelCost, useCriticalIntel)` → `Choose` → `Accept`, and `MiscPatches.CheckForPlotEnd` (a `Quest.End` postfix) advances on `EndedSuccess` and regenerates the same step on `EndedFailed`/`EndedInvalid` **[V]**. Four things stand against it:
   - Commitment is fixed at accepting `VFED_ChasedDeserter`. While `Active`, `GoodwillPatches.CanChangeGoodwillFor_Postfix` freezes Empire↔player goodwill.
-  - `VFED_EmpireBargain`, rolled after plot successes, carries `QuestPart_BetrayDeserters`, which sets `Locked` and ends every Deserter quest.
+  - `VFED_EmpireBargain`, rolled after plot successes, carries `QuestPart_BetrayDeserters`, which sets `Locked` and ends every Deserter quest. `WorldComponent_Deserters.BetrayDeserters` also gives +200 Empire goodwill and sets the Deserters Hostile by `SetRelationDirect`, at the price of a `Util_Raid` retaliation — the corpus's only shipped peace-for-obligation quest **[V]** ([#189](https://github.com/cjd721/Rimworld-Archinity/issues/189)).
   - The network is reachable only as a comms-console target while `Active`.
   - Intel is counted only on powered orbital trade beacons. Both buildings require `MicroelectronicsBasics` **[V]**.
 
@@ -1186,6 +1186,9 @@ Four sets of findings, one block:
 
 - **Settlement transfer.** `CedeOne` transfers by `SetFaction`, so the object is kept. It has no
   handling of in-flight caravans **[V]**. ([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152))
+  Its body shows no `HasMap` filter (**T-179** if a map is open), while conquest targeting
+  (`WorldComponent_RimPacts.CanTarget`) skips any settlement with a map **[V]**.
+  ([#188](https://github.com/cjd721/Rimworld-Archinity/issues/188))
 - **The corpus's only per-settlement specialty.** `RptSpecialtyUtility.SpecialtyOf(Settlement)` is
   derived rather than stored: the pool comes from the tile's mutators and landmark together, else
   hilliness, else (Spacer and above) a tech pool, else biome, filtered and extended by faction tech; the pick is by the ID hash (`HashCombineInt(ID, 977)`, so
@@ -1217,7 +1220,9 @@ Four sets of findings, one block:
 
 - **`Invasions.Utility.ApplyWinnerToSettlement` has two shapes.** It uses a bare `SetFaction` when a
   map is open, and destroy-and-recreate (`Remove` + `MakeWorldObject(def)` + `SetFaction` + `Add`,
-  new ID) when `!mapStillOpen && !HasMap` — every in-absentia resolution (**T-140**).
+  new ID) when `!mapStillOpen && !HasMap` — every in-absentia resolution (**T-140**). The
+  open-map `SetFaction` triggers **T-179** [V for the branch; I for the outcome under FT&V's own
+  invasion pawns] ([#188](https://github.com/cjd721/Rimworld-Archinity/issues/188)).
   `ApplyWinnerToVassalOffMap` recreates.
 - **`VassaliseUtility.ExecuteCedeToFactionAtTile` is public and uncalled.** It is a generic "replace
   whatever is on this tile with a Settlement of faction X". It refuses the player.
@@ -1267,7 +1272,11 @@ findings, one entry:
 **Rim War** — `Torann.RimWar`. `SettlementUtility.ConvertSettlement` transfers a settlement by
 `Destroy()` + `AddNewHome`. That gives it a new object and a new ID, and every inbound player order
 is cancelled with vanilla's vague message. It has no handling of in-flight caravans **[V]**.
-([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152))
+([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152)) The conversion is reached only
+through `RimWarSettlementComp.CompTick` → `ResolveCombat_Settlement`, gated `!ParentHasMap`, so **it
+waits for the player's map to close**; an `ExitMapPostBattle_Prefix` on
+`CaravanExitMapUtility.ExitMapAndCreateCaravan` resolves its own siege when the player leaves **[V]**.
+([#188](https://github.com/cjd721/Rimworld-Archinity/issues/188))
 
 **Medieval Overhaul** — `dankpyon.medieval.overhaul`. Ships a Medieval-era comms console, the
 messenger table (`Building_ScribeTable : Building_CommsConsole`), which opens the full vanilla
@@ -1478,7 +1487,9 @@ flips `recruitable` on a 20% roll per social interaction (**T-162**) **[V]**.
 
 - The kidnap patch (`VREArchon_KidnappedPawnsTracker_Kidnap_Patch`) `SetXenotype`s kidnapped pawns
   to `VRE_Archon`. A precedent for turn-then-join only.
-  ([#143](https://github.com/cjd721/Rimworld-Archinity/issues/143))
+  ([#143](https://github.com/cjd721/Rimworld-Archinity/issues/143)) Kidnapped by `VRE_Archons`, a
+  founder therefore loses every xenogene, Deathless included; the founder record hediff survives.
+  ([#183](https://github.com/cjd721/Rimworld-Archinity/issues/183))
 - `VRE_Transcendent` is archite with `canGenerateInGeneSet` at its default `true`, so it can drop
   in random archite genepacks; `GenePool_Archite.xml` reserves it only inside our lottery. MP
   Compat has no VRE–Archon class. ([#162](https://github.com/cjd721/Rimworld-Archinity/issues/162))
@@ -1566,6 +1577,96 @@ a fourth `OrbitalScanner` giver, behind `AdvShipParts` (Ultra); its unsaved ques
 Ferny_Outreach` on `OrbitalScanner`, `success Always`, re-adds a removed category depending on load
 order, so removing the scanner's category in XML does not make it unbuildable **[V]**.
 ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180))
+
+## What the map #2 capability batch #181–#189 found
+
+Merged from the cluster proposals for #181–#189, after reconciliation. These are amendments to
+existing rows; no verdict moves. Evidence marks are the resolving agent's. Facts that restate an
+entry above were folded into it (VRE – Archon, Rim War, RimPacts, FT&V, VFE Deserters).
+
+**Rim War** — `Torann.RimWar` (barred; cargo only). All **[V]**:
+
+- `WorldComponent_PowerTracker.AnnounceVictory` opens `GenGameEnd.EndGameDialogMessage(…, true)` from
+  `WorldComponentTick`. Under MP it is an unsynced local dialog whose *Create new wanderers* / *Main
+  menu* run on one machine only (**T-96**, world-context half).
+  ([#182](https://github.com/cjd721/Rimworld-Archinity/issues/182))
+- `IncidentWorker_WarObjectDemand.TakeFromCaravan` copies vanilla's caravan-demand hand-over; the
+  dialog opens from world context. No MP Compat entry.
+  ([#183](https://github.com/cjd721/Rimworld-Archinity/issues/183))
+- The Peace button is live only at goodwill ≥ −75, and `DeclarePeaceWith` edits only Rim War's own
+  `WarFactions`. `TributeSilver` pays for an *alliance*, not a peace.
+  ([#189](https://github.com/cjd721/Rimworld-Archinity/issues/189))
+
+**RimPacts – Diplomacy Overhaul** — `wowgag.RimPacts` (`3762723122`). All **[V]**:
+
+- **Its tributary treaty is not a way out of a war.** `TreatyWorker.AllowHostile` is false, and
+  `TreatyWorker_TributePay.CanSign` also refuses at goodwill ≤ −40 (def `minGoodwill -30`).
+- **The losing-war path:**
+  - `WorldComponent_RimPacts.ResolvePlayerPeace` leads to `AskSurrenderPeace` when
+    `WarPair.playerWarScore < 0` (`WarScoreUnfavorable` ≤ −10).
+  - Reparations are 500–5000 silver (`WarReparationSilverFor`, **seized from stockpiled goods** when
+    silver is short) or 0–2 colonists (`WarReparationColonists`).
+  - `SurrenderToRaid` then sends the foe's lords home and lifts goodwill **only to −50**, still
+    Hostile under vanilla hysteresis. It force-signs `Rpt_Treaty_TributePay`, locked for 3,600,000
+    ticks, and costs trust with every other faction.
+  - `OnQuarter` charges `max(200, 0.3% of wealth)`. One miss warns; two cost −40 goodwill and bring a
+    ×1.3 revenge raid, and `Rand.Chance(0.12)` sends an imperial demand.
+- **UI and sync:** the peace and surrender choices are `Dialog_MessageBox` actions, which nothing syncs.
+- **Its role:** the donor for `POLITICS.md` § *Ending a losing war* S1/B1, and for the war-score
+  reading of "losing". ([#189](https://github.com/cjd721/Rimworld-Archinity/issues/189))
+- `Patch_RoyalSetFavorNull` prefixes `Pawn_RoyaltyTracker.SetFavor` to drop null-faction calls. A
+  guard, not a favour writer. ([#184](https://github.com/cjd721/Rimworld-Archinity/issues/184))
+
+**Worksites Expanded** — `godsfathermixtape.worksitesexpanded` (`3687071198`). All **[V]**; no MP
+Compat class for the mod (both encodings, `Referenced/` included):
+
+- The parley's `PlayerOfferType.TradeColonist` hands a colonist to the site faction through `Kidnap`;
+  `JobGiver_CaptureDowned` kidnaps through vanilla's `KidnapAIUtility`;
+  `Patch_LordJobAssaultColony_DefenseRaid` forces `canKidnap = false` on defense raids.
+  ([#183](https://github.com/cjd721/Rimworld-Archinity/issues/183))
+- Its parley "royal tithe" demand pays 1–8 Empire favour to a caravan colonist who **already holds**
+  an Empire title; the Empire is looked up by the defName string `"Empire"`.
+  ([#184](https://github.com/cjd721/Rimworld-Archinity/issues/184))
+- `MiningOutpost.Parley.Dialog_Parley.ApplyEndorsementReward` gives +30 goodwill (+15 on a
+  counter-offer) with a faction the player picks, **hostile ones included**, recorded as
+  `PeaceTalksSuccess` — a third-party broker lever. `AtonementDemand` (silver, gear, prisoner,
+  colonist, apology) is site-scoped and ends no faction war.
+  ([#189](https://github.com/cjd721/Rimworld-Archinity/issues/189))
+
+**VFE Deserters** — `oskarpotocki.vfe.deserters` (`3025493377`). `IncidentWorker_ImperialPatrol`
+offers to "give up" a random non-leader caravan pawn to the Empire through `Kidnap(pawn, null)`; the
+pick is an inline `TryRandomElement(PawnsListForReading.Except(leader))` **[V]**.
+([#183](https://github.com/cjd721/Rimworld-Archinity/issues/183))
+
+**[SR] Factional War (fork)** — `SR.ModRimworld.FactionalWarContinued`. Its `JobGiverKidnapFaction`
+uses a private copy of the victim finder (`KidnapAIUtil`), so a patch on vanilla `KidnapAIUtility`
+does not reach it **[V]**. ([#183](https://github.com/cjd721/Rimworld-Archinity/issues/183))
+
+**VFE Empire** — `OskarPotocki.VanillaFactionsExpanded.Empire` (`2938820380`). Marquess and higher
+grant `VFEE_Bestow*` abilities: a titled colonist can `SetTitle` any lower rung onto another pawn via
+the `VFEE_BestowTitle` ritual (+≤1 favour, `Mathf.Min(1, …)`). `EmpireTitleUtility.RemoveFavor`
+writes the favour dictionary through a field ref, bypassing `GainFavor`. Gossip, royal address,
+honours, tithe and art exhibit pay only existing titleholders. Nine of its titles are
+`canBeInherited` (**T-183**) **[V]**. ([#184](https://github.com/cjd721/Rimworld-Archinity/issues/184))
+
+**EdB Prepare Carefully** — `edb.preparecarefully` (`735106432`). Sets any starting pawn's titles and
+favour at the start screen (`PanelTitles`, `PawnCustomizer` → `SetTitle` / `SetFavor`), before any
+tick-0 founder stamp **[V]**. ([#184](https://github.com/cjd721/Rimworld-Archinity/issues/184))
+
+**World Tech Level** — `m00nl1ght.worldtechlevel` (`3414187030`). Prints a faction's tech tier in
+every faction tooltip via a `FactionDef.Description` postfix, not setting-gated
+(`docs/engine/research-and-tech-tiers.md`). A pre-contact leak if tier is to be earned
+(`TERRITORY.md` SW-4) **[V]**. ([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187))
+
+**Better Traders Guild** — `shunter.bettertradersguild` (`3684587591`). Traders Guild settlements
+rotate through every orbital `TraderKindDef` (`OrbitalTraderHelper`), `Orbital_Empire` included, so
+vanilla's *"Trading here requires title"* line can appear on them. Its own *"Docked vessel: <kind>"*
+inspect line is public [V pool; I on the pick].
+([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187))
+
+**Ignorance Is Bliss** — `dame.ignorance`. Its mod-settings page lists factions below, equal to and
+above the player's tier by name (`DIgnoranceIsBliss.Settings`). Out of fiction **[V]**.
+([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187))
 
 ## Open
 

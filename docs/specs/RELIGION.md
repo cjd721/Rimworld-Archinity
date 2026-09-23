@@ -661,8 +661,9 @@ directly, and the 37,500-tick scan re-arms it [V]. `QuestNode_Root_BestowingCere
 - a throne-room acceptance requirement when the title carries `throneRoomRequirements` [V].
 
 `QuestPart_BestowingCeremony` runs `LordJob_BestowingCeremony`, which is a **`LordJob_Ritual`**.
-Its `RitualOutcomeEffectWorker_Bestowing.Apply` calls `TryUpdateTitle` and adds `honorFromQuality`
-favour for spectators [V].
+Its `RitualOutcomeEffectWorker_Bestowing.Apply` calls `TryUpdateTitle` and gives the **honoree** 0–3
+bonus Exaltation from `honorFromQuality`. Every other participant gets a mood memory, not favour. The
+spectators' part is to raise the ritual's quality, and higher quality raises the honoree's bonus [V].
 
 **It is literally the requirement** — *"at Exaltation thresholds, the
 founders perform a rite and receive the next sacred title"* — with a Church bestower and a Church
@@ -881,6 +882,125 @@ READ. The mechanisms are [V]; that they compose into per-decree costs and a host
 - **Decrees under hostility.** Stated by the requirement ([`requirements/RELIGION.md`](../requirements/RELIGION.md) § *The Church Path — Exaltation and Titles*): no decree while the Church is hostile, and running decrees stop when it turns hostile — route B. Capability for what follows: B alone lets decrees return with peace [I]; gating the same `QuestNode_CannotRun` on a stored flag ends them for good [I].
 - **Balance:** which cost each decree carries, and its size, are numbers. A hard-failure deadline is route A's.
 - **Build, next map:** a Church decree catalogue; the `decreeTags` value; whether the four vanilla decrees are re-costed or withheld from Church titles; how a pending bestowing ceremony behaves when favour drops back below its rung [unverified].
+
+#### Who may hold a Church title — every Exaltation writer, and the seams that keep titles on the founders
+
+##### Purpose and scope
+
+Decision 9 asks whether ordinary colonists can hold Church titles, or only the founders. This section answers the capability: every way a pawn gains Exaltation or a title, and how each can be kept off a non-founder. The rule is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s. Founder identity is § *Founders* A1, and what happens to a founder who leaves is § *Founders*' give-away routes ([#183](https://github.com/cjd721/Rimworld-Archinity/issues/183)). Established on [#184](https://github.com/cjd721/Rimworld-Archinity/issues/184).
+
+##### Verdict
+
+- **Possible? Yes, for any rule** — anyone, founders only, or a kind. Every gain in Exaltation goes through `Pawn_RoyaltyTracker.GainFavor`, or through `SetFavor` at pawn generation and at game start. Every direct title grant goes through `SetTitle` [V]. **Founders-only needs C#.** No XML founder test exists, and XML can only close whole surfaces.
+- **Multiplayer? Yes** [I]. Every writer runs in simulation or behind a synced command: `Quest.Accept`, `ChoiceLetter_ChoosePawn.Option_ChoosePawn`, `Pawn_RoyaltyTracker.SetTitle` and trade [V registrations]. A gate that reads `CompFounderRecord` reads saved per-pawn state, so it is deterministic.
+
+**The first point of Exaltation is a title.** Freeholder's `awardWorkerClass` is `RoyalTitleAwardWorker_Instant`. `OnFavorChanged` runs it for player pawns, so a single point makes the colonist a Freeholder with no ceremony [V] (**T-184**). Keeping Exaltation off a colonist and keeping titles off a colonist are the same requirement.
+
+##### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| A. Anyone — as shipped | Any colonist can be exalted and titled through the writers below | vanilla (+ VFE Empire) | — | Easy | Yes |
+| **B. Guard the write methods** | Exaltation and Church titles never land on a non-founder, by any route, mod routes included. The payment is refused, or redirected to a founder | our Harmony prefixes, reading `CompFounderRecord`, on `Pawn_RoyaltyTracker.GainFavor`, `.SetFavor` (when it raises Church favour on a player pawn) and `.SetTitle` (Church faction, player pawn, non-null title) | C# | Medium | Yes [I] |
+| **C. Steer each surface** | The game never offers a non-founder (per-surface levers below) | per surface | XML + C# | Medium in total | Yes [I] |
+| D. Restricted by kind | Any predicate — ideology role, trait, xenotype, title seniority — at B's or C's seams | same seams, different test | C# | Medium | Yes [I] |
+| E. Authored deeds name the founder | A Church quest exalts a named founder, and nobody else is offered | `QuestNode_GiveRoyalFavor giveTo` + a founder on the slate (§ *Founders* A2 selector or our node) | XML (+ node) | Easy · Medium | Yes |
+
+**B** is watertight but cannot make the UI honest: reward rows, the accept menu and the tribute collector still offer everyone. **C** is honest but reaches only the surfaces listed. **E** alone reaches only the quests we write.
+
+##### Every writer, and the lever on each [V]
+
+"Seeds" means the writer can reach a colonist with **no** Church title yet. Only those can spread titles past the founders.
+
+| Writer | Who it pays | Seeds? | C's lever |
+|---|---|---|---|
+| Quest reward, accepter (`QuestPart_GiveRoyalFavor.giveToAccepter`; also VFE Empire's noble visit, VFED's betrayal rewards) | The colonist the player picks at "Accept" | Yes | Postfix `QuestUtility.CanPawnAcceptQuest`. Vanilla's quest tab and VEF's contracts window both build the menu from it. C#, Easy |
+| Quest reward, chosen later (`chosenPawnSignal` → `ChoiceLetter_ChoosePawn`; bandit camp, trade request) | A colonist the player picks from a letter | Yes | Filter the letter's pawns, or prefix `QuestPart_GiveRoyalFavor.Notify_QuestSignalReceived`. C#, Easy |
+| Quest reward, named (`QuestNode_GiveRoyalFavor giveTo`) | The slate pawn | Author's choice | Route E |
+| Tribute collector (`Empire_Caravan_TributeCollector`, `tradeCurrency Favor` → `Tradeable_RoyalFavor`) | Whoever the player sends to trade | Yes | Drop `tradeCurrency Favor` or the storyteller comp (XML, Easy), or refuse a non-founder negotiator (C#, Easy) |
+| Peace talks with the Church (`PeaceTalks.TryGainRoyalFavor`) | The caravan's best diplomat | Yes | Prefix it (C#, Easy), or accept the case |
+| Inheritance (`Notify_PawnKilled` → `RoyalTitleInheritanceWorker.FindHeir`; **T-183**) | Three steps: nearest kin in the faction; **else the most-liked living humanlike of the same faction**, on any map or in the world; **else kin in any faction**, so the favour can leave with an NPC relative. **The heir gets favour, not the title** — the title's full cumulative cost through `GainFavor`. A player-faction heir becomes Freeholder at once (T-184), and Acolyte and above still need a ceremony | Yes | `canBeInherited` False on Church titles (XML, Easy: vanilla Acolyte → Count and VFE Empire's nine), or a `FindHeir` postfix naming the other founder (C#, Easy) |
+| Recruiting a titled noble (`RecruitUtility.Recruit`) | The recruit keeps its title unless `replaceOnRecruited` is set | Yes | Postfix `Recruit` to strip non-founders (C#, Easy), or accept |
+| VFE Empire bestow-title ritual (Marquess and higher grant `VFEE_Bestow*` abilities; `LordToil_BestowTitle` → `SetTitle`) | Any pawn at or below the bestowed rung | Yes | Remove the abilities from `grantedAbilities` (XML, Easy), or postfix `CompAbilityEffect_StartBestowing.CanApplyOn` (C#, Easy) |
+| Prepare Carefully start screen (`PanelTitles` / `PawnCustomizer` → `SetTitle`, then `SetFavor(…, notifyOnFavorChanged: false)`) | Any starting pawn, before tick 0. The favour is written silently, and the 37,500-tick scan (`ShouldGetBestowingCeremonyQuest`) later turns it into a ceremony. The ceremony runs `TryUpdateTitle` → `UpdateRoyalTitle`, which writes `titles[…].def` directly, bypassing both `GainFavor` and `SetTitle` | Yes | Only B's `SetFavor` and `SetTitle` guards, and only if the founder stamp precedes or reconciles them |
+| Bestowing ceremony bonus (`RitualOutcomeEffectWorker_Bestowing.Apply`) | The honoree only, 0–3 | No | — |
+| VFE Empire gossip, royal address, honours, vassal tithe, art exhibit; Worksites Expanded royal-tithe parley | Existing titleholders only | No | — |
+
+**Banishment can seed a title.** A founder killed by banishment's 80 % roll dies **before**
+`PawnBanishUtility.Banish` reaches `SetFaction`, so they die a player-faction pawn [V]. Inheritance then
+hands their Church favour to an heir (**T-183**). The heir is very likely a non-founder colonist, or an
+NPC relative when no colonist qualifies. The inheritance lever above closes it
+from the title side, and § *Founders*' banishment routes close it from the other side (#183).
+
+**A title survives every faction change.** No royalty code runs on `Pawn.SetFaction`, and
+`Pawn_RoyaltyTracker` has no faction-change notify [V]. A founder given away keeps its title, favour and
+permits, but gains no rung: the ceremony and award workers need `Faction.IsPlayer`.
+
+##### Recommendation — not a selection
+
+- **If titles are founders-only:** C for the surfaces the player sees (at least the accept menu, the
+  choose-pawn letter and inheritance), with B as the backstop. Close VFE Empire's bestow abilities in XML
+  if it ships.
+- **If anyone may hold them:** A. Every titled colonist then carries decrees (§4 *Decrees*) and permits,
+  and meets Church trade's title requirement (§5).
+- **E** names the founder in authored Church deeds under either rule.
+
+##### Constraints
+
+- **Psylinks come only from the ceremony.** `SetTitle`, `OnPreTitleChanged`, `OnPostTitleChanged` and
+  `ApplyRewardsForTitle` never call `ChangePsylinkLevel` [V]. So the recruit, ritual, Prepare Carefully and
+  instant-Freeholder routes respect the no-psylink rule as shipped. The ceremony respects it only through
+  `maxPsylinkLevel` 0 (above), whoever holds the title.
+- **`RoyalTitleDef.rewards` can drop a `PsychicAmplifier`** through `ApplyRewardsForTitle`. No vanilla or
+  VFE Empire title sets `rewards` [V]. Keep authored title rewards free of it.
+- **`CanPawnAcceptQuest` is shared** with § *Founders* B2's accepter gate. Every accepter list narrows at
+  once, and Accept is disabled when no founder is a free colonist [V].
+- **B's `SetTitle` guard must pass `null`**, because renounce, `Notify_Resurrected` and VFE Empire strip
+  titles through it. It must also pass NPC generation [V]: `PawnGenerator` calls `SetTitle` and
+  `SetFavor`, and so does VFE Empire's `ScenPart_SpawnFamilyMembers`, on NPC relatives.
+- **Favour already on the pawn becomes a title without passing through `SetTitle`.**
+  `TryUpdateTitle` → `UpdateRoyalTitle` writes `titles[…].def` directly [V]. So B must stop favour
+  where it is written: `GainFavor` and `SetFavor`. A title guard alone is not enough.
+- **VFE Empire subtracts favour by writing the dictionary directly** (`EmpireTitleUtility.RemoveFavor`),
+  not through `GainFavor` [V]. It only subtracts, so B is not bypassed.
+- **A refused payment must say so.** A silent drop is a `CODING_STANDARDS.md` § *Silent failures* case.
+- **Redirect must pick its founder without `Rand`** (stable order), or clients diverge [I].
+
+##### Available mechanisms
+
+| Mechanism | What it provides | Evidence |
+|---|---|---|
+| `Pawn_RoyaltyTracker.GainFavor` / `SetTitle` / `SetFavor` / `OnFavorChanged` | The favour and title write choke points (`SetFavor` at generation and start only); the instant-award and ceremony triggers; `UpdateRoyalTitle`'s direct title write | [V] `Assembly-CSharp.dll` 1.6.4871 |
+| `QuestPart_GiveRoyalFavor`, `Reward_RoyalFavor`, `ChoiceLetter_ChoosePawn`, `QuestUtility.CanPawnAcceptQuest` | Quest-reward recipient selection | [V] |
+| `Tradeable_RoyalFavor`, `PeaceTalks.TryGainRoyalFavor`, `RoyalTitleInheritanceWorker.FindHeir`, `RecruitUtility.Recruit` | The non-quest vanilla writers | [V] |
+| VFE Empire `LordToil_BestowTitle`, `CompAbilityEffect_StartBestowing`, `RitualOutcomeEffectWorker_BestowTitle` (`2938820380/1.6/Assemblies/VFEEmpire.dll`) | The bestow-title ritual | [V] |
+| Multiplayer `SyncMethods` (`Quest.Accept`, `Pawn_RoyaltyTracker.SetTitle`), `SyncDelegates.InitChoiceLetters` (`ChoiceLetter_ChoosePawn.Option_ChoosePawn`) | Sync of the player-facing picks | [V] |
+
+**The wide pass.**
+- **Scope:** 1,001 `.dll` over both corpus roots, with `obj/` and `Referenced/` excluded.
+- **Construction:** a Python reader emitting ASCII and UTF-16LE bytes, case-insensitive. Patterns:
+  `GainFavor`, `SetFavor`, `TryUpdateTitle`, `SetTitle`, `QuestPart_GiveRoyalFavor`,
+  `Reward_RoyalFavor`, `Tradeable_RoyalFavor`, `GenerateBestowingCeremonyQuest`,
+  `RitualOutcomeEffectWorker_Bestowing`, `ChangeFavor`.
+- **Validator:** VFE Empire's 1.6 assembly, whose decompile confirms 10 `GainFavor` calls.
+- **Result:** every 1.6 hit was decompiled. The only writers are the ones in the tables. VFE Classical
+  (senator favour) and VFE Medieval (`SetFavoriteColor`) are false positives, and RimPacts carries only a
+  null-faction guard.
+- **Residual gap:** a writer that reaches the favour dictionary by reflection is visible only to reading.
+
+##### Status
+
+READ. Every writer is [V] on the 1.6 assemblies; that the routes compose is [I] until built. Established on [#184](https://github.com/cjd721/Rimworld-Archinity/issues/184).
+
+##### Open questions
+
+- **The rule:** decision 9, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+- **Build, next map:**
+  - B's refuse or redirect, and the refusal message;
+  - the tribute collector: XML close or C# gate;
+  - the inheritance policy (the title dies, or passes to the other founder);
+  - Prepare Carefully's ordering against the founder stamp;
+  - whether VFE Empire's bestow abilities stay for founders.
 
 ### 5. Privileges — native now, and trade is already one of them
 
@@ -1942,12 +2062,12 @@ This section owns the routes to all three. What it does **not** own:
 - **Which founder a deed credits** ([#135](https://github.com/cjd721/Rimworld-Archinity/issues/135)).
 - **Party composition**, which the rejected founders-only rule on [#11](https://github.com/cjd721/Rimworld-Archinity/issues/11) leaves to beat authoring.
 
-Established on [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134).
+Established on [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). Banishment, prisoner release and kidnapping (routes D, R, K) were established on [#183](https://github.com/cjd721/Rimworld-Archinity/issues/183).
 
 ### Verdict
 
-- **Possible?** **Yes, all three halves.** One identity route holds under every change we checked, and nothing Archinity ships today can tell a founder from a convert.
-- **Multiplayer?** **Yes, for one shared faction.** Every route reads saved per-pawn state, and `Quest.Accept` and transporter loading are already synced. MP's multifaction mode skips both game-start hooks and would need work.
+- **Possible?** **Yes, all three halves.** One identity route holds under every change we checked, and nothing Archinity ships today can tell a founder from a convert. **Banishment, release and kidnapping** can each be forbidden, or permitted with conditions, for a founder. None of them in XML alone.
+- **Multiplayer?** **Yes, for one shared faction.** Every route reads saved per-pawn state. `Quest.Accept`, transporter loading, `PawnBanishUtility.Banish` and the prisoner-mode setters are already synced. MP's multifaction mode skips both game-start hooks and would need work. Two mod hand-over dialogs (Rim War, Worksites Expanded) have no MP Compat entry.
 
 ### Routes
 
@@ -1981,6 +2101,25 @@ Established on [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134).
 | C4. Veto `Pawn.SetFaction` | — | Harmony prefix | C# | Medium | — |
 
 C4 is **not recommended**: gifting calls `SetFaction` after the trade has completed, so a veto is a silent no-op (`CODING_STANDARDS.md` § *Silent failures*).
+
+**A founder who leaves by banishment, release or kidnapping**
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **D1. Refuse banishment** | No founder is banished, from any vanilla caller or Vehicle Framework's | Harmony prefix, `PawnBanishUtility.Banish(Pawn, PlanetTile, bool)` | C# | Medium | Yes |
+| **D2. Permit banishment, never "to die"** | Banishment stays a story choice without the 80 % permanent death | Harmony postfix, `PawnBanishUtility.WouldBeLeftToDie` | C# | Medium | Yes |
+| **R0. Release already returns them** | An arrested or enslaved founder, once released, is a free colonist again | vanilla `GenGuest.ShouldStayOnMapOnRelease` | — | — | Yes |
+| R1. Refuse Release for founders | A founder whose faction has flipped cannot be released to it | Harmony prefix, `Pawn_GuestTracker.SetExclusiveInteraction` | C# | Medium | Yes |
+| **K1. Raiders never pick a founder** | Every raid kidnap through vanilla's victim finder skips founders | Harmony prefix, `KidnapAIUtility.TryFindGoodKidnapVictim` | C# | Medium | Yes |
+| **K2. Never a demanded hand-over** | Caravan demands and mod parleys never name a founder | vanilla `IncidentWorker_CaravanDemand`, plus the VFE Deserters, Rim War and Worksites Expanded pickers | C# | Medium | Vanilla yes; Rim War and Worksites with work |
+| **K3. Kidnapped, never converted** | A kidnapped founder stays the player's and can be got back | Harmony prefix, `KidnappedPawnsTracker.KidnappedPawnsTrackerTick` | C# | Medium | Yes |
+| K4. A way home | Ransom from the Industrial era, our rescue quest before it | vanilla `IncidentWorker_RansomDemand`; `OpportunitySite_PrisonerWillingToJoin` as donor | XML / C# | Easy / Medium | Yes [I] |
+| K5. No raid kidnaps anyone | The requirement's fallback, for raids | prefix on the `LordJob_AssaultColony` constructor forcing `canKidnap = false` (Worksites Expanded ships one) | C# | Medium | Yes |
+| K6. Veto `KidnappedPawnsTracker.Kidnap` | — | Harmony prefix | C# | Medium | — |
+
+- **Vanilla banishment as shipped is not recommended** for a founder. A downed founder banished from a caravan dies permanently 80 % of the time (D2).
+- **K6 is not recommended.** `Kidnap` is what passes the pawn to the world, and every caller has already taken the pawn out of its caravan or map, or is carrying it off (`Pawn.ExitMap`). A skipped call leaves the founder in no caravan, on no map and in no world list, with no error (**T-181**).
+- **No XML route for release is worth taking.** Setting `hideOnHemogenicPawns` on the Release mode would also hide it from every convert and sanguophage, and it filters the UI only.
 
 #### A1 — founder record stamped at game start
 
@@ -2109,15 +2248,84 @@ A postfix that refuses founders unless `IsRequired` keeps B3 working. [I]
 
 **What it gets us.** Trade and gifts can take only colony prisoners and slaves, plus animals (`TradeUtility.AllSellableColonyPawns`, gated by `PlayerSellableNow`). [V] A founder gets there only by arrest, which `GenAI.CanBeArrestedBy` allows for colonists. [V]
 
-**What it cannot do.** Cover banishment, prisoner release or kidnapping.
+**What it cannot do.** Reach banishment or kidnapping; D1–D2 and K1–K5 below do. Release needs no route while the founder is the player's (R0).
 
 **Consequence.** Worth building only if "given away" includes arrest-then-sale, which is #119's (Open questions).
+
+#### D1 / D2 — banishment
+
+**What it gets us**
+- **One seam covers every banish path.** `PawnBanishUtility.Banish` is reached from four vanilla places and one mod: [V]
+  - the bio-card button (`CharacterCardUtility`), shown only for a spawned free colonist and refused while downed;
+  - the caravan tab (`CaravanAbandonOrBanishUtility`);
+  - pods that arrive with no arrival action (`TravellingTransporters.DoArrivalAction` banishes every player pawn aboard);
+  - Anomaly's golden cube (`CompGoldenCube.OnInteracted`);
+  - Vehicle Framework's `AerialVehicleAbandonOrBanishHelper`.
+
+  No other 1.6 assembly calls it. MP syncs `Banish(Pawn, PlanetTile, bool)`, and the shorter overload forwards to it. [V]
+- **D2 removes a permanent founder death that vanilla allows.** Banishing from a caravan while `WouldBeLeftToDie` rolls `pawn.Kill` at 80 %. `WouldBeLeftToDie` is true for a pawn that is downed, bleeding above 0.4, carrying any life-threatening hediff or at an unsafe temperature. `Pawn.Kill` bypasses Deathless ([`docs/engine/health-and-death.md`](../engine/health-and-death.md)), so a founder in regeneration coma dies for good. [V] The same method also drives the confirmation text and the "banished to die" thoughts. One postfix fixes all three.
+
+**What it cannot do**
+- **D2 cannot keep a banished founder in the faction.** Banished off-map, the founder joins a random NPC humanlike faction. Banished on the map, the founder goes factionless. [V]
+- **D1 cannot tidy the pod path.** A refused pod banish passes the founder to the world as a lost pawn (`ClearAndDestroyContentsOrPassToWorld`). [V]
+- **D1 cannot hide the bio-card button.** Its condition is inline. [V]
+
+**Consequences**
+- **A banished founder can come back as someone else's pawn.** As a `Free` world pawn it is a redress candidate for its new faction's pawn generation, or for any faction's where `WorldPawnFactionDoesntMatter` is set; vanilla's prisoner-willing-to-join quest sets it (**T-112**). [V] It keeps its Church title and favour (§ *Exaltation*; titles survive every faction change, [#184](https://github.com/cjd721/Rimworld-Archinity/issues/184)).
+- **A founder killed by the banish roll bequeaths its Exaltation.** The roll runs before the faction change, so the founder dies a member of the player faction. [V] `Pawn_RoyaltyTracker.Notify_PawnKilled` then gives the heir the favour for every `canBeInherited` Church title — favour, not the title itself (§ *Exaltation*). `RoyalTitleInheritanceWorker.FindHeir` searches three steps: kin in the same faction; else the alive same-faction humanlike the founder liked most, on any map or in the world; else kin in any faction. [V] The heir is very likely a non-founder, so D1 or D2 also protects a founders-only title rule.
+
+#### R0 / R1 — release
+
+- **An arrest never changes faction.** `Pawn_GuestTracker.CapturedBy` → `SetGuestStatus(Player, Prisoner)` calls no `SetFaction` for a non-slave. [V]
+- **Release keeps a player-faction pawn home.** `GenGuest.PrisonerRelease` → `ShouldStayOnMapOnRelease` is true when `HomeFaction.IsPlayer`, and for an enslaved colonist `HomeFaction` is the player. The founder stays on the map as a free colonist. [V]
+- **Release gives a founder away only after their faction has flipped** — by the kidnap conversion (K3 not taken) or a banishment — and a later capture by the colony. R1 closes that case. [V]
+- **R1 is safe to patch.** The job re-checks the Release mode every tick, so refusing the mode refuses the job. The mode setters are MP-synced. [V] The mode list in `ITab_Pawn_Visitor` is filtered by a local function and is not a clean seam. [V]
+- **No release on vacuum maps (T-130).**
+
+#### K1–K5 — kidnapping
+
+**Where a kidnap happens.** In `Pawn.ExitMap`, not in `JobDriver_Kidnap`: a carrier of another faction calls `Faction.kidnapped.Kidnap(pawn, carrier)`. [V] The other callers:
+- map closure with a hostile parent (`MapDeiniter.PassPawnsToWorld`);
+- the vanilla caravan demand;
+- Rim War's `IncidentWorker_WarObjectDemand`;
+- VFE Deserters' `IncidentWorker_ImperialPatrol` ("give up" a non-leader);
+- Worksites Expanded's parley `TradeColonist` offer. [V]
+
+**What it gets us**
+- **K1 is one seam for raids.** `KidnapAIUtility.TryFindGoodKidnapVictim` picks a downed, humanlike, player-faction pawn not in `disallowed`. Vanilla's kidnap lord subgraph uses it, and so do Vehicle Framework, VFE Medieval 2 and Worksites Expanded. [V] Factional War ships a private copy, `KidnapAIUtil`, which needs its own patch. [V]
+- **K2 covers the hand-overs.** Vanilla's demand picks any owner (when there are at least two) or a prisoner, at random, in `TryGenerateColonistOrPrisonerDemand`. [V] The mod pickers are per mod.
+- **K3 keeps a kidnapped founder the player's.** Every 15 051 ticks `KidnappedPawnsTrackerTick` rolls a 30-day MTB per kidnapped pawn, then calls `SetFaction` to the kidnapper. [V] Skipping founders keeps them in the `Kidnapped` world situation. [V] That makes them:
+  - never redressed;
+  - eligible for ransom;
+  - counted by `GameEnder`.
+- **K4 is the way home.** `IncidentWorker_RansomDemand` picks a kidnapped player-faction humanlike, needs a powered comms console and times out after a day. Paying spawns the pawn at the map edge or by drop pod. [V] Before comms, a rescue quest on the `OpportunitySite_PrisonerWillingToJoin` pattern would take the founder out of `Faction.kidnapped`, as the ransom does. [I]
+- **K5 is the fallback.** Worksites Expanded already prefixes the `LordJob_AssaultColony` constructor with `canKidnap = false`. [V]
+
+**What it cannot do**
+- **No selection seam reaches map closure.** A founder left downed on a raided settlement is kidnapped when the map closes, after it is despawned (`TERRITORY.md`, [#188](https://github.com/cjd721/Rimworld-Archinity/issues/188)). [V] Only K3 and K4 make that recoverable.
+- **K1 does not keep a downed founder safe.** It stays on the map, where raiders can still execute it. Execution is on the Deathless-checked path; `Pawn.Kill` from our own code is not.
+- **Two mod dialogs are unsynced.** Rim War and Worksites Expanded have no MP Compat entry, and their dialogs open from world context, where a `Dialog_NodeTree` is a local window. [V]
+
+**Consequences**
+- **VRE Archon strips a founder the Archons kidnap.** Its postfix on `Kidnap` sets the `VRE_Archon` xenotype, which clears every xenogene, Deathless included. [V] The founder record survives, because it is a hediff (A1).
+- **A kidnapped or flipped founder keeps its Church title and favour but gains no rung.** Ceremonies and award workers need `Faction.IsPlayer` (#184). [V]
+- **Anomaly's labyrinth, metal hell and cultist skip-abduction are not give-aways.** They relocate the pawn inside the player faction; the labyrinth returns everyone when it closes. [V]
+
+#### Off-map — what still holds a founder who has left
+
+- **Never garbage-collected.** `WorldPawnGC` keeps every former colonist. [V]
+- **Never mothballed.** The founder-record hediff has comps, so `HediffDef.AlwaysAllowMothball` is false. The founder is ticked every tick in `WorldPawns.WorldPawnsTick`, with hemogen, coma and healing running. [V / I for effects]
+- **Keeps the record.** `Pawn.SetFaction` removes no hediff, so A1 identity survives every departure. [V]
+- **Still Deathless only on the damage path.** The one direct `Pawn.Kill` on these routes is the banish roll. [V]
 
 #### Recommendation — not a selection
 
 - **A1 for identity.** It is the only route that survives all four verified changes: reimplant, implant, faction round-trip and duplication.
 - **B1 and/or B2 to declare** the requirement, with **B3 or B4 to enforce** attendance, by era.
 - **C1 always.** **C2** to close vanilla lending. **C3** only if the requirement reaches it.
+- **Banishment: D2 at least.** It is the only thing that stops a permanent founder death from a legal player action. Add **D1** if "given away" includes banishment.
+- **Release: nothing (R0)** while founders stay the player's. Add **R1** only if a founder can flip.
+- **Kidnapping: K1 + K2** close every path that *chooses* a founder. **K3** makes the one residual, map closure, recoverable. **K4** is the way back if kidnapping stays a beat. **K5** is the requirement's own fallback.
 
 ### Constraints
 
@@ -2127,6 +2335,9 @@ A postfix that refuses founders unless `IsRequired` keeps B3 working. [I]
 - **A chain-granted quest skips `TestRun`.** Any founder check living in a QuestNode's `TestRunInt` is inert on VEF's chain path (**T-71**).
 - **MP multifaction skips both game-start hooks.** `Multiplayer.Client.Factions.FactionCreator` creates a joining player's faction without calling `GameComponentUtility.StartedNewGame`. It invokes `PostGameStart` only on `ScenPart_StartingResearch` and `ScenPart_GameStartDialog`, and never writes `GameInfo.startingAndOptionalPawns`. [V] One shared faction, which the campaign uses (`docs/requirements/POLITICS.md`), goes through vanilla `Game.InitNewGame`, or through a single-player save converted later. [I]
 - **Lending takes whoever is aboard.** `QuestPart_LendColonistsToFaction.Enable` has no pawn filter, so exclusion must precede loading. [V]
+- **Vanilla banishment can kill a founder for good.** In a caravan, `PawnBanishUtility.Banish` calls `pawn.Kill` at 80 % whenever `WouldBeLeftToDie`, and `Pawn.Kill` ignores Deathless. A regeneration coma counts as downed. [V] **T-182** (#183).
+- **Exclude a pawn where it is chosen, never at `Kidnap`.** `KidnappedPawnsTracker.Kidnap` is what passes the pawn to the world, and every caller has already taken the pawn out of its caravan or map, or is carrying it off, so a vetoed call orphans it silently. The same holds for a refused pod banish. [V] **T-181** (#183).
+- **Map closure kidnaps whoever is left** on a hostile-parent map, and no selection seam reaches it (#188). [V]
 
 ### Available mechanisms
 
@@ -2139,24 +2350,34 @@ A postfix that refuses founders unless `IsRequired` keeps B3 working. [I]
 | `QuestNode_GenerateShuttle.requiredPawns` / `CompShuttle` | Named pawns required aboard | `CompShuttle.AllRequiredThingsLoaded`, `.SendLaunchedSignals`, `Scripts_Utility_TransportShip.xml` [V] |
 | `CompShuttle.IsAllowed` (virtual) | Single seam for all quest-shuttle loading | callers listed in C2; RimPacts postfix [V] |
 | `QuestUtility.IsQuestLodger` | Vanilla's cross-cutting "not yours to send" flag — the pattern | 111 call sites [V] |
+| `PawnBanishUtility.Banish` / `.WouldBeLeftToDie` | Single seam for every banish path; the "to die" roll | vanilla callers `CharacterCardUtility`, `CaravanAbandonOrBanishUtility`, `TravellingTransporters.DoArrivalAction`, `CompGoldenCube`; Vehicle Framework; MP `SyncMethods` [V] |
+| `GenGuest.ShouldStayOnMapOnRelease` | Release keeps a player-faction pawn home | `GenGuest.PrisonerRelease`, `Pawn.HomeFaction` [V] |
+| `KidnapAIUtility.TryFindGoodKidnapVictim` (`disallowed`) | Single raid-kidnap victim seam | vanilla `LordJob_Kidnap` subgraph; Vehicle Framework, VFE Medieval 2, Worksites Expanded [V] |
+| `KidnappedPawnsTracker.KidnappedPawnsTrackerTick` | The 30-day conversion to the kidnapper | decompiled 1.6.4871 [V] |
+| `IncidentWorker_RansomDemand` / `ChoiceLetter_RansomDemand` | Vanilla way home for a kidnapped colonist | decompiled; comms-console gate [V] |
 | **Absent:** any founder, protagonist or persistent starting-pawn marker in any mod | — | wide pass, both heaps, validated — see #134 [V] |
+| **Absent:** any mod banish or kidnap path beyond those named in D1–K5 | — | wide pass `Kidnap` / `Banish` / `ReleasePrisoner` / `Abduct`, both heaps, both roots, `obj/` and `Referenced/` excluded, validated; every hit decompiled — see #183 [V] |
 
 ### Status
 
-**Evidence class READ** ([#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)).
+**Evidence class READ** ([#134](https://github.com/cjd721/Rimworld-Archinity/issues/134), [#183](https://github.com/cjd721/Rimworld-Archinity/issues/183)).
 - **Verified:** every engine mechanism above, against 1.6.4871 and the named mod assemblies.
-- **Inferred:** every route's composition, MP determinism of the Harmony routes, Prepare Carefully's start behaviour, and B3 with a colonist rather than an NPC.
+- **Inferred:** every route's composition, MP determinism of the Harmony routes, Prepare Carefully's start behaviour, B3 with a colonist rather than an NPC, the K4 rescue quest, and the Rim War and Worksites Expanded hand-over pickers (unread).
 
 ### Open questions
 
 - **What "attend" means** — at the colony at acceptance, aboard the transport, present at the site, or taking part in the deed. Capability: B1–B4 cover colony, accepter, transport and site. Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
-- **What "given away" covers** beyond lending and revolt contribution. Capability: C1–C3 answer revolt, lending, sale and gift. Banishment, prisoner release and kidnapping → [#183](https://github.com/cjd721/Rimworld-Archinity/issues/183). Choice: #119.
+- **What "given away" covers** beyond lending and revolt contribution. Capability: C1–C3 and D1–K5 answer revolt, lending, sale, gift, banishment, release and kidnapping. Choice: #119, including whether kidnapping is forbidden or kept as a beat.
 - **Build questions for the next map:**
   - A1's hook (`StartedNewGame` or a `ScenPart` subclass), backfill trigger, and whether the record's existence or a field is the identity;
   - whether A2 is layered on;
   - the founder QuestNode's slate shape and its TestRun behaviour (T-71);
   - C2's scope (quest shuttles only, or player shuttles and gravships too) and refusal wording;
-  - B4's timing with a founder in a later caravan.
+  - B4's timing with a founder in a later caravan;
+  - D1's handling of a refused pod banish;
+  - whether K1 also patches Factional War's `KidnapAIUtil`;
+  - K2's Rim War and Worksites Expanded pickers;
+  - K4's rescue-quest shape and its era gate.
 - **Optional RUN:** a Prepare Carefully start with this scenario — does it still enforce exactly two archonians?
 
 ---
@@ -2780,7 +3001,7 @@ Read from `Assembly-CSharp.dll` at `common/RimWorld/RimWorldWin64_Data/Managed/`
 | `Pawn_RoyaltyTracker` — `favor`, `titles`, `factionPermits`, `highestTitles` | Exaltation, the title, the privileges, the high-water mark; per pawn, per faction, scribed | [V, #53] |
 | `FactionDef.royalTitleTags` × `RoyalTitleDef.tags`; `RoyalTitlesAwardableInSeniorityOrderForReading` | the ladder, filtered on `Awardable` (`favorCost > 0`, **T-28**) | [V, #53] |
 | `FactionDef.royalFavorLabel` / `royalFavorIconPath` | the word "exaltation" wherever the engine prints the scale — except six hardcoded Keyed strings (§2) | [V] |
-| `Pawn_RoyaltyTracker.OnFavorChanged` → `RoyalTitleUtility.GenerateBestowingCeremonyQuest` → `QuestNode_Root_BestowingCeremony` → `QuestPart_BestowingCeremony` → `LordJob_BestowingCeremony : LordJob_Ritual` → `RitualOutcomeEffectWorker_Bestowing.Apply` | **the bestowing ceremony**: bestower and honour guard arrive, `TryUpdateTitle`, spectator favour, and a psylink loop to `GetMaxPsylinkLevelByTitle` | [V] |
+| `Pawn_RoyaltyTracker.OnFavorChanged` → `RoyalTitleUtility.GenerateBestowingCeremonyQuest` → `QuestNode_Root_BestowingCeremony` → `QuestPart_BestowingCeremony` → `LordJob_BestowingCeremony : LordJob_Ritual` → `RitualOutcomeEffectWorker_Bestowing.Apply` | **the bestowing ceremony**: bestower and honour guard arrive, `TryUpdateTitle`, 0–3 bonus favour to the honoree (participants get mood), and a psylink loop to `GetMaxPsylinkLevelByTitle` | [V] |
 | `RoyalTitleDef.maxPsylinkLevel` | read by the ceremony's psylink loop, `PawnUtility.GetMaxPsylinkLevelByTitle` and `PawnGenerator`'s NPC title psylinks | [V] |
 | `Reward_RoyalFavor` / `QuestPart_GiveRoyalFavor`; `RewardsGenerator` | Exaltation as an automatic quest reward; `flag5` suppresses items-only stacks for the Church | [V] |
 | `RoyalTitlePermitDef` + the five delivery workers | privileges as data; workers take the faction as a parameter | [V, #53] |
@@ -3335,10 +3556,10 @@ that is *closed* ([#7](https://github.com/cjd721/Rimworld-Archinity/issues/7),
    unlocks trade — **default is vanilla's: Knight for settlement and caravan trade, Baron for orbital**
    [V]; the Exaltation-vs-Reverence split per mission. All XML. Owner:
    [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (balance).
-9. **Whether ordinary colonists can hold Church titles, or only the founders.** Vanilla imposes no
-   limit, and `Reward_RoyalFavor` lets a quest ask which colonist is exalted [V, #53]; the
-   bestowing ceremony also pays `honorFromQuality` favour to spectators (§4 [V]). Capability →
-   [#184](https://github.com/cjd721/Rimworld-Archinity/issues/184); choice #119.
+9. **Whether ordinary colonists can hold Church titles, or only the founders.** Capability: any rule
+   is possible — anyone, founders only, or a kind. Founders-only needs C#. See §4 › *Who may hold a
+   Church title* ([#184](https://github.com/cjd721/Rimworld-Archinity/issues/184)). Choice:
+   [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 13. **Which predicate defines a founder — routes exist; the choice is #119's.** § *Founders* (from [#134](https://github.com/cjd721/Rimworld-Archinity/issues/134)) gives three:
     - **A1:** a founder record stamped at tick 0 from the scenario's two required archonians. **Recommended.**
     - **A2:** a scenario pawn kind. Not recommended as the identity of record.

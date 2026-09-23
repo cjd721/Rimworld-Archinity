@@ -3,7 +3,7 @@
 ## Purpose and scope
 
 How the political consequences in [`docs/requirements/POLITICS.md`](../requirements/POLITICS.md)
-will be built. This document owns four capabilities, kept in separate parts below:
+will be built. This document owns five capabilities, kept in separate parts below:
 
 - **The political ripple** — propagating a single player act along a faction's alliances and
   rivalries, and the faction-relation graph it reads. Everything up to *Outstanding decisions*.
@@ -13,8 +13,10 @@ will be built. This document owns four capabilities, kept in separate parts belo
   player's standing on some axis reaches a threshold, and showing the threshold before it is
   reached.
 - **[Settlements meet passing caravans](#settlements-meet-passing-caravans)** — a caravan near a
-  settlement meets its faction: attacked if hostile, offered trade otherwise. The final part of
-  this document.
+  settlement meets its faction: attacked if hostile, offered trade otherwise.
+- **[Ending a losing war](#ending-a-losing-war)** — the colony's routes back from defeat: peace,
+  a one-off payment, a schedule of tribute, and standing obligations to the stronger faction. The
+  final part of this document.
 
 It does not own Reverence, which is a second per-faction axis and belongs to
 [`RELIGION.md`](RELIGION.md) — but the **gate** that reads Reverence is here, not there, and
@@ -107,7 +109,7 @@ lords start taking prisoners. **A ripple built on this hook must read `violator`
 | Piece | Cost |
 |---|---|
 | Ripple tunables, seed table | **XML** — two new Def types |
-| `permanentEnemy` audit on our own faction defs | **XML**, but **T-07** — before world creation, not patchable after |
+| `permanentEnemy` audit on our own faction defs | **XML**. The flag is read live (`CanChangeGoodwillFor`, `GoodwillSituationWorker_PermanentEnemy`), so a def edit reaches an existing save; only the −100 starting goodwill is fixed at creation [V] |
 | Reading the graph | **New C#**, ~20 lines |
 | Applying the ripple, with letter, delay and persistence | **Free** — VEF carries it |
 | Observing kidnap / harm / kill / strip | **Patch** — 4 Harmony postfixes |
@@ -164,8 +166,9 @@ any per-player filtering is draw-time only (**T-21**).
   more than −6 [V]. Any Reverence scaler composes with this ×1.25 ([`RELIGION.md`](RELIGION.md)
   § *Reverence scales the Goodwill a faction gains*). And `GoodwillWith` is clamped by `GetMaxGoodwill`, so a positive ripple
   into a faction already at its situation cap is a silent no-op [V].
-- **Two of our own factions cannot participate**, by their own defs, and it is **T-07** — not
-  patchable after worldgen.
+- **Two of our own factions cannot participate**, by their own defs. That is our flag, not the
+  engine's: `permanentEnemy` is read live, so lifting it (a def edit, or an in-place `Faction.def`
+  swap) reopens them — see [*Ending a losing war*](#ending-a-losing-war) route L.
 
 ## Status
 
@@ -285,7 +288,10 @@ Still open: a **STUB** pass loading a seeded relation set to confirm `CheckKindT
 flips NPC pairs and their lords actually re-target; and a two-client smoke test for the desync
 claim only, which belongs to
 [the multiplayer verification regime](https://github.com/cjd721/Rimworld-Archinity/issues/16).
-RimPacts' method bodies are [I] — identified from metadata names, not read.
+RimPacts' ripple method bodies are [I] — identified from metadata names, not read. Its treaty,
+war and surrender bodies have since been read ([#120](https://github.com/cjd721/Rimworld-Archinity/issues/120),
+[#189](https://github.com/cjd721/Rimworld-Archinity/issues/189); see
+[*Ending a losing war*](#ending-a-losing-war)).
 
 ## Outstanding decisions
 
@@ -302,7 +308,8 @@ RimPacts' method bodies are [I] — identified from metadata names, not read.
    that change it and its display, with `RELIGION.md` as its spec (superseding #52 and #74).
 2. **The seed table's content** — which faction hates or loves which, and by how much. Design
    work, and the real cost of this capability.
-3. **The `permanentEnemy` audit**, before world creation. T-07.
+3. **The `permanentEnemy` audit.** The flag is read live, so it can change mid-campaign; only the
+   −100 starting goodwill is set at world creation.
 
 ---
 
@@ -1465,3 +1472,287 @@ Read through the vanilla meeting, which both A and B use **[V]**:
 | Range, reaction chance, per-settlement cooldown, per-biome MTB | Balance |
 | With a caravan trade opened from a meeting on two clients, does the clicker's window open? | RUN, on [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16) |
 | Hook choice, cooldown storage, pin technique (prefix vs `TryFindFaction` patch vs ambush subclass), the VF second postfix | Build map, on selection |
+
+---
+
+## Ending a losing war
+
+The colony's route back from defeat, per [`requirements/POLITICS.md`](../requirements/POLITICS.md)
+§ *Campaign progression*: peace, paying once, paying on a schedule, or owing standing obligations
+to the stronger faction. Established on [#189](https://github.com/cjd721/Rimworld-Archinity/issues/189),
+evidence class **READ**. Which route ships is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+
+### Verdict
+
+- **Possible? Partly.**
+  - **Yes, all four forms, against any faction that has goodwill:**
+    - **Peace and a one-off payment ship in vanilla.** Vanilla ends a war one way: goodwill back
+      to **≥ 0**.
+    - **A payment schedule and standing obligations are Medium builds** on verified seams: the
+      faction demand, VEF quest chains, and a `GoodwillSituationWorker` cap.
+  - **No, by our own design: peace with a permanent enemy (Glitterites, Archons).** No gift,
+    peace talk or goodwill write reaches a `permanentEnemy` faction. That flag is ours, set in
+    `Factions_Glitterites.xml` and `Faction_Archons.xml`, and every gate reads it live [V]. **The
+    answer there is route E1**: easing the war without ending it. **Route L** lifts the flag,
+    which changes the design rather than working within it.
+  - **"Losing" has no engine meaning.** It is a predicate we write.
+- **Multiplayer? Yes.**
+  - Every vanilla lever is already synced.
+  - Our routes are quest parts, one scribed record and a cap worker.
+  - **With work** only for a comms-console "sue for peace" option, whose action MP will rebuild
+    only from a whitelisted type.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **P1** Peace as it ships | Gifts (silver, goods, their own prisoners ×2) by caravan or pod; peace talks when offered | vanilla | — | Easy | Yes |
+| **P2** Peace on the colony's initiative | Terms asked of one named faction, ending in a goodwill write to ≥ 0 and the declared war switched off | `Script_PeaceTalks` with a pinned faction, or an authored terms quest | XML + small C# | Easy–Medium | Yes; With work from the console |
+| **O1** One-off payment | Reparations in silver, goods, a prisoner or colonists — or a holding — then peace | P1's gifts, or [the faction demand](#the-faction-demand)'s shell; a holding through [`TERRITORY.md`](TERRITORY.md)'s release | XML (+ C# for a holding) | Easy (Medium for a holding) | Yes |
+| **S1** Scheduled payment | Installments on a clock; a missed one reopens the war at once | repeating demand (VEF chain) + a per-faction tributary record + a `GoodwillSituationWorker` cap latch | XML + C# | Medium | Yes |
+| **B1** Standing obligations | The overlord's asks — levies, a loaned specialist, an embargo, attending its battles — on S1's latch | S1 + the demand + #92's ally-aid shell | XML + C# | Medium | Yes |
+| **E1** Easing without peace | Fewer or no raids for a bought window while still hostile. **The only route for permanent enemies** | [`PRESSURE.md`](PRESSURE.md) route C's disable signal and/or route G's raid-draw exclusion | XML + C# | Medium | Yes |
+| **L** Lift the flag | A permanent enemy becomes an ordinary hostile faction, and P1–B1 then apply to it | a def edit (every save), or an in-place `Faction.def` swap mid-campaign to a def without `permanentEnemy` | XML, or C# for the swap | Easy (edit) · Medium (swap) | Yes (edit); With work (swap: one synced command) |
+| **R** Ransom | Kidnapped colonists bought back; no goodwill, no peace | vanilla `RansomDemand` | — | Easy | Yes |
+| RimPacts as carrier | Its war score, surrender and tributary treaty | `wowgag.RimPacts` | mod | — | **No** |
+
+**RimPacts as carrier is not recommended**, for three reasons:
+- it has no MP Compat class;
+- its ticking treaty consumes `Rand` and reads settings (**T-18**);
+- its dialog actions are unsynced.
+
+**Recommended, not selected:**
+- **P1** as the floor.
+- **P2 + O1** as the authored beat.
+- **S1** as the one real build. B1 is S1 plus content.
+- **E1** only if a permanent-enemy war must be survivable by paying.
+
+#### P1 — peace as it ships
+
+- **Gets:**
+  - **Gifts** buy 1 goodwill per 40 silver of value while goodwill is ≤ 0. The rate falls to 0.25
+    by +75, and one gift is capped at 200. Prisoners of that faction count double
+    (`FactionGiftUtility.GetBaseGoodwillChange` / `PostProcessedGoodwillChange`) [V].
+  - **Gift carriers:**
+    - Caravan gifts go only to a **hostile** settlement
+      (`CaravanArrivalAction_OfferGifts.CanOfferGiftsTo`).
+    - Pod gifts go to any relation (`TransportersArrivalAction_GiveGift.CanGiveGiftTo`).
+    - Both refuse `permanentEnemy` and a settlement with a map [V].
+  - **Peace talks** (`OpportunitySite_PeaceTalks`) admit enemies but not permanent enemies. Odds
+    follow `NegotiationAbility` [V]:
+    - success +60~70;
+    - triumph +100~110;
+    - backfire −10~−20;
+    - disaster −40~−50 plus an ambush.
+- **Cannot:**
+  - choose who offers peace talks;
+  - buy anything at the comms console. It spends goodwill and offers a hostile faction nothing
+    (`FactionDialogMaker.FactionDialogFor`) [V].
+- **Consequences:** **partial payment is invisible.** Hostile turns Neutral only at ≥ 0, and
+  nothing in vanilla reads hostile-side magnitude ([`PRESSURE.md`](PRESSURE.md) § *Hostility-scaled
+  pressure*). Easing short of peace needs PRESSURE's routes A or G.
+
+#### P2 — peace on the colony's initiative
+
+- **Gets:** a named faction's terms, asked by the colony. Two shapes:
+  - **Aim the vanilla script.** `QuestNode_GetFaction` keeps a faction already on the slate if it
+    passes the node's filter [V], so the script can be pointed at one faction.
+  - **An authored quest.** It writes the peace with `QuestNode_ChangeFactionGoodwill` and ends
+    the declared war with [`PRESSURE.md`](PRESSURE.md) route C's signal.
+- **Cannot:**
+  - The pin takes one C# call.
+  - A pinned faction that fails a filter is **silently replaced by a random one** (**T-186**) [V].
+- **Consequences:**
+  - A console option's action must live in a type on MP's delegate whitelist
+    ([`docs/engine/determinism.md`](../engine/determinism.md) § *MP serialises the comms-console
+    dialogue*).
+  - The gate itself is [*Standing as a content gate*](#standing-as-a-content-gate) §3.
+
+#### O1 — one-off payment
+
+- **Gets:** reparations as a demand the victor makes, whose success writes the peace. The demand
+  can ask for:
+  - silver;
+  - a delivery;
+  - a loaned colonist.
+
+  See [*The faction demand*](#the-faction-demand) §3.
+- **Land as payment is TERRITORY's release ending, cited, not rebuilt.** Two routes, both in
+  [`TERRITORY.md`](TERRITORY.md) § *How a holding ends*:
+  - **H-L2** *Cede to another faction*: Medium, MP With work.
+  - **H-T2** *Retake demand* (*"return it or we come"*): Medium, MP Yes.
+
+  A ceded holding with a player map loaded takes § *A settlement changing hands while a player map
+  on it is loaded* (MO-F1 or MO-W1). A bare `SetFaction` there fake-defeats the settlement, and a
+  recreate loses the party or has it kidnapped. **Neither route survives a parked player
+  gravship**, which holds the map open and destroys the settlement on takeoff (**T-180**). That
+  case is TERRITORY's GV routes.
+- **Cannot:**
+  - Vanilla has no reparations verb.
+  - A declined demand is silent without §1's refusal part.
+  - The colony's home map is not a payment. Ceding it ends the colony.
+- **Conflict for #119:** [#174](https://github.com/cjd721/Rimworld-Archinity/issues/174) requires
+  a lost or released holding to pass to a faction **drawn at random**. Two routes break it as
+  written:
+  - H-L2 with the victor as a chosen recipient;
+  - H-T2's attacker-takes outcome. TERRITORY § *Release* already records that H-T1/H-T2's
+    attacker-takes outcome does not conform.
+
+#### S1 — scheduled payment
+
+- **Gets:**
+  - **The schedule:** a repeating tribute demand (VEF `QuestChainExtension.isRepeatable`) while a
+    per-faction tributary record holds.
+  - **Default** reopens the war **now**, through a `GoodwillSituationWorker` `GetMaxGoodwill` cap
+    at ≤ −75. It is [`RELIGION.md`](RELIGION.md) §6's latch with a different bit.
+  - **Installment size:** RimPacts' `max(200, 0.3% of wealth)` per quarter
+    (`TreatyWorker_TributePay.NextPaymentSilver`) is the donor number. Ours is #119's.
+- **Cannot:**
+  - lean on VEF's expiry hooks (**T-71**, **T-72**, **T-73**);
+  - key the repeat on anything but success and the refusal part.
+- **Consequences:** one saved record per tributary. It can be a `WorldComponent`, or
+  `TERRITORY.md` §3's R4 faction record.
+
+#### B1 — standing obligations
+
+- **Gets:** the tributary record grants the overlord demands, on S1's latch. It is the mirror of
+  `TERRITORY.md`'s sworn faction. The demands can be:
+  - levies;
+  - a loaned specialist;
+  - an embargo;
+  - attendance at its battles: #92's ally-aid shell ([`TERRITORY.md`](TERRITORY.md) §1), pointed
+    the other way.
+- **Precedent:** VFE Deserters' `VFED_EmpireBargain` is the extreme case. Its
+  `QuestNode_BetrayDeserters` leads to `WorldComponent_Deserters.BetrayDeserters`, which grants
+  +200 Empire goodwill, sets the Deserters Hostile and ends deserter quests. The retaliation raid
+  is the quest's own later `Util_Raid` step in `EmpireBargain.xml` [V].
+- **Cannot:** rely on a subordinate relation. Vanilla has only Hostile, Neutral and Ally.
+- **Consequences:** obligations count against the pending-demand cap (*The faction demand* §5).
+
+#### E1 — easing without peace
+
+- **Gets:** a bought truce, in two forms ([`PRESSURE.md`](PRESSURE.md) routes C and G):
+  - the declared war's `QuestPart_ThreatsGenerator` is disabled;
+  - the faction is dropped from the raid draw.
+- **Cannot:** carry a payment from one quest to the war in another in XML. Only a
+  `Quest.`-prefixed global signal crosses, and that broadcast is C#.
+- **Consequences:**
+  - This is the only route for Glitterites and Archons **while their defs carry `permanentEnemy`**.
+    The flag blocks both gift carriers, peace talks and every goodwill write. It is ours, and it
+    is read live (route L).
+  - An empty raid pool fails quietly (**T-17**).
+
+#### L — lift the flag
+
+- **Gets:** a Glitterite or Archon war that can end like any other.
+  - `permanentEnemy` is read live by `Faction.CanChangeGoodwillFor`,
+    `GoodwillSituationWorker_PermanentEnemy.GetMaxGoodwill` (the −100 cap),
+    `CaravanArrivalAction_OfferGifts.CanOfferGiftsTo`,
+    `TransportersArrivalAction_GiveGift.CanGiveGiftTo` and `QuestNode_GetFaction.IsGoodFaction`
+    [V].
+  - So a def without the flag reopens P1–B1 at once.
+  - There are two ways to get that def:
+    - **edit the def**, which affects every save and every game;
+    - **swap `Faction.def` in place** mid-campaign (`docs/engine/factions-and-worldgen.md`
+      § *Climbing a faction by swapping `Faction.def`*), which turns it on as a story beat.
+- **Cannot:**
+  - **Start them anywhere but hostile.** Worldgen gave them −100 (`GetInitialGoodwill`), and that
+    stays until paid down.
+  - **Reach the Archons while they are hidden.** They are also `hidden`, and a hidden faction has
+    no goodwill at all. They must be revealed as well, and `QuestPart_SetFactionHidden` does not
+    scribe `hidden` (**T-116**).
+- **Consequences:**
+  - **It reverses a deliberate design.** Both defs' comments state the flag keeps them out of
+    diplomacy.
+  - **The swap is a synced command** with no `Rand` if it is only the def write (§ *Multiplayer*
+    under that engine heading).
+  - **Whether this ever happens is #119's decision.**
+
+#### R — ransom
+
+- **Gets:** a kidnapped colonist back for 1.2–2.2 × their market value. Needs a powered comms
+  console; the letter lasts 60,000 ticks (`IncidentWorker_RansomDemand`) [V].
+- **Cannot:** move goodwill or end a war.
+- **Consequences:** it is the vanilla route back for a party kidnapped when a hostile settlement's
+  map closes under it (see O1).
+
+### "Losing" is ours to define
+
+There is no engine notion of losing: 1.6 has no `WarScore`, `WarState`, `Surrender` or `Losing`
+type [V]. Three ways to read it:
+- **From the beat.** Authored.
+- **From vanilla counters:**
+  - `Faction.kidnapped`;
+  - colonist deaths;
+  - holdings lost;
+  - `StoryWatcher_Adaptation.AdaptDays`.
+- **From a war score of our own.** RimPacts' `WarPair.playerWarScore` is the donor.
+
+The threshold is a requirement for #119.
+
+### Constraints
+
+- **Positive writes no-op silently:**
+  - during an assault (**T-110**);
+  - under a quest lock (gate E);
+  - above a situation cap.
+- **Previews show the requested amount, not the landed one:** gifts, quest rewards and peace talks.
+- **Two designed blocks** must not be undone by P1 and P2:
+  - the Church betrayal latch ([`RELIGION.md`](RELIGION.md) §6);
+  - VFED's goodwill freeze.
+- **Every vanilla lever is already synced** [V]:
+  - gift trade (`MpTradeSession.giftsOnly`);
+  - pod gifts;
+  - the ransom letter;
+  - console clicks;
+  - quest accept and choice.
+
+  Our pieces use no `Rand`, are tuned by Def (**T-18**) and hold no cache (**T-20**).
+
+### Available mechanisms
+
+- **RimPacts is the donor, not the route, and its tributary treaty is not a way out of a war.**
+  All of the following is [V], and it corrects the premise the map carried:
+  - **The treaty cannot be signed while at war.** `TreatyWorker.AllowHostile` is false, and
+    `TreatyWorker_TributePay.CanSign` also refuses at goodwill ≤ −40.
+  - **The losing-war path is surrender:**
+    1. `WorldComponent_RimPacts.ResolvePlayerPeace` leads to `AskSurrenderPeace` when the war
+       score is below 0.
+    2. The colony pays reparations: 500–5000 silver, **seized from stockpiles** when silver is
+       short, or 0–2 colonists.
+    3. `SurrenderToRaid` sends the foe's lords home and lifts goodwill **only to −50**, which is
+       still Hostile under vanilla's rule.
+    4. It then force-signs `Rpt_Treaty_TributePay`, **locked** against breaking for 3,600,000
+       ticks (`activeTreaty.lockUntilTick`), which is not the treaty's duration.
+  - **The treaty's quarter:** `OnQuarter` charges the installment. One miss warns; two cost −40
+    goodwill and bring a ×1.3 revenge raid.
+- **Rim War** is already barred. Its Peace button works only at goodwill ≥ −75, and
+  `TributeSilver` buys an alliance, not a peace [V].
+- **Worksites Expanded**'s parley `ApplyEndorsementReward` gives +30 goodwill with a faction the
+  player picks, hostile ones included. It is site-scoped, runs in an unsynced `Window`, and has no
+  MP Compat class [V].
+
+### Status
+
+**Verified available mechanism. Not an implementation commitment.** Evidence class READ. Sources:
+- decompiled 1.6 assemblies:
+  - `Assembly-CSharp.dll`;
+  - `Multiplayer.dll`;
+  - `RimPacts.dll`;
+  - `RimWar.dll`;
+  - Worksites Expanded's `MiningOutpost.dll`;
+  - `VFED.dll`;
+- a two-encoding wide pass over both corpus roots.
+
+The mechanisms are [V]. Every route is [I] as a composition.
+
+### Open questions
+
+- **For [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):**
+  - the "losing" predicate and its threshold;
+  - installment size and cadence;
+  - which factions may take tribute;
+  - whether a permanent-enemy war should be survivable by payment at all (E1).
+- **Ceding a holding to the victor (H-L2 to the victor, H-T2) versus #174's random recipient:**
+  requirement, #119.
+- **Whether Glitterites or Archons should ever become negotiable (route L):** design, #119.

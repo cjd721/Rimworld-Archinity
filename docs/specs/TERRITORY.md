@@ -989,7 +989,11 @@ Everything keyed on `WorldObjectDefOf.Settlement` would need the variants, inclu
 
 This section answers [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *Player information and agency*: *"the player must be able to learn what a settlement will give before committing to take it"*, *"nothing shows a settlement's specialty to a player who has not learned it"* (vanilla's *Show sellable items* included), *"once learned, known for good… always current"*, and *"planning a campaign against what has been learned is a feature"*. Established on [#178](https://github.com/cjd721/Rimworld-Archinity/issues/178).
 
-**Owns:** where a learned, per-settlement fact — specialty, tier, how hard it is to take — can be drawn; what each surface needs from the store; and whether a fact one player learns is shown to both.
+**Owns:**
+- where a learned, per-settlement fact — specialty, tier, how hard it is to take — can be drawn;
+- what each surface needs from the store;
+- whether a fact one player learns is shown to both;
+- what vanilla and the corpus already show before anything is learned — a tier, the trade-permission line — and how each can be withheld ([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187)).
 
 **Does not own:**
 - whether the fact exists, and what reveals it: § *A settlement's specialty* ([#165](https://github.com/cjd721/Rimworld-Archinity/issues/165)). Its **one colony-wide record, keyed on the tile**, is the store every route here reads.
@@ -1007,6 +1011,12 @@ This section answers [`requirements/TERRITORY.md`](../requirements/TERRITORY.md)
 - **Multiplayer? Yes, with no work beyond #165's.** Every route here is **render code that reads state at draw time**. A fact in synced, scribed game state (#165's tile-keyed record) is drawn identically on both clients, so one player's learning is shown to both by construction. Both players are one faction, and the requirement says *the colony* finds out. Two conditions:
   - #165's reveal write must come from a synced context.
   - **No surface may keep a client-local store or draw `Rand`.** Vanilla's own "learned" store, `PlayerKnowledgeDatabase`, is a file on each machine [V]. It is exactly the wrong model (**T-160**).
+- **Withholding what shows before it is learned ([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187)): Yes, for the tier and for the permission line. Multiplayer: Yes.** Every withholding route is def data, or render code reading #165's synced record.
+  - **Vanilla never prints an NPC faction's tech tier as a word** [V]. The only tier string, the research tab's `TechLevelTooLow`, names the player's own tier.
+  - **The tier is implied by the owner's identity:** its def label (*"gentle tribe"*), description, faction icon, settlement art and name style. Each can be authored tier-neutral in XML, or swapped per settlement at draw time.
+  - **World Tech Level prints the tier as a word** in every faction tooltip. RimPacts prints it in its war and puppet windows.
+  - **The *"Trading here requires title"* line** is one string in one method, and a postfix strips it until the settlement is learned (SP-1).
+  - Which surfaces withhold, and how, is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s selection.
 
 ### Routes
 
@@ -1029,6 +1039,21 @@ Every route reads one store: #165's colony-wide record, keyed on the tile. **SD-
 
 Every route is **[I]** as a composition. Its seams are [V].
 
+**Withholding what shows before it is learned** ([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187)). SW routes withhold the tier; SP routes withhold the permission line.
+
+| Route | What the player sees | Seam | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|---|
+| **SW-1** Tier-neutral identity | No surface implies a tier. A faction reads *"the Ashen Clans"*, not *"savage tribe"*. Icon and settlement art are the same at every tier. The tier appears only where SD-1/SD-2/SD-11 draw it from the record | `FactionDef.label`, `description`, `factionIconPath`, `settlementTexturePath`, `factionNameMaker`/`settlementNameMaker`; XML patches on vanilla and mod defs | vanilla | XML | Easy | Yes |
+| **SW-2** Neutral map art per settlement | An unlearned settlement's world icon and close-zoom mesh are a generic glyph; a learned one shows its owner's | `Settlement.ExpandingIcon` and `Settlement.Material` getter postfixes | ours | C# | Medium | Yes |
+| **SW-3** Faction rows gated | The Factions tab, faction tooltips and the faction info card show a neutral label, icon and description until the faction is known | `FactionUIUtility.DrawFactionRow` (private, transpiler), `FactionUIUtility.DrawFactionIconWithTooltip`, `Dialog_RewardPrefsConfig`'s tooltip, `Faction.GetReportText` | ours | C# | Medium–Hard | Yes |
+| **SW-4** World Tech Level's tier line removed | No *"Tech level: Medieval"* appended to every faction tooltip | `Harmony.Unpatch` of `WorldTechLevel.Patches.Patch_FactionDef.GetDescription_Postfix` from the `FactionDef.Description` getter | WTL (removal) | C# | Medium | Yes |
+| **SW-5** RimPacts' tier text | Tier withheld in its world-war and puppet windows | `Dialog_RptWorldWarSide`, `Dialog_RptWorldWarInvite`, `RptPuppetUI`, `PuppetCultureUI` (+ `WorldComponent_RimPacts.TechLabel`) | RimPacts (patch) | C# | Hard | Yes. **Not recommended**: every one addresses a faction already at war or under treaty |
+| **SP-1** Permission line stripped until learned | No *"Trading here requires title: <title>"* on an unlearned settlement | `Settlement.GetInspectString` postfix, `Priority.Last` | ours | C# | Medium | Yes |
+| **SP-2** Permission read transpiled out | Same as SP-1 | the `TraderKind?.TitleRequiredToTrade` read in `Settlement.GetInspectString` | ours | C# | Medium | Yes. **Not recommended**: SP-1's result, more fragile |
+| **SP-3** Permit deleted | The line vanishes because the rule does: anyone may trade at Empire settlements | XML patch removing `permitRequiredForTrading` from `Base_Empire_Standard` (+ `Orbital_Empire`) | vanilla | XML | Easy | Yes. **Not withholding**: it changes a rule |
+
+Every route is **[I]** as a composition. Its seams are [V].
+
 #### SD-0 — suppression
 
 **Gets us** [V]:
@@ -1037,7 +1062,10 @@ Every route is **[I]** as a composition. Its seams are [V].
 
 **Must also cover** (§ *A settlement's specialty*, SV-6): RimPacts' `WITab_RptTrade` and BTG's inspect line, **if either ships**. Both show their values to everyone.
 
-**A small leak stays** [V]: `Settlement.GetInspectString` prints *"Requires trade permission: <title>"* from `TraderKind.TitleRequiredToTrade`. That tells the player an Empire settlement's trader is a royal one before any visit.
+**A second leak sits in the inspect pane** [V]:
+- `Settlement.GetInspectString` prints *"Trading here requires title: <title>"* (key `RequiresTradePermission`) from `TraderKind.TitleRequiredToTrade`. That tells the player an Empire settlement's trader is a royal one before any visit.
+- It shows on the Empire's settlements, and on a Better Traders Guild settlement whenever its rotating kind is `Orbital_Empire`.
+- SP-1 withholds it (§ *Withholding tier and the permission line*).
 
 #### SD-1 — inspect-pane line
 
@@ -1185,15 +1213,89 @@ Every route is **[I]** as a composition. Its seams are [V].
 #### Specialty, tier, difficulty — what each surface can truthfully say
 
 - **Specialty:** #165's record. It is **fixed and known for good** ([#174](https://github.com/cjd721/Rimworld-Archinity/issues/174)).
-- **Tier:** before conquest, an NPC settlement's tier is its faction's `Faction.def.techLevel`, read live [V, #167]. After conquest it is the stored tier (TR-1).
+- **Tier:** before conquest, an NPC settlement's tier is its faction's `Faction.def.techLevel`, read live [V, #167]. After conquest it is the stored tier (TR-1). **Vanilla prints it as a word nowhere.** It shows through the owner's identity instead, which § *Withholding tier and the permission line* covers surface by surface.
 - **Difficulty:** vanilla has nothing to show, because every vanilla settlement's garrison is 1150–1600 points whatever its faction or tier (#164, SM-1) [V].
   - A difficulty band is only as real as the route that makes difficulty vary: SM-2/SM-3's layout list per faction, or SM-4's curve.
   - It is **a prediction drawn from that route's inputs**. The garrison itself does not exist until the map is generated on arrival [V, #164].
   - **The band must be a pure function of synced state**, never a map generation and never a `Rand` draw at render.
 
+#### Withholding tier and the permission line
+
+**Every surface that shows a tier, and what withholding it costs** [V, `Assembly-CSharp.dll` 1.6 unless named]:
+
+| Surface | What it draws | Withheld by | Cost |
+|---|---|---|---|
+| World icon, zoomed out | `Settlement.ExpandingIcon => Faction.def.FactionIcon` (vanilla: `Village`/`VillageRough`/`VillageSavage` for tribes, `Town`/`TownRough` for outlanders), tinted by `ExpandingIconColor`, which reads `Material.color` | SW-1 (all), SW-2 (per settlement) | XML; or one getter postfix |
+| World mesh, close zoom | `Settlement.Material` from `def.settlementTexturePath` (`TribalSettlement` / `DefaultSettlement`), **cached, never refreshed** (**T-12**) | SW-1, SW-2 | XML; or one getter postfix |
+| Factions tab row | `FactionUIUtility.DrawFactionRow`: `def.FactionIcon`, `def.LabelCap` as a label line, tooltip `def.Description` (vanilla text is tier prose, *"have lost most of the technology…"*) | SW-1, SW-3 | XML; or a transpiler on a private method, contested by VFE Classical, RimPacts and FT&V (#61 A1) |
+| Faction icon + tooltip elsewhere | `FactionUIUtility.DrawFactionIconWithTooltip`: comms (`Dialog_NodeTreeWithFactionInfo`), reward prefs, Ideology, quests, research | SW-1, SW-3 | XML; or one prefix |
+| Reward-prefs tooltip; faction info card | `Dialog_RewardPrefsConfig` (`def.Description`); `Faction.GetReportText` (`def.description`) | SW-1, SW-3 | XML; or two patches |
+| Names | `factionNameMaker`, `settlementNameMaker` (tribal styles) | SW-1 | XML |
+| World Tech Level tooltip line | *"Tech level: X"* (or current/original while WTL caps it) appended to `FactionDef.Description`, so it reaches every row above that shows the description | SW-4 | one `Harmony.Unpatch` |
+| RimPacts war and puppet windows | `ToStringHuman(def.techLevel)` / `TechLabel` | SW-5 | four patches; not recommended |
+| Trade profile | `Dialog_SellableItems` | SD-0 | already SD-0 |
+| The faction's own people | the gear of its raids, visitors and caravans; SF-1's trader-arrival letter | **nothing** | the colony meets them whether or not it has learned a settlement |
+
+**What does not show a tier** [V]:
+- `Settlement.GetInspectString`, `WorldObject.GetInspectString` (*"Faction: <Name>"*) and the Alt-hover `CellInspectorDrawer.DrawWorldInspector` print nothing that names a tier;
+- nor does the settlement info card, which gives the `WorldObjectDef` description, *"A base of one of the factions."*;
+- `TechLevelUtility.ToStringHuman` produces the `TechLevel_*` strings, and its only non-debug caller that names a faction is `MainTabWindow_Research`'s `TechLevelTooLow`, which reads `Faction.OfPlayer`.
+
+**SW-1: tier-neutral identity** [V fields; I composition]
+- **Gets us:**
+  - the tier drawn on no surface, vanilla or modded, because every implicit surface reads these def fields;
+  - revealed only where SD-1, SD-2 or SD-11 read it from the record;
+  - no code. Our own factions (`Archinity.Drifters`, `Archinity.Glitterites`) can be authored this way at no cost.
+- **Cannot:**
+  - reveal per settlement. The label is one string for the whole faction;
+  - hide the faction's people;
+  - reach surfaces that print `techLevel` itself (SW-4, SW-5).
+- **Consequences:**
+  - vanilla legibility is lost to everyone, including after contact, unless SW-3 swaps it back;
+  - **a climb goes silent.** Under a `Faction.def` swap (`engine/factions-and-worldgen.md` § *Climbing a faction by swapping `Faction.def`*), a neutral def announces nothing in the tab;
+  - every vanilla and mod faction def needs a patch.
+
+**SW-2: neutral map art per settlement** [V seams]
+- **How:** `ExpandingIcon` and `Material` are public virtual getters. While the tile is not in #165's record, a postfix returns a neutral glyph and a static neutral material, built once from a fixed path in `Faction.Color`. `ExpandingIconColor` follows the material.
+- **Gets us:** the only per-settlement tier withholding on the map. It reads #165's record directly.
+- **Cannot:** hide the same faction's icon in the Factions tab beside its name. It is coherent only with SW-1 or SW-3.
+- **Consequence:** once learned, the art comes from `cachedMat`, which lags any climb or hand-over (**T-12**).
+
+**SW-3: faction rows gated** [V seams]
+- **Gets us:** a faction's identity withheld until it is known, which makes SW-2 coherent.
+- **Needs a faction-level knowledge record:** SF-3's, or a pure derivation, *"known if any tile in #165's record belongs to it"* [I]. The record itself is per tile.
+- **Consequence:** it contradicts *"a faction's own specialty is public"* only if that specialty is carried in the def description (SD-9).
+
+**SW-4: World Tech Level's line** [V, `3414187030/1.6/Lunar/Components/WorldTechLevel.dll`]
+- **The patch:** `Patch_FactionDef.GetDescription_Postfix` is `[HarmonyPatch("Description", MethodType.Getter)]` on `FactionDef`, in `PatchGroup("Main")`. **No setting disables that group**, unlike WTL's filter groups.
+- **The route:** `Harmony.Unpatch(original, patchMethod)` names the patch by its method, so no owner id is needed [V API]. It runs after LunarFramework applies `Main` [I on timing].
+- **Cannot:** reveal per settlement. The getter carries only the def.
+- WTL's `Patch_WITab_Planet` line is the **world's** tier, not a faction's.
+
+**SW-5: RimPacts** [V, `3762723122/Assemblies/RimPacts.dll`]: tier text in its puppet-war menu, puppet culture UI, world-war side and invite dialogs and a world-war condition row. Each one addresses a faction already engaged.
+
+**SP-1: the permission line** [V]
+- **How:** the line is `"\n" + "RequiresTradePermission".Translate(title.GetLabelCapForBothGenders())`, appended in the NPC branch of `Settlement.GetInspectString`. A `Priority.Last` postfix recomputes that string from `TraderKind?.TitleRequiredToTrade` and removes it while the tile is unlearned.
+- **Gets us:** a per-settlement reveal straight from #165's record. The rule is unchanged.
+- **The player still meets the permit** when the caravan arrives: `CaravanVisitUtility.TradeCommand` disables *Trade* with `CommandTradeFailNeedPermit`. `CaravanArrivalAction_Trade` does not check the permit beforehand.
+- **Every other permit read is SD-0's gizmo or faction-level:**
+  - `Settlement.GetGizmos` raises the `TradingRequiresPermit` concept dialog;
+  - `FactionDialogMaker` (comms trade requests), `FactionUtility` (calling a ship), `IncidentWorker_TraderCaravanArrival` and `IncidentWorker_CaravanMeeting`.
+- **Which settlements carry it:**
+  - vanilla sets `permitRequiredForTrading` only on Royalty's `Base_Empire_Standard`, `Empire_Caravan_TraderGeneral` (`TraderKinds_Caravan_Empire.xml`) and `Orbital_Empire`, and no mod XML sets it;
+  - Better Traders Guild draws each Guild settlement's kind from every orbital `TraderKindDef` (`OrbitalTraderHelper`), `Orbital_Empire` included [V pool; I on the pick].
+- **Consequence:** BTG's own *"Docked vessel: <kind>"* line (`SettlementGetInspectString`) leaks the same way, and the same postfix covers it if BTG ships.
+
+**Out of fiction, no route:** Ignorance Is Bliss' mod-settings page lists factions below, equal to and above the player's tier (`DIgnoranceIsBliss.Settings`) [V].
+
 #### Recommendation (not a selection)
 
 - **SD-0 regardless.** Without it, every other route is undercut by vanilla's public sellable-items window.
+- **SP-1** is the permission line's route: one postfix, per settlement, with the rule unchanged.
+- **For tier**, which surfaces to withhold is #119's selection. The table above prices each one:
+  - SW-1 is free for our own factions;
+  - SW-4 is needed if WTL ships and tier is withheld, since otherwise every faction tooltip prints it;
+  - SW-2 is for the map, and only alongside SW-1 or SW-3.
 - **Before committing:** SD-1 for the one-line fact, SD-2 for the full picture, and SD-3 at the moment of commitment. SD-4 comes free with SD-1's comp. SD-11 is a cheap extra that puts the fact where vanilla already puts goodwill on hover.
 - **For planning:** SD-5 (badge + hover) and SD-7 (search) are the cheapest surfaces on the map itself. SD-8 only if a campaign tab is built anyway (#119, per #61's routes). SD-6 only if MMF ships for another reason.
 - **SD-10 as the reveal's voice**, never as its memory. **SD-9** as the zero-code carrier of the faction's public specialty.
@@ -1205,6 +1307,10 @@ Every route is **[I]** as a composition. Its seams are [V].
 - **Filter at draw time** (**T-21**). A surface that hides unlearned settlements hides them when it draws, never by editing a list the tick reads.
 - **A display that acts is a command.** SD-8's jump-to is camera-only and safe. Any button on SD-2 or SD-8 that *does* something is a synced command (**T-80**; float menu per `engine/determinism.md`).
 - **Identity** (**T-140**): a record keyed on `WorldObject.ID` orphans when a settlement is replaced; the tile does not.
+- **Per tile vs per faction.**
+  - #165's record is per tile. SW-2 and SP-1 read it directly.
+  - SW-3 is per faction and SW-4 is per def, so they need SF-3's record or a derivation from the tiles.
+  - Withholding never edits a def at runtime (**T-11**).
 
 ### Available mechanisms
 
@@ -1225,6 +1331,13 @@ Every route is **[I]** as a composition. Its seams are [V].
 | RimPacts `WITab_RptTrade` + `Patch_WorldObject_GetInspectTabs_RptTrade`; `Patch_WorldWarOverlayGUI`; `MainTabWindow_RimPacts` | settlement tab gated by `IsVisible`; per-settlement map glyphs; own campaign tab | SD-2, SD-5, SD-8 donors | [V] `3762723122/Assemblies/RimPacts.dll` |
 | FT&V `Patches_ExpandableWorldObjectsOnGUI`; `MapMode_FactionTerritories` | per-settlement badge; an MMF map mode with labels | SD-5, SD-6 donors | [V] `3626725895/Assemblies/FactionTerritories.dll` |
 | Map Mode Framework `MapModeDef`, `MapMode`, `MapModeComponent`, `ExpandableWorldObjectsOnGUI` prefix | switchable world overlays with per-tile colour, label, tooltip | SD-6 | [V] `3296654393/1.6/Assemblies/MapModeFramework.dll` |
+| `TechLevelUtility.ToStringHuman`; `MainTabWindow_Research` `TechLevelTooLow` | the only tier string; the player's own tier | § Withholding | [V] |
+| `Settlement.ExpandingIcon`, `Settlement.Material`, `WorldObject.ExpandingIconColor` | settlement art from the owner's def; material cached (T-12) | SW-1, SW-2 | [V] |
+| `FactionUIUtility.DrawFactionRow`/`DrawFactionIconWithTooltip`, `Dialog_RewardPrefsConfig`, `Faction.GetReportText`, `FactionDef.Description` | faction label, icon, description | SW-1, SW-3 | [V] |
+| WTL `Patch_FactionDef.GetDescription_Postfix` | *"Tech level"* line in every faction tooltip | SW-4 | [V] `3414187030/1.6/Lunar/Components/WorldTechLevel.dll` |
+| RimPacts `Dialog_RptWorldWarSide`, `Dialog_RptWorldWarInvite`, `RptPuppetUI`, `PuppetCultureUI`, `WorldComponent_RimPacts.TechLabel` | tier text in war and puppet windows | SW-5 | [V] `3762723122/Assemblies/RimPacts.dll` |
+| `Settlement.GetInspectString` (`RequiresTradePermission`); `CaravanVisitUtility.TradeCommand` (`CommandTradeFailNeedPermit`) | the permit line; the refusal on arrival | SP-1 | [V] |
+| BTG `OrbitalTraderHelper`, `SettlementGetInspectString` | `Orbital_Empire` on Guild settlements; the docked-vessel line | SP-1 | [V] `3684587591/1.6/Assemblies/BetterTradersGuild.dll` |
 
 **What does not exist:**
 - a vanilla tooltip or text label on a world-object icon. The Alt-held inspector (SD-11) is vanilla's only settlement hover, and it shows owner and goodwill, not specialty;
@@ -1236,6 +1349,22 @@ Every route is **[I]** as a composition. Its seams are [V].
 ### Status
 
 **Evidence class: READ**, established on [#178](https://github.com/cjd721/Rimworld-Archinity/issues/178). Seams [V] by decompiling `Assembly-CSharp.dll` 1.6 and the named mod assemblies; routes [I].
+
+**[#187](https://github.com/cjd721/Rimworld-Archinity/issues/187), READ.** It covers withholding the tier and the permission line.
+- **Vanilla:** a full decompile of `Assembly-CSharp.dll` 1.6, swept as source.
+- **Mods decompiled at 1.6:** WTL, RimPacts, FT&V, BTG, VEF, Ignorance Is Bliss, Rim War, Lemmy Progression and Medieval Overhaul.
+
+**Vanilla sweeps (#187)**, over the full decompile:
+
+| Sweep | Result |
+|---|---|
+| `"TechLevel_` / `ToStringHuman` with `techLevel` | `TechLevelUtility`, `MainTabWindow_Research`, debug only |
+| `RequiresTradePermission\|TitleRequiredToTrade\|permitRequiredForTrading\|TradingRequiresPermit` | `Settlement` ×2, `CaravanVisitUtility`, `FactionDialogMaker`, `FactionUtility`, the two caravan incidents, `TraderKindDef`, `ConceptDefOf`, debug |
+| `faction.def.(LabelCap\|label\|Description\|FactionIcon\|settlementTexturePath)` | the rows of *Every surface that shows a tier* |
+
+**Residual gap:**
+- A mod printing `techLevel` through `Enum.ToString()` is bounded only by the third corpus sweep below.
+- Ten of its mods were not depth-read: VPE, VRE Android, Worksites, VFE Empire, VFE Medieval 2, VFE Furniture, VGE, VQE Ancients, Hacking and Glittertech [I]. None adds a settlement or faction-row surface in #178's sweeps.
 
 **Sweeps.** Both roots, `.dll`, `-g '!**/obj/**' -g '!**/Referenced/**'`:
 
@@ -1251,10 +1380,19 @@ Every route is **[I]** as a composition. Its seams are [V].
 | `-i` `mapmode` in MP Compat `1629973374/1.6`, ASCII and UTF-16 | **0** | `PatchKCSG` |
 | `CellInspectorDrawer\|DrawWorldInspector`, ASCII; UTF-16 typed literally | Vehicle Framework (both); FloatSubMenu (ASCII only) | — |
 | `EvolvingEnemyStrongholds`, ASCII and UTF-16; `stronghold` in every `About.xml` | RimPacts' bridge only | — |
+| #187: Keyed English XML `-i` `tech ?level\|techlevel` | WTL, RimPacts, VFE Tribals, Medieval Overhaul, TechBlock, Tribal Furniture, Better Architect | — |
+| #187: ASCII `ToStringHuman` ∩ `techLevel` | VEF, RimPacts, WTL, FT&V, Vehicles, VFE Tribals, Better Architect. Faction-tier display, on decompiling: WTL and RimPacts only | WTL, known hit |
+| #187: 1.6 `techLevel` ∩ `TipRegion\|Widgets` ∩ `get_Faction\|FactionDef` | 21 mods. Depth-read: Ignorance Is Bliss (settings page), Rim War, Lemmy, Medieval Overhaul (none) | — |
+| #187: ASCII `TitleRequiredToTrade\|permitRequiredForTrading` | Rim War, FT&V, RimPacts, Vehicles, VFE Medieval 2, BTG. FT&V, RimPacts and BTG decompiled: all gates, none prints the line. The other three [I, name only] | — |
+| #187: UTF-16 `RequiresTradePermission`, typed literally | **0** in mods | 1 hit on vanilla `Assembly-CSharp.dll`, same pattern |
+| #187: `.xml` `permitRequiredForTrading` | **0** | same form finds `baseTraderKinds` in 40 files |
 
 ### Open questions
 
-- **Tier, difficulty and the permission line before the colony has learned them.** Capability: difficulty is ours to show, because vanilla shows it on no surface (*Specialty, tier, difficulty*), so it can be hidden and revealed at will. Whether a settlement's tier (its faction's `def.techLevel`) and the *"Requires trade permission"* inspect line (SD-0) can be withheld from every vanilla surface until learned → [#187](https://github.com/cjd721/Rimworld-Archinity/issues/187). Choice: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+- **Tier, difficulty and the permission line before the colony has learned them.**
+  - **Difficulty** is ours to show, because vanilla shows it on no surface.
+  - **Tier and the *"Trading here requires title"* line** can each be withheld until learned. See *Withholding tier and the permission line* ([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187)).
+  - Which surfaces withhold is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s selection.
 - **Selection, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)**, per [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s routes: which of SD-1 to SD-11 ship.
 - **Build, depends on [#164](https://github.com/cjd721/Rimworld-Archinity/issues/164)'s selection:** the difficulty band's inputs. Vanilla gives nothing to show.
 - **Unverified [I]:**
@@ -1876,8 +2014,330 @@ It does not own:
 
 - **Transfer shape per beat** (`SetFaction` or recreate). It decides whether an order carries on or aborts. *[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).*
 - **Odyssey gravship travel toward a tile that changes hands.** Answered by [#177](https://github.com/cjd721/Rimworld-Archinity/issues/177) in `GRAVSHIP.md` — never re-checked; routes GF-A…GF-G mirror CF-A…CF-G (T-171, T-172).
-- **A caravan inside the settlement's map at the moment of transfer.** Map pawns keep the old faction. Requirement stated 2026-09-23 ([`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *A holding is a settlement taken by force*): a settlement never changes hands while a player map on it is loaded and in use. Capability → [#188](https://github.com/cjd721/Rimworld-Archinity/issues/188).
+- **A caravan inside the settlement's map at the moment of transfer.** Map pawns keep the old faction. Requirement stated 2026-09-23 ([`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *A holding is a settlement taken by force*): a settlement never changes hands while a player map on it is loaded and in use. Answered by [#188](https://github.com/cjd721/Rimworld-Archinity/issues/188) in § *A settlement changing hands while a player map on it is loaded*, below.
 - **Build questions for the next map:** CF-B's letter text, CF-C's re-target precedence, and how CF-G stores the ordered faction.
+
+---
+
+## A settlement changing hands while a player map on it is loaded
+
+### Purpose and scope
+
+This section answers [#188](https://github.com/cjd721/Rimworld-Archinity/issues/188). **When a
+settlement is due to change hands while the player has its map loaded, can the change wait for the
+map to close? Can the player's pawns be moved off it first?**
+
+It serves two requirements:
+- [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *A holding is a settlement taken by
+  force*: *"A settlement never changes hands while the player has its map loaded and in use"*
+  (#118).
+- [`requirements/ERA.md`](../requirements/ERA.md) § *The era advance*: one indivisible act, and
+  nothing changes on a delay.
+
+Like § *A caravan en route*, **this is a clause of the settlement-transfer command, not a system of
+its own.** It applies to the advance, the Schism, a revolt and conquest alike. Other documents own
+the rest:
+- which settlements transfer: [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34);
+- selecting a route: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119);
+- a gravship still in flight to the tile: `GRAVSHIP.md` (#177).
+
+### Verdict
+
+- **Possible? Yes, except where something the eject cannot move holds the map open.**
+  - The transfer can wait for the map to close. Vanilla's `TimeoutComp` and Rim War both wait.
+  - Every player pawn can be put into a caravan instantly, using vanilla's own forced reform. That
+    instant eject is the only eject branch that fits the era advance.
+  - **Three things keep the map open after the eject** [V, `Settlement.ShouldRemoveMapNow`]:
+    1. **A player gravship parked on the map.** Its grav engine blocks removal, and the map is a
+       player home. The ship cannot join a caravan. When it takes off without a grav anchor,
+       vanilla **destroys the settlement**.
+    2. **A pod or gravship inbound to the tile**
+       (`TransporterUtility.IncomingTransporterPreventingMapRemoval`). This one is transient: it
+       ends when the pod lands or the ship arrives.
+    3. **A rescue-quest relative on the map** (`MapPawns.AnyPawnBlockingMapRemoval`,
+       `relativeInvolvedInRescueQuest`). The eject takes that pawn only if the player's faction
+       holds or hosts them.
+  - **For the parked gravship, no route closes the map inside the advance, and no route that
+    runs the advance now satisfies both `ERA.md` and #118.**
+    - GV-1 prevents the case from arising.
+    - Once a ship is parked, GV-2 breaks `ERA.md`'s single act and GV-3 breaks #118.
+    - GV-7 keeps both, but only by holding the advance until the ship leaves.
+    - Which requirement to bend is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s
+      call.
+- **Multiplayer? Yes** for every route except two:
+  - **MO-F2 is With work.** MP turns the reform dialog into a caravan-forming session and never runs
+    its `onClosed`.
+  - **GV-6 (forcing a takeoff) is not recommended.** The takeoff is frame-driven and outside
+    Multiplayer's determinism wrap (T-78).
+
+**Vanilla gets both transfer shapes wrong while a map is open, which is why the requirement is
+needed** [V]:
+- **`SetFaction`.** On the next interval `CheckDefeated` counts only the **new** owner's pawns,
+  finds none, and "defeats" the settlement (**T-179**).
+- **Destroy-and-recreate.** The map closes with the party still on it. They are lost, or
+  **kidnapped** if the old owner is hostile.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **MO-A** Transfer anyway | Fake defeat, or a lost or kidnapped party. **Not recommended** | vanilla (FT&V ships it) | — | Easy | Yes |
+| **MO-W1** Hold until the map closes | The change is queued and fires on the first world tick with `!HasMap` | ours; donors vanilla `TimeoutComp`, Rim War `RimWarSettlementComp.CompTick` | C# | Medium | Yes |
+| **MO-W2** Hold with a deadline, then force out | A visible countdown, then F1 or F2 | ours; donor vanilla `TimedForcedExit` (obsolete; copy the shape) | C# | Medium | Yes |
+| **MO-W3** Hold the whole advance | The advance or its rite cannot start while a settlement map is loaded. It then runs whole | our capstone/rite gate | C# | Medium | Yes |
+| **MO-F1** Instant eject, then transfer | Player and player-hosted pawns become a caravan on the tile, the map closes, then the transfer runs. **The only eject branch that fits the single-act advance** | vanilla `CaravanExitMapUtility.ExitMapAndCreateCaravan` + `MapParent.CheckRemoveMapNow`; VF `CaravanHelper.ExitMapAndCreateVehicleCaravan` | C# | Medium | Yes |
+| **MO-F2** Forced reform dialog | The player packs loot in a window that cannot be cancelled | vanilla `Dialog_FormCaravan(reform, mapAboutToBeRemoved)` | C# | Medium | With work |
+| **MO-F3** Eject and bring home | F1, then the caravan enters a home map | F1 + `CaravanEnterMapUtility.Enter` | C# | Medium | Yes |
+| **MO-S** Skip the settlement | The pass leaves it alone. **Not recommended for the advance** | ours; donor RimPacts `CanTarget` | C# | Easy–Medium | Yes |
+
+**MO-A — transfer anyway (not recommended).**
+- **Gets:** nothing to build.
+- **Cannot:** keep either the settlement or the party.
+  - **Under `SetFaction`:** the next `Settlement.TickInterval` → `CheckDefeated` turns the
+    settlement into a `DestroyedSettlement` of the new owner. It also sends the "settlement
+    defeated" letter, gives +20 goodwill with the new owner's enemies, and sets `defeated` if that
+    was the owner's only base (**T-179**).
+  - **Under destroy-and-recreate:** `MapParent.PostRemove` → `DeinitAndRemoveMap` →
+    `PassPawnsToWorld` loses the party, or has it **kidnapped** if the old owner is hostile.
+- **Consequences:** FT&V's `ApplyWinnerToSettlement` uses `SetFaction` exactly when a map is open.
+  A #92 Build B that copies it inherits this.
+
+**MO-W1 — hold until the map closes.**
+- **Gets:**
+  - No pawn is moved.
+  - The queue only has to poll `HasMap`. Vanilla closes a settlement map by itself, on the world
+    tick, once nothing of the player's holds it.
+  - Precedents: vanilla `TimeoutComp` waits for `!ParentHasMap` before removing its object, and
+    **Rim War converts a settlement only when `!ParentHasMap`**.
+- **Cannot:**
+  - fit the era advance, because it is the delay `ERA.md` forbids;
+  - promise an end. The player can stay. On top of that, the map can stay open indefinitely with
+    nobody on it:
+    - a parked gravship never lets it close;
+    - a grav anchor left behind keeps it open, because `Map.AnyBuildingBlockingMapRemoval` checks
+      `GravAnchor`;
+    - a map created by a gravship landing stays a player home through
+      `wasSpawnedViaGravShipLanding`, which is never cleared.
+- **Consequences:**
+  - The queue is stored state.
+  - It must re-validate when it fires. The player's own assault may already have "defeated" the
+    settlement.
+  - It fits the Schism, a revolt and conquest.
+
+**MO-W2 — hold with a deadline, then force out.**
+- **Gets:** W1 plus a countdown the player can see, then F1 or F2. This is the design of vanilla's
+  `TimedForcedExit`.
+- **Cannot:**
+  - fit the advance;
+  - reuse the class as it stands. It is `[Obsolete]`, no def uses it, and its `CompTickInterval`
+    decrements once per interval rather than by `delta`, so the countdown runs slow.
+- **Consequences:** under Async Time, MP's `TimedForcedExitTickPatch` stops that countdown while the
+  map's clock is paused. Count down on the map's clock, and do not store a timestamp.
+
+**MO-W3 — hold the whole advance, not the transfer.**
+- **Gets:** the advance stays one act. It does not start while any NPC settlement map is loaded, or
+  while one of the settlements it would transfer has a map.
+- **Cannot:** work with the capstone as #113 fixed it, since `AdvanceEra()` is called directly on
+  completion. It needs `ERA.md`'s rite route, or a gate on the research completing.
+- **Consequences:**
+  - The players can hold the era back by staying on a map.
+  - `requirements/ERA.md` already permits this. *"Nothing else may change on a delay"* governs
+    changes **after** the advance (§ *The era advance*). Holding the advance itself falls under
+    *"The era advance is always the players' choice"* (§ *Player information and agency*).
+
+**MO-F1 — instant eject, then transfer.**
+- **Gets:** one synced transfer command that runs these steps in order:
+  1. Collect every pawn with `Faction == OfPlayer || HostFaction == OfPlayer`.
+  2. `CaravanExitMapUtility.ExitMapAndCreateCaravan(pawns, OfPlayer, tile, tile, Invalid)`.
+  3. `map.Parent.CheckRemoveMapNow()`.
+  4. Confirm `!HasMap`.
+  5. Transfer. On a kept object (`SetFaction`), also null `Settlement.cachedMat` (**T-12**).
+
+  This is vanilla's `TimedForcedExit.ForceReform` without its final `Destroy()`. The party is safe,
+  and both vanilla defects are avoided whichever transfer shape the beat uses.
+- **Cannot:**
+  - close a map with the player's gravship on it (see *The parked gravship*, below);
+  - carry anything outside a pawn's inventory: loot on the ground, buildings, a landed shuttle,
+    or allied non-player pawns;
+  - move VF vehicles through the vanilla call. Use VF's public
+    `CaravanHelper.ExitMapAndCreateVehicleCaravan` for those;
+  - close a map still held by an inbound pod or gravship, or by a rescue-quest relative. When
+    step 4 fails, the command falls back to MO-S or W1. **Neither fallback fits the advance.** MO-S
+    leaves the world half re-authored, which is the failure `ERA.md` names, and W1 is a delay. An
+    inbound pod is transient, so MO-W3 (hold the advance until the pod lands) is the fallback that
+    keeps the act whole.
+- **Consequences:**
+  - The party stands as a caravan beside a settlement that now belongs to someone else, so a
+    letter says why.
+  - A caravan made only of downed pawns forms, but cannot move [I].
+  - Rim War's `ExitMapPostBattle_Prefix` on the same call resolves its own siege there. It is
+    harmless.
+
+**MO-F2 — forced reform dialog.**
+- **Gets:** the player packs the loot. The window sets `closeOnCancel = !reform`, and
+  `mapAboutToBeRemoved` preselects everything.
+- **Cannot:**
+  - be instant. It is W2 wearing a dialog;
+  - run its `onClosed` under Multiplayer. `DialogFormCaravanCtorPatch` makes it a
+    `CaravanFormingSession`, which stores `onClosed` and never invokes it.
+- **Consequences:**
+  - The transfer has to follow by polling `HasMap`.
+  - The session pauses that map and executes on that map's clock.
+
+**MO-F3 — eject and bring home.**
+- **Gets:** F1, then `CaravanEnterMapUtility.Enter` into a home map.
+- **Cannot:** choose between two colonies by itself.
+- **Consequences:** it probably draws `Rand` for the entry cells [I]. That is safe inside the synced
+  command.
+
+**MO-S — skip (not recommended for the advance).**
+- **Gets:** RimPacts' shape. `WorldComponent_RimPacts.CanTarget` rejects a settlement whose
+  `HasMap` is true.
+- **Cannot:** re-author the whole world. The settlement keeps its old owner **for good**, the same
+  objection as CF-D.
+- **Consequences:** it suits a Schism fought blow by blow. As F1's fallback, it does **not** fit the
+  advance: some settlements transferred and others not is exactly the failure `ERA.md` § *The era
+  advance* names.
+
+#### The parked gravship — routes for the case no eject reaches
+
+**The engine fact** [V]:
+- A player gravship on an NPC settlement's map makes that map a player home. That holds through
+  `GravshipUtility.PlayerHasGravEngine`, and through `wasSpawnedViaGravShipLanding` when the
+  landing generated the map. That flag is never cleared.
+- The grav engine blocks removal (`Map.AnyBuildingBlockingMapRemoval`), so
+  `Settlement.ShouldRemoveMapNow` stays false.
+- The ship is the colony and cannot join a caravan.
+- On takeoff without a grav anchor, `WorldComponent_GravshipController.TakeoffEnded` →
+  `GravshipUtility.AbandonMap` → `Settlement.Abandon(true)` → `Destroy()`. **The NPC settlement is
+  erased** (**T-180**).
+
+**So nothing closes that map inside one synced command.** Seven routes exist:
+
+| Route | What it gets us | Seam | Kind | Weight | Fits the single-act advance? | Multiplayer |
+|---|---|---|---|---|---|---|
+| **GV-1** Refuse landing on NPC settlements | The case never arises. The ship cannot pick an NPC settlement as a landing tile | postfix `Settlement.GravShipCanLandOn` (read by `TileFinder.IsValidTileForNewSettlement(forGravship)`), plus the `MapParentAt(tile).HasMap` branch of `CompPilotConsole.StartChoosingDestination_NewTemp`'s validator | C# | Medium | **Yes**: nothing is left to do at the advance | Yes (MP syncs the tile-pick lambdas) |
+| **GV-2** Skip that one settlement | The advance runs whole. That settlement keeps its old owner | our transfer selection (MO-S) | C# | Easy–Medium | **No**: a world half re-authored is the failure `ERA.md` names, and here it lasts **for good** | Yes |
+| **GV-3** Transfer with the map open | The settlement changes hands at the instant, with the ship still on it | `SetFaction`, a prefix on `SettlementDefeatUtility.CheckDefeated` skipping that settlement, and nulling `cachedMat` (T-12) | C# | Medium | **Yes**, but it breaks #118's *"never while its map is loaded"* | Yes |
+| **GV-4** Defer that one settlement until takeoff | It changes hands once the ship leaves | MO-W1 keyed on `HasMap`, plus GV-5 | C# | Medium | **No**: this is the delay `ERA.md` forbids, and it can wait forever. A grav anchor left behind keeps the map open (`AnyBuildingBlockingMapRemoval` checks `GravAnchor`), and a map created by the landing stays a player home (`wasSpawnedViaGravShipLanding`) | Yes |
+| **GV-5** Keep the settlement on takeoff | The ship leaving no longer erases the settlement. This is a companion to GV-3 and GV-4, not an answer by itself | prefix `GravshipUtility.AbandonMap`, skipping `Abandon` for a non-player parent and removing the map ourselves. The donor is RimPacts' `Patch_GravshipAbandonKeepSettlement` | C# | Medium | — | Yes [I]; the takeoff path is T-78 |
+| **GV-6** Force the ship off (not recommended) | The ship is made to leave | `WorldComponent_GravshipController.InitiateTakeoff(engine, tile)` exists | C# | Hard | **No**: the takeoff is a frame-driven cutscene that needs a destination. It cannot finish inside one command | No (T-78) |
+| **GV-7** Hold the advance while a ship is parked | MO-W3 narrowed to this case | our capstone/rite gate | C# | Medium | **Yes**: the act stays single, and holding the advance is the players' choice (`ERA.md` § *Player information and agency*). It can wait as long as the ship stays | Yes |
+
+- **GV-1 prevents rather than resolves.**
+  - **Cost:** it removes Odyssey's "land the ship on an enemy base" assault.
+  - **Leaves open:** a ship already in flight (T-171; `GRAVSHIP.md` GF-G) and saves where a ship is
+    already parked. Those fall back to GV-2 or GV-3.
+  - Vanilla's pick-time confirmation (`CheckConfirmSettle`) is the natural place to explain the
+    refusal.
+- **GV-3 is the only route that transfers that settlement at the instant.**
+  - It deliberately breaks #118's requirement for this one case.
+  - The old owner's defenders stay on the map under their old faction.
+  - It needs GV-5, or the ship's later takeoff erases the new owner's settlement.
+- **GV-2 is the cheapest route, and it does not fit the advance.** It leaves that settlement with
+  its old owner for good: CF-D's objection, and the half re-authored world `ERA.md` names.
+- **For a ship already parked, no route that runs the advance now satisfies both `ERA.md` and #118.**
+  - GV-2 breaks `ERA.md`.
+  - GV-3 breaks #118.
+  - GV-7 keeps both, but only by holding the advance until the ship leaves.
+  - GV-1 prevents the case from arising.
+  - Which to accept is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s call.
+
+### Recommendation (not a selection)
+
+- **Era advance:** **MO-F1**, optionally with **F3**. It is the only eject branch that satisfies both
+  `ERA.md` and #118.
+- **Schism, revolt and conquest:** **MO-W1**.
+- **The parked gravship:**
+  - **GV-1** keeps the case from arising.
+  - For a ship already parked or already landing, choose among:
+    - **GV-2**: skip that settlement, which breaks `ERA.md`;
+    - **GV-3 + GV-5**: transfer at the instant, which breaks #118 for that one case;
+    - **GV-7**: hold the advance until the ship leaves, which breaks neither but waits on the
+      players.
+  - The choice is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+
+### Constraints
+
+- **Eject and close the map first, and transfer last.** Both transfer shapes break while a map is
+  open [V]. The one exception is re-pointing `map.info.parent` before destroying the old object,
+  which is vanilla's `CheckDefeated` hand-off to its ruin. `Game.FindMap` matches on
+  `map.info.parent`.
+- **A kept object needs its material reset.** `SetFaction` leaves `cachedMat` stale, so the world
+  icon keeps the old owner's colour (**T-12**, § *Showing what the player has learned*).
+- **In vanilla, a settlement map exists only during an assault or a landing.** Visiting and trading
+  never generate one [V; I for exhaustiveness].
+- **Multiplayer:**
+  - Map closure runs on the world-object tick, on the world clock.
+  - MP's `CheckRemoveMapNowPatch` suppresses removal only for player-faction parents.
+  - The eject is lockstep code whichever clock carries it.
+  - Ejected pawns change clock through MP's `TimestampFixer` [V for the patch; I for the
+    composition].
+  - Nothing here stores an absolute tick.
+
+### Available mechanisms
+
+- **Map lifecycle** [V, `Assembly-CSharp.dll` 1.6]:
+  - `MapParent.TickInterval` → `CheckRemoveMapNow`;
+  - `Settlement.ShouldRemoveMapNow`;
+  - `MapPawns.AnyPawnBlockingMapRemoval`;
+  - `Map.AnyBuildingBlockingMapRemoval` and `Map.IsPlayerHome`;
+  - `TransporterUtility.IncomingTransporterPreventingMapRemoval`;
+  - `MapParent.PostRemove` → `Game.DeinitAndRemoveMap` → `MapDeiniter.PassPawnsToWorld`, which
+    kidnaps the party if the parent is hostile;
+  - `Game.FindMap(MapParent)`.
+- **Fake defeat** [V]: `Settlement.TickInterval` → `SettlementDefeatUtility.CheckDefeated` /
+  `IsDefeated`. The check returns early only for a player-owned settlement.
+- **Eject** [V]:
+  - `CaravanExitMapUtility.ExitMapAndCreateCaravan`;
+  - `TimedForcedExit.ForceReform`;
+  - `DebugActionsMapManagement.ForceReformInCurrentMap`;
+  - `Dialog_FormCaravan` (its constructor and `TryReformCaravan`);
+  - `CaravanEnterMapUtility.Enter`;
+  - VF `Vehicles.CaravanHelper.ExitMapAndCreateVehicleCaravan`.
+- **Wait** [V]:
+  - `TimeoutComp` (`Passed && !ParentHasMap`);
+  - Rim War `RimWarSettlementComp.CompTick`, the sole path to `WorldUtility.ConvertSettlement`,
+    gated on `!ParentHasMap`.
+- **Skip** [V]: RimPacts `WorldComponent_RimPacts.CanTarget` rejects a settlement that has a map
+  (its reason 2).
+- **Gravship** [V]:
+  - `WorldComponent_GravshipController.TakeoffEnded` and `.InitiateTakeoff`;
+  - `GravshipUtility.AbandonMap`, `MapParent.Abandon` and `Settlement.Abandon`;
+  - `Settlement.GravShipCanLandOn`, read by `TileFinder.IsValidTileForNewSettlement`;
+  - the `HasMap` branch of `CompPilotConsole.StartChoosingDestination_NewTemp`;
+  - RimPacts `Patch_GravshipAbandonKeepSettlement`, a prefix on `GravshipUtility.AbandonMap`.
+- **Multiplayer** (`Multiplayer.dll`) [V]:
+  - `CheckRemoveMapNowPatch`;
+  - `DialogFormCaravanCtorPatch`;
+  - `CaravanFormingSession`;
+  - `TimedForcedExitTickPatch`;
+  - `DeinitMapPatch`.
+- **Wide pass:**
+  - **Scope:** both roots, `*.dll`, excluding `obj/` and `Referenced/`.
+  - **ASCII `ExitMapAndCreateCaravan`:** no mod. Validated against vanilla `Assembly-CSharp.dll`
+    in the same heap.
+  - **Typed UTF-16 `ExitMapAnd` (`-i`):** Rim War and VF, both read.
+  - **Result:** no corpus mod ejects player pawns ahead of a world-object change [V for the mods
+    read].
+  - **Not depth-read [I]:** the `DeinitAndRemoveMap` and `CheckRemoveMapNow` hits in HugsLib,
+    Worksites Expanded, VEF and VGE. These are map managers.
+
+### Status
+
+**READ.** Mechanisms are [V] by `Type.Method`. Routes are [I] as compositions. Established by
+[#188](https://github.com/cjd721/Rimworld-Archinity/issues/188). **T-179** and **T-180** are
+registered traps.
+
+### Open questions
+
+- **Build questions for #119:**
+  - the eject letter's text;
+  - whether loose loot is packed automatically;
+  - F3's home map;
+  - W1's queue and its re-validation;
+  - F1's fallback;
+  - which gravship route is taken, and how GV-1 explains its refusal.
 
 ---
 

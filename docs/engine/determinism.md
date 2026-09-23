@@ -44,6 +44,40 @@ road arrays are what load; re-check on a Multiplayer update.
 ([#68](https://github.com/cjd721/Rimworld-Archinity/issues/68), `docs/specs/WORLD-INFRASTRUCTURE.md`
 § *Persistence and multiplayer*)
 
+## Under Async Time, `TicksGame` is whichever clock the context installed
+
+Verified in [#185](https://github.com/cjd721/Rimworld-Archinity/issues/185) against `Multiplayer.dll`
+1.6 (`2606448745/1.6/AssembliesCustom/`) and `Assembly-CSharp.dll`.
+
+There is one `TickManager.ticksGameInt`. Multiplayer swaps its **value** by context, so the same
+`Find.TickManager.TicksGame` call returns different clocks in different places. All of them are
+synced lockstep state, so none can desync. **What they can do is disagree with each other.**
+
+| Clock | `TicksGame` returns it in | Advances at |
+|---|---|---|
+| **Map clock**, `AsyncTimeComp.mapTicks` (scribed), one per **map**, encounter maps, sites and pocket maps included | `AsyncTimeComp.Tick` (all Thing/pawn/job/lord ticks, `MapComponentTick`, map quests, the map's storyteller pass), `AsyncTimeComp.ExecuteCmd`, `DefaultParmsNow` / `IncidentWorker.TryExecute` for a `Map` target (`MapContextIncidentParms` / `…Execute`), map-drawn UI (`SetMapTimeForUI`, skipped while the world is selected), `DateNotifierTick` (the min-timezone home map) | that map's voted speed: 0/1/3/6/15, **12 on speed 3 while its colonists all sleep**, 1× under `forceNormalSpeed`, 0 under a pausing session |
+| **World clock**, the global value outside map context (= `AsyncWorldTimeComp.worldTicks`) | `AsyncWorldTimeComp.Tick` → `DoSingleTick` (`WorldComponentTick`, **`GameComponentTick`**, world quests, world-target storyteller), world commands, any `[SyncMethod]` whose arguments carry no map (`SyncMethod.DoSync` sends `MpContext.map?.uniqueID ?? -1`), world-view and window UI | the max desired speed over unpaused maps; no 12× step; 0 when every map is paused |
+| `TickPatch.Timer` | never | once per lockstep step, paused or not. Not a game clock |
+
+- `TicksAbs` and `GenDate` inherit the split (`TimeSnapshot` also swaps `gameStartAbsTick`).
+- **No clock is the max or the min of the others by construction.** A paused colony stops while the
+  world runs on the other colony's speed; a colony sleeping at speed 3 runs 12× against the world's 6×.
+- A new map starts at `max(other maps' mapTicks) ?? TicksGame` (`MapSetup.CreateAsyncTimeCompForMap`),
+  a gravship landing and a newly settled colony included — usually the *other* colony's clock.
+- A `[SyncMethod]` routes by the `MpContext.map` of its serialised arguments, not by
+  `Find.CurrentMap`: one taking a `Thing` runs on that Thing's map clock, one taking only a def or an
+  int runs on the world clock even when clicked from a colony. A `PersistentDialog` click is always a
+  command on the dialog's own map.
+- Research finished at a bench fires on the researching colony's map clock
+  (`JobDriver_Research` → `ResearchManager.FinishProject`).
+- `Multiplayer.API` exposes none of these. Reading a clock you are not on means reflecting into
+  `Multiplayer.dll`; MP Compat's `PatchingUtilities.SetupAsyncTime` is the shipped shim, and its
+  `RegisterTimestampFixer` is the shipped seam for rebasing a stored tick (**T-175**).
+
+**The cheap consequence:** a `GameComponentTick` counter counts world ticks and a `MapComponentTick`
+counter counts that map's ticks, both with no `Multiplayer.dll` reference, and both equal `TicksGame`
+deltas in single-player. A stored absolute stamp read on another clock is **T-175**.
+
 ## Why `Rand` inside a synced tick is safe
 
 There is **no per-tick reseeding**. Multiplayer runs deterministic lockstep: both
@@ -422,6 +456,37 @@ Established on [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93) and
 [#73](https://github.com/cjd721/Rimworld-Archinity/issues/73); the Multiplayer members were
 re-derived from `2606448745/1.6/AssembliesCustom/Multiplayer.dll` on 2026-09-12.
 
+## Leaving to the main menu under Multiplayer
+
+Verified in [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182).
+
+**Any `GenScene.GoToMainMenu()` (and `Root.Shutdown`) under MP first runs
+`Multiplayer.StopMultiplayer()`** (`Multiplayer.Client.Shutdown_Quit_Patch`). That stops the session,
+stops the local server if this machine hosts, and sets `Multiplayer.game = null` [V].
+
+- **Host leaves** → `MultiplayerServer.TryStop` → `PlayerManager.OnServerStop` closes every player
+  with `ServerClosed`. Each remote runs `MultiplayerSession.Disconnected`:
+  - `MpUI.ClearWindowStack()` — a bare `windows.Clear()`, so **no `PostClose` runs** on anything open;
+  - then a `DisconnectedWindow`: paused, input-absorbing, one button *Quit to main menu*. The loaded
+    game stays on screen behind it.
+- **Client leaves** → only that client stops; the host plays on.
+- **Nothing syncs an exit.** A terminal ending that must take both players out together has to put the
+  `GoToMainMenu` call inside a synced command, so that each client runs it. The one shipped carrier is
+  vanilla's `GenGameEnd` dialog made persistent: `GenGameEnd` is on the delegate allowlist above. That
+  call then tears MP down **inside** `AsyncTimeComp.ExecuteCmd`, whose `finally` reads
+  `Multiplayer.game`. The exception reaches `Root_Play.Update`'s catch. Whether the teardown lands
+  cleanly is **pending a two-client run** (`TRANSCENDENCE.md` § *Verification*).
+- **`Screen_Credits(exitToMainMenu: true)` exits per machine.** It closes only on its own *Skip
+  credits* button, so each player leaves on their own. A host skipping first cuts the other player's
+  credits off through the path above. Its `forcePause` does not pause MP (**T-53**), so the colony
+  runs under the credits.
+- **The ship countdown runs on `TickPatch.Timer`**, outside every game clock and every map context
+  (`ConstantTicker.TickShipCountdown`), so the credits open on both clients on the same step.
+  Vanilla's `ArchonexusCountdown.ArchonexusCountdownUpdate` gets no such patch and still runs on
+  per-client `Time.deltaTime` [V].
+- A dialog opened from world context is a local window on each client (**T-96**, world-context half),
+  and vanilla's game-over state never arrives under MP (**T-176**).
+
 ## Multiplayer's float-menu sync wraps options a postfix appends
 
 Multiplayer's float-menu sync postfix is at Harmony priority −2 (prefix 801), so options appended
@@ -529,6 +594,20 @@ clone, is not, and needs `ExposeParameter`. Established by
 paste-settings button is the worked case: it writes fields that are unwatched in its scope, and
 nothing in MP or MP Compat covers it. The spec is `docs/specs/DEFAULTS.md` § *A bill's
 configuration, pasted onto another bill*.
+
+---
+
+## Under shared-faction Multiplayer there are two player factions, and one owns everything
+
+Verified on [#186](https://github.com/cjd721/Rimworld-Archinity/issues/186) [V].
+`Multiplayer.Common.PlayerManager.OnJoin` assigns every player `hostFactionId` unless multifaction is
+on. `HostUtil.SetupGameFromSingleplayer` (and `MultiplayerWorldComp.DoBackCompat` for old saves)
+always adds a hidden `"Spectator"` faction of `FactionDefOf.PlayerColony`, which owns nothing.
+`Faction.OfPlayer` stays the host faction because `FactionManager.RecacheFactions` takes the first
+`IsPlayer`. So a walk over `AllFactions.Where(f => f.IsPlayer)` sees two player factions, and code on
+`Faction.OfPlayer` sees one. Both colonies' settlements are `Faction.OfPlayer`, and nothing in vanilla
+or Multiplayer marks either as the primary one. `Find.AnyPlayerHomeMap` is the first `IsPlayerHome`
+map in `Game.maps` order.
 
 ---
 

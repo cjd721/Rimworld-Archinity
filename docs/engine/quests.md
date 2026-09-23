@@ -328,12 +328,14 @@ Verified against 1.6.4871 and `Multiplayer.dll` (`2606448745`).
   `QuestManager.Remove`'s only callers are debug code [V].
 - **`QuestNode_GetNearbySettlement` never returns a hostile settlement.** It filters on
   `Settlement.Visitable`, which is false when the settlement's faction is hostile to the player [V].
-  `QuestNode_GetFaction` does take `allowEnemy` and `allowedHiddenFactions` [V].
+  `QuestNode_GetFaction` does take `allowEnemy` and `allowedHiddenFactions` [V]; a faction pre-set
+  on its slate that fails the filter is silently replaced (**T-186**).
 - **Controllable allied pawns are XML.** Royalty's `Scripts_Utility_Helpers.xml` generates pawns, then
   applies `QuestNode_JoinPlayer`, `QuestNode_ExtraFaction` (`factionType HomeFaction`,
   `areHelpers true`), apparel lock and `QuestNode_Leave` after a delay [V].
 - **Accepting a quest is synced**: `SyncMethod.Register(typeof(Quest), "Accept")`. Under async time,
-  `MultiplayerAsyncQuest` caches the quest against a map on accept [V].
+  `MultiplayerAsyncQuest` binds the quest to one clock at generation, on accept and at load [V] —
+  § *Under Async Time, a quest runs on one clock* below.
 - **A shelf life is set at generation and resolves without the quest ever being ticked.**
   `RimWorld.QuestGen.QuestGen.InitializeQuestGen` sets `acceptanceExpireTick` from
   `QuestScriptDef.expireDaysRange` [V], and `Quest.State` is **computed** — it returns
@@ -351,6 +353,23 @@ Verified against 1.6.4871 and `Multiplayer.dll` (`2606448745`).
   (`def.questScriptDef ?? parms.questScriptDef`) [V]. ([#154](https://github.com/cjd721/Rimworld-Archinity/issues/154))
 
 Established on [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131).
+
+---
+
+## Under Async Time, a quest runs on one clock
+
+Verified on [#186](https://github.com/cjd721/Rimworld-Archinity/issues/186) [V]. Multiplayer ticks each
+quest once, from one of two caches: the world pass, or one map's tick (skipped while that map is
+paused). A quest goes to a map when its first part of exactly one of fourteen vanilla types carries a
+`mapParent` on a live player home map; otherwise it runs on the world clock. The choice is made at
+generation, at accept and at load, and is undone only by the abandon gizmo. **T-177** carries the
+list and the gravship hole. Every storyteller pass — the world's and each map's — walks every
+ongoing quest's incident-maker parts, but MP's `QuestPartsListForReadingPatch` drops a
+`QuestPart_ThreatsGenerator` from every pass but its own map's; only a custom incident maker that
+does not derive from it repeats (**T-178**). `docs/specs/POLITICS.md` § the demand and
+`docs/specs/RELIGION.md` already rely on the world-clock half; the clocks themselves are
+`docs/engine/determinism.md` § *Under Async Time, `TicksGame` is whichever clock the context
+installed*.
 
 ---
 

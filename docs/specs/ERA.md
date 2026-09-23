@@ -24,6 +24,8 @@ This document owns:
 - the **persistence contract** every other spec reads through, and what a save that predates
   the clock sees;
 - the **second writers** that must be shut off, and the multiplayer consequences of each;
+- **which clock the era runs on** under Multiplayer Async Time with two colonies — § *An era's
+  start under Async Time* ([#185](https://github.com/cjd721/Rimworld-Archinity/issues/185));
 - whether **above-era structures and events seeded on the player's own map** can be removed,
   timed to their era or replaced, and by which routes — § *Above-era content seeded on the
   player's own map* at the end of this document
@@ -124,9 +126,16 @@ GameComponent_Era : GameComponent
 
     TechLevel CurrentEra        => boundaries.Last().era
     int  CurrentEraStartTick    => boundaries.Last().startTick
-    int  TicksInCurrentEra      => Find.TickManager.TicksGame - CurrentEraStartTick
+    int  TicksInCurrentEra      => era-clock now - CurrentEraStartTick
     int  StartTickOf(TechLevel) => first boundary with that era, or -1
 ```
+
+**`startTick` and "now" are read on the era clock, and the era clock is not
+`Find.TickManager.TicksGame`.** Under Multiplayer Async Time that call returns whichever clock the
+calling context installed — the researching colony's own map clock at a bench, the world clock in
+`GameComponentTick` — so a stamp taken in one context and read in another is off by the drift
+between colonies. Which clock the era runs on is § *An era's start under Async Time*; in
+single-player every route reduces to `TicksGame`.
 
 **Prior eras' boundaries are retained — all of them — and this is a design decision with a
 consumer, not tidiness.** Two reasons, in order of force:
@@ -175,8 +184,14 @@ public void AdvanceEra(TechLevel next)
     1. Current.Game.GetComponent<GameComponent_TechLevel>().WorldTechLevel = next   // scribed
     2. WorldTechLevel.WorldTechLevel.Current = next                                 // volatile mirror
     3. Faction.OfPlayer.def.techLevel = next                                        // see T-11
-    4. boundaries.Add(new EraBoundary(next, Find.TickManager.TicksGame))
+    4. boundaries.Add(new EraBoundary(next, <start on the era clock>))              // § An era's start under Async Time
 ```
+
+**Write 4 does not stamp the caller's `TicksGame`.** The capstone completes at a research bench,
+inside the researching colony's map tick, where `TicksGame` is that colony's clock and no one
+else's [V, `RimWorld.JobDriver_Research` toil `tickIntervalAction` → `ResearchManager.ResearchPerformed`;
+`Multiplayer.Client.AsyncTimeComp.Tick`]. Stamping it would be **T-175** — a stored absolute tick read against whatever clock the reader is on. It opens the boundary on the era clock — a world count or
+one per colony, § *An era's start under Async Time*.
 
 Writes 1 and 2 are **both mandatory and the pair is the whole trap.** WTL's own
 "Change tech level" button does exactly this pair [V,
@@ -260,7 +275,7 @@ Is Bliss*].
 | Surface | What it shows | Cost |
 |---|---|---|
 | world `WITab_Planet` description | **WTL already prints `Tech level: <era>` there**, through `Patch_WITab_Planet.GetDesc_Postfix` [V] | free |
-| the same description | *"Era began: day N — n days here"*, from `CurrentEraStartTick` | one postfix on `WITab_Planet.get_Desc`, ~10 lines |
+| the same description | *"Era began: day N — n days here"*, from `CurrentEraStartTick`. Under Multiplayer the world view reads the **world** clock (§ *An era's start under Async Time*), so under Route B this line must name a colony | one postfix on `WITab_Planet.get_Desc`, ~10 lines |
 | the boundary log | *"Neolithic day 0 · Medieval day 96 · Industrial day 310"* | **not a tooltip on the line above** — see below. A `FillTab` postfix with its own layout, ~40 lines |
 | the crossing itself | the capstone project's completion **is** the event | the era-capstone project and `AdvanceEra()` hook |
 | pressure readout | era time as a named contributor | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (routes verified on [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)), supplied by [`PRESSURE.md`](PRESSURE.md) |
@@ -362,11 +377,10 @@ is a real one for anyone writing the shim from scratch, **not** because the dono
 
 ## Persistence and multiplayer
 
-**Saved state added by this document: one list of `(TechLevel, int)` pairs.** Nothing else.
-The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is computed from
-`Find.TickManager.TicksGame`. Under Async Time with two colonies each map keeps its own
-`TicksGame`, so which clock stamps an era's start is an open capability question:
-[#185](https://github.com/cjd721/Rimworld-Archinity/issues/185).
+**Saved state added by this document: one list of `(TechLevel, int)` pairs** — per colony under
+§ *An era's start under Async Time* Route B. Nothing else. The era itself stays WTL's; research
+stays `ResearchManager`'s; era *time* runs on the era clock, which under Async Time is a choice
+between the world clock and one clock per colony (§ *An era's start under Async Time*).
 
 **What must be a synced command, and what already is.**
 
@@ -403,6 +417,104 @@ The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is co
 - **Session shape.** [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) settled
   one shared player faction, two colonies on separate tiles, Async Time on. The era is world-scoped and
   faction-independent, so Multiplayer's `FactionRepeater` machinery does not apply to it.
+  The era *value* is one instant for both colonies; the era *clock* is not — next section.
+
+---
+
+## An era's start under Async Time
+
+**Can an era's start be stamped consistently for both colonies, and by which clock?**
+([#185](https://github.com/cjd721/Rimworld-Archinity/issues/185))
+
+- **Possible? Yes**, by either route below. Stamping `Find.TickManager.TicksGame` wherever
+  `AdvanceEra()` runs is not one: it records the caller's clock, and every reader on another clock
+  is off by the drift between them, which is unbounded.
+- **Multiplayer? Yes.** Every clock is lockstep state — scribed, advanced only on the synced tick —
+  so no route can desync. The problem is between colonies, not between clients.
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| A — the world clock is the era clock | One era time for everyone, at every instant; it runs whenever either colony is unpaused | vanilla `GameComponentTick`, which under MP runs only on the world tick | C# | Medium | Yes |
+| B — one era clock per colony | Each colony's era time runs only while that colony plays; the advance is still one instant for both | vanilla `MapComponentTick` (map tick only), or a per-colony stamp table written through MP Compat's `PatchingUtilities.SetupAsyncTime` shape | C# | Medium–Hard — one component per colony, plus carry-over on relocation and a rule for world-side readers | Yes |
+
+Which one is a route choice for the build map, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+
+### The clocks
+
+There is one `TickManager.ticksGameInt`, and Multiplayer swaps its **value** by context
+(`AsyncTimeComp.PreContext` → `TimeSnapshot.GetAndSetFromMap`, restored by `PostContext`) [V,
+`2606448745/1.6/AssembliesCustom/Multiplayer.dll`]:
+
+| Clock | What `TicksGame` returns it in | Advances at |
+|---|---|---|
+| **Map clock**, `AsyncTimeComp.mapTicks` (scribed) — one per **map**, encounter maps and sites included | map ticks: every Thing, pawn and job tick, lord toils and ritual outcomes, bench research, `MapComponentTick`; map commands; threat points for a `Map` target (`MapContextIncidentParms`); map-drawn UI (`SetMapTimeForUI`) | that map's voted speed — 0/1/3/6/15× for Paused/Normal/Fast/Superfast/Ultrafast, **12× instead of 6× at Superfast while its colonists all sleep**, 1× under `forceNormalSpeed`, 0 under a pausing session |
+| **World clock**, the global value outside map context (`AsyncWorldTimeComp.worldTicks`) | `AsyncWorldTimeComp.Tick` → `DoSingleTick`: `GameComponentTick`, `WorldComponentTick`, world quests, world-target storyteller; world commands, including any `[SyncMethod]` whose arguments carry no map (`SyncMethod.DoSync` sends `MpContext.map?.uniqueID ?? -1`); world-view UI such as `WITab_Planet` | the fastest unpaused map's *desired* speed, and 6× at Superfast even when a map is at 12×; 0 when every map is paused |
+| `TickPatch.Timer` | never | once per lockstep step, paused or not. Not a game clock and not a candidate |
+
+`TicksAbs` and `GenDate` inherit the split, because `TimeSnapshot` swaps `gameStartAbsTick` too.
+**No clock is the max or the min of the others by construction** — a sleeping colony outruns the
+world, a paused one falls behind it. A new map — a second colony, a gravship landing — starts at
+`max(other maps' mapTicks)`, usually the *other* colony's clock
+(`MapSetup.CreateAsyncTimeCompForMap`). Multiplayer converts exactly four pawn timestamp fields
+between clocks (`Patches.TimestampFixer.FixPawn`; MP Compat adds VEF ability cooldowns through
+`PatchingUtilities.RegisterTimestampFixer`); nothing of ours would be converted.
+`Multiplayer.API` exposes no clock.
+
+**What a stamp on the caller's clock gets each reader.** The researching colony reads
+`A_now − A_stamp`, correct. The other colony reads `B_now − A_stamp`: negative if it has been
+paused more — its era term sits at the curve's floor until it catches up — or a head start if it
+ran faster. World readers read `W_now − A_stamp`, wrong either way. If a later capstone completes on
+the other colony, the log's spans subtract one clock from another and PRESSURE's `Σ cappedCurve`
+breaks with them.
+
+### Route A — the world clock
+
+**Levers.** Count rather than stamp: `GameComponent_Era` adds to the open boundary's span in
+`GameComponentTick`. Vanilla calls that only from `TickManager.DoSingleTick`, and under Multiplayer
+`DoSingleTick` runs only from `AsyncWorldTimeComp.Tick` (MP's `TickPatch` replaces
+`TickManagerUpdate`) [V] — so the count *is* world ticks, identical on both clients, with no
+reference to `Multiplayer.dll`, and it reads the same from any context. Stamping `worldTicks`
+instead forces every map-context reader to reflect into Multiplayer for "now"; counting is strictly
+lighter.
+
+**Limits.** The world clock is no colony's time. It runs at the faster colony's speed and keeps
+running while one colony is paused, so a paused colony's era time rises on the other player's play —
+the *"another colony's clock"* [`requirements/PRESSURE.md`](../requirements/PRESSURE.md)
+§ *Constraints* rules out for local quantities. It lags a colony sleeping at 12×.
+
+**Consequences.** The contract becomes spans — `TicksInCurrentEra` and per-boundary durations —
+rather than absolute ticks, because a world tick cannot be compared against `TicksGame` in map
+context. The log never mixes clocks; relocation and new colonies do not touch it. Single-player is
+identical to the design above.
+
+### Route B — one clock per colony
+
+**Levers.** Count per home map in `MapComponentTick`, which runs only inside that map's
+`AsyncTimeComp.Tick` (`CancelMapManagersTick` suppresses `Map.MapPostTick` elsewhere) [V]. Or stamp
+every home map's `mapTicks` at the advance: inside map context `TicksGame − stamp[map]` then needs no
+reflection, because `TicksGame` there *is* that map's clock [V]; only the write reflects, and MP
+Compat's `PatchingUtilities.SetupAsyncTime` is the shipped shim for it (it resolves
+`Multiplayer.Client.Extensions:AsyncTime` and `AsyncTimeComp.mapTicks` by string) [V,
+`1629973374/1.6/Assemblies/Multiplayer_Compat.dll`].
+
+**Limits — open for the build map.** A colony founded mid-era; a colony that relocates, which lands
+on a new map and a new clock, so its era time must be carried or rebased (`TimestampFixer`'s offset
+is the donor shape); what world-side readers — world quests' points, the planet-tab line — use;
+excluding temporary maps (`IsPlayerHome`).
+
+**Consequences.** Satisfies PRESSURE's per-colony clock constraint by construction: threat points
+are always computed on the target map's clock [V, `MapContextIncidentParms`], and so would this term
+be. Era time differs between colonies, so a beat keyed to *"180 days after the Medieval gate"* fires
+at different moments per colony. The log becomes one per colony. Single-player has one colony.
+
+**The two compose** — a world count for world beats beside per-colony counts for threat — as a
+combination of these mechanisms, not a third.
+
+**Survey.** Across both corpus roots only Multiplayer and Multiplayer Compatibility reference
+`mapTicks`, `AsyncTimeComp` or `AsyncWorldTime` — ASCII and null-interleaved UTF-16 passes,
+`Referenced/` included deliberately, the UTF-16 form validated on MP's own `"Map Ticks: "` literal.
+MP Compat reads map clocks and extends the rebase list; nothing reads the world clock, and nothing
+stamps an era (§ *Available mechanisms*).
 
 ---
 
@@ -433,8 +545,9 @@ The era itself stays WTL's; research stays `ResearchManager`'s; era *time* is co
 
 **Evidence class: READ.** Settled against the 1.6 `Assembly-CSharp.dll`, `WorldTechLevel.dll`
 1.6 (`…/294100/3414187030/1.6/Lunar/Components/WorldTechLevel.dll` — **not** `1.6/Assemblies/`,
-which holds only the Lunar loader), `VFETribals.dll` 1.6, `LemProgress.dll` 1.6, and
-`0MultiplayerAPI.dll` 1.6. No stub, no launch.
+which holds only the Lunar loader), `VFETribals.dll` 1.6, `LemProgress.dll` 1.6,
+`0MultiplayerAPI.dll` 1.6, and — for § *An era's start under Async Time* — `Multiplayer.dll` 1.6
+(`2606448745/1.6/AssembliesCustom/`) and `Multiplayer_Compat.dll` 1.6. No stub, no launch.
 
 **Verified available mechanisms.** Every mechanism the build composes is read out of a
 decompiled assembly and marked [V] where claimed: WTL's scribed component and its volatile
@@ -453,9 +566,9 @@ built and loaded twice.
 | Read | Returns |
 |---|---|
 | `GameComponent_Era.CurrentEra` | the era, `TechLevel` |
-| `GameComponent_Era.CurrentEraStartTick` | absolute `TicksGame` of the current boundary |
-| `GameComponent_Era.TicksInCurrentEra` | derived; what #60 asked for |
-| `GameComponent_Era.StartTickOf(TechLevel)` | absolute tick, or `-1` if never entered |
+| `GameComponent_Era.CurrentEraStartTick` | start of the current boundary **on the era clock** — not comparable to `TicksGame` under Async Time (§ *An era's start under Async Time*) |
+| `GameComponent_Era.TicksInCurrentEra` | derived; what #60 asked for; the safe read in every context |
+| `GameComponent_Era.StartTickOf(TechLevel)` | start on the era clock, or `-1` if never entered |
 | `GameComponent_Era.Boundaries` | the whole log, read-only, oldest first |
 
 - [#109](https://github.com/cjd721/Rimworld-Archinity/issues/109) — this document.

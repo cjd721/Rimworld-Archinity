@@ -955,6 +955,96 @@ current from C#. Stripping tags does nothing.
 `.QuestPart_SpawnWorldObject`, `.RitualOutcomeEffectWorker_Bestowing.Apply`, `RimWorld.Pawn_RoyaltyTracker`
 (`Assembly-CSharp.dll` 1.6.4871); `VanillaPsycastsExpanded.RitualOutcomeEffectWorker_Bestowing_Apply_Patch.Transpiler`. [V]*
 
+### T-182 — Banishing a downed caravan member kills a Deathless pawn permanently, 80 % of the time
+
+`PawnBanishUtility.Banish` checks `WouldBeLeftToDie`, which is true when the pawn is downed (a
+regeneration coma counts), bleeding at more than 0.4, carrying any life-threatening hediff, or at an
+unsafe temperature for the tile. If so, **and the pawn is in a caravan**, `Banish` rolls
+`pawn.Kill(null, null)` at 80 %. `Pawn.Kill` is unguarded (`docs/engine/health-and-death.md`), so a
+Deathless pawn dies for good. The only warning is vanilla's generic "will be left to die" line in the
+confirmation; nothing mentions Deathless.
+
+The roll comes **before** `SetFaction`, so the pawn dies as a player-faction pawn, and its
+inheritable titles then pass on as favour, most likely to a colonist (**T-183**).
+
+**Fix:** postfix `WouldBeLeftToDie` to return false for pawns that must not die, or refuse `Banish`
+for them.
+
+*[#183](https://github.com/cjd721/Rimworld-Archinity/issues/183), `docs/specs/RELIGION.md` § Founders.
+`RimWorld.PawnBanishUtility.Banish` / `.WouldBeLeftToDie` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+### T-183 — Title inheritance falls back to whoever the holder liked most, then to kin in any faction
+
+`Pawn_RoyaltyTracker.Notify_PawnKilled` hands every `canBeInherited` title to
+`RoyalTitleInheritanceWorker.FindHeir`. The heir search has three steps:
+1. The nearest `FactionDef.royalTitleInheritanceRelations` kin in the same faction.
+2. **Otherwise, the most-liked living humanlike of the same faction**, anywhere on any map or in the
+   world (`PawnsFinder.AllMapsAndWorld_Alive`, ranked by the holder's opinion). For a player holder
+   that means any colonist or slave, not only a pawn on the map.
+3. **Otherwise, kin in any faction** (`GetClosestFamilyPawn(ignoreFaction: true)`), so the title can
+   leave the colony for an NPC relative.
+
+**The heir gets favour, not the title.** They get the title's **cumulative** `favorCost` through
+`GainFavor`. On a player-faction heir, that makes them Freeholder at once (**T-184**), and every rung
+from Acolyte up still needs a bestowing ceremony. An NPC heir banks the favour but gets no title,
+because the award workers and the ceremony need `Faction.IsPlayer`.
+
+Vanilla marks Acolyte, Knight, Praetor, Baron and Count `canBeInherited`, and VFE Empire marks nine of
+its own titles. Nothing asks the player first; the letter arrives after the fact. So a titled founder's
+death breaks a founders-only title rule, and that includes a death from the banish roll (**T-182**).
+
+**Fix:** `canBeInherited` false (XML), or a postfix on `FindHeir`.
+
+*[#184](https://github.com/cjd721/Rimworld-Archinity/issues/184), `docs/specs/RELIGION.md` §
+Exaltation. `RimWorld.Pawn_RoyaltyTracker.Notify_PawnKilled`, `RimWorld.RoyalTitleInheritanceWorker.FindHeir`
+(`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+### T-184 — One point of favour is a title
+
+`OnFavorChanged` calls `AwardWorker.DoAward` for player pawns. Freeholder's `awardWorkerClass` is
+`RoyalTitleAwardWorker_Instant`, which calls `TryUpdateTitle` at once. So a single favour point — from
+a tribute-collector trade, a peace talk, or a quest reward given to "the accepter" — makes that
+colonist a Church titleholder without any rite. "Keep Exaltation off X" and "keep titles off X" are
+one requirement. The writers are `docs/engine/factions-and-worldgen.md` § *Who receives royal favour*.
+
+**Fix:** gate at the favour writers, not at the ceremony.
+
+*[#184](https://github.com/cjd721/Rimworld-Archinity/issues/184). `RimWorld.Pawn_RoyaltyTracker.OnFavorChanged`,
+`RimWorld.RoyalTitleAwardWorker_Instant`, Royalty's Freeholder `RoyalTitleDef` (`Assembly-CSharp.dll`
+1.6.4871). [V].*
+
+### T-185 — A zero `PsychicSensitivity` factor is not deafness: offsets are added after it
+
+"Psychically deaf" in VRE – Android (`VREA_PsychicallyDeaf`), and in anything we author the same way,
+is `<statFactors><PsychicSensitivity>0</PsychicSensitivity></statFactors>`. It reads as absolute, and
+it is not.
+
+`StatWorker.GetValue` runs `GetValueUnfinalized` — where every trait, hediff and gene factor
+multiplies — and then `FinalizeValue`, which runs the stat's `parts` in order. `PsychicSensitivity`
+(`Core/Defs/Stats/Stats_Pawns_General.xml`) has four:
+- `StatPart_GearStatOffset` — adds each worn or wielded item's `PsychicSensitivityOffset`
+  (`equippedStatOffsets`): Royalty's psyfocus helmet +0.15, eltex skullcap +0.4, psyfocus shirt
+  +0.10, vest +0.15, robe +0.20, psyfocus staff +0.50; VPE ships more;
+- `StatPart_GearStatFactor`;
+- `StatPart_SightPsychicSensitivityOffset` — sight efficiency ≤ 0.5 adds up to +0.5;
+- `StatPart_BlindPsychicSensitivityOffset` — a fully blind pawn with an `Ideo` adds its precepts'
+  `blindPsychicSensitivityOffset`.
+
+So a factor-zero pawn in eltex, or with its eyes shot out, ends above `float.Epsilon`, and
+`Psycast.CanApplyPsycastTo`, `Verb_CastPsycast.ValidateTarget` and VPE's psychic-flagged abilities
+accept it as a target — and `Psycast.GizmoDisabled`, which reads the finished stat through
+`psychicEntropy.PsychicSensitivity`, lets it **cast** if it holds a psylink. Nothing logs. Vanilla's own deaf trait is a −1 **offset** and leaks the same way.
+
+**Fix.** For deafness that must hold, append a `StatPart` of our own to the stat's `parts` and clamp
+there. "Last" depends on load order: VRE – Archon appends `VREArchon.StatPart_PsychicStormWeather`
+(a doubling), which cannot lift a zero but can follow ours. Keeping psychic gear out of a kind's apparel
+tags narrows it at generation only.
+
+*[#181](https://github.com/cjd721/Rimworld-Archinity/issues/181), `docs/specs/ANDROIDS.md` § *By kind
+of android*. `StatWorker.GetValue` / `GetValueUnfinalized` / `FinalizeValue` and the three
+`StatPart_*` classes named above (`Assembly-CSharp.dll` 1.6.4871); Royalty `Apparel_Psychic.xml`,
+`Weapons/PsychicWeapons.xml`. [V].*
+
 ## Ideology authoring
 
 ### T-121 — No `FactionDef` restriction applies inside the ideology reform dialog

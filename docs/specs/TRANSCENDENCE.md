@@ -47,7 +47,7 @@ the only new state.
 
 | | |
 |---|---|
-| **Mechanism** | A `HediffComp` on a founder-only `HediffDef`, implementing `Verse.IRenameable`; a `Dialog_Rename<T>` subclass for the epithet; a vanilla `Dialog_NodeTree` for the Administrator and the enter-or-stay choice. *Enter* rolls credits by the verified non-terminal route (§4; ending the game under Multiplayer is [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182)); *Stay* closes the tree with no pawn mutation. |
+| **Mechanism** | A `HediffComp` on a founder-only `HediffDef`, implementing `Verse.IRenameable`; a `Dialog_Rename<T>` subclass for the epithet; a vanilla `Dialog_NodeTree` for the Administrator and the enter-or-stay choice. *Enter* rolls credits by the verified non-terminal route (§4), and can also end the game for both players (§ *Ending the game under Multiplayer*); *Stay* closes the tree with no pawn mutation. |
 | **State** | `CompFounderRecord` — one instance per founder, living on the `Archinity_FounderRecord` hediff. Plus `Pawn_StoryTracker.title`, a vanilla per-pawn string, as the display projection of the epithet. |
 | **Persistence** | `HediffWithComps.ExposeData` → `CompExposeData()` for the comp; `Scribe_Values.Look(ref title, "title")` in `Pawn_StoryTracker.ExposeData` for the display copy. A save that predates the feature has no hediff and no `title`; both read as "nothing claimed". **No migration code.** |
 | **Change** | The `RenamableLabel` setter (claim); the altar's rite completion (grant `VRE_Transcendent`); the Administrator dialog's terminal *Enter the new reality* option. *Stay* changes nothing beyond recording that the scene was seen. |
@@ -280,10 +280,8 @@ destroys nothing, `InitiateCountdown` resets `timeLeft` on every call, and two m
 corpus already ship this exact pattern (VFE Deserters' flagship ending; RimPacts' strategy
 victory).
 
-Whether *Enter* can instead end the game for both players under Multiplayer — credits that
-exit both clients to the main menu, or the `GameEnder` / `GenGameEnd` path — is
-[#182](https://github.com/cjd721/Rimworld-Archinity/issues/182). If no ending route proves safe, `ENDING.md`'s
-fallback frames the same scene as the founder staying until ready.
+Ending the game for both players instead — credits that exit to the main menu, or vanilla's
+game-over dialog — is § *Ending the game under Multiplayer*. `GameEnder` is not a route.
 
 ### 5. Where the player sees it
 
@@ -296,7 +294,7 @@ fallback frames the same scene as the founder staying until ready.
 | Health tab row, "Transcendent" | the `Archinity_FounderRecord` hediff, `CompLabelInBracketsExtra` | ~10 lines |
 | "X has not claimed a title" when the altar refuses | `Building_Altar.CanAcceptPawn` refusal string | ~5 lines |
 | The claim, the transcendence, the Administrator and the enter-or-stay choice | letters + one `Dialog_NodeTree` with two `DiaOption`s | ~30 lines + XML |
-| *Enter the new reality* | `Screen_Credits`, with our text above the credit roll (the ending beyond the credits is [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182)) | ~5 lines |
+| *Enter the new reality* | `Screen_Credits`, with our text above the credit roll; optionally vanilla's game-over dialog (§ *Ending the game under Multiplayer*) | ~5 lines |
 
 The claimed epithet and any Church title **coexist without contention**: nothing in
 `Pawn.LabelNoCount` reads `pawn.royalty`, and `RoyalTitleDef` titles render in the
@@ -323,6 +321,122 @@ ground, allied for good* › *Route C — VFE Deserters as shipped*) [V]; the va
 **~185 lines of C# into the assembly we already ship, plus ~65 lines of XML. No
 new assembly of ours, and — on the recommended design — no reference to
 Multiplayer at all.**
+
+---
+
+## Ending the game under Multiplayer
+
+Established by [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182). Evidence class
+**READ**, with two-client runs for route C and for the A + C layering (§ *Verification*, items 5 and 6).
+
+- **Possible?** Yes — three endings. Non-terminal credits; credits that exit to the main menu, one
+  player at a time; and vanilla's game-over dialog, whose one *Main menu* click takes both players
+  out together. **Not** through `GameEnder`, which Multiplayer switches off.
+- **Multiplayer?** Credits: yes. Credits-then-exit: yes, no desync — but the host skipping first
+  closes the server and cuts the other player's credits off. Game-over dialog: **unknown until one
+  two-client run**; a deferred-exit variant is the fallback.
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| A — credits, play continues | Fade, credits with our text, back to the live colony | `ShipCountdown.InitiateCountdown(string)` | C#, one call in the *Enter* action | Medium | Yes |
+| B — credits, then the main menu | Credits on both machines at once; each player leaves when they skip | `GameVictoryUtility.ShowCredits(…, exitToMainMenu: true)` — vanilla's Archonexus ending | C#, one call | Medium | Yes; the exit is per player |
+| C — the game is over | A one-option *Main menu* dialog on both machines; one click ends it for both | `GenGameEnd.EndGameDialogMessage(msg, allowKeepPlaying: false)` — vanilla's planetkiller ending | C#, one call | Medium | Unknown until run |
+| C′ — C, exit deferred | As C; the exit runs a frame later, outside MP's command | our option on `CompAltarThreshold`, queuing the exit as a long event | C# | Medium | [I] |
+
+**A and C compose.** *Enter* can start the credits and open the game-over dialog in the same action.
+The credits open on top after the 7.2 s fade, and the dialog is waiting underneath when each player
+closes them. It is the only shape that both rolls credits and ends the game for both players with one
+synced click [I — each piece verified, the layering not run; § *Verification*, item 6].
+
+**Recommended, not selected**: A + C, falling back to C′ only if the run fails. Take A alone if the
+first *Enter* should leave the second founder's arc open — B and C end the playthrough for both
+founders, and [`plot/ENDING.md`](../plot/ENDING.md) lets them transcend separately.
+
+### A — credits, play continues
+
+- **Gets us:** our text and song over vanilla's credits, then play resumes. The first founder can
+  leave while the second plays on.
+- **Cannot:** end anything.
+- **Consequences:**
+  - MP drives the countdown from its command timer (`ConstantTicker.TickShipCountdown`), so the
+    credits open on both machines on the same step [V].
+  - **The colony keeps running under the credits.** `Screen_Credits.forcePause` means nothing to MP
+    (**T-53**). Pause first if that matters.
+
+### B — credits, then the main menu
+
+- **Gets us:** vanilla's own terminal-credits shape, with our text, song and song delay.
+- **Cannot:** exit both players together. `Screen_Credits` closes only on its own *Skip credits*
+  button (`closeOnCancel` is false), and `PostClose` then calls `GenScene.GoToMainMenu()` **on that
+  machine alone** [V].
+- **Consequences:**
+  - Under MP that call first runs `Multiplayer.StopMultiplayer()` (`Shutdown_Quit_Patch`) [V].
+  - A client skipping leaves alone.
+  - The host skipping stops the server (`PlayerManager.OnServerStop`). The other player's windows
+    are cleared — credits gone mid-roll — and a paused *Server closed* window offers one button,
+    *Quit to main menu* [V].
+  - Nothing after the credits is simulation, so no desync.
+  - Nothing saves the ended game.
+  - `ShowCredits` fades only from white; a `ScreenFader.StartFade` call restores the fade-in (UI
+    only).
+
+### C — the game is over
+
+- **Gets us:** vanilla's game-over dialog with our message and a fill colour.
+  - Opened from the *Enter* action, the dialog sits inside `PersistentDialog.Click`. That click is a
+    map command on the dialog's own map — the `PersistentDialog` sync writer sets that map as the
+    command's context. So `CancelDialogNodeTree` makes the new dialog a `PersistentDialog`: it is
+    shown on both machines, its click is synced, and `GenGameEnd` is on the delegate allowlist, so it
+    survives a save [V].
+  - Its *Main menu* option already sets `resolveTree` (**T-97** satisfied) [V].
+- **Cannot:**
+  - **Stay undismissable.** MP forces a close-X onto every persistent dialog. A local close is
+    re-shown on the next map draw [V].
+  - **Show to a player looking elsewhere.** It appears only to a player viewing the altar's map
+    (`ForceShowDialogs`) [V].
+- **Consequences:**
+  - **The click runs `GoToMainMenu` inside MP's command execution on both machines.** MP tears
+    itself down mid-command, and `AsyncTimeComp.ExecuteCmd`'s `finally` then reads the nulled
+    `Multiplayer.game` [V].
+  - Reading predicts one logged exception per machine, caught by `Root_Play.Update`, and both still
+    reaching the main menu [I — the run].
+  - The host's machine also closes the server, so the other player may land on the *Server closed*
+    window instead — one click from the main menu, never in a running game [I].
+  - Nothing saves the ended game.
+
+### C′ — the exit deferred
+
+Only if the run fails. Our own single *Main menu* option, hosted on `CompAltarThreshold` (§4 rule 2),
+queues the exit as a long event instead of calling it. MP already stops running commands the moment
+a long event is queued (`TickPatch.RunCmds`, `DoTick`), so the teardown happens outside
+`ExecuteCmd` [V seams; I composition]. The remote client's race is unchanged.
+
+### Rules for any terminal route
+
+1. **Call it from the *Enter* action**, which runs as a synced map command. A `GenGameEnd` dialog
+   opened from a `WorldComponentTick`, a `GameComponentTick` or a world command has no map context.
+   It is a local window on each machine, and its clicks are unsynced. Rim War's
+   `WorldComponent_PowerTracker.AnnounceVictory` ships exactly that, and nothing in Multiplayer
+   Compatibility covers it [V].
+2. **Do every simulation write the action makes** — the founder record — **before** the exit call in
+   the same action.
+3. **Always pass `allowKeepPlaying: false` under MP.** *Create new wanderers* opens
+   `Dialog_ChooseNewWanderers`, which nothing in Multiplayer syncs [V].
+
+### Not a route: `GameEnder`
+
+`Multiplayer.Client.GameEnderPatch` makes `GameEnder.CheckOrUpdateGameOver` a no-op under MP (**T-176**). In 1.6
+it never calls `GenGameEnd` anyway; it posts a *Game over* letter when no free colonist is left [V].
+
+**Nothing else in the corpus carries a synced exit.** Neither Multiplayer nor Multiplayer
+Compatibility patches `GenGameEnd`, `Screen_Credits`, `GameVictoryUtility` or a main-menu exit beyond
+what is cited here. MP Compat was checked in both `Multiplayer_Compat.dll` builds and the
+`Referenced/` one.
+
+The sweep covered both corpus roots and both string heaps [V]. Its only other hits are:
+
+- Rim War — the world-context dialog above;
+- RimPacts and VFE Deserters — non-terminal credits, §4.
 
 ---
 
@@ -355,7 +469,7 @@ deliberately client-local — with one exception, the Administrator's options.**
 | Our comp being serializable | MP registers `HediffComp` with `isImplicit: true` and identifies an instance as (parent `HediffWithComps`, `props.compClass` index). `CompSerialization.hediffCompTypes` is built from `AllSubclassesNonAbstractOrdered(typeof(HediffComp))`, so our class is in it. |
 | Entering the altar | `Multiplayer.Client.SyncDelegates`, `SyncMethod.Register(typeof(Building_Enterable), "SelectPawn")`; `Building_Altar` inherits it unmodified. |
 | The rite completing | `Building_Altar.Tick` — the synced tick, already the altar's home. |
-| *Enter the new reality* (credits) | MP prefixes out `ShipCountdown.ShipCountdownUpdate` (the real-time path) and drives the countdown from `ConstantTicker.TickShipCountdown` instead, calling `CountdownEnded()` on every client from the synced tick. `CancelCancelCountdown` blocks cancellation during play. Ending the game beyond the credits under MP is [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182). |
+| *Enter the new reality* (credits) | MP prefixes out `ShipCountdown.ShipCountdownUpdate` (the real-time path) and drives the countdown from `ConstantTicker.TickShipCountdown` instead, calling `CountdownEnded()` on every client from the synced tick. `CancelCancelCountdown` blocks cancellation during play. Terminal endings under MP: § *Ending the game under Multiplayer*. |
 | The Administrator scene — **the dialog** | A `Dialog_NodeTree` opened from synced code becomes a map-scoped MP `PersistentDialog` and is replayed to every client. Free. |
 | The Administrator scene — **the two options** | **Not free.** `DelegateSerialization.IsDeclaringTypeAllowed` admits only 15 declaring types, and neither `Building_Altar` (`Building → Thing`) nor `HediffComp` is among them; a delegate declared on either throws `"Delegate deserialization: method not allowed"` on load. *Stay in this reality* is built with **no action**; *Enter the new reality* hosts its action on `CompAltarThreshold : ThingComp`, and `ThingComp` **is** on the list. Constraint and array recorded in [`docs/engine/determinism.md`](../engine/determinism.md) § *MP serialises the comms-console dialogue, options included* [V]; §4 above states the rules. |
 | The credits themselves | `Screen_Credits` is pure UI; `MakeEndCredits` only reads shared state, so both clients build identical text. Its `CurTimeSpeed` write on close is inert — MP replaces `TickManager.TickManagerUpdate` wholesale and drives time by server vote. |
@@ -434,8 +548,9 @@ alone:
 - Multiplayer's 15-type delegate allowlist as a **hard constraint** on `DiaOption` actions
   inside a `PersistentDialog`, recorded in `docs/engine/determinism.md`.
 - `ShipCountdown.InitiateCountdown(string)` → `GameVictoryUtility.ShowCredits(…,
-  exitToMainMenu: false)` as a non-terminal victory, and MP's synced ticking of it. Ending
-  the game from *Enter* under Multiplayer is not verified: [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182).
+  exitToMainMenu: false)` as a non-terminal victory, and MP's synced ticking of it. The
+  terminal endings under MP are read end to end, pending one two-client run (§ *Ending the game
+  under Multiplayer*; [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182)).
 - `RoyalTitleDef.Awardable => favorCost > 0` — **confirmed at source**, closing the
   "corroborated, not verified" flag [#21](https://github.com/cjd721/Rimworld-Archinity/issues/21)
   left open.
@@ -550,8 +665,10 @@ generic path is supported, the ad-hoc one gets suppressed.
 - RimPacts calls `GameVictoryUtility.ShowCredits(…, false, 2.5f)` on its strategy
   victory, in a `try/catch` that logs and carries on.
 
-`GameEnder` is the only vanilla thing that ends a game for real, and it triggers
-solely on "no free colonists anywhere", never on a victory.
+Vanilla ends a game for real in two places only: `ArchonexusCountdown.EndGame`
+(`ShowCredits(…, exitToMainMenu: true)`) and `GameCondition_Planetkiller.Impact`
+(`GenGameEnd.EndGameDialogMessage(…, allowKeepPlaying: false)`). `GameEnder` ends nothing — on "no
+free colonists anywhere" it posts a *Game over* letter — and Multiplayer disables it.
 
 ### What was ruled out, and why
 
@@ -603,6 +720,11 @@ solely on "no free colonists anywhere", never on a victory.
 | credits do not end the game | `RimWorld.GameVictoryUtility.ShowCredits`, `RimWorld.Screen_Credits.PostClose` |
 | MP ticks the countdown deterministically | `Multiplayer.Client.ConstantTicker.TickShipCountdown`, `ShipCountdownUpdatePatch` |
 | `Awardable => favorCost > 0` | `RimWorld.RoyalTitleDef.Awardable` |
+| `GameEnder` never runs under MP | `Multiplayer.Client.GameEnderPatch` |
+| leaving to the main menu stops MP; the host leaving closes every client | `Multiplayer.Client.Shutdown_Quit_Patch`; `Multiplayer.StopMultiplayer`; `Multiplayer.Common.PlayerManager.OnServerStop`; `MultiplayerSession.Disconnected` |
+| a `Dialog_NodeTree` is persistent only with a map context; a click is a map command on the dialog's map | `Multiplayer.Client.CancelDialogNodeTree`; `Multiplayer.MapContext`; `SyncDictMultiplayer` (`PersistentDialog` writer) |
+| the game-over dialog's options, and the terminal vanilla callers | `RimWorld.GenGameEnd.EndGameDialogMessage`; `GameCondition_Planetkiller.Impact`; `ArchonexusCountdown.EndGame` |
+| credits close only on *Skip credits* and exit only if `exitToMainMenu` | `RimWorld.Screen_Credits` ctor, `OnCancelKeyPressed`, `WindowUpdate`, `PostClose` |
 
 **Needs a run, and exactly this much:**
 
@@ -621,9 +743,39 @@ solely on "no free colonists anywhere", never on a victory.
    open and reload** — this is the only way the delegate allowlist is exercised, and a
    wrongly-hosted action throws `"Delegate deserialization: method not allowed"` here and
    nowhere else. Then take *Enter the new reality* and confirm both clients see the fade and
-   the credits; what follows the credits is #182's route.
+   the credits; what follows the credits is item 5.
 4. **Save/load.** Claim, save, quit, reload; confirm the epithet and the flag survive, and
    that loading a pre-feature save produces no error and no claimed title.
+5. **Two clients, route C** (§ *Ending the game under Multiplayer*).
+   - **Trigger.** Use a trigger known to be synced: the *Enter the new reality* option of the
+     Administrator's persistent dialog. Its click is `PersistentDialog.Click`, a map command [V].
+     Have that option call `GenGameEnd.EndGameDialogMessage("test", false)`.
+     - A dev gizmo is a valid substitute **only if its action is a registered sync method**. That is
+       unchecked for any particular gizmo.
+     - A local, unsynced trigger opens a plain window on one machine, and the test then proves
+       nothing.
+   - Confirm the dialog appears on both clients, with *Main menu* as the only option.
+   - Have the **remote** click *Main menu*. On each client, record:
+     1. main menu reached, or the *Server closed* `DisconnectedWindow`;
+     2. any `NullReferenceException` from `AsyncTimeComp.ExecuteCmd` in `Player.log`
+        (`Map cmd exception` / `Root level exception in Update()`);
+     3. any hang on the loading screen.
+   - **Repeat with the host clicking**, in a **fresh session**: relaunch the host, reload the save
+     and rejoin. The first pass ended the session on both machines.
+   - **Pass:** both clients reach the main menu with no hang, whatever the log shows.
+   - **Fail:** a hang, or a client left in a running game. That means route C′.
+6. **Two clients, the recommended A + C layering.** This is [I] until now and not exercised by item 5.
+   - **Setup.** Have *Enter* call `ShipCountdown.InitiateCountdown(…)` **and**
+     `GenGameEnd.EndGameDialogMessage(…, false)` in the same action.
+   - **Observe on both clients:**
+     - the persistent game-over dialog is present when the white fade starts;
+     - after 7.2 s, `Screen_Credits` opens **on top of** it;
+     - *Skip credits* closes the credits and leaves the dialog visible and clickable. A flicker as
+       `ForceShowDialogs` re-adds it is acceptable; the dialog vanishing for good is not;
+     - the one skip does not close the other client's credits.
+   - **Then** click *Main menu* and apply item 5's pass/fail.
+   - **Fail:** the dialog is hidden under the credits, or cannot be clicked after them. Then order the
+     calls differently: open the dialog when the countdown ends, not in the same action.
 
 ---
 

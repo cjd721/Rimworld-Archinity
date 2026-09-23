@@ -40,9 +40,8 @@ see *Jailbreaking a captured Glitterite into an android colonist*.
 ## Psylinks — verdict and routes
 
 *Answers `docs/requirements/GLITTERTECH.md` § The Glitterite Loop on whether an android can hold a
-psylink. Established by [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141). What the
-routes leave open, by kind of android, is
-[#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).*
+psylink. Established by [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141); *By kind
+of android* below is [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181)'s.*
 
 ### Verdict
 
@@ -108,7 +107,9 @@ vanilla's, not VRE's.** `VREA_PsychicallyDeaf` declares
 `RimWorld.Psycast.GizmoDisabled` and `RimWorld.Verb_CastPsycast.ValidateTarget` both refuse at
 `PsychicSensitivity < float.Epsilon`. **[V]** This gate is not in VRE's Harmony patches at all — it
 is a stat factor in a def meeting a vanilla comparison. Lift gate 1 alone and the android holds a
-psylink level and a psycast gizmo it can never press.
+psylink level and a psycast gizmo it cannot press — unless gear or sight loss lifts the finished
+stat above zero: `GizmoDisabled` reads `psychicEntropy.PsychicSensitivity`, the value after stat
+parts, so a deaf android in eltex can cast (T-185).
 
 **`Hediff_Psylink_ChangeLevel_Patch` is not gate 1, and never was.** It is declared
 `[HarmonyPatch(typeof(Hediff_Psylink), "ChangeLevel", new Type[] { typeof(int) })]` — the
@@ -133,9 +134,9 @@ altar's rite, authored breakthroughs included, and that Church titles never gran
 ([`docs/requirements/ALTAR.md`](../requirements/ALTAR.md),
 [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md)).
 [`PSYCHIC.md`](PSYCHIC.md) § *What raises psylink rank besides the altar* lays out routes that close bestowing, blinding, the neuroformer and the anima
-tree for every pawn ([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)). Whether the
-altar's rite and authored breakthroughs can reach an android, and whether that can be permitted or
-refused by kind of android, is [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+tree for every pawn ([#163](https://github.com/cjd721/Rimworld-Archinity/issues/163)). The altar's
+rite already refuses every non-awakened android and every prisoner, and authored breakthroughs are
+our code; how either is permitted or refused by kind is *By kind of android* below ([#181](https://github.com/cjd721/Rimworld-Archinity/issues/181)).
 
 ### Route A — global lift
 
@@ -164,7 +165,10 @@ awakened becomes psychically sensitive, and the gene's own label and description
 
 **Consequences.** `VREA_PsychicallyDeaf` also shields androids from hostile psychic effects.
 `Psycast.CanApplyPsycastTo` refuses a target at `PsychicSensitivity < float.Epsilon` **[V]**, so
-lifting the factor removes that shield; that psychic *incidents* begin to bite too is **[I]**.
+lifting the factor removes that shield; that psychic *incidents* begin to bite too is **[I]**. The
+shield was never absolute: gear and sight-loss offsets are added after the factor (*By kind of
+android* › *Glitterites stay deaf*). Route A also strips a Glitterite's deafness unless it rides the
+Glitterite's own marker gene.
 
 ### Route B — per-android lift
 
@@ -242,6 +246,140 @@ or an `Unpatch`.
 and the kind of thing that breaks quietly on a VRE update. Take it only if the campaign needs a
 non-gene gate. **[I]** by construction.
 
+### By kind of android
+
+*Answers what routes A–E leave open: permitting, forbidding or restricting psylinks by kind, the
+altar's rite and authored breakthroughs reaching an android, and Glitterite deafness under each.
+Established by [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181), evidence class
+**READ**.*
+
+#### Verdict
+
+- **Possible? Yes.** *Forbid* is route E. *Restrict by kind* has two independent handles: the
+  **grant side** — the altar's rite already refuses every non-awakened android and every prisoner —
+  and **gate 2**, a per-pawn stat. VRE – Android marks one kind, **awakened**; **built, arrived and
+  jailbroken are marked by nothing**, so separating them needs a marker gene of ours. Glitterites
+  stay deaf under every route if their deafness rides #142's marker gene (one XML field);
+  *absolutely* deaf, against psychic gear and lost eyes, needs C# under every route, E included.
+- **Multiplayer? Yes.** XML, or C# reading synced pawn state in already-synced jobs, rituals and
+  stat reads. No route adds a command, dialog or setting.
+
+**"Kind" is two axes.** Built / arrived / jailbroken is provenance; awakened is a state any of them
+enters (mood, or J1's `Awaken`). A rule keyed on *awakened* covers all three.
+
+| Kind | What marks it | Evidence |
+|---|---|---|
+| Awakened | `Utils.IsAwakened`: the pawn carries **no** `removeWhenAwakened` gene | [V] |
+| Built | nothing — `FinishAndroidProject` writes no record | [V] |
+| Arrived | nothing; in practice a generated `VREA_AndroidAwakened` (faction bleed at 0.02, `QuestNode_GenerateAndroid`) | [V] |
+| Jailbroken | nothing once #142's marker is gone | [V] |
+| Glitterite | #142's marker gene | [I] until built |
+
+#### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **K1 — gate the grant** | Psylinks permitted or refused per kind at the rite and in breakthroughs. Basic androids and prisoners already refused; an awakened android is admitted iff it can use the rite's focus. Gate 1 opened once, globally (route A's first op) | vanilla `CompPsylinkable.CanPsylink`; VRE's `PawnCanUseInt` postfix; our breakthrough code | XML | Easy | Yes |
+| **K2 — awakening lifts deafness** | Awakened androids hear, basic ones stay deaf. No station path, no disease cost | VRE – Android: `removeWhenAwakened` on `VREA_PsychicallyDeaf`, gene off the awakened xenotype | XML patch | Easy | Yes |
+| **K3 — route B, xenotypes split** | Built: chosen per unit. Arrived awakened: set by the xenotype (else deaf forever — the station refuses them). Arrived basic and prisoners: station strip | VRE `isCoreComponent`; `XenotypeDefs.xml` | XML patch | Easy | Yes |
+| **K4 — deafness on kind markers** | Built, arrived, jailbroken and Glitterite each deaf or hearing by their own gene; the only XML route separating built from arrived | our genes — a built marker as core `VREA_Hardware` (T-163 installs it on every built android), #142's marker, J1's record | XML + one C# hide postfix | Medium | Yes |
+| **K5 — our own stat part** | Sensitivity decided by any predicate, after every offset — the only absolute deafness | our `StatPart` appended to `StatDef PsychicSensitivity` | C# + XML | Medium | Yes |
+
+K1 decides who may **hold** a psylink; K2–K5 decide who **hears**. K1 stacks with any of them.
+
+**Recommended, not selected: K1 + K2, with the Glitterite factor on #142's marker; K5 only if
+Glitterite deafness must be absolute.** The rite already draws the line the fiction can use — an
+android must *awaken* to reach the channel — and K2 makes hearing follow it in two XML operations.
+K4 only if *built* and *arrived* must differ. K3 is route B made kind-aware; its station leak and
+immunity price make it second.
+
+#### K1 — gate the grant, not the pawn
+
+- **The rite already sorts by kind.** `CompPsylinkable.CanPsylink` refuses
+  `pawn.Faction != Faction.OfPlayer`, then requires `requiredFocus.CanPawnUse`. VRE's
+  `MeditationFocusTypeAvailabilityCache_PawnCanUseInt_Patch` is an `int.MinValue` **postfix** forcing
+  `false` for `VREA_JoyDisabled`, after vanilla's hediff bypass — so no focus reaches a basic android,
+  and `VREA_JoyDisabled` goes at awakening. **[V]**
+- **Awakened androids per kind:** by who carries the rite's focus hediff, or the altar's
+  `CanAcceptPawn` ([`ALTAR.md`](ALTAR.md)). `PawnCanUseInt` reads traits, backstories, titles and
+  hediffs, **not genes** **[V]**; a gene can carry a hediff through VEF `hediffsToBodyParts` **[I]**.
+- **Breakthroughs are our code** and test any kind. The first psylink is an add and meets gate 1
+  (T-169); later levels reach VPE through `ChangeLevel(int, bool)`, which VRE does not patch.
+- **Gate 1 globally** (`PsychicAmplifier` off `androidsShouldNotReceiveHediffs`) is safe once the
+  grant side is gated, and it ends the VPE bestowing NRE for androids (§ *Constraints* below).
+
+**Cannot:** make a linked android cast reliably — pair with K2–K5. A deaf linked android casts
+anyway while psychic gear or sight loss lifts its finished sensitivity above zero (T-185); only K5
+closes that. **Consequence:** the global lift lets
+generated psylinks (VPE's Basilicus and caster kinds, [`PSYCHIC.md`](PSYCHIC.md) § *Class I*) land on
+androids; #163's I1 strips those generators.
+
+#### K2 — awakening lifts deafness
+
+`Gene_SyntheticBody.Awaken` removes every `removeWhenAwakened` gene **[V]**, so every awakening —
+mood, J1, dev — ends deafness; built androids get the gene as core and stay deaf until then. The
+behaviorist station cannot strip it from a basic android (still core) and hides it from an awakened
+one (`Window_AndroidModification.GeneValidator`) **[V]**.
+
+**The xenotype op is mandatory.** `IsAwakened` means "no `removeWhenAwakened` gene" **[V]**, so a
+generated awakened android still carrying it would read as basic to every VRE reader — station
+acceptance, skill and name generation, awakening ticks. Patch the abstract
+`VREA_AndroidXenotypeAwakenedBase` (T-02).
+
+**Cannot:** tell built-then-awakened from arrived from jailbroken. **Consequences:** a Glitterite that
+awakens, or is jailbroken, loses this gene — Glitterite deafness must be its own (below). And the
+starting-pawn editor opens it: `Window_CreateAndroidXenotype` sets `disableAndroidHardwareLimitation`,
+and `CanBeRemovedFromAndroidAwakened` is true once the gene is `removeWhenAwakened`, so a starting
+android can be made without deafness **[V]**.
+
+#### K3 — route B, with the xenotypes split
+
+Route B per kind. **Built**: chosen per unit. **Arrived awakened**: whatever
+`VREA_AndroidXenotypeAwakenedBase` lists — the station refuses awakened colonists (§ *Jailbreaking*
+› *J2*), so an arrival carrying the gene is deaf for good. **Arrived basic and prisoners**: station
+strip. Price as route B (synthetic immunity), unless only `VREA_PsychicallyDeaf` is de-cored and
+gate 1 opened by K1's list removal **[I]**. **Leak:** the station takes prisoners, so it can strip a
+captured Glitterite's `VREA_PsychicallyDeaf` **[V]**.
+
+#### K4 — deafness carried by kind markers
+
+Lift `VREA_PsychicallyDeaf`'s factor (route A's second op), then carry deafness on genes that *are*
+the kinds: a **built** marker in `VREA_Hardware` with `isCoreComponent true` (T-163 locks it onto
+every built android and nothing generated **[V]**); J1's **jailbroken** record; #142's
+**Glitterite** marker. Each is deaf or hearing by whether it carries a zero `PsychicSensitivity`
+factor — every active gene's factor multiplies in **[V]**.
+
+**Cannot, without C#:** keep the built marker off arrived androids — the modification window adds
+any android gene the pawn lacks **[V]**, so it needs a `GeneValidator` hide postfix (J3a's shape).
+
+#### K5 — our own stat part
+
+A `StatPart` of ours appended to `PsychicSensitivity`'s `parts`. `StatWorker.FinalizeValue` runs
+parts after every factor **[V]**, so the last one sees gear and sight offsets and can hold the
+value at 0 by any predicate — kind, era, record. The gate-2 counterpart of route D.
+
+**It must run last, or survive what runs after it.** VRE – Archon (`3067715093/1.6/Patches/Core.xml`)
+appends `VREArchon.StatPart_PsychicStormWeather` to the same `parts`; it doubles the value on a map
+under `VREA_PsychicStorm` **[V]**. A multiply cannot lift a zero, so a clamp to 0 survives it; a
+clamp to any other value does not, and which part runs last depends on load order. Clamp to 0, or
+place ours after Archon's.
+
+#### Glitterites stay deaf — under every route
+
+**Put `<statFactors><PsychicSensitivity>0</PsychicSensitivity></statFactors>` on #142's marker
+gene.** One zero factor wins **[V]**: route A, K2's awakening and K3's station strip all leave it in
+place. It ends with the marker at the jailbreak, as *the jailbroken android is an ordinary android*
+requires; J1 can add a deaf record if the story wants otherwise. No grant reaches a Glitterite
+under K1: a prisoner fails `CanPsylink`'s faction test, a basic android its focus test **[V]**.
+
+**Deaf is not absolute, today, under route E.** `PsychicSensitivity`'s parts add gear offsets
+(Royalty's psyfocus helmet, shirt, vest and robe, the eltex skullcap, the psyfocus staff; VPE's
+gear) and a sight-loss offset (up to +0.5) **after** every factor **[V]** — T-185. An eltex-wearing
+or eyeless Glitterite is a valid target. Kinds' apparel tags narrow it **[I]**; K5 closes it. Under
+VPE, deafness only refuses abilities flagged `psychic` (`AbilityExtension_Psycast.ValidateTarget`)
+**[V]**. Vanilla's `PsychicAbility_Deaf` does not work on a basic android: it deafens by forced
+trait, and VRE wipes a `VREA_PsychologyDisabled` pawn's traits at generation **[V]**.
+
 ### Constraints every psylink route inherits
 
 **A psylink on an android is a level counter until `PsychicSensitivity` is non-zero.** Gate 2 is
@@ -285,16 +423,16 @@ everything a psycasting android would then do.
 1. **Which androids can hold a psylink.** Capability: every android (A), a chosen build (B),
    awakened androids at the anima tree (C), any pawn a condition that is not a gene picks (D), or
    none, as shipped (E) — routes above. Route B's price is that the android that hears the channel
-   is the android that can fall ill. What the routes leave open — the altar's rite and authored
-   breakthroughs reaching an android, and permitting, forbidding or restricting psylinks by kind
-   (built, awakened, arrived, jailbroken) — is
-   [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+   is the android that can fall ill. By kind (built, awakened, arrived, jailbroken), and whether the
+   altar's rite and authored breakthroughs reach an android: *By kind of android* (routes K1–K5,
+   [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181)).
 2. **Glitterite deafness.** A marked Glitterite is never on the player's side (*A captured
    Glitterite*), so no grant path reaches one under any route. Deafness is a separate matter: route A
    lifts gate 2 by editing the `VREA_PsychicallyDeaf` def itself, so every carrier loses its
    deafness, a Glitterite built as a VRE android included, and `Psycast.CanApplyPsycastTo` then
-   accepts it as a target **[V]**. Whether Glitterite deafness can be kept under each route is on
-   [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+   accepts it as a target **[V]**. Kept under every route by a zero `PsychicSensitivity` factor on
+   #142's marker gene; absolute only with K5 (*By kind of android* › *Glitterites stay deaf*,
+   [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181)).
 3. **Build questions, deferred to the next map:** the exact operations and their `expect:` counts;
    list-removal versus mod extension for the `PsychicAmplifier` lift; whether route B's sensitive
    android gets an authored Archinity hardware gene of its own; whether route C's `Natural` grant
@@ -1310,8 +1448,9 @@ argument is a **penalty** applied to android colonists — see *Outstanding deci
   meets vanilla's own `< float.Epsilon` tests. Both are reachable from XML; neither gene appears in
   the other's path. **[V]** — [#141](https://github.com/cjd721/Rimworld-Archinity/issues/141).
 - **Proposed** — routes A–D for lifting that refusal. The mechanisms each composes are **[V]**;
-  that they compose into a psycasting android is **[I]** until built. What they leave open by kind
-  of android is [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+  that they compose into a psycasting android is **[I]** until built. By kind of android: routes
+  K1–K5 ([#181](https://github.com/cjd721/Rimworld-Archinity/issues/181)); the rite's refusal of basic androids and prisoners is **[V]**, the routes
+  **[I]**.
 - **Proposed** — the Exemplar gate on `VREA_AndroidTech`. The mechanism is #67's and is
   **[V]**; its application here is **[I]**.
 - **Proposed** — removing the outlander, pirate and Church xenotype bleed, one route to ERA's
@@ -1507,8 +1646,8 @@ that patch is written.
    Route A makes every android sensitive and makes the gene's own description a lie; route B makes
    it a per-unit build that costs synthetic immunity; route E keeps the asymmetry as a *stated*
    cost of an artificial body, set against *"the campaign does not treat artificial bodies as
-   inherently inferior."* What the routes leave open — the altar's rite and authored breakthroughs
-   reaching an android, by kind — is [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181).
+   inherently inferior."* By kind: the altar's rite already admits only awakened androids, and K2
+   lets awakening lift deafness (*By kind of android*, [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181)).
    If the endgame assumes any colonist can be a psycaster, `docs/specs/TRANSCENDENCE.md`'s
    implications are satisfiable.
 

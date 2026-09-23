@@ -446,6 +446,36 @@ clients.
 `1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll` `Multiplayer.Compat.VanillaGravshipExpanded`;
 `Assembly-CSharp.dll` 1.6 `RitualOutcomeEffectWorker_GravshipLaunch.Apply`.*
 
+### T-180 — A gravship on an NPC settlement pins the map, and its departure erases the settlement
+
+**Symptom.**
+- While the player's gravship sits on an NPC settlement's map, that map never closes.
+- When the ship takes off, the settlement disappears from the world, leaving only a
+  `GravshipLaunch` marker.
+- No message says that a faction lost a base.
+
+**Mechanism** [V]:
+- `Map.IsPlayerHome` is true when `wasSpawnedViaGravShipLanding`, which `MapGenerator` sets and
+  nothing clears, or when `GravshipUtility.PlayerHasGravEngine(map)` holds.
+- `Settlement.ShouldRemoveMapNow` returns false for a player home, and
+  `Map.AnyBuildingBlockingMapRemoval` returns true for a grav engine or anchor.
+- On takeoff with no grav anchor, `WorldComponent_GravshipController.TakeoffEnded` calls
+  `GravshipUtility.AbandonMap(map)`. That calls `map.Parent.Abandon(wasGravshipLaunch: true)`, and
+  `MapParent.Abandon` calls `Destroy()` on the parent, whoever owns it.
+
+**Consequences.**
+- No eject can close such a map, because the ship is the colony and cannot join a caravan.
+- "Wait until the map closes" ends with the settlement destroyed, not kept.
+- RimPacts' `Patch_GravshipAbandonKeepSettlement` prefix blocks the destroy, but only during its
+  world war or strategy mode.
+- The same takeoff strands any quest Multiplayer had bound to that map (**T-177**).
+
+*[#188](https://github.com/cjd721/Rimworld-Archinity/issues/188), `docs/specs/TERRITORY.md` § *A
+settlement changing hands while a player map on it is loaded*. `Map.IsPlayerHome`,
+`Settlement.ShouldRemoveMapNow`, `WorldComponent_GravshipController.TakeoffEnded`,
+`GravshipUtility.AbandonMap`, `MapParent.Abandon`, `Settlement.Abandon` (`Assembly-CSharp.dll` 1.6).
+Kin to T-171.*
+
 ### T-144 — An XML `<mapGenerator>` on the Settlement `WorldObjectDef` also rebuilds every new player colony
 
 Player and NPC settlements are made from the same def, `layer.Def.SettlementWorldObjectDef`:

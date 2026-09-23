@@ -1148,6 +1148,13 @@ live from the second colony's founding, when a second home map exists.
   async-time RNG context around both [V]. **Points generated through `DefaultParmsNow` and incident
   execution therefore run in the right context; direct calls to `DefaultThreatPointsNow` do not**,
   which is the second reason §2's postfix must be `Rand`-free.
+- **The per-map storyteller pass is a direct call.** `Multiplayer.Client.AsyncTimeComp.Tick` calls
+  `Find.Storyteller.StorytellerTick()` itself on each map's clock, and `StorytellerTickPatch` only gates it
+  [V]. During any pass, `Multiplayer.Client.AsyncTime.QuestPartsListForReadingPatch` removes from
+  `Quest.PartsListForReading` every part that `is QuestPart_ThreatsGenerator` whose
+  `mapParent.Map` is not that pass's map [V]. **So § 7 route C's threats generator fires once, in
+  its target colony's pass, on that colony's clock.** A custom `IIncidentMakerQuestPart` gets no
+  such filter (**T-178**) ([#186](https://github.com/cjd721/Rimworld-Archinity/issues/186)).
 - **`IncidentQueue` carries no Multiplayer patch** [V] — absent from the assembly's type list.
   `IncidentQueue.IncidentQueueTick` runs outside the 1000-tick gate, every tick [V], so anything we
   put on the queue is evaluated against whichever clock is ticking. Prefer a comp or a quest part

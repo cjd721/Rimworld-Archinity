@@ -906,7 +906,17 @@ a synced command — so `CancelDialogNodeTree` converts it into a `PersistentDia
 takes that route for the altar's lottery and records why the `ChoiceLetter` shape was rejected
 despite fitting the problem better on paper.
 
-*[#110](https://github.com/cjd721/Rimworld-Archinity/issues/110), `docs/specs/ALTAR.md` § 10.
+**The same null map context catches a dialog opened from the world tick, not just from the
+interface.** `MapContext` is also null inside `AsyncWorldTimeComp.Tick` (every `WorldComponentTick`,
+`GameComponentTick`, world quest) and in world-scoped commands. A `Dialog_NodeTree` opened there is
+added on **each** client by the lockstep tick, so it looks synced, but it is a plain window and each
+click runs locally. Rim War's `WorldComponent_PowerTracker.AnnounceVictory` opens
+`GenGameEnd.EndGameDialogMessage` from `WorldComponentTick` exactly so, and MP Compat has no Rim War
+class ([#182](https://github.com/cjd721/Rimworld-Archinity/issues/182)). "Synced code" in the fix
+above therefore means a **map** tick or a **map** command.
+
+*[#110](https://github.com/cjd721/Rimworld-Archinity/issues/110), `docs/specs/ALTAR.md` § 10;
+world-context half [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182).
 `Multiplayer.Client.SyncDelegates.InitChoiceLetters` / `.PreLetterChoices`,
 `Multiplayer.Client.Persistent.GrowthMomentSession` / `.GrowthMomentWindow`,
 `Multiplayer.Client.Multiplayer.MapContext`, `Multiplayer.Client.CancelDialogNodeTree.Prefix`,
@@ -1181,5 +1191,120 @@ every `OrbitalScanner` giver shut*. `RimWorld.CompOrbitalScanner.ScannerQuests` 
 `RimWorld.CompAncientUplink.ScannerQuests` (`Assembly-CSharp.dll` 1.6);
 `VanillaGravshipExpanded.CompScannerCluster_OrbitalScannerModule`. Mechanism [V]; the MP divergence
 [I]. Kin to T-20.*
+
+### T-175 — A stored absolute tick is compared against the reader's clock, not the writer's
+
+Under Multiplayer with Async Time, `Find.TickManager.TicksGame` is the **current context's** clock:
+each map's `AsyncTimeComp.mapTicks` inside that map's tick or commands, and the world clock in
+`GameComponentTick`, `WorldComponentTick` and world commands (`docs/engine/determinism.md` §
+*Under Async Time, `TicksGame` is whichever clock the context installed*). A mod that stores
+`TicksGame` in one context and subtracts it from `TicksGame` in another gets a plausible number that
+is wrong by the drift between the two clocks. The drift grows without bound as one colony pauses, or
+sleeps at 12×, while the other plays. Nothing throws, nothing desyncs (both clients compute the same
+wrong value), and single-player testing cannot show it, because there is only one clock.
+
+Multiplayer rebases exactly four fields between clocks, and only when a pawn changes map:
+`Pawn_MindState.canSleepTick` / `canLovinTick` and `Pawn_GuestTracker.ticksWhenAllowedToEscapeAgain` /
+`lastPrisonBreakTicks` (`Multiplayer.Client.Patches.TimestampFixer.FixPawn`). MP Compat adds VEF
+ability cooldowns through `PatchingUtilities.RegisterTimestampFixer`. **Everything else, ours
+included, is compared unconverted.** A gravship relocation lands the colony on a new map whose clock
+is `max(other maps)`, usually the *other* colony's, so a tick stored before takeoff is wrong after
+landing.
+
+**Fix:** count, don't stamp — accumulate a duration on a known tick (`GameComponentTick` = world,
+`MapComponentTick` = that map). When a stamp is unavoidable, store it with its clock and read it only
+from that clock's context.
+
+*[#185](https://github.com/cjd721/Rimworld-Archinity/issues/185), worked case `docs/specs/ERA.md` § 3
+write 4. `Multiplayer.Client.AsyncTimeComp.Tick`, `Multiplayer.Client.TimeSnapshot`,
+`Multiplayer.Client.Patches.TimestampFixer.FixPawn`, `MapSetup.CreateAsyncTimeCompForMap`
+(`2606448745/1.6/AssembliesCustom/Multiplayer.dll`); `Multiplayer.Compat.PatchingUtilities`
+(`1629973374/1.6/Assemblies/Multiplayer_Compat.dll`). [V].*
+
+### T-176 — Multiplayer switches `GameEnder` off
+
+`Multiplayer.Client.GameEnderPatch` prefixes `GameEnder.CheckOrUpdateGameOver` with
+`return Multiplayer.Client == null;`. Under MP, `gameEnding` is never set: the 400-tick *Game over*
+letter and the 20,000-tick *Create new wanderers* choice letter (`GameEnder.GameEndTick`) never fire,
+however many colonists die. Nothing logs. In single-player the same colony gets both.
+
+**Consequences:** a design that leans on vanilla's game-over state — a "last colonist dies" beat, a
+check of `Find.GameEnder.gameEnding` — is inert under MP. And `GameEnder` is not a way to *end* a
+game in the first place: 1.6's `GameEnder` never calls `GenGameEnd`, it only posts letters. The
+vanilla game-ending calls are `GenGameEnd.EndGameDialogMessage` (`GameCondition_Planetkiller.Impact`)
+and `GameVictoryUtility.ShowCredits(…, exitToMainMenu: true)` (`ArchonexusCountdown.EndGame`).
+
+*[#182](https://github.com/cjd721/Rimworld-Archinity/issues/182), worked case
+`docs/specs/TRANSCENDENCE.md` § *Ending the game under Multiplayer*. `Multiplayer.Client.GameEnderPatch`
+(`2606448745/1.6/AssembliesCustom/Multiplayer.dll`); `RimWorld.GameEnder` (`Assembly-CSharp.dll`
+1.6.4871). [V].*
+
+### T-177 — A quest's clock is chosen by exact part type, and a gravship departure strands it
+
+`Multiplayer.Client.Comp.MultiplayerAsyncQuest` replaces `QuestManager.QuestManagerTick`
+(`DisableQuestManagerTickTest`) with two caches: world quests, ticked in the world pass, and per-map
+quests, ticked from that map's `AsyncTimeComp.Tick` and **not at all while that map is paused**.
+`TryGetQuestMap` puts a quest in a map's cache when its **first** part whose type is **exactly** one
+of fourteen vanilla types (`QuestPart_DropPods`, `_SpawnThing`, `_PawnsArrive`, `_Incident`,
+`_RandomRaid`, `_ThreatsGenerator`, `_Infestation`, `_GameCondition`, `_JoinPlayer`,
+`_TrackWhenExitMentalState`, `_RequirementsToAcceptBedroom`, `_MechCluster`,
+`_DropMonumentMarkerCopy`, `_PawnsAvailable`) has a `mapParent` whose `Map` is a player home. The
+test is `List<Type>.Contains(GetType())`: **a subclass does not bind**, and a quest aimed at two
+colonies ticks entirely on the first match's map.
+
+The choice is made only in `CacheQuestAfterGeneration` (`QuestGen.Generate` postfix),
+`SetContextForAccept` (while `NotYetAccepted`) and `SetupAsyncTimeLookupForQuests`
+(`Game.FinalizeInit`, every load). It is undone only by `RemoveMapCacheOnAbandon`, a prefix on
+`SettlementAbandonUtility.Abandon` — the player's abandon gizmo. **A gravship takeoff without a grav
+anchor abandons through `GravshipUtility.AbandonMap` → `MapParent.Abandon(wasGravshipLaunch: true)`
+and is not caught**: the quest stays keyed to a dead `AsyncTimeComp`, and the only `QuestTick` caller
+left is `MultiplayerAsyncQuest.TickQuests` over the two caches, so nothing ticks it until the next
+load re-caches it onto the world clock. Nothing throws, and both clients agree, so nothing desyncs.
+Deadlines, `QuestPartTick` accumulators and `QuestPart_Delay`s just stop.
+
+**Fix:** use the vanilla parts as they ship if the quest should follow a map's clock; keep them out
+if it should follow the world's. When the target map changes — any relocation — end the quest and
+generate a new one, which re-binds it through `QuestGen.Generate` with no `Multiplayer.dll`
+reference.
+
+*[#186](https://github.com/cjd721/Rimworld-Archinity/issues/186), `docs/specs/TRACE.md` § *Two
+colonies*. `Multiplayer.Client.Comp.MultiplayerAsyncQuest` (`2606448745/1.6/AssembliesCustom/Multiplayer.dll`,
+SHA-1 `44ca036e…`); `RimWorld.GravshipUtility.AbandonMap`, `WorldComponent_GravshipController.TakeoffEnded`
+(`Assembly-CSharp.dll` 1.6). Mechanism [V]; that nothing else ticks the stranded quest [I], pending
+the RUN check on #186.*
+
+### T-178 — A custom `IIncidentMakerQuestPart` is polled in every storyteller pass, and there is one pass per clock
+
+`Storyteller.MakeIncidentsForInterval` yields `MakeIntervalIncidents()` for every enabled
+`IIncidentMakerQuestPart` of every `Ongoing` quest, after the comps. It walks
+`Quest.PartsListForReading` and does **not** filter by the pass's `AllIncidentTargets`. Under
+Multiplayer, `StorytellerTick` runs in the world pass (`TickManager.DoSingleTick`), and each
+`AsyncTimeComp.Tick` calls `Find.Storyteller.StorytellerTick()` directly for its own map. Each pass
+runs at its own `TicksGame % 1000`. (`Multiplayer.Client.AsyncTime.StorytellerTickPatch` only gates
+on `Multiplayer.Ticking` and raises its `updating` flag.)
+
+**Multiplayer already fixes this for the vanilla part.** `Multiplayer.Client.AsyncTime.QuestPartsListForReadingPatch`
+postfixes `Quest.PartsListForReading`. While `StorytellerTickPatch.updating` is set, it drops every
+part that `is QuestPart_ThreatsGenerator` (subclasses included) whose `mapParent.Map` is not
+`Multiplayer.MapContext`. A threats generator is therefore asked for incidents only in its own map's
+pass. Nothing else gets that filter. **A custom incident-maker that does not derive from
+`QuestPart_ThreatsGenerator` is asked in the world pass and in every map's pass.** If its schedule is
+indexed by the current `TicksGame`, as `IncidentCycleUtility.IncidentCountThisInterval` indexes by
+`TicksSinceSettle / 1000`, it fires once for each clock that crosses its interval. Every temporary
+map (caravan encounter, site) adds a clock.
+
+**Affects:** only a part we write ourselves. No mod in either corpus root implements
+`IIncidentMakerQuestPart`, and vanilla's only implementor is `QuestPart_ThreatsGenerator`.
+
+**Fix:** derive from `QuestPart_ThreatsGenerator`. Otherwise, yield only when
+`Multiplayer.MapContext` is the part's own target map, which is the same test Multiplayer applies.
+
+*[#186](https://github.com/cjd721/Rimworld-Archinity/issues/186). `RimWorld.Storyteller.MakeIncidentsForInterval`,
+`RimWorld.IncidentCycleUtility.IncidentCountThisInterval` (`Assembly-CSharp.dll` 1.6);
+`Multiplayer.Client.AsyncTimeComp.Tick`, `Multiplayer.Client.AsyncTime.QuestPartsListForReadingPatch`,
+`StorytellerTickPatch` (`Multiplayer.dll`). [V] for the mechanism and the filter. The per-clock firing
+of a custom part is [I], because it depends on how that part schedules. Corpus sweep:
+`IIncidentMakerQuestPart`, ASCII, over both roots on `.dll` files with `obj/` and `Referenced/`
+excluded, returned zero mods. The same form returned 3 hits on `Assembly-CSharp.dll`.*
 
 ---

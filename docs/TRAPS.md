@@ -102,6 +102,9 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-165 | WTL's "Ancient debris" filter misses vanilla ancient dangers, strips encounter maps' turrets and remains, and clamps every NPC base's build to the world era |
 | T-166 | WTL's `AlwaysAllowOffworld` voids every `offworld`-flagged row for every def type — nine vanilla incidents, the ship-part crashes among them, reach a Neolithic home map in #7's frozen configuration |
 | T-174 | World Tech Level's quest filter discards quests at `QuestManager.Add` from every source — givers, chains, our code — silently, spending the scanner's signal or the uplink's hack |
+| T-179 | A settlement given a new owner by `SetFaction` while its map is loaded is "defeated" on the next interval — `CheckDefeated` counts only the new owner's pawns, finds none, ruins the settlement, credits the player and can mark the new owner defeated |
+| T-181 | Skipping `KidnappedPawnsTracker.Kidnap` leaves the pawn in no caravan, no map and no world list — `Kidnap` is what passes it to the world, and every caller has already taken it out of its caravan, map or hands |
+| T-186 | `QuestNode_GetFaction` silently swaps a pre-set faction that fails its filter for a random one — a quest aimed at a named faction lands on another, with no message |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -137,6 +140,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-155 | A bill edit is synced only if the field is watched in the scope where the edit runs — a mod button writing any other bill field changes one client |
 | T-160 | Vanilla's `PlayerKnowledgeDatabase` is a per-machine file — campaign knowledge modelled on it shows differently to the two players and is lost on rejoin |
 | T-173 | The orbital quest givers cache the giver-tag list on the comp, unsaved — a tag change reaches only comps that have not drawn, and host and joiner can draw different lists |
+| T-175 | Under Async Time a stored absolute tick is read against whatever clock the reader is on — off by the drift between colonies, silently, and never in single-player |
+| T-176 | Multiplayer switches `GameEnder` off — under MP no colony ever reaches "game over", and no new-wanderers offer ever comes |
+| T-177 | Under Async Time Multiplayer binds a quest to one clock by its parts' exact types, re-binds only at generate/accept/load, and a gravship departure leaves a map-bound quest ticked by nothing until the next load |
+| T-178 | Under Async Time a custom `IIncidentMakerQuestPart` that does not derive from `QuestPart_ThreatsGenerator` is polled in every storyteller pass — world plus each map — because MP's per-map filter covers only threats generators |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -184,6 +191,10 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-168 | VPE's `ensureLockRequirement` rechecks only on hediff, gene and temporary-ability changes, parks the path rather than revoking it, and never refunds the point — a meme or backstory key never relocks by itself |
 | T-169 | The vanilla psylink method is not a chokepoint: `ChangePsylinkLevel` skips `ChangeLevel(int)`, the first rank is an add, some writers set `level` directly, and under VPE every rank write goes through `Hediff_PsycastAbilities.ChangeLevel` instead |
 | T-170 | Quest rewards add a psylink neuroformer by `ThingDefOf` on a 45–60-day pity timer (Royalty, reward ≥ 600, non-Empire giver). No def tag controls it, and it resets only when a psylink becomes "available" — an anima link, a neuroformer offered in a quest or title reward, or vanilla bestowing (which VPE removes) — never on blinding-ritual, XP or scripted psylinks |
+| T-182 | Banishing a pawn "left to die" from a caravan calls `Pawn.Kill` at 80 % — Deathless does not apply, the death is permanent |
+| T-183 | A dead title-holder's inheritable titles pass as their full favour cost to kin in the faction, else the same-faction pawn the holder liked most, else kin in any faction — a founder's Church favour can land on any colonist or leave with an NPC relative |
+| T-184 | The first point of royal favour is a title — Freeholder's `RoyalTitleAwardWorker_Instant` awards it with no ceremony, so any Exaltation on a colonist makes it a titleholder |
+| T-185 | A zero `PsychicSensitivity` factor is not psychic deafness — gear and sight-loss offsets are added after every factor, so a "deaf" pawn in eltex or without eyes is psycast-targetable, and can cast if linked |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 
@@ -212,6 +223,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-154 | Odyssey layout placement gives up silently — a crate, prefab or corner thing with no cell is not made, a refused item is destroyed, and the objective room can generate sealed |
 | T-171 | A gravship lands on whoever holds its tile on arrival — no re-check of owner, relation or `preventGravshipLanding`; any non-player settlement landed on gets `AffectRelationsOnAttacked`, and the tile is never reserved in flight |
 | T-172 | Under VGE the landing tile is picked before the launch ritual and `ExecuteGravshipLaunch` flies to it unchecked — the commitment starts at the ritual |
+| T-180 | A gravship parked on an NPC settlement's map holds that map open for good (it is a player home), and its takeoff destroys the settlement — `AbandonMap` → `Settlement.Abandon(true)` → `Destroy` — unless a grav anchor stays behind |
 
 ---
 
@@ -234,19 +246,19 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole. **All five are now over that line**, counted 2026-09-23 after the third
-capability batch of the day (#142–#180, T-161–T-174): `world-creation.md` (61),
-`content-and-buildings.md` (42), `multiplayer.md` (30), `defs-and-patching.md` (18) and
-`worldgen-layouts.md` (23).
+read whole. **All five are now over that line**, counted 2026-09-23 after the batch
+#181–#189 (T-175–T-186): `world-creation.md` (64), `content-and-buildings.md` (46),
+`multiplayer.md` (34), `defs-and-patching.md` (18) and `worldgen-layouts.md` (24).
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
 sharpened the case rather than changing it.** None of the five names the subject, so
 T-65, T-70 through T-73, T-76/T-77 and now **T-88 through T-91** sit in
 `world-creation.md` on the strength of factions and goodwill alone — filed under an
 *Incidents, quests and goodwill* heading inside it — and T-39 and T-48 are the same
-subject filed under determinism and worldgen respectively, as are T-173 (orbital quest
-givers, under determinism) and T-170 (the neuroformer quest reward, under rituals and titles).
-**That is 29 entries under *Incidents, quests and goodwill* in `world-creation.md` and 33
-across the register**, against a host file whose remaining 32 are 25 about factions and
-worldgen and 7 under *Holdings, outposts and world objects changing hands*. Adding a group
+subject filed under determinism and worldgen respectively, as are T-173, T-177 and T-178
+(orbital quest givers and the async quest clock, under determinism) and T-170 (the
+neuroformer quest reward, under rituals and titles). **That is 30 entries under *Incidents,
+quests and goodwill* in `world-creation.md` and 36 across the register**, against a host file
+whose remaining 34 are 26 about factions and worldgen and 8 under *Holdings, outposts and
+world objects changing hands*. Adding a group
 changes this index's shape and is Conrad's call; it is recorded here rather than taken.

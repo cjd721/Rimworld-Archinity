@@ -257,7 +257,11 @@ rule 1): by gravship, or by caravanning out, founding a new settlement and aband
 old. A short move still grants no fresh safe window, and a move between two places in
 orbit counts the same way, past its threshold (§ *Planet↔orbit as a qualifying
 relocation*, Route C). The tick comparison above registers any change of settled tile,
-however it was made, so the caravan case needs nothing further **[I]**.
+however it was made **[I]**. **What it cannot do alone is say whose tile.** Under
+[#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) two colonies stand, both owned by
+the one player faction, and nothing in vanilla or Multiplayer marks either as "the colony";
+`CurrentSettledTile()` needs a named colony, not a fallback to the first home map. That, and
+which colony a caravan-founded settlement continues, is § *Two colonies*.
 
 Rule 4 (*"Reducing Trace cannot undo progress already made"*) is structural rather
 than enforced: `searchProgress` is only ever written by `QuestPartTick` and by the
@@ -512,12 +516,48 @@ rather than by luck.**
 | `Notify_Intrusion` | `ThingComp.Notify_Hacked` inside `CompHackable.OnHacked`, reached from `JobDriver_Hack` **[V]** | the job |
 | `QuestPart_ChangeTrace` | `Notify_QuestSignalReceived` | the quest machinery |
 | destructive analysis (Raise C) | `IThingStudied.OnStudied` → job tick | the job |
-| `QuestPart_TraceSearch.QuestPartTick` | `Quest.QuestTick` | the world tick |
+| `QuestPart_TraceSearch.QuestPartTick` | `Quest.QuestTick` | the tick of whichever clock Multiplayer binds the quest to — the target colony's map, via its vanilla raid parts (§ *Which clock the pursuit runs on*) |
 | the relocation check | `WorldComponentTick` — no patch, no hook |
 
 **There is no new synced-command surface.** Nothing in this document originates at a
 button. That is the whole reason the donor's defects do not reproduce here: VFED's
 problem is a *purchase* running in `OnGUI`, and Trace has no purchase.
+
+### Which clock the pursuit runs on
+
+Verified on [#186](https://github.com/cjd721/Rimworld-Archinity/issues/186) against
+`2606448745/1.6/AssembliesCustom/Multiplayer.dll`.
+
+Under Async Time, `Multiplayer.Client.Comp.MultiplayerAsyncQuest` ticks each quest **once, on one
+clock**: one map's clock if the quest carries a part of **exactly** one of fourteen vanilla types
+(`QuestPart_ThreatsGenerator` and `QuestPart_RandomRaid` among them) whose `mapParent` is a live
+player home map, and the world clock otherwise **[V]**. A map-bound quest does not tick while its
+map is paused. The test is `List<Type>.Contains(GetType())`, so **a subclass of a listed part does
+not bind**, and `QuestPart_TraceSearch` never does. So the pursuit runs on the clock of the colony
+its threats generator names at generation. That is right, as long as the vanilla parts are used as
+they ship.
+
+The binding is chosen only at `QuestGen.Generate`, at `Quest.Accept` and at every load
+(`Game.FinalizeInit`) **[V]**. After a **caravan** relocation, the abandoned settlement goes through
+`SettlementAbandonUtility.Abandon`. Multiplayer catches that (`RemoveMapCacheOnAbandon`), and the
+quest moves to the **world** clock. After a **gravship** relocation with no grav anchor, the old map
+goes through `GravshipUtility.AbandonMap` → `MapParent.Abandon(wasGravshipLaunch: true)`, which
+Multiplayer does not catch. The quest then stays keyed to a dead map clock that nothing ticks until
+the next load (**T-177**). **[V]** for the mechanism: the only `Quest.QuestTick` caller left under Async Time is
+`MultiplayerAsyncQuest.TickQuests`. The halt itself is **[I]** until observed.
+**So every relocation, short or qualifying, ends the pursuit quest and generates a fresh one on the
+new map, carrying `searchProgress` across on a short move.** That is the only re-bind that needs
+no reflection into `Multiplayer.dll` (`MultiplayerAsyncQuest.CacheQuest` is public but is not in
+`Multiplayer.API`). It is also rule 1's own shape.
+
+**The repeats fire once, in their own colony's pass [V].** Each map's `AsyncTimeComp.Tick` calls
+`Find.Storyteller.StorytellerTick()` directly, and the world pass calls it again. Both passes walk
+every ongoing quest's incident-maker parts (`Storyteller.MakeIncidentsForInterval`). But
+Multiplayer's `QuestPartsListForReadingPatch` removes, during a storyteller pass, every part that
+`is QuestPart_ThreatsGenerator` (subclasses included) whose `mapParent.Map` is not the pass's map.
+So the vanilla threats generator is asked for incidents only in its target colony's pass. **A
+custom incident-maker gets no such filter (T-178).** The repeats should therefore stay on
+`QuestPart_ThreatsGenerator`, or on a subclass of it.
 
 ### Why the relocation check is not on the travel path — T-78
 
@@ -818,6 +858,149 @@ number, because there is no number on either side to compare.
 
 ---
 
+## Two colonies
+
+Answers [#186](https://github.com/cjd721/Rimworld-Archinity/issues/186): with two player colonies
+on separate tiles ([#23](https://github.com/cjd721/Rimworld-Archinity/issues/23), Async Time on),
+can the pursuit track each colony separately, only one, or both as one faction-wide target?
+Evidence class **READ**, with one observation handed back as RUN (§ *RUN hand-back*, below).
+
+### Verdict
+
+- **Possible? Yes — all three.** Per colony is a contained build on verified seams. One colony is
+  what this document already specifies. Faction-wide is buildable. **Nothing in vanilla,
+  Multiplayer or the corpus knows which settlement is "the colony"**, because both belong to the
+  one player faction. So every shape has to supply its own answer to *which colony* and *which
+  move*.
+- **Multiplayer? With work.** Multiplayer runs each quest on one clock, chosen from its parts'
+  exact types and re-chosen only at generation, accept and load. A gravship departure leaves a
+  map-bound quest unticked until the next load (**T-177**; § *Persistence and multiplayer* ›
+  *Which clock the pursuit runs on*).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — per colony** | Each colony has its own hidden search, reveal, raids and escape; one can be found while the other is safe | our code on vanilla quest parts; Odyssey's `ScenPart_PursuingMechanoids` is the per-map shape | C# + XML | Medium | **With work** — one quest per colony, regenerated on every relocation |
+| **A′ — per colony, meter on the map** | As A, with the meter on a `MapComponent` of the colony's map | our code | C# | Medium | **With work** — map clock by construction; a short move carries progress by hand |
+| **B — one colony, named** | One pursued colony, held as a scribed pointer (the grav engine, or a re-pointable `MapParent`); the other colony is invisible | our code | C# | Medium | Yes |
+| **C — faction-wide** | One search for the faction; the detection raid and repeats hit every colony; escape is a rule over the set of colony tiles | our code; #23's doubled-beat methods | C# + XML | Medium | **With work** — one quest runs on one clock |
+
+**Recommended, not selected: A.** It is the only shape that reads *"the colony's location"* per
+colony without making either colony a free haven. It is also the only one that meets
+[`PRESSURE.md`](../requirements/PRESSURE.md)'s *"must not … advance local deadlines through extra
+maps or another colony's clock"* without a workaround, because a quest bound to a colony's map
+counts that colony's own ticks. The regeneration Multiplayer forces on A is the requirement's own
+shape: *"a qualifying relocation starts a fresh search"*. **B** is the smallest build if only one
+colony, such as the gravship, should be hunted. **C** fits a beat in which the Glitterites hunt the
+founders' people rather than a place. Every mechanism below is **[V]**. That any route composes
+into the required behaviour is **[I]**.
+
+**Which colony a caravan-founded settlement continues is a route parameter for
+[the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119)**, alongside the escape
+rule over a set of tiles for C. Candidate rules: the colony abandoned soonest after the founding;
+the colony most of the caravan came from; or the players name it with a gizmo, which would be this
+document's first synced command.
+
+**Route A — what it gets us.**
+- A search meter per colony, on **its own colony's clock**. A paused colony is not searched, and one
+  sleeping at 12× (a map-clock step; the world clock has none) is searched at 12× ([#185](https://github.com/cjd721/Rimworld-Archinity/issues/185)).
+- Independent reveal, detection raid, repeats and escape for each colony. One can run while the
+  other stays and fights (rule 6).
+- One quest-tab row per colony, each with its own `ExpiryInfoPart` estimate.
+- Trace stays one number, so a hack by either colony speeds both searches. Trace per colony is
+  reachable, since the hacker's map is in hand at `Notify_Intrusion` **[I]**, but nothing asks for it.
+
+**Route A — what it cannot do.**
+- **Pair a caravan move on its own.** Rule 1's caravan move is three player acts: caravan out,
+  found, abandon. They reach two seams that share no argument,
+  `SettleInEmptyTileUtility.Settle(Caravan)` and `SettlementAbandonUtility.Abandon(MapParent)`
+  **[V]**. Vanilla avoids the question: its new-colony mood (`NewColonyOptimism`) fires only when
+  no other player home remains (`Settle` checks `Find.AnyPlayerHomeMap == null`, and
+  `MapParent.Abandon` checks for another `IsPlayerHome` map) **[V]**. Hence the route parameter
+  above.
+- **Key a colony on its `Map`.** A gravship landing on an empty tile makes a new `Map`, and so does
+  every caravan settle (`GravshipUtility.ArriveNewMap` → `GetOrGenerateMap`;
+  `SettleInEmptyTileUtility.Settle` → `SettleUtility.AddNewHome`) **[V]**. Odyssey's
+  `Dictionary<Map,int>` therefore reads every move as a new colony. That is right for Odyssey and
+  wrong for a rule in which a short move must not reset.
+- A **gravship** move pairs itself. `RimWorld.Planet.Gravship` is built from the
+  `Building_GravEngine` instance and scribes it by reference, so the engine is the same `Thing`
+  before and after **[V]**. Vanilla's `GravEngine` has no `designationCategory` or `costList`, so it
+  names at most one colony. In the corpus, GravTech's `GravShipPatch.xml` adds both when VGE is
+  absent **[V]**, and VGE ships two more engine types, so both colonies can be gravships.
+
+**Route A — consequences.**
+- **Every relocation ends the colony's pursuit quest and generates a new one** (§ *Persistence and
+  multiplayer* › *Which clock the pursuit runs on*). Without that, the quest silently changes clock
+  after a caravan move, or stops after a gravship move until the next load (**T-177**).
+- `lastSettledTile` becomes one per tracked colony, keyed by whatever the pairing rule names.
+
+**Route A′.** `MapComponentUtility.MapComponentTick` runs from `Map.MapPostTick`, and Multiplayer
+runs that only inside the map's own tick. So a meter there counts that map's ticks with no
+dependence on quest binding **[V]**. The component dies with its map. That is right for a qualifying
+relocation and wrong for a short one, which must copy progress to the new map's component. The
+reveal and the raids still live on a quest that binds by A's rules, so A′ removes one clock hazard,
+not both.
+
+**Route B.** The pursued colony is an explicit scribed pointer, not a search. **Searching for it by
+"the home map holding a grav engine, else `Find.AnyPlayerHomeMap`" picks by list order:**
+`Game.AnyPlayerHomeMap` returns the first `IsPlayerHome` map in `Game.maps` **[V]**. If the first
+colony is abandoned, the other colony is promoted, and the tile test reads the
+jump as a move and can grant an escape nobody made. `Map.IsPlayerHome` is also true for any map
+holding a player grav engine **[V]**, so a gravship parked on a quest site would be "the colony"
+while it sat there. `Scribe_References` on the engine or on a `MapParent` removes both failures. The
+unpursued colony is a permanent haven, and whether that is a bug or a beat is the story's call.
+
+**Route C — what it gets us.** One countdown for the faction. The detection raid and the repeats go
+to every colony, through two raid parts or #23's `QuestNode_SubScript`-twice and two-quest methods
+**[V]**. Splitting up does not help. **What it cannot do:** escape is a rule over a *set* of tiles
+(every colony moved, any colony moved, or the centroid), which is the build map's parameter.
+**One quest runs on one clock.** With raid parts for both colonies, the whole quest binds to the
+first matched part's map **[V]**, so the search meter and every quest-side delay run on colony A's
+time. The repeats do not: each threats generator is polled only in its own colony's storyteller
+pass (§ *Which clock the pursuit runs on*). Keeping the quest on
+the world clock means it can carry no vanilla raid part with a live home-map `mapParent`. The world
+clock runs at the highest speed any unpaused colony has voted for, and it has no 12× step, so a
+colony sleeping at 12× is searched more slowly than its own clock runs (#185). Either way, a paused
+colony is still searched. C accepts, by construction, the *"another colony's clock"* that the requirement forbids.
+
+### What every route must respect
+
+- **One faction, no home.** Under #23, `Multiplayer.Common.PlayerManager.OnJoin` assigns every player
+  the host faction, and both settlements are `Faction.OfPlayer` **[V]**. Multiplayer also always
+  creates a hidden `"Spectator"` player faction that owns nothing (`HostUtil.SetupGameFromSingleplayer`).
+  `Faction.OfPlayer` stays the host's because `FactionManager.RecacheFactions` takes the first
+  `IsPlayer` **[V]**. So no faction test can tell the colonies apart, and a walk over
+  `AllFactions.Where(f => f.IsPlayer)` sees two factions.
+- **The relocation test reads no clock.** It compares tiles, and the meter accumulates rather than
+  stamping a tick. So #185's stored-tick hazard reaches neither. What decides the meter's clock is
+  which quest cache Multiplayer puts the quest in.
+- **T-49** applies to any fallback through `RandomSurfacePlayerHomeMap`, and **T-48** applies to raids
+  on an orbital colony.
+
+### Carriers, and what the corpus does not have
+
+- **`RimWorld.ScenPart_PursuingMechanoids`** holds the only per-colony pursuit state in the corpus:
+  two `Dictionary<Map,int>` deadline tables, pruned in `MapRemoved` and whenever the map has no
+  player grav engine **[V]**. It is a donor for the *shape* of per-colony state, not for the key.
+- **`VFED.WorldComponent_Deserters.Visibility`** is one `int`, keyed on nothing **[V]**.
+- **Vanilla Gravship Expanded** patches `ScenPart_PursuingMechanoids.Tick` only for letter text and
+  the pilot-console lookup **[V]**.
+- **Sweep.** `-i "pursu"` over both roots, on `.dll` files with `obj/` and `Referenced/` excluded,
+  once in ASCII and once as a null-interleaved `#US` pass typed literally. It found RimPacts (raid
+  pursuers, unrelated) and VGE (above). Both forms were validated against `Assembly-CSharp.dll`.
+  Nothing marks a primary colony in `Game`, `Map`, `SettleUtility`, `MultiplayerWorldComp`,
+  `FactionWorldData` or `PlayerManager` **[V]**.
+
+### RUN hand-back
+
+1. Bind a pursuit to colony A, then gravship A away with no grav anchor. Watch `searchProgress` in
+   the dev quest window: the claim is that it stops until a save/load, then resumes on the world
+   clock.
+
+---
+
 ## Failure and recovery
 
 | Failure | Detection | Recovery |
@@ -828,6 +1011,8 @@ number, because there is no number on either side to compare.
 | A short relocation is mistaken for an escape | **Silent** — the player believes they got away | Prevented rather than recovered: the threshold is a `TraceDef` field, stated in `ExpiryInfoPartTip`. The launch UI shows a chemfuel cost, not a tile count, and it **projects** a cross-layer origin before measuring **[V]** ([#150](https://github.com/cjd721/Rimworld-Archinity/issues/150)). For a same-layer move the fuel cost is still monotonic in the distance we test; for a layer change there is no comparable number and the tooltip must state the rule. See § *Planet↔orbit as a qualifying relocation* → *Legibility*. |
 | `GravshipUtility.TravelTo`'s signature changes on a RimWorld update | **Loud** — Harmony throws at startup on a missing target | Nothing else in this document is exposed to an update; every other seam is a virtual override or a `Def` field. |
 | Two clients hold different Trace | MP desync | Unreachable by design — see the writer table. No path originates at a button and no number comes from `ModSettings`. |
+| A gravship relocation leaves the pursuit quest bound to the abandoned map | **Silent** — the countdown freezes, then resumes on the world clock after the next load **[I]** | Prevented: every relocation ends the quest and generates a new one on the new map (§ *Persistence and multiplayer* › *Which clock the pursuit runs on*) |
+| Two colonies stand and the first is abandoned | **Silent** — a first-home-map fallback promotes the other colony, and the tile test reads the jump as a move | Prevented by naming the pursued colony (§ *Two colonies*, Route A or B), never falling back to list order |
 
 **No campaign softlock is reachable from this document.** Rule 6 is explicit that
 *"detection neither forces departure nor causes automatic defeat"*; the player may
@@ -975,7 +1160,7 @@ Multiplayer's `PatchGravshipLandingEnded`, `PatchGravshipCutsceneToFreeze`,
    `MainTabWindow_Quests` reads the property each draw **[V]**, so it should — but
    whether the quest tab caches the row is not read. Observable: lower Trace with the
    quest tab open and watch the estimate lengthen without a reload.
-3. **That `CurrentSettledTile()` returns invalid for the whole of a gravship transit,
+3. **That `CurrentSettledTile()` — per tracked colony (§ *Two colonies*) — returns invalid for the whole of a gravship transit,
    and returns the new tile once — not twice, and not the origin tile again — on
    arrival.** The failure mode if it flickers is a spurious escape or a missed one.
    Observable with one client; the two-client check is only that both reach the same
@@ -1009,6 +1194,6 @@ Multiplayer's `PatchGravshipLandingEnded`, `PatchGravshipCutsceneToFreeze`,
 | **Every number** — band thresholds, decay, the `intrusionRows` columns, search rate curve, reveal point, escape distance, both raid factors | Balance. Nothing structural depends on any of them. | Balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
 | **Which target defs are authored `Network` / `Command`** | Decides what actually raises Trace. The mechanism does not depend on the answer. | Authoring, alongside [`HACKING.md`](HACKING.md)'s `HackTargetClass` catalogue ([#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)) |
 | **Does the pursuit reach an orbital home?** `QuestPart_ThreatsGenerator` needs a `mapParent` with a map, and **T-48** narrows the legal `IncidentDef` set drastically on an orbit layer. The pursuit's own defs need `layerWhitelist` (§ *Cost*). | The late-Ultra act is where pursuit matters most, and it is exactly where incidents silently stop. | This document whitelists its own pursuit defs; the general orbital pack and life on an orbital home are [`GRAVSHIP.md`](GRAVSHIP.md) § *Ordinary colony life on an orbital home* ([#147](https://github.com/cjd721/Rimworld-Archinity/issues/147)) |
-| **Which tile counts as "the colony's" when two player home maps exist.** `CurrentSettledTile()` reads the home map holding a grav engine, falling back to `Find.AnyPlayerHomeMap`, and scribes one tile. [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) settled two colonies on two separate tiles, so two home maps exist from the second colony's founding, and the pursuit can run while both stand. | A wrong answer makes a relocation read as an escape, or the reverse. | Capability: [#186](https://github.com/cjd721/Rimworld-Archinity/issues/186) — whether the pursuit can track each colony separately, only one, or both as one target, and by which routes |
+| **Which colonies are pursued, and which colony a caravan-founded settlement continues.** Per colony (A/A′), one named colony (B) or the faction (C); for a caravan move, a pairing rule, since nothing in vanilla links caravan-out, found and abandon; for C, whether escape needs every colony moved or any. | A wrong answer makes a relocation read as an escape, or the reverse, and decides whether the second colony is a haven. | Capability answered: § *Two colonies* ([#186](https://github.com/cjd721/Rimworld-Archinity/issues/186)). The route and its pairing rule are parameters for [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
 | **How far an orbit→orbit move must go.** A move between two places in orbit shakes the pursuit the same way a move on the planet does (`PRESSURE.md` § *Glitterite pursuit*, rule 1). An orbit "tile" is not a surface tile, so the threshold must be **authored per layer rather than derived** — `Archinity.Pacing` already replaces the orbit grid Odyssey's own `rangeDistanceFactor 20` was calibrated against, and **T-45** makes that replacement worldgen-only. | The late-Ultra act is entirely in orbit, so this is the threshold that will actually be tested. | Capability: § *Planet↔orbit as a qualifying relocation*, Route C (a threshold per layer). The number: balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
 | **Layer identity, or `isSpace`?** If a second *surface* layer is ever added — Odyssey ships a `Moon` template commented out, XML-only **[V]** — hopping to it qualifies under layer identity and not under `isSpace`. | Decides whether "escape" means *left the planet* or *left this world*. Nothing structural depends on the answer. | Capability: Route B (layer identity) or B′ (`isSpace`), both **[V]**, same cost (§ *Planet↔orbit as a qualifying relocation* › *Routes*). Which ships is the build map's |

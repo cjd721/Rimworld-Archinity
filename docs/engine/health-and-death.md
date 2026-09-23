@@ -67,3 +67,41 @@ It is therefore a one-field, XML-only "cannot die" that is strictly stronger tha
 Deathless and has no incumbent. What it does *not* give is a return: no corpse, no
 letter, no absence — the pawn simply never dies. That is a different behaviour from
 the coma route, not a cheaper version of it.
+
+## A pawn who leaves the colony: where it goes, and what still protects it
+
+Verified on [#183](https://github.com/cjd721/Rimworld-Archinity/issues/183) [V] unless marked. The
+system is `docs/specs/RELIGION.md` § Founders.
+
+**Banished**
+- Off-map (caravan, pod), a banished pawn joins a random non-colony humanlike faction
+  (`PawnBanishUtility.Banish` → `TryGetRandomNonColonyHumanlikeFaction`).
+- On the map, it goes factionless.
+- Banishing from a caravan while `WouldBeLeftToDie` rolls `pawn.Kill` at 80 % (**T-182**).
+
+**Released**
+- A player-faction prisoner or slave is never sent away. Arrest does not change faction, and
+  `GenGuest.ShouldStayOnMapOnRelease` keeps any pawn whose `HomeFaction.IsPlayer` and makes it a
+  colonist again.
+
+**Kidnapped**
+- A kidnap happens in `Pawn.ExitMap`, when a carrier of another faction leaves; not in
+  `JobDriver_Kidnap`. Other callers: map closure with a hostile parent, and the caravan demand.
+  Vetoing `Kidnap` itself orphans the pawn (**T-181**).
+- After a 30-day MTB (checked every 15 051 ticks), `KidnappedPawnsTrackerTick` gives the pawn to the
+  kidnapper (**T-112**).
+- Ransom (`IncidentWorker_RansomDemand`) needs a powered comms console. It targets only player-faction
+  kidnapped humanlikes.
+
+**Off-map**
+- A former colonist is never garbage-collected (`WorldPawnGC`).
+- Any hediff with comps blocks mothballing (`HediffDef.AlwaysAllowMothball`), so such a pawn is ticked
+  every tick in `WorldPawns.WorldPawnsTick`. Off-map, Deathless still guards only the damage path.
+- `Pawn.SetFaction` removes no hediff and makes no `royalty` call, so a record hediff and held titles
+  travel with the pawn (`docs/engine/factions-and-worldgen.md` § *Who receives royal favour*).
+- A `Free` world pawn is a redress candidate for generation requests of its faction, or of any faction
+  when `WorldPawnFactionDoesntMatter` is set.
+
+*`RimWorld.PawnBanishUtility`, `RimWorld.GenGuest.ShouldStayOnMapOnRelease`, `Verse.Pawn.ExitMap`,
+`RimWorld.KidnappedPawnsTracker`, `RimWorld.IncidentWorker_RansomDemand`, `RimWorld.Planet.WorldPawnGC`,
+`RimWorld.Planet.WorldPawns`, `Verse.Pawn.SetFaction` (`Assembly-CSharp.dll` 1.6.4871).*

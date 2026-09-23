@@ -72,6 +72,8 @@ Both **[V]**, from `2975771801/1.6/Assemblies/VREAndroids.dll` and the mod's own
   `<statFactors><PsychicSensitivity>0</PsychicSensitivity></statFactors>`, which meets
   vanilla's own `PsychicSensitivity < float.Epsilon` tests in `RimWorld.Psycast.GizmoDisabled`
   and `RimWorld.Verb_CastPsycast.ValidateTarget`. No Harmony patch is involved on this side.
+  The zero is a **factor**; gear and sight-loss offsets are added after it, so it is not absolute on
+  either side — a linked "deaf" pawn in eltex can be targeted and can cast (**T-185**).
 
 **`AndroidCanCatch` never reads `VREA_PsychicallyDeaf`; vanilla's sensitivity tests never
 read `VREA_SyntheticImmunity`** **[V]**. Lifting either alone gets nothing: gate 1 alone
@@ -84,6 +86,27 @@ deselectable in either creation window** — the `disableAndroidHardwareLimitati
 needs `CanBeRemovedFromAndroidAwakened()` **[V]**. This corrects
 [#78](https://github.com/cjd721/Rimworld-Archinity/issues/78), whose conclusion was right
 and whose stated reason was wrong in both halves.
+
+## What VRE – Android marks about a pawn, and what the rite reads
+
+From `2975771801/1.6/Assemblies/VREAndroids.dll` and vanilla 1.6.4871, on
+[#181](https://github.com/cjd721/Rimworld-Archinity/issues/181). All **[V]**.
+
+- **Awakened is the only kind VRE marks.** `Utils.IsAwakened` is "carries no gene with
+  `AndroidGeneDef.removeWhenAwakened`". `Gene_SyntheticBody.Awaken` removes those genes. Readers: the
+  behaviorist station's acceptance, the skill and name generation postfixes, the style patch,
+  `Gene_SyntheticBody.TickInterval`, `Window_AndroidModification.GeneValidator`. So a gene given
+  `removeWhenAwakened` changes what "awakened" means for every pawn that carries it.
+- **Built, arrived and jailbroken are not marked.** `Building_AndroidCreationStation.FinishAndroidProject`
+  writes no provenance record. Kinds are not markers either (**T-112**).
+- **The linking rite refuses every basic android.** `CompPsylinkable.CanPsylink` needs
+  `Faction.OfPlayer` and `requiredFocus.CanPawnUse`; VRE's `PawnCanUseInt` postfix (`int.MinValue`)
+  forces the latter false for `VREA_JoyDisabled`, after the hediff bypass. `PawnCanUseInt` reads
+  traits, backstories, titles and hediffs — never genes.
+- **Gene stat factors multiply.** `StatWorker.GetValueUnfinalized` multiplies every active gene's
+  `statFactors`, so one zero among several genes wins — until the stat parts add offsets (**T-185**).
+- **VPE's target test is per ability.** `AbilityExtension_Psycast.ValidateTarget` refuses a
+  zero-sensitivity target only for abilities with `psychic` true (default false).
 
 ## Third-party android hardware is pure XML
 

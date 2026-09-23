@@ -17,9 +17,9 @@ Ultra also opens advanced android manufacture. The campaign does not treat artif
 
 **Whether androids hold psylinks is a capability question.** Routes exist
 ([`ANDROIDS.md`](../specs/ANDROIDS.md) § *Psylinks — verdict and routes*,
-[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)); what they leave open — by
-kind of android, and Glitterite deafness under each — is on
-[#181](https://github.com/cjd721/Rimworld-Archinity/issues/181). Glitterites never receive
+[#141](https://github.com/cjd721/Rimworld-Archinity/issues/141)); by kind of android, and
+Glitterite deafness under each, are in § *By kind of android*
+([#181](https://github.com/cjd721/Rimworld-Archinity/issues/181)). Glitterites never receive
 psylinks (§ *Trace*). If no route is taken, the asymmetry stands and the fiction leaves the
 reason to interpretation — the soul, not the body, is what connects to the channel.
 [#124](https://github.com/cjd721/Rimworld-Archinity/issues/124)

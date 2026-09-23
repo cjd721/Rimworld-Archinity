@@ -13,17 +13,7 @@ the row is deleted.
 
 ## Open capability tickets
 
-| Ticket | The capability in question | Answer lands in |
-|---|---|---|
-| [#181](https://github.com/cjd721/Rimworld-Archinity/issues/181) Android psylinks by kind | Can psylinks be allowed for androids, forbidden outright, or restricted by kind (built, awakened, arrived, jailbroken)? Can the altar's rite reach an android? Can Glitterites stay psychically deaf under every route? | `ANDROIDS.md` |
-| [#182](https://github.com/cjd721/Rimworld-Archinity/issues/182) Ending the game from Transcendence under Multiplayer | Which endings can *Enter the new reality* produce on both clients at once? Only the non-terminal credits path is verified. | `TRANSCENDENCE.md` |
-| [#183](https://github.com/cjd721/Rimworld-Archinity/issues/183) Giving a founder away | Can banishment, prisoner release and kidnapping each be permitted or forbidden for a founder? | `RELIGION.md` § Founders |
-| [#184](https://github.com/cjd721/Rimworld-Archinity/issues/184) Who can hold Church titles and Exaltation | Can favour be kept off non-founders across every way it is paid, the bestowing ceremony's spectators included? | `RELIGION.md` § Exaltation |
-| [#185](https://github.com/cjd721/Rimworld-Archinity/issues/185) An era's start under Async Time with two colonies | Can an era's start be stamped consistently for both colonies when each map keeps its own clock? | `ERA.md` |
-| [#186](https://github.com/cjd721/Rimworld-Archinity/issues/186) The Glitterite pursuit with two colonies | Can the pursuit track each colony separately, only one, or both as one target? | `TRACE.md` |
-| [#187](https://github.com/cjd721/Rimworld-Archinity/issues/187) Withholding what a settlement shows | Can a settlement's tech tier and trade-permission line be hidden until the colony has learned them? | `TERRITORY.md` |
-| [#188](https://github.com/cjd721/Rimworld-Archinity/issues/188) A settlement changing hands while its map is loaded | Can the transfer wait for the map to close, and can the player's pawns be moved off first? At an era advance only the second fits the single-act rule. | `TERRITORY.md` |
-| [#189](https://github.com/cjd721/Rimworld-Archinity/issues/189) Ending or easing a war the colony is losing | Can the colony end or ease a losing war by peace, payment or owed obligations? | `POLITICS.md` |
+None open. The last nine, #181–#189, were answered on 2026-09-23.
 
 ## Open capability claims under the build map
 

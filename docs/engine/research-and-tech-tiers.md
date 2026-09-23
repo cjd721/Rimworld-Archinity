@@ -326,6 +326,17 @@ the vanilla levers that scope a removal to the player's own map, are
 [`docs/specs/ERA.md`](../specs/ERA.md) § *Above-era content seeded on the player's own map*
 ([#153](https://github.com/cjd721/Rimworld-Archinity/issues/153)).
 
+### WTL prints every faction's tier in its tooltip, unconditionally
+
+`WorldTechLevel.Patches.Patch_FactionDef.GetDescription_Postfix` postfixes the `FactionDef.Description`
+getter in `PatchGroup("Main")`, which, unlike the filter groups, has no setting. It appends *"Tech
+level: X"*, or the *current* and *original* tier while the world level caps the faction. It reaches
+the Factions tab tooltip, the five `DrawFactionIconWithTooltip` sites, reward prefs and the worldgen
+faction list. `Patch_WITab_Planet` separately prints the **world** tier on the Planet tab. Vanilla
+itself prints no NPC tier (`docs/engine/factions-and-worldgen.md` § *Vanilla never prints an NPC
+faction's tech tier*). [V `3414187030/1.6/Lunar/Components/WorldTechLevel.dll`]
+([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187))
+
 ---
 
 ## Ignorance Is Bliss
