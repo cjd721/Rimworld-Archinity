@@ -554,6 +554,13 @@ back is a new `Thing` with a fresh `false`. The one-shot therefore lives in
 §6 already establishes, and the same component the Waystone `bool` sits in. `<buildingLeft>`
 handles *"this mural, in this map, is now read"* for free and needs no state at all.
 
+> **Correction, 2026-09-23 ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)):**
+> a vanilla quest site the player leaves is **destroyed**, not regenerated.
+> `Site.ShouldRemoveMapNow` sets `alsoRemoveWorldObject` and `CheckRemoveMapNow` destroys it [V].
+> Re-entry regenerates only a `Settlement`, or a site kept by a `SitePartWorker_AncientAltar`-type
+> part. The world-scoped `readLore` key still stands, because a failed quest can generate the same
+> content again. See `ORBIT.md` § *A stronghold a quest generates → Map lifetime*.
+
 **Persistence.** `Scribe_Collections.Look(ref readLore, "readLore", LookMode.Value)` —
 **strings, not `LookMode.Def`**, per the T-04 note in *Persistence and multiplayer*. Added to a
 save that predates it, the set loads empty: every record reads unread, which is the safe
@@ -1445,3 +1452,259 @@ been compiled.
 - **Build, next map.** Whether the tile ledger prunes, and on what.
 - **Build, next map.** Whether the outpost's "unresolved find" latch holds a reference or a
   counter. Both are verified available.
+
+## The orbital scanner and Charting — one apparatus or two
+
+Answers [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149), from
+`docs/requirements/SPACE.md` § *Open questions*. Evidence class **READ**: decompiled 1.6
+`Assembly-CSharp.dll`, `VanillaGravshipExpanded.dll` and `Multiplayer.dll`; Odyssey's defs; and
+two-root sweeps of all 155 mods in both string heaps.
+
+### Verdict
+
+- **Possible?** **Yes, every way.** One apparatus can serve both layers, the scanner can carry
+  Charting's content, or the two can stay apart — no engine fact forces any of them. **Charting can
+  deliver Odyssey's six orbital quests with no Harmony and no re-authoring**: the quests are
+  giver-agnostic and the giver tag is public to read. What no route escapes is #148's rule (whose
+  closure list [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180) now re-examines) —
+  *closing orbit means closing givers* — and **the `OrbitalScanner` tag has more givers than we
+  knew** (see *Constraints*).
+- **Multiplayer?** **Yes.** Every discovery path here — vanilla's scanner, Charting's comp, any
+  subclass of either — fires from the synced tick; Multiplayer registers the scanner's only gizmos as
+  debug-only. The one exception is VGE's scanner cluster, used as shipped (*With work*, below).
+
+### Two premises this corrects
+
+- **The orbital scanner is not a `CompScanner`.** `CompOrbitalScanner : ThingComp` **[V]**. It
+  needs no worker and does no labor: it takes power, reports to `OrbitalScannerWorldComponent`, and
+  waits. So the claim that *"`CompScanner.CanUseNow` bans roofs for every subclass, which the orbital
+  scanner shares"* is wrong. Its roof ban is placement-only (`PlaceWorker_NotUnderRoof`), and
+  `CompTick` never checks a roof. A scanner roofed over later keeps scanning; only
+  `Alert_CannotBeUsedRoofed` complains **[V]**.
+- **"We cannot reuse its marker" holds only for *writing* a marker.** `QuestGiverTag` is a closed
+  enum (`Traders`, `OrbitalScanner`, `Reading`, `Beggars`). But `QuestUtility.GetGiverQuests` is
+  `public static`, and `givenBy` is read nowhere else in 1.6 **[V]**. Our code can read the
+  scanner's list with one call, and our quests can join it with one XML `<li>`.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — One apparatus: Charting reaches orbit** | One building, one labor rule, one readout, one pair of pools, working on both layers. The orbital scanner leaves the game or is re-skinned as a Charting tier. **The reveal gate is one eligibility test in our own code.** | our `CompChartingApparatus` (§1) + XML repoints of Odyssey | C# already priced in §1, plus a `CanUseNow` override · XML | **Medium**, over the Charting build | Yes |
+| **B — One apparatus, the other way: the scanner carries Charting** | Charting's orbital content arrives from Odyssey's own passive building. **Easy at survey depth**: our quests join its list by `givenBy`. **Ordered return-pool beats** need our subclass of the scanner comp. | Odyssey `CompOrbitalScanner`; our subclass via `compClass` repoint | XML (survey) · C# subclass (return) | **Easy** (survey) · **Medium** (return) | Yes |
+| **C — Two apparatuses, shared pools** | Charting works the planet and the return pool. The scanner is a Waystone-less, passive instrument for **orbital survey content only**, and each draws from the other's list. This is the *mundane table* the requirements already float, built for orbit. | both, unchanged; XML joins the lists | XML | **Easy**, over the Charting build | Yes |
+| **D — Two apparatuses, fully separate** | Vanilla as shipped: the scanner finds Odyssey's orbital sites on its own clock. Charting never touches orbit. | Odyssey | none | **Easy** | Yes |
+
+The six quests can reach Charting four ways, and these are not peers:
+
+| Delivery | How | Kind | Verdict |
+|---|---|---|---|
+| **E1 — Tag them into Charting's survey pool** | `PatchOperationAddModExtension` of §3's `ChartingSurveyExtension` onto the six | XML | **Recommended.** Legible, per-quest, and the band field is honest about not applying |
+| **E2 — Read the tag** | our comp calls `QuestUtility.GetGiverQuests(QuestGiverTag.OrbitalScanner)` | C#, one call | Valid. Also picks up VGE's and Worksites Expanded's additions automatically. Returns nothing without Odyssey |
+| **E3 — Re-author copies** `givenBy` nothing | new `QuestScriptDef`s | XML | Only if the text or rules must change. Not needed for delivery |
+| **E4 — Around the enum** | Harmony on `GetGiverQuests`; or a numeric `<li>4</li>` in `givenBy`, which `Enum.Parse` accepts as an undefined fifth tag **[I]** | C# / XML | **Not recommended.** Solves nothing E1 does not; the numeric tag is invisible to readers, and any other mod that picks the same number collides with it |
+
+Every route composes verified mechanisms. **That they compose into the behaviour is [I]** until
+something compiles.
+
+**Route A — what it gets us.**
+- Discovery stays labor on both layers. The requirements already give the Sensory Array
+  *"planetary and orbital scale"*, and this route delivers exactly that.
+- The layer a find lands on is the quest's decision, not the comp's. `QuestNode_GetSiteTile` takes
+  its origin from the slate's `map`, falls back to a surface home, and keeps a space origin only when
+  `canSelectSpace` is set **[V]**. So a Charting apparatus aboard the ship still finds surface
+  content below it, and orbital content comes from quests whose root places on Orbit. **A
+  layer-aware pool is list membership plus one slate variable, with no new band machinery.**
+- The six join by E1. With a spine beat that places on Orbit, the Archon returns can walk off the
+  planet — the ending's *"pointing out of the universe"* on the same apparatus the players built in
+  the Neolithic.
+- **The reveal gate is one place.** Orbital pool entries are eligible only once the reveal flag
+  (`ORBIT.md` § *The build → 5*) is set. That is one line in our eligibility test, not a list of
+  `givenBy` patches.
+- The duplicate rule has a shipped donor. `OrbitalScannerWorldComponent` holds one world-level
+  cooldown that every scanner feeds (*"Building multiple orbital scanners does not increase the
+  chance"*) **[V]**. That is the requirements' *duplicates contribute to the same search*, already
+  written.
+
+**What it cannot do.**
+- The band does not bind the six. `QuestNode_Root_Asteroid.TryFindSiteTile` hard-codes 1–3 tiles
+  from a random player tile and never reads `siteDistRange` **[V]**. They always land close, which
+  suits orbit, but no band lever moves them.
+- **A worked apparatus in space meets the roof ban.** A gravship interior is roofed and pressurised,
+  and `CompScanner.CanUseNow` refuses any roofed cell **[V]**. So the orbital tier needs the
+  `CanUseNow` override §1 already names, or an operator in a vacsuit on an open deck.
+
+**Consequences.**
+- The vanilla orbital loop's building goes. What goes is the building, not the content: the six
+  still arrive, through Charting.
+- The scanner's other carriers need the same treatment, or the tag keeps a live giver. See
+  *Constraints*.
+
+**Route A′ — the re-skin, a variant of A.** Keep Odyssey's `OrbitalScanner` `ThingDef` (art,
+research slot, cost) and repoint its `<compClass>CompOrbitalScanner</compClass>` to a Charting
+apparatus tier. This is XML, but the def gains an interaction cell (`hasInteractionCell`), because
+Charting is worked and the scanner is not **[V: the def has none]**. Use it if the Sensory Array
+wants an existing model.
+
+**Route B — what it gets us.**
+- **Easy tier:** any orbital survey quest we author joins the scanner with
+  `<givenBy><li>OrbitalScanner</li></givenBy>`. The scanner then draws it by
+  `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight` — **the same selector §3 uses**, so
+  `rootSelectionWeight`, `rootEarliestDay`, `rootMinProgressScore` and `minRefireDays` all work
+  identically **[V]**.
+- **Medium tier:** replace the comp with our subclass through `<compClass>`. The seams:
+  `CompTick` is overridable, and `OrbitalScannerWorldComponent.Notify_ScannerWorking` takes a
+  `CompOrbitalScanner`, so a subclass keeps the shared world cooldown. **VGE's
+  `CompScannerCluster_OrbitalScannerModule : CompOrbitalScanner` overrides exactly that** **[V]**.
+  `LocateSignal` and `ScannerQuests` are private, so the subclass writes its own find.
+- The pace is fixed and legible. One signal per world every ~19 days — an 18-day cooldown
+  (`FindSignalCooldownTicks` 1,080,000) counted from the last signal, then a 1-day MTB. Each signal
+  becomes a site 8–10 days later (`TrackSignalDurationRangeTicks`). That delay runs **inside** the
+  next cooldown, so it does not lengthen the cycle **[V]**. The pace is the same with one scanner or
+  five.
+
+**What it cannot do.**
+- **It is not labor.** No pawn works the scanner, and research skill does nothing to it. *"Discovery
+  becomes labor"* and *"skill buys more"* do not hold in orbit under B. That is a requirement
+  change, not a capability gap, and it goes to Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2)
+  and `docs/requirements/CHARTING.md`.
+- **A spine beat must never ride the tag.** The tag has a second giver (the uplink, *Constraints*).
+  It draws by random weight with no `CanRun` and no ordering, so a return beat on it could arrive
+  out of order from a hacked ruin.
+
+**Consequences:** the Waystone plays no part in orbit, and the orbital act has a second, different
+discovery rule.
+
+**Route C — what it gets us.** The two jobs the requirements already distinguish — *the colony
+surveys* and *the founders detect* — get two instruments:
+- **The scanner** is the colony's passive eye on orbit. It holds no Waystone and feeds only orbital
+  survey content.
+- **Charting** keeps the return pool on both layers, and keeps labor.
+
+Both sharing moves are XML: E1 puts the six in Charting's survey pool, and `givenBy` puts our
+orbital survey quests on the scanner. **This answers the requirements' open *mundane table*
+question for orbit without building a table.**
+
+**What it cannot do:** the two paces add rather than share, because the scanner's world cooldown
+never sees Charting's accumulator. Two buildings, two readouts — one a progress bar, one a
+countdown.
+
+**Consequences:**
+- It collides with `docs/requirements/CHARTING.md` § *Constraints*: *"Charting is the only systemic
+  source of unannounced sites."* A scanner is a second source unless the requirements call it part
+  of Charting. **That is a requirements call, handed to Conrad via #2.**
+- It sets up the same collision for Route D.
+
+**Route D — what it gets us:** nothing to build, and Odyssey's orbital loop exactly as Ludeon ships
+it. **What it cannot do:** it carries no campaign content, keeps no pace with the eras, and cannot
+express the return pool in orbit. **Consequences:**
+- The requirement collision of C, with nothing shared to justify it.
+- **Pre-reveal, D is the costliest to hold shut.** It keeps every vanilla giver live, and each must
+  be locked individually.
+- **Not recommended** unless orbit is meant to feel like somebody else's game.
+
+**Recommended, not selected: A with E1.** The requirements already give the Sensory Array orbital
+scale and require discovery to be labor. A is the only route where both stay true in orbit. It is
+also the only route where the reveal gate lives in one line of our own code rather than in a patch
+per giver. **C is the recommendation if the story wants a mundane orbital instrument.** Its price is
+one requirements amendment.
+
+### Constraints
+
+**The `OrbitalScanner` tag has two vanilla givers, not one — and the second needs no research.**
+**[V]** `CompAncientUplink.Notify_Hacked` runs the identical draw:
+`GetGiverQuests(QuestGiverTag.OrbitalScanner)`, weighted by `GetNaturalRandomSelectionWeight`, then
+`GenerateQuestAndMakeAvailable`.
+- `AncientUplink` is a hackable building (`CompProperties_Hackable`, intellectual 6). Its
+  `TileMutatorDef`'s description reads *"Hacking the uplink will reveal a hidden location in orbit."*
+- **It spawns through Odyssey's `AncientUplink` tile mutator.** That mutator appears in **32**
+  `LandmarkDef.mutatorChances` lists: 23 at `0.02` and 9 at `0.15`. Vanilla Landmarks Expanded adds
+  **54** more: 47 at `0.02` and 7 at `0.15` **[V]**.
+- **It also spawns through the `AncientOrbitalUplink` ruin room**, which appears in **nine** Odyssey
+  ancient-ruins layouts **[V]**.
+- **World Tech Level already ships an XML closure for the mutator path.**
+  - Its `3414187030/1.6/Defs/TechLevels_TileMutatorDefs.xml` marks `AncientUplink`,
+    `AncientRuins` and `AncientRuins_Frozen` as **Industrial**.
+  - `Patch_TileMutatorDef` postfixes `EverValid` and `IsValidTile` to refuse any mutator above the
+    world's tech level **[V]**.
+  - `WorldLandmarks` applies a landmark's `mutatorChances` through `IsValidTile` unless the chance is
+    `required` and forced **[V]**, so landmark-attached uplinks are refused too.
+  - **The patch group exists only when the `Filter_WorldGenSteps` setting is on (`[HarmonyPrepare]`).**
+    That setting is a mod setting and part of the sync surface (**T-18**).
+  - **The ruin-room path is not covered.** The nine ancient-ruins layouts are used by several defs
+    beyond those three mutators **[I]**.
+- **With the filter off, or through a ruin room, a Neolithic colony that hacks an uplink can open the
+  Orbit layer.** No scanner, no `OrbitalTech`, no grav engine. This is an opener that
+  [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148) did not list. Holding orbit shut
+  against it is now [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)'s question.
+
+**The corpus adds two more givers and two more quests.**
+- **Givers:** VGE's `VGE_GravshipScannerCluster` carries `CompScannerCluster_OrbitalScannerModule`,
+  which is a `CompOrbitalScanner`. GravTech's `AdvShip_ComputerCore` carries `CompOrbitalScanner`
+  outright **[V]**.
+- **Quests:** VGE's `VGE_OpportunitySite_SolidCoreAsteroid` and Worksites Expanded's
+  `OpportunitySite_OrbitalPlatform` are both `givenBy OrbitalScanner` **[V]**. So the tag selects
+  **eight** quests across the corpus, not six.
+
+**Emptying the tag is not a clean closure.** Both vanilla givers draw with `RandomElementByWeight`,
+not `TryRandomElementByWeight`. On an empty list, or on one whose weights are all zero, it logs
+*"RandomElementByWeight with totalWeight=0"* and returns `null` **[V]**. `QuestGen.Generate(null)`
+catches its own failure and returns `null`, and `QuestManager.Add(null)` logs and returns.
+`LocateSignal` then reads `quest.hidden`, which throws a `NullReferenceException` **before** it
+resets `locateSignalTick` **[V]**. So the scanner throws again every tick, indefinitely, and a
+hacked uplink throws once **[V]**.
+**Close at the giver:**
+- **Scanner:** make the building unbuildable, or repoint its `compClass`.
+- **Uplink:** remove or repoint `CompAncientUplink` on the `AncientUplink` def, which is XML; or
+  strip the mutator and the room.
+- **Never** empty `givenBy` while a giver can still fire.
+
+**The giver path never calls `CanRun`.** Every `GetGiverQuests` consumer goes straight from the draw
+to `QuestGen.Generate`, so a gate in a quest's `TestRunInt` is inert on it **[V]**. That covers the
+scanner, the uplink, `TradeUtility.ReceiveQuestFromTrader`, `BookOutcomeDoer_GiveQuest` and
+`QuestNode_Root_Beggars`. This is the **T-71** class, reached by another door. Charting's own path
+does call `CanRun` (§2), which is one more reason Route A holds the reveal gate more cheaply.
+
+**VGE's scanner cluster, as shipped, is not one apparatus in the sense Route A means.** It hosts a
+worked `CompScanner` and the passive orbital module on one building. But the orbital module runs only
+while the cluster is **not** being worked (`IsPassiveModuleActive`: `lastScanTick + 20 < now`)
+**[V]**, so labor and orbital scanning exclude each other. Its module-switch float menus write
+`ActiveModule`. No `ScannerCluster` name appears in `Multiplayer_Compat.dll` or
+`Multiplayer_Compat_Referenced.dll` in either encoding, validated against `VanillaGravshipExpanded`
+hitting in both **[V]**. Adopting it is *Multiplayer: With work*.
+
+### Status
+
+**READ.** `CompOrbitalScanner`, `OrbitalScannerWorldComponent`, `CompAncientUplink`,
+`QuestUtility.GetGiverQuests`, `QuestScriptDef.givenBy`, `QuestNode_Root_Asteroid`,
+`QuestNode_GetSiteTile`, `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`,
+`GenCollection.RandomElementByWeight` and `ParseHelper.FromString`'s enum branch: all decompiled from
+the 1.6 assembly **[V]**. VGE's cluster was decompiled from
+`3609835606/1.6/Assemblies/VanillaGravshipExpanded.dll`. Multiplayer's two debug-only registrations,
+`SyncMethod.Register(typeof(CompOrbitalScanner), "ReceiveSignal"/"LocateSignal").SetDebugOnly()`, are
+read from `Multiplayer.dll` **[V]**.
+
+The sweeps covered both roots with `obj/` excluded:
+- `CompOrbitalScanner` in ASCII hits only VGE and Multiplayer.
+- `OrbitalScanner` in UTF-16 hits nothing. The sweep form was validated on VGE's `#US` literal
+  `VGE.NoComponentActive`.
+- `QuestGiverTag` and `GetGiverQuests` hit no mod assembly. The form was validated on the vendored
+  `Assembly-CSharp` copy. Medieval Overhaul's `givenByFinder` is its own field.
+
+### Open questions
+
+- **Requirement, to Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) and
+  `docs/requirements/CHARTING.md`.** Routes B, C and D each put a non-labor, Waystone-less discovery
+  source in orbit, which contradicts *"Charting is the only systemic source of unannounced sites"*
+  and *"discovery becomes labor"*. Only A leaves the requirements untouched. (#127 is closed; the map
+  carries the fog patch on `SPACE.md`'s conflicting clauses.)
+- **Requirement, to Conrad via #2.** Whether the ancient uplink stays in the game at all. After the
+  reveal it is harmless flavour. Before it, it opens orbit wherever the WTL filter does not reach.
+  Its carriers (the mutator, the ruin room, and VLE's landmarks) are all XML.
+- **To [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** How to hold orbit shut
+  against every giver of these quests. The closure list in `ORBIT.md`'s Route A (*"`givenBy` tags and
+  `subquestDefs` entries"*) needs to gain the uplink and the two corpus givers. Clearing `givenBy`
+  alone is the error path above.
+- **Build, next map (unowned).** Whether A's orbital tier is a new building or A′'s re-skin. Whether
+  the `CanUseNow` override lifts the roof ban outright or tests `Room.ExposedToSpace`. How far E1's
+  six weigh against authored orbital survey content.

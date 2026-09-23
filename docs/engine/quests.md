@@ -386,3 +386,163 @@ Verified against decompiled `Assembly-CSharp.dll` and Royalty's
 
 Established on [#137](https://github.com/cjd721/Rimworld-Archinity/issues/137); the routes are
 `docs/specs/RELIGION.md` § *Decrees — what failing one costs, set per decree*.
+
+---
+
+## What ends a quest, and what can hear it end
+
+Verified against decompiled `Assembly-CSharp.dll` [V throughout].
+
+- **Every outcome end goes through `Quest.End(QuestEndOutcome, sendLetter, playSound)`, but not
+  every end does.** `End` sets `ended` and `endOutcome` and then calls `CleanupQuestParts()`,
+  which runs `Notify_PreCleanup()` and then `Cleanup()` on every part. **An offer that expires
+  unaccepted skips `End`.** `Quest.QuestTick` calls `CleanupQuestParts()` directly when
+  `TicksUntilExpiry == 0 && State == NotYetAccepted`. `State` is computed: `Fail` gives
+  `EndedFailed`, `Success` gives `EndedSuccess`, `InvalidPreAcceptance` gives `EndedInvalid`,
+  and anything else gives `EndedUnknownOutcome`. `EndedOfferExpired` applies only while
+  `acceptanceTick < 0`.
+- **`End` sends no signal, and `QuestManager` has no end hook.** Its `Notify_*` set covers pawns
+  discarded, killed or born, things produced, plants harvested and factions removed. **Three
+  event seams can hear a quest end, and polling is a fourth listener:**
+  - **A part inside that quest**, reading `quest.State` in `Notify_PreCleanup`. It hears expiry
+    too.
+  - **A Harmony patch on `Quest.End`.** It **never hears expiry**. It is shipped four times: VFED
+    `MiscPatches.CheckForPlotEnd`, VFEE `Patch_Quest_End`, Medieval Overhaul
+    `MedievalOverhaul.Patches.Quest_End` (all postfixes), and VEF
+    `VanillaExpandedFramework_Quest_End_Patch` (a prefix).
+  - **A patch on `CleanupQuestParts`.** It hears expiry, and VEF's
+    `VanillaExpandedFramework_Quest_CleanupQuestParts_Patch` routes it to `QuestExpired`.
+  - **Polling `quest.State` from outside.** Vanilla's `StorytellerComp_RefiringUniqueQuest`
+    refires a unique quest `refireEveryDays` after `cleanupTick` unless it ended `EndedSuccess`.
+    `QuestPart_SubquestGenerator` polls its children (below).
+- **Failure almost always comes from a script's own signal.** `QuestPart_QuestEnd` ends the quest
+  on its `inSignal`, taking the outcome from the part or from the signal's `OUTCOME` argument. The
+  builder is `QuestGen_End.End`. **Direct callers mostly end `Unknown`:** `MoveColonyUtility`,
+  `Precept_Relic` and `GameComponent_Anomaly` end `Unknown`, `RoyalTitleUtility` ends
+  `InvalidPreAcceptance`, and `QuestPart_SpawnMonolith` ends `Fail`.
+- **The accepter dying fails nothing generically, and the player cannot abandon an accepted
+  quest.** Nothing that reads `AccepterPawn` ends a quest, and `MainTabWindow_Quests` never calls
+  `End`.
+- **An ended quest cannot be accepted again.** `Accept` is a no-op unless the state is
+  `NotYetAccepted`, and `ended` is never reset. To re-offer, generate the script again.
+
+Established on [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145); the routes are
+`docs/specs/CURRENCIES.md` § *A failed bought quest returns to the shop*.
+
+---
+
+## Giver tags: a closed enum, five callers, no `CanRun`
+
+`QuestScriptDef.givenBy` is a `List<QuestGiverTag>`. The enum is closed: `Traders`, `OrbitalScanner`,
+`Reading`, `Beggars`. `givenBy` is read only by `QuestUtility.GetGiverQuests`, which is `public
+static` and yields nothing unless Odyssey is active **[V]**.
+
+**Five vanilla callers:**
+
+| Caller | Tag | Draw |
+|---|---|---|
+| `CompOrbitalScanner.LocateSignal` | `OrbitalScanner` | `RandomElementByWeight` |
+| `CompAncientUplink.Notify_Hacked` | `OrbitalScanner` | `RandomElementByWeight` |
+| `TradeUtility.ReceiveQuestFromTrader` | `Traders` | `rootSelectionWeight` |
+| `BookOutcomeDoer_GiveQuest` | `Reading` | `rootSelectionWeight` |
+| `QuestNode_Root_Beggars`, fired later by `QuestPart_AddGiverQuest` | `Beggars` | `rootSelectionWeight` |
+
+The two orbital callers weight their draw by `NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`
+**[V]**.
+
+- **None of them calls `CanRun`.** Each goes from the draw straight to `QuestGen.Generate`, so a
+  `TestRunInt` gate is inert on every giver path. This is the **T-71** class.
+- **The two orbital givers use `RandomElementByWeight`, not the `Try` form.** An empty or zero-weight
+  list logs an error and hands `null` onward, and `CompOrbitalScanner` then throws on every tick.
+  **Never empty a tag while its giver can fire.**
+- **Reading a tag is free; adding one is not.** Our code can call `GetGiverQuests` for any of the
+  four, and our quests can join any of the four by XML. A fifth tag needs C#. `ParseHelper` parses
+  enums with `Enum.Parse`, which accepts an undefined numeric value such as `<li>4</li>` **[I]**, but
+  no reader would ever find it.
+- **The six Odyssey `OpportunitySite_*` quests are giver-agnostic.** Each sets `discoveryMethod`
+  itself when the slate lacks one, so any caller can run them. Their root,
+  `QuestNode_Root_Asteroid`, places 1–3 tiles from a random player tile and ignores
+  `siteDistRange` **[V]**.
+
+Established on [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149);
+`docs/specs/CHARTING.md` § *The orbital scanner and Charting*.
+
+---
+
+## A visitor group can be sent to a specific thing — in C#, not XML
+
+Verified against RimWorld 1.6 [V throughout].
+
+- **`QuestPart_Venerate : QuestPart_MakeLord`** takes a `Thing target`, `venerateDurationTicks`,
+  `outSignalVenerationCompleted` and `inSignalForceExit`, and makes a `LordJob_Venerate`. Its graph
+  is travel to `target.InteractionCell` → `LordToil_Venerate` for the duration → exit, sending the
+  completion signal on the way out. It exits early if the target takes damage, and exits defending
+  itself if a member is killed or the group turns hostile. `LordToil_Venerate` rotates one pawn
+  close in while the rest spectate around the target, using the Ideology-only
+  `DutyDefOf.Pilgrims_Spectate`.
+- **Its one user is Ideology's `QuestNode_Root_ReliquaryPilgrims`**, which aims it at a
+  reliquary holding a relic. **No `QuestNode_*` constructs it**, and no corpus mod references it
+  or `LordJob_Venerate`.
+- ⚠ **`QuestPart_Venerate.ExposeData` does not save `outSignalVenerationCompleted`**, and
+  `QuestPart_MakeLord.ExposeData` saves only the pawns, `inSignal`, `inSignalRemovePawn`, the
+  faction, `mapParent`, `mapOfPawn` and `excludeFromLookTargets`. `LordJob_Venerate` does save
+  the field, so it is safe once the lord exists. If the game is saved between generation and the
+  part's `inSignal` (for example, while the quest sits unaccepted), the loaded part has `null`.
+  The lord it later makes adds no completion action, because `CreateGraph` wires the signal only
+  when the field is non-empty, so the signal never fires and nothing is logged (**T-158**). Vanilla's pilgrims
+  do not notice: they drive success from every pawn's `LeftMap` through `QuestPart_PassAll`, and
+  the completion signal only drives a message.
+- **Any 1×1 thing is a valid target.** `ThingUtility.InteractionCellWhenAt` returns a standable,
+  reachable adjacent cell for a 1×1 def without `hasInteractionCell`.
+- **The XML visit cannot be aimed.** `QuestNode_VisitColony` → `QuestPart_VisitColony.MakeLord`
+  puts the group at `RCellFinder.TryFindRandomSpotJustOutsideColony`, with no target field.
+- **`QuestNode_GetFaction`'s `allowNeutral` and `allowAlly` default to `false`.** It draws
+  uniformly (`TryRandomElement`) from `GetFactions(allowHidden: true)`, which already drops the
+  player, defeated and temporary factions. VEF postfixes its private `IsGoodFaction` to honour
+  `FactionDefExtension.excludeFromQuests` (global), and ships its own node with a `factionDef`
+  pin.
+
+Established on [#158](https://github.com/cjd721/Rimworld-Archinity/issues/158); the routes are
+`docs/specs/ENCOUNTERS.md`.
+
+---
+
+## A quest site's map: leaving destroys the site, and one site part keeps it
+
+Verified against decompiled 1.6 `Assembly-CSharp.dll` [V throughout].
+
+- **Leaving a vanilla quest site destroys it.** `Site.ShouldRemoveMapNow` refuses while pawns
+  block removal, on the map or on a pocket map sourced from it; while a building blocks it; or
+  while a transporter is inbound. Otherwise it sets `alsoRemoveWorldObject = true`, unless a part
+  holds a live condition causer or a hostile `SitePartWorker_RaidSource` threat.
+  `MapParent.CheckRemoveMapNow` then removes the map and destroys the site. The quest hears
+  `site.MapRemoved`, and its script decides the outcome: the hack complex and `Gravcore_Mechhive`
+  end `Fail`. Odyssey's two orbital gravcore platforms also carry an `Unknown` end on it, **but they
+  end `Success` on `site.MapGenerated` first, so it never fires.** There is no return visit, and
+  anything not carried off is gone.
+- **A `Settlement` is the opposite.** `ShouldRemoveMapNow` leaves the world object standing, so the
+  next entry generates a fresh map from the `MapGeneratorDef`. Only
+  `SettlementDefeatUtility.CheckDefeated` retires it, to a `DestroyedSettlement`.
+- **The exception is a type test, so XML can opt in.** `Site.ShouldRemoveMapNow` keeps the site
+  whenever a part's worker `is SitePartWorker_AncientAltar` and its relic is still on the map.
+  `Notify_SiteMapAboutToBeRemoved` despawns the relic back into the `SitePart`, or, if it has left,
+  sends `SitePartParams.relicLostSignal` — the relic hunt's success signal. The class has no DLC
+  check. Any `SitePartDef` naming it as `workerClass` gets this behaviour once
+  `SitePartParams.relicThing` is set, and so does any subclass.
+- **Two things hold a map open.** Pawns (`AnyPawnBlockingMapRemoval`) and, with Odyssey, any
+  `GravEngine` or `GravAnchor` on it (`Map.AnyBuildingBlockingMapRemoval`). A map generated by a
+  gravship landing starts no `TimedDetectionRaids` countdown (`Site.PostMapGenerate`).
+- **An unvisited site outlives its quest.** `QuestPart_SpawnWorldObject.Cleanup` destroys the
+  world object only if it was never spawned. A spawned, never-entered site stays on the board
+  after its quest ends, unless the script adds `QuestNode_DestroyWorldObject` or
+  `QuestNode_WorldObjectTimeout` with `destroyOnCleanup`.
+- **A parent generator hears its children end without a patch.** `QuestPart_SubquestGenerator`
+  polls `quest.GetSubquests()` states each tick. Only `EndedSuccess` counts toward
+  `maxSuccessfulSubquests`, and Odyssey's gravcore generator re-admits any script not `Ongoing` or
+  `EndedSuccess`. So a failed or `Unknown` child is offered again as a fresh quest. This is a
+  fourth listener beside the three in § *What ends a quest*. ⚠ The base `TryGenerateSubquest`
+  skips `CanRun`. All three shipped subclasses test it themselves: `RelicHunt`, `ArchonexusVictory`
+  and `Gravcores`.
+
+Established on [#151](https://github.com/cjd721/Rimworld-Archinity/issues/151); the routes are
+`docs/specs/ORBIT.md` § *A stronghold a quest generates*.

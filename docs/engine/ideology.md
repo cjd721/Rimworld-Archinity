@@ -120,6 +120,15 @@ From [#114](https://github.com/cjd721/Rimworld-Archinity/issues/114).
   outside the class caps it either [V].
 - `PreceptDef.maxCount` limits *instances of a def* in the ideology editor
   (`IdeoUIUtility.AddPrecept`, default 1), not holders [V].
+- **Vanilla's specialist posts are multi-holder.** All eight vanilla specialists
+  (`IdeoRole_ShootingSpecialist`, `…Melee…`, `…Research…`, `…Plant…`, `…Production…`,
+  `…Mining…`, `…Animals…`, `…Medical…`) inherit `PreceptRoleMultiBase` and so are
+  `Precept_RoleMulti`, uncapped. A "one holder per post" design must author a
+  `Precept_RoleSingle` or cap the post itself. Vanilla's role-eligibility classes are
+  `RoleRequirement_NotChild`, `_SameIdeo`, `_SupremeGender` and `_MinSkillAny` (skill level only;
+  nothing reads passion). `PawnGenerator` assigns no role. From
+  [#156](https://github.com/cjd721/Rimworld-Archinity/issues/156);
+  `Ideology/Defs/PreceptDefs/Precepts_Role.xml`, `RimWorld.Precept_RoleMulti.Assign`. 1.6.4871 [V].
 
 **`leaderRole` is a single-holder concept** [V]:
 - `Precept_RoleSingle.Assign` is the only writer of `Faction.OfPlayer.leader` among roles, and

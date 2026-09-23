@@ -476,6 +476,47 @@ by [#95](https://github.com/cjd721/Rimworld-Archinity/issues/95).
 
 ---
 
+## Editing a bill is synced by where the edit happens, not by which field changes
+
+Multiplayer syncs most bill fields as **watched sync fields**, not commands. Each `[MpPrefix]`
+target is wrapped with `SyncFieldUtil.FieldWatchPrefix` (priority 801) and `FieldWatchPostfix`
+(priority -2). The postfix compares every watched field with its value at entry, **reverts a
+changed field locally and sends it as a command**. Anything unwatched stays changed on one
+machine only **[V]** (`2606448745/1.6/AssembliesCustom/Multiplayer.dll`,
+`Multiplayer.Client.SyncFieldUtil`, `Multiplayer.Client.SyncFields`).
+
+The bill scopes **[V]**:
+
+- **`Bill.DoInterface`** (the bill row) watches `suspended`, `allowedSkillRange`,
+  `ingredientSearchRadius`, `repeatMode`, `repeatCount`, `targetCount`, `pauseWhenSatisfied`,
+  `unpauseWhenYouHave` and `paused`. `paused` is also watched in `Bill_Production.ShouldDoNow`.
+- **`Dialog_BillConfig.DoWindowContents`** watches the same set minus `paused`, plus
+  `includeEquipped`, `includeTainted`, `limitToAllowedStuff`, `hpRange` and `qualityRange` when
+  the recipe has a `ProducedThingDef`.
+- **The repeat-mode menu** is a third scope. MP transpiles
+  `BillRepeatModeUtility.MakeConfigFloatMenu` (`SyncFields.BillConfigFloatMenuTranspiler` →
+  `SyncBillConfigFloatMenuOptions`) so that each option's action re-watches `repeatMode`,
+  `repeatCount`, `targetCount`, `pauseWhenSatisfied` and `unpauseWhenYouHave`.
+- **The pawn restriction** (`pawnRestriction`, `slavesOnly`, `mechsOnly`, `nonMechsOnly`) is
+  watched only inside the worker dropdown's option actions.
+- **Real sync methods:** `Bill_Production.SetStoreMode`, `SetIncludeGroup`, and
+  `BillStack.AddBill`/`Delete`/`Reorder`.
+- **The ingredient filter** syncs only through `SyncThingFilters`, which intercepts `SetAllow` /
+  `SetAllowAll` / `SetDisallowAll` while a `ThingFilterContext` is drawn.
+  `ThingFilter.CopyAllowancesFrom` is intercepted nowhere.
+
+**Consequence: a mod button that edits a bill is safe only if every field it writes is watched in
+the scope it runs in, or goes through one of those methods.** Otherwise it needs its own synced
+command. A live `Bill` is a legal command argument: the `Bill` sync worker writes the bill's
+`BillStack` and `loadID` (`SyncDictRimWorld`) **[V]**. A detached bill, such as a clipboard
+clone, is not, and needs `ExposeParameter`. Established by
+[#157](https://github.com/cjd721/Rimworld-Archinity/issues/157). Better Workbench Management's
+paste-settings button is the worked case: it writes fields that are unwatched in its scope, and
+nothing in MP or MP Compat covers it. The spec is `docs/specs/DEFAULTS.md` § *A bill's
+configuration, pasted onto another bill*.
+
+---
+
 ## Presentational separation between the two players
 
 Verified during [#23](https://github.com/cjd721/Rimworld-Archinity/issues/23) and

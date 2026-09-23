@@ -454,4 +454,22 @@ default filter with `Inherit="False"` or an explicit `<thingDefs>` list.
 `Data/Core/Defs/ThingDefs_Buildings/Buildings_Base.xml`, `Verse.Building`,
 `RimWorld.Building_OutfitStand`, `RimWorld.ITab_ContentsOutfitStand`. 1.6.4871.*
 
+### T-159 — Worksites Expanded picks recreation outside the vanilla chain, so a `GetChance` patch skips its pawns
+
+Vanilla's only per-pawn recreation weight is `JoyGiver.GetChance(pawn)`, read by
+`JobGiver_GetJoy.TryGiveJob` together with the tolerance factor. Worksites Expanded's
+`MiningOutpost.SharedJobUtility.TryRecreation` picks recreation for worksite pawns by shuffling
+`JoyGiverDef`s uniformly and calling `Worker.TryGiveJob` directly. It never calls `GetChance` and
+never applies tolerance, so **any patch on the vanilla recreation weight silently skips those
+pawns** — and so does any `JobGiver_GetJoy` subclass or transpiler. The pawns still take
+recreation; it just ignores whatever rule we added.
+
+**Fix:** if the rule must reach worksite pawns, patch `SharedJobUtility.TryRecreation` as well, or
+accept the gap and say so.
+
+*[#159](https://github.com/cjd721/Rimworld-Archinity/issues/159), `docs/specs/COLONY.md` §
+*Recreation follows a pawn's passions* (route A, *Cannot*).
+`3687071198/Assemblies/MiningOutpost.dll` `MiningOutpost.SharedJobUtility.TryRecreation`;
+`RimWorld.JobGiver_GetJoy`, `RimWorld.JoyGiver.GetChance` (`Assembly-CSharp.dll` 1.6). [V].*
+
 ---

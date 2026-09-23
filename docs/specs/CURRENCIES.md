@@ -45,6 +45,7 @@ of currencies, because nothing in it names either fiction.
 | **What a delivered item unlocks, when it is not a techprint** | **No owner — a gap.** [`HACKING.md`](HACKING.md) gates hacking research through ordinary research projects, whose Instruction item is a techprint; [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) owns no item consumer. Any unlock item that is *not* a techprint (or a `CompProperties_Techprint`-carrying authored def) needs a consumer nobody has specified — fog for [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) to either rule out or ticket. The exchange delivers a `Thing` and stops. |
 | **Exaltation** and **Reverence** | [#53](https://github.com/cjd721/Rimworld-Archinity/issues/53), [#98](https://github.com/cjd721/Rimworld-Archinity/issues/98) / [`RELIGION.md`](RELIGION.md). Threshold ladders, not spends. |
 | **Trace** | [#56](https://github.com/cjd721/Rimworld-Archinity/issues/56) / [`TRACE.md`](TRACE.md). A band ladder, not a balance. #56 has now **ruled** on whether sharing one store with Intel couples it to Church standing — see *What is shared*. |
+| **Which bought quests return on failure, and at what price** | Authoring, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) for the Schism, and [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). The **mechanism** — what observes the failure and how an entry comes back free, paid or refunded — is here, at *A failed bought quest returns to the shop*, from [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145). |
 | **Which quests are for sale, and what they contain** | Authoring. The **machinery** that offers and sells a quest is [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s and is **in this document**, at *The purchasable quest catalogue* — because it is a purchase, and purchases live here. |
 | The **ordered Schism chain** that Influence purchases advance | Routes, stranding and the marking act: *The Schism catalogue — a spend that advances the plot*, from [#132](https://github.com/cjd721/Rimworld-Archinity/issues/132). The reveal, ground and finale are [#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)'s. |
 | Cross-cutting political-UI layout | [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61). The readout for these two numbers is here. |
@@ -164,7 +165,7 @@ Answers [`RELIGION.md` § *The Schism Path*](../requirements/RELIGION.md): *"Inf
 | Question | Owner |
 |---|---|
 | First plot spend as the marking act lets Influence bank while the Church stays favourable, contradicting the banking clause | Requirements → [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122) (closed; reopening is Conrad's call) |
-| Does a failed blow cost its price again, refund it, or retry free? | Requirements → [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122) |
+| Does a failed blow cost its price again, refund it, or retry free? All three are possible — *A failed bought quest returns to the shop* ([#145](https://github.com/cjd721/Rimworld-Archinity/issues/145)) | Requirements → [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (#122 is closed) |
 | Influence decay: a steady state below a step's price strands the plot | Existing unowned gap under *Outstanding decisions* |
 | Chain state storage; shelving in `QuestManager` vs deep save; per-approach price snapshot; retry on generation failure; the synced accept check (B); plot rows and cooldowns in the window | Build map, on selection |
 
@@ -189,9 +190,10 @@ stays on the shelf.
   from [#106](https://github.com/cjd721/Rimworld-Archinity/issues/106). Read as-is — its shelf,
   its `QuestCurrency`/`QuestCurrencyInfo` pair and its `ActivateQuest` seam are unchanged. **What
   this section does change is what may ride on that shelf**: see *What this section reverses*.
-- **A failed bought quest returning to the shop:**
-  [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145). It shares route B's tick seam
-  and VEF's `QuestChainExtension.grantAgainOnFailure` as its donor.
+- **A failed bought quest returning to the shop:** *A failed bought quest returns to the shop*,
+  below, from [#145](https://github.com/cjd721/Rimworld-Archinity/issues/145). It runs on the
+  quest-**end** seam, not route B's tick. VEF's `grantAgainOnFailure` is its route C, which
+  re-grants *outside* the shop.
 - Which entries exist, their prices and their cadence:
   [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117). This section supplies the
   vocabulary; the values are balance.
@@ -465,6 +467,318 @@ current**.
 | Whether route C's node also attaches a re-checking part, or gates at generation only | Build map, on selection |
 | What `QuestGiverManager.CallWindow`'s `Find.WindowStack.Add` does under Multiplayer from the synced toil — one client or both. Moot if the shop opens from a main tab; settled by two clients, not by reading | Unowned |
 | Which item entries exist, and what each one's eligibility clause and shelf life say | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) |
+
+---
+
+## A failed bought quest returns to the shop
+
+### Purpose and scope
+
+Answers [`docs/requirements/QUESTS.md` § *Shops*](../requirements/QUESTS.md): *a bought quest can
+fail without stalling its plot line; whether it returns to the shop, and whether free or at its
+price again, is not decided.* This section says what is possible. Established on
+[#145](https://github.com/cjd721/Rimworld-Archinity/issues/145).
+
+**This section owns:** what counts as a bought quest failing, what can observe it, and every way
+the entry can come back, free, paid again or refunded, set per entry.
+
+**It does not own:**
+- The shelf, the currency pair and `ActivateQuest`: *The purchasable quest catalogue*
+  ([#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)).
+- Entry eligibility and shelf life: *Shop entries*
+  ([#144](https://github.com/cjd721/Rimworld-Archinity/issues/144)).
+- Whether a failed Schism blow is paid again, refunded or free: that is a **requirement**. The
+  Schism requirements ticket, [#122](https://github.com/cjd721/Rimworld-Archinity/issues/122), is
+  closed, so it goes to [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). This
+  section supplies the mechanism for every answer.
+- Which entries return and at what price: [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)
+  and authoring.
+
+### Verdict
+
+- **Possible? Yes, with one small piece built.** No **currency shop** in the corpus returns a
+  failed bought quest **[V]**. VEF forgets a quest as soon as it is sold: `ActivateQuest` removes
+  its `QuestInfo` and keeps no record of it **[V]**. The nearest shipped return is Medieval
+  Overhaul's quest finder. It records a quest as done only on `Success`, so an `onlyOnce` quest
+  that failed can be found again and paid for again with scanner work **[V]**. Every failure ends
+  in `CleanupQuestParts`, which a part inside the quest hears without Harmony. A `QuestPart` of ours, attached at purchase, can put a **fresh roll
+  of the same `QuestScriptDef`** back on the same shelf. It can be free (`currencyInfo = null`,
+  which VEF already draws and sells as free) or priced again **[V seams; route I]**. The *same*
+  quest object can never return: an ended quest cannot be accepted again, and selling it would
+  take payment for nothing **[V]**. Free, paid or refunded is a data field per entry.
+- **Multiplayer? Yes for A, B and D.** A quest ends inside the simulation on every client. The
+  restock is a state change driven from there, and generation draws `Rand` in the simulation. No
+  new synced method is needed **[I, from V parts]**. **C needs care:** VEF's `LoadedGame`
+  scheduling pass runs on a joining client and not on the host.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — Restock the shelf with a fresh roll** | The failed entry reappears in the same shop, free or at a price, after an optional delay, set per entry | Ours: one `QuestPart` on the end seam + VEF `QuestGiverManager.AvailableQuests` | C# + XML policy | Medium | Yes |
+| **B — Refund on failure, no restock** | The spent Influence or Intel comes back, in full or in part. The entry does not return, or returns through A | Ours: the same part + `Currencies.Credit` | C# + XML policy | Medium (shares A's part) | Yes |
+| **C — Re-grant outside the shop** | A free copy arrives as an ordinary quest offer after N days. No shop, no price | VEF `QuestChainExtension.grantAgainOnFailure` | XML | Easy | With care: `LoadedGame` runs only on a joining client. See C. **Not recommended for plot entries** |
+| **D — The Schism re-offers its step** | The ordered chain's current step is regenerated on failure, paid again or free by policy | *The Schism catalogue* route A (VFED donor) | C# + XML | Medium, already specified | Yes |
+| **E — Adopt VFE Deserters' shop as shipped** | Plot steps regenerate and are paid again. **Service missions never return** | VFED | patch | Hard to fit — **not recommended** | Yes |
+
+**Blocked by an engine fact: re-adding the same `QuestInfo`.** `Quest.State` is computed from a
+private `ended` flag that nothing resets. `Quest.Accept` is wrapped in
+`if (State == QuestState.NotYetAccepted)`. `ActivateQuest` still charges and sends the letter
+when that check fails, so re-shelving the ended quest would **take payment and start nothing**
+(*Shop entries* § A, consequences) **[V]**. So "the same entry" always means *the same script,
+rolled again*.
+
+**Recommend A, with B's refund as a per-entry mode of the same part.** D is A applied to the
+chain's current step and needs nothing extra. C is the cheapest way to make a free, shopless
+return possible. It fits side content, not a plot entry, because of its hazards (below). The policy
+is not selected here. For the Schism it is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s, because #122 is closed. For
+everything else it is authoring's. Medieval Overhaul is the donor for keying the policy on a
+`DefModExtension` on the quest script.
+
+#### What ends a bought quest as failed
+
+All **[V]**, `Assembly-CSharp.dll` 1.6:
+
+- **Every outcome end goes through one method.** `Quest.End(QuestEndOutcome, sendLetter,
+  playSound)` sets `ended` and `endOutcome`, then calls `CleanupQuestParts()`. `State` then
+  reads `EndedFailed` for `Fail`, `EndedSuccess` for `Success`, `EndedInvalid` for
+  `InvalidPreAcceptance`, and `EndedUnknownOutcome` otherwise. **Offer expiry skips `End`:**
+  `Quest.QuestTick` calls `CleanupQuestParts()` directly on an unaccepted offer whose clock ran
+  out. A bought quest is accepted at purchase, so this cannot happen to it. It does matter for
+  choosing a seam.
+- **Almost always through a part on a signal.** `QuestPart_QuestEnd.Notify_QuestSignalReceived`
+  calls `quest.End(outcome)` on its `inSignal`, taking the outcome from the part or from the
+  signal's `OUTCOME` argument. `QuestGen_End.End` is the builder every root uses.
+  `QuestNode_Root_Mission`'s fail triggers are `shuttle.Killed`, `shuttle.LeftBehind`, the
+  shuttle-leave delay and one further `inSignal` pass. `QuestNode_Root_WorkSite` fails on the site's own
+  signal. `QuestPartUtility`'s world-object timeout emits `OUTCOME = Fail`.
+  `QuestPart_QuestEndParent` ends a parent from a child.
+- **A few direct calls, and most of them end `Unknown`, not `Fail`.**
+  `MoveColonyUtility.MoveColonyAndReset` (Archonexus) and `Precept_Relic` end quests `Unknown`
+  with no letter. `RoyalTitleUtility` ends quests `InvalidPreAcceptance`.
+  `GameComponent_Anomaly` ends a quest `Unknown`, and `QuestPart_SpawnMonolith` ends one `Fail`.
+- **The accepter dying is not a failure condition in general.** `AccepterPawn` is read by
+  `QuestPart_GiveRoyalFavor`, the refugee delayed reward and the quest tab. None of them ends a
+  quest. A pawn's death fails a quest only where that script wires its own signal.
+- **The player cannot abandon an accepted quest.** `MainTabWindow_Quests` has no `End` call. The
+  only way out of a bought quest is its own script.
+- **Expiry does not apply after purchase.** `State` reads `EndedOfferExpired` only while
+  `acceptanceTick < 0`, and `ActivateQuest` accepts at once.
+
+**So "failed" is a choice of outcome set.** Only `EndedFailed` is certain. VFED re-offers on
+`EndedFailed` **or** `EndedInvalid` (`Notify_PlotQuestEnded`: `state - 5 <= 1`) **[V]**. A script
+whose loss path ends `Unknown` would never trigger a restock keyed on `Fail`. Which outcomes count
+is a per-entry parameter.
+
+#### What can observe it
+
+| Seam | How | Harmony | Evidence |
+|---|---|---|---|
+| **A part of ours inside the bought quest** | `CleanupQuestParts` calls `Notify_PreCleanup()`, then `Cleanup()`, on every part after `ended`/`endOutcome` are set. The part reads `quest.State`. It also hears expiry | None | [V] `Quest.End`, `Quest.CleanupQuestParts`, `Quest.QuestTick` |
+| **Postfix on `Quest.End`** | Look the quest up in our own registry of bought quests. **Never hears expiry** | 1 patch | [V] shipped four times: VFED `MiscPatches.CheckForPlotEnd`, VFEE `Patch_Quest_End`, Medieval Overhaul `MedievalOverhaul.Patches.Quest_End` (postfixes), VEF `VanillaExpandedFramework_Quest_End_Patch` (prefix) |
+| **Prefix on `Quest.CleanupQuestParts`** | Same, reading the private `endOutcome`. Hears expiry | 1 patch | [V] VEF `VanillaExpandedFramework_Quest_CleanupQuestParts_Patch` (it routes expiry to `QuestExpired`) |
+| **Polling `quest.State`** | Checking a held quest's state on a tick | None | [V] vanilla `StorytellerComp_RefiringUniqueQuest` (refires `refireEveryDays` after `cleanupTick` unless `EndedSuccess`); `QuestPart_SubquestGenerator` (`docs/engine/quests.md`, from #151) |
+| Medieval Overhaul's quest finder | `GameComponent_QuestFinder.Notify_QuestComplete`, called from its `Quest.End` postfix, records `completed` only on `Success`. `CompQuestFinder.CanFind` then keeps a failed `onlyOnce` script (`QuestInformation` extension) in `AvailableForFind` | — | [V] `…/3219596926/1.6/Assemblies/MedievalOverhaul.dll` |
+| `QuestManager` notify hooks | **None for quest end.** Its `Notify_*` cover pawn discarded or killed or born, things produced, plants harvested, faction removed | — | [V] |
+| A signal | **`End` sends none.** Only the script's own trigger signals exist, and each script names them differently | — | [V] |
+| VEF's quest-giver tracking | **None after purchase.** `ActivateQuest` ends in `availableQuests.Remove(questInfo)` | — | [V] |
+| VEF's chain tracking | Records only quests whose root carries `QuestChainExtension` (`QuestManager.Add` postfix → `CleanupQuestParts` prefix → `QuestCompleted`) | — | [V] |
+
+**The part is the natural seam, and it can be attached without Harmony or XML.**
+`CurrencyQuestCurrencyInfo.Buy(QuestInfo)` is ours. It runs inside the synced `ActivateQuest`,
+after `Accept`, holding the `Quest` and the price, and `Quest.AddPart` is public **[V]**. The
+alternative is a `QuestNode` of ours placed in each entry's script. Either way the part must be a
+**top-level** part. `QuestPart_Choice.Choose` runs `Notify_PreCleanup`/`Cleanup` on the parts of
+the options that were not chosen (`docs/engine/quests.md` § *Reward choices*). A part inside a
+choice is cleaned up at purchase. Gating on `State == EndedFailed` makes that harmless, not
+correct.
+
+#### A — restock the shelf with a fresh roll
+
+**What it gets us.**
+- **The same shop, the same script, a new roll.** `QuestGiverManager.AvailableQuests` returns
+  the live list, so appending a `QuestInfo` is a public call **[V]**. The part runs
+  `QuestGen.Generate(quest.root, slate)` and builds the entry. For a priced return it goes
+  through our `CurrencyQuestCurrency.Allows`. For a free one it builds a
+  `new QuestInfo(q, faction, null, onlyOneChoice: true, saveQuestDeeply: true)`.
+- **Free return with no UI work.** With `currencyInfo == null`, `Window_Contracts` skips the price
+  label, and `ActivateQuest`'s `currencyInfo?.Buy` charges nothing **[V]**. A "returned" badge is
+  one row in `Window_ArchinityNetwork`.
+- **Paid return at the old price or a new one.** The part can carry the original
+  `QuestCurrencyInfo.amount` and reapply it, or let `Allows` price the new roll.
+- **Delay and count.** The part can store a return tick, which a manager tick checks. It can also
+  carry a return count across rolls, for example *free once, then paid*.
+- **The Schism for free.** Route D is this mechanism applied to the chain's current step.
+
+**What it cannot do.**
+- **Return the same quest.** Site, reward, choice and pawns are all rolled again. `QuestInfo`'s
+  constructor also re-draws the displayed choice **[V]**.
+- **Outlive a rotating shelf.** `Reset()` is `Clear()` then regenerate **[V]**. On a giver with
+  `resetEveryTick` set, a returned entry lasts until the next rotation. Standing returns need a
+  standing giver or *Shop entries* route B.
+- **Guarantee a roll.** `CanRun` may no longer pass: a research gate, `QuestNode_QuestUnique`, or a
+  faction gone. `QuestGen.Generate` can throw. Our call is not wrapped by VEF's silent catch
+  (**T-77**), so a throw is loud unless we catch it. Refunding (B) is the fallback.
+
+**Consequences.**
+- ⚠ **Free returns are a reward re-roll.** A player who fails a bought quest on purpose draws a
+  new reward for nothing. The protections are paid-again, a delay, or a return cap. That choice
+  is balance ([#117](https://github.com/cjd721/Rimworld-Archinity/issues/117)).
+- **`maximumAvailableQuestCount`.** A returned entry either takes a slot or goes over the cap.
+  `GenerateQuests` fills only up to `max − Count` **[V]**, so going over is harmless but
+  permanent until something is bought.
+- **Generating inside `End`.** VFED calls `QuestGen.Generate` from inside its `Quest.End`
+  postfix **[V]**, so this is shipped practice. Moving it to the next
+  `StorytellerWatcher.GameComponentTick` is a build choice.
+- **The shelf must exist.** Managers are lazy. A quest was bought through this one, so it exists,
+  but the part must look it up by `questManagerID` in `StorytellerWatcher.questGiverManagers`
+  **[V]**, not hold a reference across a save.
+
+**Multiplayer.** Every `End` caller found is a tick-driven part, a signal, or a utility reached
+from a player action (`MoveColonyAndReset`). The quest tab cannot end a quest **[V]**. Player
+actions and the signals they cause (a shuttle launch) reach the simulation through Multiplayer's
+own synced commands **[I]**. The restock runs on both clients in the same tick, and
+`QuestGen`'s and `QuestInfo`'s `Rand` draws happen in the simulation. **No new `SyncMethod`**
+**[I]**. It inherits #106's one registration on `ActivateQuest` unchanged.
+
+#### B — refund on failure
+
+**What it gets us.** The part credits back `amount × refundFraction` through this document's
+`Credit`, with a message. Uses: *the network makes good a failed job*, a partial refund, or a
+refund when a roll fails. **Cannot:** return the entry. Combine it with A for that.
+**Consequence:** a full refund combined with a free return pays the player to fail. A policy
+validator refuses that pair. **MP:** the same as A. `Credit` is an in-sim mutation, never a UI
+call **[I]**.
+
+#### C — re-grant outside the shop — not recommended for plot entries
+
+**What it gets us.** Pure XML. On an entry's `QuestScriptDef`, VEF's
+`QuestChainExtension.grantAgainOnFailure: true` + `daysUntilGrantAgainOnFailure` works like this.
+`ActivateQuest`'s `QuestManager.Add` triggers VEF's postfix, which records the quest. On
+`Fail`, `CleanupQuestParts`'s prefix calls `QuestCompleted` → `TryGrantAgainOnFailure` → a
+`FutureQuestInfo` → `QuestUtility.GenerateQuestAndMakeAvailable` **[V]**. The copy is free and
+arrives as an ordinary offer.
+
+**What it cannot do.** It cannot return to the shop or carry a price. It reacts only to `Fail`, not
+`Invalid` or `Unknown`.
+
+**Consequences, all [V]:**
+- ⚠ **The extension also hands the entry out free at game start** (**T-153**). `StartedNewGame`/`LoadedGame`
+  → `TryScheduleQuests` reaches `quest.CreateQuest()` for any script carrying the extension that
+  no gate stops. Offers held on the shop shelf are not in `QuestManager`, so the live-duplicate
+  check cannot see them. `TryGrantAgainOnFailure` does **not** re-check `requiredResearch`. So a
+  `requiredResearch` that is never finished blocks the free start grant and still allows the
+  re-grant **[I composition]**. A hack, stated as one.
+- The re-granted offer carries the script's own acceptance expiry. VEF's expiry handling is broken
+  (**T-72**, **T-73**), and a chain-granted quest skips `TestRun` (**T-71**).
+
+**Multiplayer: with care.** The failure path is in the simulation. It runs `CleanupQuestParts`,
+and the `FutureQuestInfo` fires from `GameComponentTick`, including its `Rand.MTBEventOccurs`
+**[V]**. **`LoadedGame` is the exception.** It runs `EnsureAllQuestChainUniquePawns()` and
+`TryScheduleQuests()` **[V]**. A client joining a running game loads the save and runs both. The
+host, already in the game, does not **[I, Multiplayer's join-by-load]**. MP Compat's VEF entry
+does not touch either one (*Shop entries* § Multiplayer).
+- **Harmless when no chain script can schedule at that moment.** Every `TryScheduleQuest` exits at
+  a gate before any `Rand`: `requiredResearch` unfinished, already pending, already live, or not
+  repeatable and already recorded **[V]**. The unique-pawn pass must also find its pawns already
+  made. Route C's own entries pass this test by construction, because their `requiredResearch`
+  gate never opens.
+- **A desync when anything can schedule.** Take a chain script whose conditions became true since
+  the last scheduling pass. On the joining client, `CreateQuest` or a `RandomInRange` delay runs
+  and the host never runs it. The risk is the whole load order's chain scripts, not just ours.
+  #158 inherits it if it uses VEF chains.
+
+#### D — the Schism re-offers its step
+
+Already specified: *The Schism catalogue* § Route A. VFED's donor regenerates the same index on
+`EndedFailed`/`EndedInvalid` and makes the player pay again **[V]**. Free, paid again or refunded
+is route A's or B's part applied to the step. The re-offer itself needs nothing new.
+
+#### E — adopt VFED's shop — not recommended
+
+VFED's `ServiceQuests` shelf has **no return**. `EnsureQuestListFilled` only tops it up to 10,
+and no end handler reads `ServiceQuests` **[V]**. Its plot re-offer is D's donor, and D already
+rejected adopting it (*The Schism catalogue* § Route D). Note also that a plot quest ending
+`Unknown` matches neither branch of `Notify_PlotQuestEnded`, so the step is never re-offered
+**[V]**. Route D must not copy that gap.
+
+### Per-entry policy — where the flag lives
+
+The policy has four fields: which outcomes count (`Fail` / `+Invalid` / `+Unknown`); the mode
+(`none` / `free` / `paid` / `refund`, and refund combines with a return); a delay; a cap. Every
+home below is authored in **XML** and read by **our C#**:
+
+| Home | Scope | Note |
+|---|---|---|
+| A `DefModExtension` on the entry's `QuestScriptDef` | One policy per script, wherever it is sold | Simplest. **T-06**: a second extension of the same type is inert |
+| A field on our `CurrencyQuestCurrency`, keyed by script | Per shelf: the same script can return free from one shop and paid from the other | `QuestGiverDef.currency` is already polymorphic (`Class=`) **[V]** |
+| A `QuestNode` of ours in the script | Per branch or variant, can read the slate | Also the attach point if `Buy` does not attach the part |
+| `QuestGiverDef` | **No field exists** **[V]**. It would mean a def subclass | Not worth it: the currency object already carries per-shelf data |
+
+### Available mechanisms
+
+Every line **[V]**. `VEF.dll` = `…/294100/2023507013/1.6/Assemblies/VEF.dll`; `VFED.dll` =
+`…/3025493377/1.6/Assemblies/`; `VFEEmpire.dll` = `…/2938820380/1.6/Assemblies/`.
+
+- **Vanilla:** `Quest.End`, `Quest.State`, `Quest.Accept`, `Quest.CleanupQuestParts`,
+  `Quest.AddPart`, `Quest.QuestTick`; `QuestState` / `QuestEndOutcome`; `QuestPart.Notify_PreCleanup`
+  / `Cleanup`; `QuestPart_QuestEnd`; `QuestManager.Add` / `Remove` / `QuestManagerTick` / its
+  `Notify_*` set; and the direct `End` callers listed above.
+- **VEF:** `QuestGiverManager.ActivateQuest` / `AvailableQuests` / `Reset` / `GenerateQuests`;
+  `QuestInfo` (constructor, fields, `ExposeData`); `QuestWorker.GenerateQuests`;
+  `StorytellerWatcher.questGiverManagers`; `Window_Contracts` null-`currencyInfo` draw;
+  `GameComponent_QuestChains.QuestCompleted` / `TryGrantAgainOnFailure` / `TryScheduleQuest`;
+  `FutureQuestInfo.TryFire`; `QuestUtils.CreateQuest`; the `QuestManager.Add`, `Quest.End` and
+  `Quest.CleanupQuestParts` patches.
+- **VFED:** `WorldComponent_Deserters.Notify_PlotQuestEnded` / `GeneratePlotQuest` /
+  `EnsureQuestListFilled`; `HarmonyPatches.MiscPatches.CheckForPlotEnd`.
+- **VFEE:** `Patch_Quest_End`, a success-only postfix, as a `Quest.End` precedent.
+- **Medieval Overhaul** (`…/3219596926/1.6/Assemblies/MedievalOverhaul.dll`):
+  `Patches.Quest_End` → `GameComponent_QuestFinder.Notify_QuestComplete`, which adds to
+  `completed` only on `Success`. `CompQuestFinder.CanFind` refuses an `onlyOnce` script only once
+  it is `Completed`. `QuestInformation` is the per-script `DefModExtension` (`onlyOnce`,
+  `WorkTillTrigger`, `requiredLinkable`, `LinkablesNeeded`). A finder-issued quest goes out
+  through `QuestUtility.GenerateQuestAndMakeAvailable`. **The only shipped fail-then-return**:
+  the price is scanner work, not a currency, and the return is a fresh generation.
+- **Vanilla, polling:** `StorytellerComp_RefiringUniqueQuest` refires a unique quest
+  `refireEveryDays` after `cleanupTick` unless it ended `EndedSuccess`, `Ongoing` or
+  `NotYetAccepted`. That makes it a free fail-then-return with no shop.
+
+**The wide pass**, both roots, `-a -g '*.dll' -g '!**/obj/**' -g '!**/Referenced/**'`, attributed
+through `tools/corpus.py --which -`:
+- ASCII, case-insensitive: `grantAgainOn` → VEF only; `ReturnOnFail|RetryOnFail|OnQuestFailed|
+  QuestFailed|Notify_QuestEnded|Notify_QuestFailed|QuestEnded` → only VFED's
+  `Notify_PlotQuestEnded`, VFEE's `questEnded`/`questEndedSignal` and 1.2–1.4 Achievements
+  Expanded; `restock|requeue|reoffer` and `refund` → trader, vehicle, building and fuel restocks
+  and refunds, **none on a quest**.
+- UTF-16, hand-typed null-interleaved, validated on `questDeep` (VEF, both roots):
+  `grantAgain` → zero (VEF reads it by XML reflection, not a literal);
+  `onFail|retry|reoffer|requeue` → Mining Outpost's KCSG retries and RimPacts' `retryCount`,
+  **none on a quest**.
+- **Missed by these patterns, found in review:** Medieval Overhaul's `Notify_QuestComplete`,
+  above. The name-based sweep did not reach it. A sweep of `Quest.End` patches would have: the
+  `HarmonyPatch(typeof(Quest), "End")` attribute sites. **Residual:** a return-on-fail named
+  some other way, outside a `Quest.End` or `CleanupQuestParts` patch.
+
+### Status
+
+**Evidence class: READ.** Mechanisms **[V]**. Routes A–E **[I]** as compositions. From
+[#145](https://github.com/cjd721/Rimworld-Archinity/issues/145).
+[#106](https://github.com/cjd721/Rimworld-Archinity/issues/106)'s `ActivateQuest` order and
+[#132](https://github.com/cjd721/Rimworld-Archinity/issues/132)'s re-offer were re-read and stand.
+**One pointer corrected:** *Shop entries* said #145 "shares route B's tick seam and
+`grantAgainOnFailure` as its donor". The return runs on the **end** seam, not the tick.
+`grantAgainOnFailure` is route C, which re-grants *outside* the shop.
+
+### Open questions
+
+| Question | Owner |
+|---|---|
+| Does a failed bought quest return, and free, paid again or refunded, per entry or everywhere? | Requirements → [`QUESTS.md`](../requirements/QUESTS.md) § *Shops*; the Schism's blows → [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) (#122 is closed) |
+| Which outcomes count as failure: `Fail` only, or also `Invalid` / `Unknown` | Requirements, with the answer above |
+| Delay, return cap, refund fraction; whether free returns are capped against reward re-rolling | [#117](https://github.com/cjd721/Rimworld-Archinity/issues/117) |
+| Attach in `Buy` or by a `QuestNode`; restock inside `End` or on the next tick; skip `CanRun` on a return or refund instead; old price or new | Build map, on selection |
 
 ---
 

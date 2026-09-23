@@ -681,11 +681,17 @@ Anything that parks pawns off-map in its own container has the same shape. Vanil
 the precedent: `QuestPart_LendColonistsToFaction` is summed back in by
 `TotalBorrowedColonistCount`.
 
-**Fix:** a postfix on `AdjustedPopulation` adding the occupants of every live `Outposts.Outpost`
-(`docs/specs/TERRITORY.md` OC-N2).
+**For outposts this is now the intended behaviour.** Under #175's consumed-pawn premise a
+committed pawn is *sold*, and a sold pawn should leave the storyteller's population, so #170's
+fix (a postfix on `AdjustedPopulation` adding every live outpost's occupants, OC-N2) is retired
+and must not be built for outposts. The mechanism stands for any other off-map container of ours
+that is meant to keep its pawns counted: **fix** that one by summing its pawns back in, the way
+`TotalBorrowedColonistCount` does.
 
 *[#170](https://github.com/cjd721/Rimworld-Archinity/issues/170), `docs/specs/TERRITORY.md` §
-*What an outpost costs*. Verified against 1.6 `Assembly-CSharp.dll` and
+*What an outpost costs*; premise inverted by
+[#179](https://github.com/cjd721/Rimworld-Archinity/issues/179), § *An outpost that consumes its
+pawns and runs on its own*. Verified against 1.6 `Assembly-CSharp.dll` and
 `2023507013/1.6/Assemblies/Outposts.dll`.*
 
 ### T-149 — VEF charges an outpost's cost only when the caravan's last humanlike joins
@@ -742,11 +748,18 @@ leaves living colonists referenced by nothing: no death, no `Notify_PawnLost`, n
 are gone at the next save. VEF's own exits are safe for living pawns: `ConvertToCaravan` makes a
 caravan first, and `Tick` destroys only at `PawnCount == 0`. For dead ones see **T-152**.
 
+**The goods go too.** `containedItems` is a plain `List<Thing>`, not a `ThingOwner`, so
+`Destroy()` drops every stored thing as silently as the pawns. Anything meant to survive
+destruction — a ruin's loot, a refund — must be moved out first.
+
 **Fix:** any code of ours that ends an outpost must first evacuate the occupants
-(`ConvertToCaravan`), kill them, or transfer them to a holder, and only then destroy it.
+(`ConvertToCaravan`), kill them, or transfer them to a holder, move out whatever in
+`containedItems` should survive, and only then destroy it.
 
 *[#171](https://github.com/cjd721/Rimworld-Archinity/issues/171), `docs/specs/TERRITORY.md` §
-*An outpost's upkeep arrives as events* → *Loss*. Verified against VEF
+*An outpost's upkeep arrives as events* → *Loss*; the goods from
+[#179](https://github.com/cjd721/Rimworld-Archinity/issues/179), § *An outpost that consumes its
+pawns and runs on its own* (`Outpost.containedItems`). Verified against VEF
 `2023507013/1.6/Assemblies/Outposts.dll`.*
 
 ### T-152 — An outpost occupant who dies of disease or bleeding stays an occupant, counts and produces
@@ -831,6 +844,18 @@ grants the quest quietly stops working when a chain does. A category cap of ours
 `QuestNode` whose `TestRunInt` counts pending offers has the same problem, and must live
 somewhere the chain path actually executes.
 
+**The chain is not the only door that skips `CanRun`.** Two more reach `QuestGen.Generate` the
+same way:
+
+- **`QuestPart_SubquestGenerator.TryGenerateSubquest`** calls `GenerateQuestAndMakeAvailable`
+  directly. All three shipped subclasses test `CanRun` themselves — `RelicHunt` and
+  `ArchonexusVictory` in `GetNextSubquestDef`, `Gravcores` in `GetPossibleSubquests`; **a subclass
+  of ours must too**, because the base does not.
+- **Every Odyssey giver-tag path** — the orbital scanner, the ancient uplink, the trader, the book,
+  and the beggars via `QuestPart_AddGiverQuest` — goes from the weighted draw straight to
+  `QuestGen.Generate` (`docs/engine/quests.md` § *Giver tags*). A `givenBy` quest's `TestRun`
+  gates are inert on that path.
+
 *(One claim the audit struck: it is **not** true that only two vanilla callers run `CanRun` —
 there are 16. The gates are inert on the chain path regardless; the narrow-caller framing was
 wrong and is not what this entry rests on.)*
@@ -839,7 +864,12 @@ wrong and is not what this entry rests on.)*
 `VEF.QuestUtils.CreateQuest` and `VEF.GameComponent_QuestChains` from `VEF.dll`;
 `RimWorld.QuestGen.QuestGen.Generate`, `RimWorld.QuestScriptDef.CanRun`,
 `RimWorld.QuestGen.QuestNode_QuestUnique`. T-39 is the same method, read for a different
-hazard. 1.6.4871.*
+hazard. 1.6.4871. The subquest and giver-tag doors:
+[#151](https://github.com/cjd721/Rimworld-Archinity/issues/151), `docs/specs/ORBIT.md` § *A
+stronghold a quest generates* (`RimWorld.QuestPart_SubquestGenerator` and subclasses);
+[#149](https://github.com/cjd721/Rimworld-Archinity/issues/149), `docs/specs/CHARTING.md` § *The
+orbital scanner and Charting — one apparatus or two* (`CompOrbitalScanner`, `CompAncientUplink`,
+`QuestUtility.GetGiverQuests`, `QuestPart_AddGiverQuest`), `Assembly-CSharp.dll` 1.6.*
 
 ### T-72 — VEF's `conditionFailQuests` never matches an expired offer
 
@@ -1371,5 +1401,72 @@ the slate.
 *[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168), `docs/specs/TERRITORY.md` §
 *A sworn faction owes services* (OS-4). `VEF.Storyteller.GoodwillCurrency.Allows`
 (`2023507013/1.6/Assemblies/VEF.dll`).*
+
+### T-153 — A `QuestChainExtension` on a shop-sold quest also gives it away free
+
+`GameComponent_QuestChains.StartedNewGame` / `LoadedGame`, and every `QuestCompleted`, call
+`TryScheduleQuests`. That reaches `quest.CreateQuest()` for **any** script carrying the extension
+that no gate stops. Its live-duplicate check reads only `Find.QuestManager`, and a VEF
+`QuestGiverManager` holds its unbought offers by `Scribe_Deep` outside `QuestManager`, so the
+shelved copy is invisible to it. Adding `grantAgainOnFailure` to a shop entry therefore also puts
+a free copy in the quest tab. **Nothing logs.** The offer is visible, but nothing says it came
+from the chain scheduler rather than the shop, and nothing flags it as a duplicate of a shelf
+entry.
+
+`TryGrantAgainOnFailure` does not re-check `requiredResearch`, so a `requiredResearch` that is
+never finished stops the start grant and keeps the re-grant **[I composition]** — the hack
+`CURRENCIES.md` route C states as one. In Multiplayer, `LoadedGame`'s pass runs on a joining
+client and not on the running host **[I, join-by-load]**, so any chain script schedulable at that
+moment desyncs.
+
+**Fix:** never put `QuestChainExtension` on a script a shop sells unless a gate provably stops
+the start grant; return a failed bought quest through the shop's own end-seam part instead.
+T-71 to T-73 also apply to anything the chain grants.
+
+*[#145](https://github.com/cjd721/Rimworld-Archinity/issues/145), `docs/specs/CURRENCIES.md` §
+*A failed bought quest returns to the shop* → route C. `VEF.Storyteller.GameComponent_QuestChains`
+(`2023507013/1.6/Assemblies/VEF.dll`). Mechanism [V].*
+
+### T-157 — `StorytellerComp_SingleOnceFixed` gets one chance
+
+`MakeIntervalIncidents` yields only when `TicksGame / 1000 == fireAfterDaysPassed * 60`, and tests
+nothing. `Storyteller.TryFire` then runs `CanFireNow` and discards a `false`; nothing retries. For
+an `IncidentWorker_GiveQuest` incident `CanFireNowSub` runs the quest's `CanRun`, so any `TestRun`
+that fails on that one interval — no eligible faction, an `allowNeutral` / `allowAlly` left at its
+`false` default, a missing target thing, no site tile, a techprint already met — **cancels the
+quest for the campaign with no log line**.
+
+`StorytellerComp_RefiringUniqueQuest` has the same single window (`minDaysPassed * 60 + 1`) until
+a load sets its unscribed `generateSkipped`, after which it retries every interval. That flag
+differs between a running host and a client that joined by loading **[I]**.
+
+**Fix:** author the quest so its `TestRun` cannot fail on the day (a fallback branch inside the
+quest), or fire it from a comp of ours that retries until offered (`ENCOUNTERS.md` T4).
+
+*[#158](https://github.com/cjd721/Rimworld-Archinity/issues/158), `docs/specs/ENCOUNTERS.md` § 1;
+`docs/engine/storyteller-and-incidents.md` § *The fixed-day comps fire on one interval*.
+`RimWorld.StorytellerComp_SingleOnceFixed`, `RimWorld.StorytellerComp_RefiringUniqueQuest`,
+`RimWorld.Storyteller.TryFire`, `RimWorld.IncidentWorker_GiveQuest.CanFireNowSub`
+(`Assembly-CSharp.dll` 1.6).*
+
+### T-158 — `QuestPart_Venerate` does not save its completion signal
+
+`QuestPart_Venerate.ExposeData` saves `target`, `venerateDurationTicks` and `inSignalForceExit`
+but **not `outSignalVenerationCompleted`**, and `QuestPart_MakeLord.ExposeData` saves only the
+pawns, `inSignal`, `inSignalRemovePawn`, the faction, `mapParent`, `mapOfPawn` and
+`excludeFromLookTargets`. A save and load between quest generation and the part's `inSignal`
+(typically while the offer is unaccepted) leaves the field `null`. The lord made afterwards then
+carries no completion action, because `LordJob_Venerate.CreateGraph` adds it only for a non-empty
+signal, so anything keyed to it **never fires**. There is no error or log.
+
+`LordJob_Venerate` does save the field, so a save after the lord exists is safe. Vanilla's
+reliquary pilgrims are unaffected because their success runs off each pawn's `LeftMap`.
+
+**Fix:** key the payload to the group leaving (vanilla's own path), subclass the part to save the
+field, or `autoAccept` with the lord made on the initiate signal.
+
+*[#158](https://github.com/cjd721/Rimworld-Archinity/issues/158), `docs/specs/ENCOUNTERS.md` § 4
+(V2). `RimWorld.QuestPart_Venerate`, `RimWorld.QuestPart_MakeLord`, `RimWorld.LordJob_Venerate`
+(`Assembly-CSharp.dll` 1.6).*
 
 ---

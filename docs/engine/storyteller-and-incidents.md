@@ -207,3 +207,28 @@ The storyteller's own path to a pinned faction is `docs/engine/factions-and-worl
   (`Settlement_TraderTracker`: a virtual 0.02).
 
 *[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168). `RimWorld.FactionDialogMaker`, `RimWorld.Tradeable` — `Assembly-CSharp.dll` 1.6.*
+
+## The fixed-day comps fire on one interval, and a refusal is never retried
+
+The two comps that offer a quest on a given day are both one-shot windows [V]:
+
+- **`StorytellerComp_SingleOnceFixed`** yields its incident when `TicksGame / 1000 ==
+  fireAfterDaysPassed * 60` — one 1000-tick interval — and tests nothing itself.
+  `Storyteller.StorytellerTick` hands each yield to `TryFire`, which runs `CanFireNow` and drops a
+  `false`. For an `IncidentWorker_GiveQuest` incident, `CanFireNowSub` runs the quest's `CanRun`,
+  so a quest whose `TestRun` fails on that interval is **never offered, and nothing is logged** (**T-157**).
+  `minColonistCount` restarts the clock from the tick the count was reached. Royalty's
+  `Intro_Wimp` (day 8) and `Intro_Deserter` (day 26) use it, in `BaseStoryteller`.
+- **`StorytellerComp_RefiringUniqueQuest`** checks `CanFireNow` itself, but on exactly one interval
+  (`minDaysPassed * 60 + 1`) unless its private `generateSkipped` is set. `Initialize` sets it when
+  the day has already passed, and `Storyteller.ExposeData` re-runs `InitializeStorytellerComps` on
+  `ResolvingCrossRefs` — so **after a load** it retries every interval until a quest with that `root`
+  exists. `generateSkipped` is not scribed. `refireEveryDays` re-offers after the last quest
+  ended without success.
+- The base `StorytellerCompProperties.minDaysPassed` is compared against
+  `GenDate.DaysPassedSinceSettleFloat` in `Storyteller.MakeIncidentsForInterval`; the
+  `SingleOnceFixed` day is counted from `TicksGame`.
+
+*[#158](https://github.com/cjd721/Rimworld-Archinity/issues/158), `docs/specs/ENCOUNTERS.md` §1.
+`RimWorld.StorytellerComp_SingleOnceFixed`, `RimWorld.StorytellerComp_RefiringUniqueQuest`,
+`RimWorld.Storyteller`, `RimWorld.IncidentWorker_GiveQuest` — `Assembly-CSharp.dll` 1.6.*

@@ -35,6 +35,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-92 | Declaring a modded research tab silently enrols a `requiredAnalyzed`-gated project into the vanilla `Schematic` book's grant pool, bypassing the gate |
 | T-99 | Declaring `techprintCount` puts the techprint into every faction-less generator — orbital trade ships, map-gen loot and asker-less rewards skip `heldByFactionCategoryTags` |
 | T-136 | `OutfitStandBase` declares no `thingClass`, so a def derived from it is a plain `Building` — no gizmo, no contents, no error |
+| T-159 | Worksites Expanded picks worksite pawns' recreation outside `JobGiver_GetJoy` — a `JoyGiver.GetChance` patch silently skips them |
 
 ## World creation and factions — [`docs/traps/world-creation.md`](traps/world-creation.md)
 
@@ -58,7 +59,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-68 | `SetFactionDirect` leaves a seized turret in the wrong attack-target bucket until a reload |
 | T-65 | VEF's `forcedPointsRange` sentinel is `IntRange.One`; omit it and the authored raid fires at zero points |
 | T-70 | `QuestNode_End` sets `signalListenMode` on the end part but not on the goodwill change beside it |
-| T-71 | A chain-granted quest skips `TestRun`, so `CanRun`, `QuestNode_QuestUnique` and `minRefireDays` are inert |
+| T-71 | A chain-granted quest skips `TestRun`, so `CanRun`, `QuestNode_QuestUnique` and `minRefireDays` are inert — and so does a `QuestPart_SubquestGenerator` child or any Odyssey giver-tag (`givenBy`) quest |
 | T-72 | VEF's `conditionFailQuests` never matches an expired offer — `outcome` is written only on completion |
 | T-73 | VEF's `grantAgainOnExpiry` passes a tick count into an `mtbDays` parameter and never fires |
 | T-76 | A VEF `QuestGiverDef` with `onlyOneReward: false` has a permanently empty catalogue |
@@ -89,11 +90,14 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-142 | A goodwill refund written as a second `TryAffectGoodwillWith` does not restore the balance — vanilla amplifies whichever leg moves toward natural goodwill, and a Reverence scaler on positive gains would skew the refund leg again |
 | T-145 | Under R1, a holding's tier or specialty read from `holding.Faction` reads the player's def, which `AdvanceEra()` rewrites at every boundary |
 | T-147 | VEF's `GoodwillCurrency` silently offers nothing for a quest with no `asker` on the slate |
-| T-148 | A pawn committed to a VEF outpost drops out of the storyteller's population — committing pawns silently raises population intent |
+| T-148 | A pawn committed to a VEF outpost drops out of the storyteller's population — committing pawns silently raises population intent (intended for outposts under #179's sale premise; still a trap for any other off-map container) |
 | T-149 | Rejecting a humanlike from VEF `Outpost.AddPawn` silently skips the outpost's build charge |
 | T-150 | A map generated on a tile that already holds a `MapParent` is parented by it — M-proxy works only while the target is not a `MapParent`; a VEF outpost adopts the map with the `Encounter` generator and never removes it |
-| T-151 | Destroying a staffed VEF outpost drops its living pawns with no death, no letter and no world-pawn record |
+| T-151 | Destroying a staffed VEF outpost drops its living pawns with no death, no letter and no world-pawn record — and its stored goods with them |
 | T-152 | An outpost occupant who dies of disease or bleeding stays in `occupants` — it still counts, still produces, and the outpost is never abandoned |
+| T-153 | A VEF `QuestChainExtension` on a shop-sold quest also grants it free at game start and load — the shelved copy is invisible to the chain's duplicate check |
+| T-157 | `StorytellerComp_SingleOnceFixed` fires on one interval — a quest whose `TestRun` fails then is lost for the campaign, with no log |
+| T-158 | `QuestPart_Venerate` does not save its completion signal — after a save before the visitors' lord exists, the payload never fires |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -115,7 +119,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | **T-74** | **Vehicle Framework pathfinds on the .NET thread pool, and neither its own switch nor MP Compat reaches it** |
 | T-75 | `Vehicles.SectionDebug.debugUseMultithreading` cannot be set — there is no flag to turn that threading off |
 | T-78 | Multiplayer wraps the gravship *landing* for determinism and does not wrap the *takeoff*; code hung on `TakeoffEnded` or `TravelTo` runs unfrozen and unseeded |
-| T-80 | A caravan gizmo or dialog is outside Multiplayer's float-menu SyncAction — the net covers `WorldObject.GetFloatMenuOptions`, and nothing else on a caravan |
+| T-80 | A caravan gizmo or dialog is outside Multiplayer's float-menu SyncAction — the net covers `WorldObject.GetFloatMenuOptions`, and nothing else on a caravan; a mod's own confirmation dialog on a synced option runs its confirm unsynced |
 | T-81 | Overriding `WorldObject.UpdateRateTicks` escapes MP's VTR prefix, and the world-object tick phase silently goes back to depending on which player has the world map open |
 | T-82 | Multiplayer syncs a `DiaOption` click by its **index**, through either of two contending prefixes — and one of them re-resolves the dialog client-locally, so identical option lists are necessary but not sufficient |
 | T-95 | Subclassing `Dialog_NodeTree` drops it out of Multiplayer's `PersistentDialog` bindings — options never sync, and the one log line names no type |
@@ -126,6 +130,8 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-135 | `GetClosestTile_NewTemp` resolves through a Burst job whose closest-tile tie-break depends on thread partitioning — two clients can pick different tiles |
 | T-137 | Multiplayer registers `OrderForceTarget` only for `ITargetingSource` implementors in the vanilla assembly — one declared in ours must register itself |
 | **T-143** | **KCSG's static `GenOption.settlementLayout` is never reset — a `chooseFromlayouts` faction's garrison is multiplied by whatever layout was generated last in the process, and diverges between clients after a rejoin** |
+| T-155 | A bill edit is synced only if the field is watched in the scope where the edit runs — a mod button writing any other bill field changes one client |
+| T-160 | Vanilla's `PlayerKnowledgeDatabase` is a per-machine file — campaign knowledge modelled on it shows differently to the two players and is lost on rejoin |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -165,6 +171,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-123 | `FactionDef` **meme** fields on a player faction def are inert whenever a world exists — vanilla's own `PlayerTribe` `disallowedMemes` does nothing |
 | T-141 | A faction-dialogue option appended for the Industrial comms console also appears at Medieval Overhaul's messenger table, an era early |
 | T-146 | A permit granted without a title is permanent — vanilla never revokes it, and the "Call aid" gizmo keeps offering it after whatever granted it is gone |
+| T-156 | Better Workbench Management's "paste settings" keeps the target's material filter whenever the two recipes' fixed filters differ — "steel only" is dropped with no message |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 
@@ -190,6 +197,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-138 | An attack order issued before a settlement passes to an ally or neutral lands anyway — `AttackSettlement` never re-checks the faction, and the new owner turns hostile with no prompt |
 | T-139 | `CaravanArrivalAction.StillValid` returns `true` in the base class — an arrival action of ours that does not override it marches on to a destroyed or transferred target |
 | T-144 | An XML `<mapGenerator>` on the Settlement `WorldObjectDef` also rebuilds every new player colony — player and NPC settlements share one def |
+| T-154 | Odyssey layout placement gives up silently — a crate, prefab or corner thing with no cell is not made, a refused item is destroyed, and the objective room can generate sealed |
 
 ---
 
@@ -212,17 +220,18 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole. **All five are now over that line**, counted 2026-09-23 after the map #2
-territory merge (#152–#172): `world-creation.md` (54), `content-and-buildings.md` (34),
-`multiplayer.md` (27), `defs-and-patching.md` (17) and `worldgen-layouts.md` (20).
+read whole. **All five are now over that line**, counted 2026-09-23 after the second
+capability batch of the day (#145–#179, T-153–T-160): `world-creation.md` (57),
+`content-and-buildings.md` (35), `multiplayer.md` (29), `defs-and-patching.md` (18) and
+`worldgen-layouts.md` (21).
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
 sharpened the case rather than changing it.** None of the five names the subject, so
 T-65, T-70 through T-73, T-76/T-77 and now **T-88 through T-91** sit in
 `world-creation.md` on the strength of factions and goodwill alone — filed under an
 *Incidents, quests and goodwill* heading inside it — and T-39 and T-48 are the same
-subject filed under determinism and worldgen respectively. **That is 24 entries under
-*Incidents, quests and goodwill* in `world-creation.md` and 26 across the register**, against
+subject filed under determinism and worldgen respectively. **That is 27 entries under
+*Incidents, quests and goodwill* in `world-creation.md` and 29 across the register**, against
 a host file whose remaining 30 are 23 about factions and worldgen and 7 under *Holdings,
 outposts and world objects changing hands*. Adding a group
 changes this index's shape and is Conrad's call; it is recorded here rather than taken.

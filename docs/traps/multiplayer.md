@@ -663,11 +663,21 @@ Either one can mutate world state on one client only. VEF's
 decreasing, client-local IDs** while `Multiplayer.InInterface` is true — so the object exists with a
 negative ID on the clicking client and not at all on the other.
 
+**A confirmation dialog on a synced option is the same trap.** `WorldObjectCaravanMenuWrapper`
+recognises only `CaravanArrivalActionUtility`'s own closure (`<>c__DisplayClass0_1<T>`), swapping
+its inner `action` for the sync so the dialog opens locally and the confirmed act is synced. Any
+other confirmation a mod wraps around a world-object caravan option falls to the default wrap: the
+dialog's *opening* is synced to both clients, and its confirm button then runs unsynced on one.
+
 **Fix:** commit through an explicit `[SyncMethod]`, or move the commit into a `FloatMenuOption` on
-the world object. Do not assume a gizmo or a dialog inherits the caravan net.
+the world object. Do not assume a gizmo or a dialog inherits the caravan net. A commit dialog on a
+caravan option goes through `CaravanArrivalActionUtility.GetFloatMenuOptions`' `confirmation`
+parameter, which is how vanilla's friendly-attack confirmation is built.
 
 *[#81](https://github.com/cjd721/Rimworld-Archinity/issues/81) and
-[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), `docs/specs/TERRITORY.md`.
+[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), `docs/specs/TERRITORY.md`; the
+confirmation clause from [#178](https://github.com/cjd721/Rimworld-Archinity/issues/178), §
+*Showing what the player has learned about a settlement* (SD-3).
 `Multiplayer.Client.SyncActions.Init` / `SyncAction.DoSync` /
 `SyncActions.WorldObjectCaravanMenuWrapper` / `Multiplayer.Client.UniqueIdsPatch` from
 `Multiplayer.dll` (`2606448745/1.6/AssembliesCustom/`);
@@ -1099,5 +1109,52 @@ single-layout branch.
 `KCSG.GenStep_CustomStructureGen.Generate`, `KCSG.GenOption`;
 `3209927822/1.6/Defs/SettlementDefs/*.xml`; `3309003431/1.6/Assemblies/VFEInsectoids.dll`.
 Mechanism [V]; MP consequence [I], by composition with #88's checksum finding.*
+
+### T-155 — A bill edit is synced only if the field is watched where the edit runs
+
+Multiplayer syncs most `Bill` / `Bill_Production` fields as *watched fields*, not commands: the
+watch reverts a changed watched field locally and sends it as a command, and an unwatched write
+stays on one machine.
+
+- `Bill.DoInterface` watches `suspended`, `allowedSkillRange`, `ingredientSearchRadius`,
+  `repeatMode`, `repeatCount`, `targetCount`, `pauseWhenSatisfied`, `unpauseWhenYouHave` and
+  `paused`.
+- `Dialog_BillConfig.DoWindowContents` watches the same minus `paused`, plus `includeEquipped`,
+  `includeTainted`, `limitToAllowedStuff`, `hpRange` and `qualityRange`.
+- The repeat-mode menu re-watches the five production fields inside each option (a transpiler on
+  `BillRepeatModeUtility.MakeConfigFloatMenu`).
+- The pawn restriction is watched only inside the worker dropdown's actions, and
+  `ThingFilter.CopyAllowancesFrom` nowhere.
+- Only `SetStoreMode`, `SetIncludeGroup` and `BillStack.AddBill` / `Delete` / `Reorder` are real
+  sync methods.
+
+**A mod button that writes any other field, or writes these outside those scopes, changes one
+client only, with no error.** Better Workbench Management's paste-settings button is the worked
+case.
+
+**Fix:** a bill-editing button of ours issues one synced command carrying the live `Bill`
+(MP serialises it as `billStack` + `loadID`); a detached clipboard bill needs `ExposeParameter`.
+
+*[#157](https://github.com/cjd721/Rimworld-Archinity/issues/157), `docs/specs/DEFAULTS.md` § *A
+bill's configuration, pasted onto another bill*; engine note `docs/engine/determinism.md` §
+*Editing a bill is synced by where the edit happens, not by which field changes*.
+`2606448745/1.6/AssembliesCustom/Multiplayer.dll` (`Multiplayer.Client.SyncFields`,
+`SyncMethods`, `SyncFieldUtil`, `SyncDictRimWorld`). Mechanism [V]; BWM's desync in play [I].*
+
+### T-160 — Vanilla's "the player has learned this" store is per machine
+
+`PlayerKnowledgeDatabase` loads from and saves to `GenFilePaths.ConceptKnowledgeFilePath`, a file
+outside the save. `Settlement.GetGizmos` already gates a gizmo on it
+(`IsComplete(ConceptDefOf.FormCaravan)`), and `CellInspectorDrawer.Update` writes to it, so it
+looks like a sanctioned place for "the player knows X". Any campaign knowledge ("the colony has
+scouted X") modelled on it, or kept in any static, `ModSettings` value (**T-18**) or client file,
+**shows differently to the two players and is lost on rejoin**, with no error.
+
+**Fix:** campaign knowledge lives in scribed game state and is written from a synced context.
+
+*[#178](https://github.com/cjd721/Rimworld-Archinity/issues/178), `docs/specs/TERRITORY.md` §
+*Showing what the player has learned about a settlement* → *Constraints*.
+`RimWorld.PlayerKnowledgeDatabase`, `Verse.GenFilePaths.ConceptKnowledgeFilePath`
+(`Assembly-CSharp.dll` 1.6). [V].*
 
 ---

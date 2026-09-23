@@ -75,6 +75,18 @@ So the augment doctrine is proven, is roughly 20 lines of Harmony, and partly
 already runs. Those `Rand.Chance` calls sit inside the synced bill-completion
 path.
 
+## Weapons, apparel and armour share one work-speed stat
+
+`BaseMakeableGun`, `BaseMeleeWeapon`, `BaseMakeableGrenade`, the neolithic ranged weapons,
+`ApparelMakeableBase`, `ArmorSmithableBase` and `ArmorMachineableBase` all set
+`recipeMaker.workSpeedStat` `GeneralLaborSpeed`. `RecipeDefGenerator` copies
+`recipeMaker.workSpeedStat` and `efficiencyStat` onto the generated `RecipeDef`, so **repointing
+the stat on a base is how a recipe family gets its own speed stat** — pure XML plus a new
+`StatDef`. `QualityUtility.GenerateQualityCreatedByPawn(Pawn, SkillDef, bool)` takes no product,
+so no stat distinguishes quality by recipe; that needs C#. From
+[#156](https://github.com/cjd721/Rimworld-Archinity/issues/156) (`docs/specs/SPECIALISATION.md`);
+`Core/Defs/ThingDefs_Misc`, `RimWorld.RecipeDefGenerator`, `RimWorld.QualityUtility`. 1.6.4871 [V].
+
 ## Facility limits
 
 - `maxSimultaneous` (default 1) is a **per-bench cap on that facility def**.
@@ -158,6 +170,36 @@ so a filter applied there is draw-time by construction. The unsafe variant mutat
 `def.AllRecipes` or patches `AvailableOnNow` to a per-player value; `AvailableOnNow` is
 also consulted on the paste-validation path, so that would diverge what a client can
 *do* rather than what it sees [V].
+
+**What the menu can be reshaped with, and what a recipe's era can key on** (from
+[#161](https://github.com/cjd721/Rimworld-Archinity/issues/161), vanilla 1.6.4871) [V]:
+
+- `FloatMenu` sorts by `Priority` descending, then by `orderInPriority`. A `Disabled` option
+  reports `MenuOptionPriority.DisabledOption`, the enum's lowest value. **A disabled row
+  therefore sinks to the bottom** and cannot serve as a group header.
+- `RecipeDef` has **no `techLevel` field**. `RecipeDefGenerator` copies
+  `recipeMaker.researchPrerequisite(s)` onto the recipes it generates. World Tech Level keeps
+  a tech-level database for `ThingDef` and `ResearchProjectDef` but none for `RecipeDef`.
+- **FloatSubMenu** is kathanon's library. The corpus ships it only as `FloatSubMenu.dll` inside
+  Nice Bill Tab (`3520130671`). It adds nested menus, a `QuickSearchWidget` search row, checkbox
+  rows and dividers to any vanilla `FloatMenu`. It filters by swapping `FloatMenu.options` for a
+  copy at draw time. **Every patch it applies is a UI patch.** Its `PatchAll` covers
+  FloatSubMenu's own targets (`FloatMenu.UpdateBaseColor`, `GenUI.DistFromRect`) and those of
+  its bundled MoreWidgets:
+  - `GameConditionManager.TotalHeightAt` and `DoConditionsUI`;
+  - `GameComponentUtility.GameComponentOnGUI`;
+  - `DebugTabMenu_Settings.InitActions`;
+  - a tooltip transpiler on `LongEventHandler.LongEventsOnGUI` and `UIRoot.UIRootOnGUI`.
+- **Nice Bill Tab can be switched off per player.** Its `ITab_Bills.FillTab` prefix returns
+  `true`, so vanilla's tab and add-bill menu run, while its on-tab checkbox
+  (`Settings.EnabledMod`) is off. The flag defaults to `true`, is client-local and is never
+  scribed.
+- **Correction:** Glittertech's `Source/ITab_BillsMemoryCell.cs`, cited in #87 as a 1.6
+  template, is **not in the 1.6 `GlittertechExpansion.dll`**. That assembly ships
+  `ITab_MemoryCellMods` instead, so the file is stale source. The shape survives under the
+  new name: `BuildRecipeOptions` walks `AllRecipes` and hands the result to
+  `BillStack.DoListing`. **A patch at `DoListing` reaches every such menu; one on vanilla's
+  local `OptionsMaker` reaches only vanilla's.**
 
 See also `docs/engine/mods/medieval-overhaul.md` and
 `docs/engine/research-and-tech-tiers.md`.

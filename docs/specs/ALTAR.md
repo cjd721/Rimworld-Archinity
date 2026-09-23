@@ -46,6 +46,9 @@ Additional requirement this implements:
   activated", and § *One apparatus and separate rewards* — "Random augmentation is a
   separate, explicitly chosen lottery, including genuinely bad outcomes."
 
+The same requirement section's **optional encounter that teaches what anima is** is answered in
+[`ENCOUNTERS.md`](ENCOUNTERS.md) ([#158](https://github.com/cjd721/Rimworld-Archinity/issues/158)), not here.
+
 ---
 
 ## Superseded build — custom Transcendent gene

@@ -34,7 +34,7 @@ dll for each of 1.4/1.5/1.6 — reading its source is reading 1.4.
 | Archinity - Glitterites | `archinity.glitterites` | yes | yes | — | — | ours | 2026-08-21 |
 | Archinity - Origins | `archinity.origins` | yes | yes | — | — | ours | 2026-08-21 |
 | Archinity - Pacing | `archinity.pacing` | yes | yes | — | — | ours | 2026-08-22 |
-| Better Traders Guild | `shunter.bettertradersguild` | yes | yes | — | 1.6 | workshop | 2026-08-22 |
+| Better Traders Guild | `shunter.bettertradersguild` | yes | yes | — | 1.6 | workshop | 2026-09-15 |
 | Biotech | `ludeon.rimworld.biotech` | yes | yes | — | — | core | 2022-12-27 |
 | Biotech for Gravship | `als.biotechgravship` | yes | yes | — | 1.6 | workshop | 2026-08-21 |
 | Compositable Loadouts | `wiri.compositableloadouts` | yes | yes | — | 1.4, 1.5, 1.6 | workshop | 2026-08-21 |
@@ -52,7 +52,7 @@ dll for each of 1.4/1.5/1.6 — reading its source is reading 1.4.
 | Odyssey | `ludeon.rimworld.odyssey` | yes | yes | — | — | core | 2026-08-19 |
 | Pick Up And Haul | `mehni.pickupandhaul` | yes | yes | root | 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6 | workshop | 2025-08-29 |
 | Prepatcher | `zetrith.prepatcher` | yes | yes | — | 1.4, 1.5, root | workshop | 2026-08-21 |
-| Replace Stuff - Continued | `memegoddess.replacestuff` | yes | yes | root | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6 | workshop | 2026-08-21 |
+| Replace Stuff - Continued | `memegoddess.replacestuff` | yes | yes | root | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6 | workshop | 2026-09-15 |
 | Royalty | `ludeon.rimworld.royalty` | yes | yes | — | — | core | 2026-08-19 |
 | TakeCover | `rabiosus.takecover` | yes | yes | — | 1.6, root | workshop | 2026-08-18 |
 | TechBlock | `fridgebaron.techblock` | yes | yes | root | 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, root | workshop | 2026-08-21 |
@@ -71,7 +71,7 @@ dll for each of 1.4/1.5/1.6 — reading its source is reading 1.4.
 | Vanilla Furniture Expanded - Production | `vanillaexpanded.vfeproduction` | yes | yes | — | — | workshop | 2025-06-30 |
 | Vanilla Furniture Expanded - Security | `vanillaexpanded.vfesecurity` | yes | yes | — | 1.4, 1.5, 1.6 | workshop | 2026-02-02 |
 | Vanilla Furniture Expanded - Spacer Module | `vanillaexpanded.vfespacer` | yes | yes | 1.3 ⚠ | 1.1, 1.3, 1.4, 1.5, 1.6 | workshop | 2026-08-21 |
-| Vanilla Gravship Expanded - Chapter 1 | `vanillaexpanded.gravship` | yes | yes | — | 1.6 | workshop | 2026-08-19 |
+| Vanilla Gravship Expanded - Chapter 1 | `vanillaexpanded.gravship` | yes | yes | — | 1.6 | workshop | 2026-09-15 |
 | Vanilla Nutrient Paste Expanded | `vanillaexpanded.vnutriente` | yes | yes | — | 1.4, 1.5, 1.6 | workshop | 2026-08-21 |
 | Vanilla Quests Expanded - Ancients | `vanillaquestsexpanded.ancients` | yes | yes | — | 1.6 | workshop | 2026-08-21 |
 | Vanilla Races Expanded - Archon | `vanillaracesexpanded.archon` | yes | yes | 1.4, 1.5 ⚠ | 1.4, 1.5, 1.6 | workshop | 2026-08-21 |
@@ -101,7 +101,7 @@ dll for each of 1.4/1.5/1.6 — reading its source is reading 1.4.
 | ATH's Styleable Framework | `anthitei.athsstyleableframework.style` | — | yes | root | root | workshop | 2026-08-25 |
 | ATH's styles Norse | `anthitei.athsstylenorse.style` | — | yes | — | — | workshop | 2026-08-25 |
 | Auto-Cast Specialist Commands | `linnun.autocastspecialistcommands` | — | yes | 1.6 | 1.5, 1.6 | workshop | 2026-08-28 |
-| Better Architect Menu | `ferny.betterarchitect` | — | yes | 1.6 | 1.6 | workshop | 2026-09-08 |
+| Better Architect Menu | `ferny.betterarchitect` | — | yes | 1.6 | 1.6 | workshop | 2026-09-15 |
 | Better Workbench Management | `falconne.bwm` | — | yes | — | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, root | workshop | 2026-08-28 |
 | Dark Ages : Beasts and Monsters | `van.beasts` | — | yes | — | 1.5, 1.6 | workshop | 2026-08-24 |
 | Dark Ages : Crypts and Tombs | `van.dacrypts` | — | yes | root | 1.5, 1.6, root | workshop | 2026-08-24 |

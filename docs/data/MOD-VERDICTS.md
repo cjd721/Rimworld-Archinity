@@ -1291,6 +1291,151 @@ verdict stays *Undecided*. ([#172](https://github.com/cjd721/Rimworld-Archinity/
 **T-143**'s stale-static read **[V]**. (The mod is declined.)
 ([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164))
 
+## What the 2026-09-23 second capability batch found
+
+Merged from the drafts for #145, #149, #151, #156, #157, #158, #159, #161, #178 and #179, after
+independent review. These are amendments to existing rows; no verdict moves. Evidence marks are
+the resolving agent's. Conflicts are cargo, not verdicts.
+
+**Medieval Overhaul** — `DankPyon.Medieval.Overhaul` (`3219596926`). Ships a `Quest.End` postfix
+(`MedievalOverhaul.Patches.Quest_End`) and a quest-finder scanner (`GameComponent_QuestFinder`,
+`CompQuestFinder`) that re-offers a failed `onlyOnce` script, because it records a quest as done
+only on `Success`. **The only shipped fail-then-return in the corpus** **[V]**.
+([#145](https://github.com/cjd721/Rimworld-Archinity/issues/145))
+
+**Orbital-scanner givers and tag quests** ([#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)),
+all **[V]**:
+
+- **Vanilla Gravship Expanded – Chapter 1** — `vanillaexpanded.gravship` (`3609835606`).
+  `VGE_GravshipScannerCluster`'s orbital module (`CompScannerCluster_OrbitalScannerModule :
+  CompOrbitalScanner`) is a live `OrbitalScanner` giver, running only while the cluster is not
+  being worked. Its module-switch float menus are not covered by MP Compat. It also adds the tag
+  quest `VGE_OpportunitySite_SolidCoreAsteroid`.
+- **GravTech** — `als.gravtech` (`3545374124`). `AdvShip_ComputerCore` carries
+  `CompOrbitalScanner`, so it is a live orbital giver.
+- **Worksites Expanded** — `godsfathermixtape.worksitesexpanded` (`3687071198`). Adds
+  `OpportunitySite_OrbitalPlatform` with `givenBy OrbitalScanner`.
+- **Vanilla Landmarks Expanded** — `VanillaExpanded.VExplorationE`. Adds the `AncientUplink`
+  mutator to 54 landmarks, each a pre-reveal orbit opener (hacking it draws from the
+  `OrbitalScanner` tag; T-71).
+
+**Better Traders Guild** — `shunter.bettertradersguild` (`3684587591`). An orbital quest site
+(Smugglers' Den, `QuestNode_BTG_SmugglersDen_CreateSite`, with `QuestPart_DestroyWorldObject` on
+`End`); a quest record read at map generation (`WorldObjectComp_QuestVault` →
+`GenStep_GenerateQuestVaultStock`); an XML-parameterised pawn room part (`RoomPart_MechDef.pawnKindDef`
+→ `RoomPart_Mech`, which skips silently with no cell — **T-154**); about 20 `RoomContents_*`
+subclasses. Donor for `ORBIT.md` § *A stronghold a quest generates* C4/E5 **[V]**.
+([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151))
+
+**Ushankas Glittertech Expansion** — `Ushanka.GlittertechExpansion` (`3522676478`). Two findings:
+
+- `USH_GlittertechOutpost` / `Facility` are KCSG quest sites (`tiledStructures`, surface only) with
+  `USH_GE.QuestNode_AncientForces` on `site.MapGenerated`, and a 12–28-day
+  `QuestNode_WorldObjectTimeout` with `destroyOnCleanup` **[V]**.
+  ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151))
+- `Source/ITab_BillsMemoryCell.cs` is stale: it is absent from the 1.6 assembly, which ships
+  `ITab_MemoryCellMods`. That tab builds its own add-bill menu (`BuildRecipeOptions` →
+  `BillStack.DoListing`) and its own clipboard paste (`PasteClipboardBill`, a whole-bill clone),
+  correcting #87 § 9 **[V]**. ([#161](https://github.com/cjd721/Rimworld-Archinity/issues/161),
+  [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157))
+
+**VFE Deserters** — `oskarpotocki.vfe.deserters` (`3025493377`). Plot-mission sites are keyed
+through `WorldComponent_Deserters.DataForSites` and read by `GenStep_PlotRaid`, which places the
+target noble at the throne. Donor for `ORBIT.md` C4/E5 **[V, 1.6 dll]**.
+([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151))
+
+**Vanilla Cooking / Fishing / Gravship Expanded** — `…VCookE`, `…VCEF`, `vanillaexpanded.gravship`.
+Their `VSE.Expertise.ExpertiseDef` payloads (8 distinct 1.6 defs) load only when
+`vanillaexpanded.skills` is active (`loadFolders.xml` `IfModActive`, or `PatchOperationFindMod`).
+VSE is not on disk, so they are inert, and they target each mod's own stats **[V]**.
+([#156](https://github.com/cjd721/Rimworld-Archinity/issues/156))
+
+**VFE Empire** — `OskarPotocki.VFE.Empire` (`2938820380`). Honors are per-pawn (`HonorUtility`'s
+static dictionary keyed by pawn), bestowed at a ritual, and applied through `StatPart_Honor`. MP
+Compat (`Referenced/`) syncs `AddHonor`, `RemoveHonor`, `RemoveAllHonors` and the tracker **[V]**.
+([#156](https://github.com/cjd721/Rimworld-Archinity/issues/156))
+
+**VFE Classical** — `OskarPotocki.VFE.Classical` (`2787850474`). MP Compat's
+`VanillaFactionsClassical` (`Referenced/`) registers senator buttons,
+`WorldComponent_Senators.CheckInit` and a `VeniVidiVici` gizmo lambda, but no `AddPerk` **[V]**.
+Worth re-reading against `PARTS-BIN.md`'s "MP: BLOCK".
+([#156](https://github.com/cjd721/Rimworld-Archinity/issues/156))
+
+**Better Workbench Management** — `falconne.BWM` (`935982361`). Ships configuration-only paste
+onto an existing bill (`BillCopyPaste.DoPasteInto(Bill_Production)` → `MirrorBills(…,
+preserveTargetProduct: true)`), across recipes and benches, with a strict fixed-filter rule for
+materials (**T-156**) and no bill-type check. Linked bills are mirrored from `ITab_Bills.TabUpdate`
+and the bill-dialog postfix every frame — UI-driven local writes, unwatched by MP (**T-155**). No
+MP Compat class and no MP API. The 1.6 and root `Assemblies/` dlls are byte-identical **[V]**.
+([#157](https://github.com/cjd721/Rimworld-Archinity/issues/157))
+
+**Nice Bill Tab** — `Andromeda.NiceBillTab` (`3520130671`). Amends its row in § *Named prices
+already known*, and does not soften it:
+
+- Has no configuration paste of its own. It calls BWM's `DoCopy` / `CanPasteInto` / `DoPasteInto`
+  by reflection (`BetterWorkbenchesIntegration`) from float-menu actions, which are outside every
+  MP watch scope **[V]**. ([#157](https://github.com/cjd721/Rimworld-Archinity/issues/157))
+- Vendors kathanon's `FloatSubMenu.dll` (nested float menus, a `QuickSearchWidget` search row,
+  checkbox rows, dividers). All its patches are UI patches: `FloatMenu.UpdateBaseColor`,
+  `GenUI.DistFromRect`, and through its bundled MoreWidgets
+  `GameConditionManager.TotalHeightAt` / `DoConditionsUI`, `GameComponentUtility.GameComponentOnGUI`,
+  `DebugTabMenu_Settings.InitActions`, and a tooltip transpiler on `LongEventsOnGUI` /
+  `UIRootOnGUI`. The standalone `kathanon.floatsubmenu` is not on disk. It is the donor for an era
+  filter in the vanilla add-bill menu; the licence is unverified **[V]**.
+- It can be switched off per player with its on-tab checkbox (`Settings.EnabledMod`, not scribed,
+  default `true`), which lets vanilla's bill tab run **[V]**.
+  ([#161](https://github.com/cjd721/Rimworld-Archinity/issues/161))
+
+**Compositable Loadouts** — `Wiri.compositableloadouts` (`2679126859`). Not a bill-config paste
+route. `ExtendedBillDataStorage_Patch` postfixes BWM's `MirrorBills` (gated on BWM running) and
+`BillProduction_Clone_Patch` postfixes `Bill_Production.Clone`, both only to carry its `W_PerTag`
+loadout tag, which lives in `LoadoutManager`, not on the bill. A `BillStack.DoListing` button
+creates pre-configured bills from colonists' loadouts **[V]**. Never copy `W_PerTag` without its
+tag. ([#157](https://github.com/cjd721/Rimworld-Archinity/issues/157),
+[#161](https://github.com/cjd721/Rimworld-Archinity/issues/161))
+
+**VFE Medieval 2** — `OskarPotocki.VFE.Medieval2` (`3444347874`). On mannequin-linked benches
+`VFEMedieval.RecipePatches` replaces `bill.recipe` with a runtime `RecipeDef` clone (ingredients
+×0.9) in `BillStack.AddBill`, `Bill_Production.Clone` and `ExposeData`. Recipe identity is
+therefore not stable, and bill logic must not compare recipes by reference **[V]**.
+([#157](https://github.com/cjd721/Rimworld-Archinity/issues/157),
+[#161](https://github.com/cjd721/Rimworld-Archinity/issues/161))
+
+**Knick Knacks** — `3595196942` (`DinnerDateWithEuterpe.dll`). Ships a Harmony postfix on
+`JoyGiver.GetChance` (a decorate on/off gate). It composes with any Archinity postfix on the same
+method **[V]**. *(No tier row found in this file; recorded here as cargo.)*
+([#159](https://github.com/cjd721/Rimworld-Archinity/issues/159))
+
+**Vanilla Furniture Expanded** — `VanillaExpanded.VFECore` (`1718190143`).
+`ExtendedSitFacingJoyDataExtension.extraJoySkill` is a building-keyed second recreation skill,
+XML, used only for Intellectual. Its Crafting-training computers survive only in its ≤1.4 folders
+**[V]**. ([#159](https://github.com/cjd721/Rimworld-Archinity/issues/159))
+
+**Worksites Expanded** — `godsfathermixtape.worksitesexpanded` (`3687071198`). A private
+recreation picker for worksite pawns, `MiningOutpost.SharedJobUtility.TryRecreation`, outside
+`JobGiver_GetJoy` (**T-159**) **[V]**. ([#159](https://github.com/cjd721/Rimworld-Archinity/issues/159))
+
+**Better Architect Menu** — `ferny.BetterArchitect`. Re-pinned: `corpus.py --check` reported
+`2026-09-08 -> 2026-09-15`, and `docs/data/MOD-SNAPSHOT.md` was regenerated with
+`corpus.py --write` in this merge, which also moved `memegoddess.replacestuff`,
+`vanillaexpanded.gravship` and `shunter.bettertradersguild` to 2026-09-15.
+([#161](https://github.com/cjd721/Rimworld-Archinity/issues/161))
+
+**Map Mode Framework** — `NozoMe.MapModeFramework`. Switchable world-map overlays: `MapModeDef`
+(XML) + a `MapMode` subclass with `GetMaterial(tile)`, `GetTileLabel(tile)`, `GetTooltip(tile)`.
+FT&V depends on it (`MapMode_FactionTerritories`). It prefixes
+`ExpandableWorldObjectsUtility.ExpandableWorldObjectsOnGUI` and returns false when a mode hides
+world objects, which suppresses every other mod's icon-space overlay in that mode. MP Compat
+carries no patch for it (0 hits, ASCII and UTF-16) **[V]**.
+([#178](https://github.com/cjd721/Rimworld-Archinity/issues/178), SD-6)
+
+**RimPacts – Diplomacy Overhaul** — `wowgag.RimPacts` (`3762723122`). Reflects into *Evolving
+Enemy Strongholds* (`RptEesBridge`: `StrongholdData.intelLevel` / `militaryPower` / `tier` /
+`roleDefName`, `ScoutUtility.ApplySabotageSuccess`); EES is **not in the corpus**. Also ships
+`WITab_RptTrade` (gated by `IsVisible`), `Patch_WorldWarOverlayGUI` and `MainTabWindow_RimPacts`,
+all display donors for `TERRITORY.md` § *Showing what the player has learned about a settlement*.
+([#178](https://github.com/cjd721/Rimworld-Archinity/issues/178))
+
 ## Open
 
 - **`rwmt.MultiplayerCompatibility` is a required member of the shipping set, not a

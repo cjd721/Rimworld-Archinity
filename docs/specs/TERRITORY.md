@@ -24,12 +24,14 @@ Holdings and outposts are answered section by section, above *The build*:
 - § *What a holding pays, and how the player takes it* — the form, schedule and taking of a holding's payment, and the rebuild debt ([#166](https://github.com/cjd721/Rimworld-Archinity/issues/166)).
 - § *Taking a settlement must be hard* — what builds a settlement's map and garrison, and what survives the map ([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164)).
 - § *A settlement's specialty, and learning it before you commit* — the faction's and the settlement's specialty, and what reveals it ([#165](https://github.com/cjd721/Rimworld-Archinity/issues/165)).
+- § *Showing what the player has learned about a settlement* — every surface a learned per-settlement fact can be drawn on, and whether both players see it ([#178](https://github.com/cjd721/Rimworld-Archinity/issues/178)).
 - § *Paying to advance a holding to a later era* — where a holding's era lives, and paying to rewrite it ([#167](https://github.com/cjd721/Rimworld-Archinity/issues/167)).
 - § *How a holding ends* — release, retaking, destruction and throwing off, each as a moment the player acts on ([#172](https://github.com/cjd721/Rimworld-Archinity/issues/172)).
 - § *A caravan en route when its destination changes hands* — what an in-flight order does when its target changes owner ([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152)).
 - § *A sworn faction owes services* — what a sworn faction can owe, and whether the player asks or only receives ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168)).
 - § *What an outpost costs* — materials, silver and committed pawns, and whether staffing bounds the count ([#170](https://github.com/cjd721/Rimworld-Archinity/issues/170)).
 - § *An outpost's upkeep arrives as events* — upkeep, attack and decline as events, never a management surface ([#171](https://github.com/cjd721/Rimworld-Archinity/issues/171)).
+- § *An outpost that consumes its pawns and runs on its own* — production without staff, the pawn sale and its kind rule, and the destroyed outpost as a lootable, rebuildable ruin ([#179](https://github.com/cjd721/Rimworld-Archinity/issues/179)).
 
 It does **not** own:
 
@@ -983,6 +985,290 @@ Everything keyed on `WorldObjectDefOf.Settlement` would need the variants, inclu
   - whether the specialty rides the stock;
   - where the copy-at-conquest happens;
   - the plug into #166 P1's `GetTitheInfo` replacement.
+
+---
+
+## Showing what the player has learned about a settlement
+
+### Purpose and scope
+
+This section answers [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *Player information and agency*: *"the player must be able to learn what a settlement will give before committing to take it"*, *"nothing shows a settlement's specialty to a player who has not learned it"* (vanilla's *Show sellable items* included), *"once learned, known for good… always current"*, and *"planning a campaign against what has been learned is a feature"*. Established on [#178](https://github.com/cjd721/Rimworld-Archinity/issues/178).
+
+**Owns:** where a learned, per-settlement fact — specialty, tier, how hard it is to take — can be drawn; what each surface needs from the store; and whether a fact one player learns is shown to both.
+
+**Does not own:**
+- whether the fact exists, and what reveals it: § *A settlement's specialty* ([#165](https://github.com/cjd721/Rimworld-Archinity/issues/165)). Its **one colony-wide record, keyed on the tile**, is the store every route here reads.
+- what the garrison is: § *Taking a settlement must be hard* ([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164)).
+- a holding's tier after conquest: § *Paying to advance a holding* ([#167](https://github.com/cjd721/Rimworld-Archinity/issues/167)).
+- which campaign window hosts what: [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61) resolved that every surface has a route and a main tab is always available; choosing one is [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+
+### Verdict
+
+- **Possible? Yes, for every per-settlement surface the ticket names, and four more. The Factions tab is the partial exception: it can carry only the faction's own specialty.**
+  - Vanilla draws no settlement specialty anywhere [V].
+  - Its one hover surface for a settlement is the **Alt-held inspector**. It lists label, faction and goodwill beside the cursor, and a postfix can add a line (SD-11).
+  - Every surface is ours to fill, and each has a verified seam, most of them one small C# hook. Five have shipped donors in the corpus (SD-1, SD-2, SD-5, SD-6, SD-8).
+  - The inspect pane, a world inspect tab, the Alt-hover line and the caravan's float menu cover *before you commit*. A world-map badge, a map mode, the world search and a campaign tab of our own cover *planning*.
+- **Multiplayer? Yes, with no work beyond #165's.** Every route here is **render code that reads state at draw time**. A fact in synced, scribed game state (#165's tile-keyed record) is drawn identically on both clients, so one player's learning is shown to both by construction. Both players are one faction, and the requirement says *the colony* finds out. Two conditions:
+  - #165's reveal write must come from a synced context.
+  - **No surface may keep a client-local store or draw `Rand`.** Vanilla's own "learned" store, `PlayerKnowledgeDatabase`, is a file on each machine [V]. It is exactly the wrong model (**T-160**).
+
+### Routes
+
+Every route reads one store: #165's colony-wide record, keyed on the tile. **SD-0 is required whichever others are taken.**
+
+| Route | What the player sees | Seam | Carrier / donor | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|---|
+| **SD-0** Suppression | Nothing about an unlearned settlement's trade: *Show sellable items* gone or disabled until learned | `Settlement.GetGizmos` postfix | ours | C# | Medium | Yes |
+| **SD-1** Inspect-pane line | *"Known for: arms · Medieval · fortified"* under the goodwill line whenever the settlement is selected | `WorldObjectComp.CompInspectStringExtra` on an XML-patched comp; or a `Settlement.GetInspectString` postfix | ours; donor BTG `SettlementGetInspectString` | C# + XML patch | Medium | Yes |
+| **SD-2** Settlement inspect tab | A *Known* tab beside Terrain/Planet: full specialty, goods, tier, garrison band, when and how learned. **Absent for an unlearned settlement** | a `WITab` subclass, via the def's `inspectorTabs` or a `WorldObject.GetInspectTabs` postfix; `InspectTabBase.IsVisible` | ours; donor RimPacts `WITab_RptTrade` | C# (+ XML) | Medium | Yes |
+| **SD-3** At the commit | The caravan's right-click menu reads *"Attack Ironhold (known for arms, fortified)"*, or a confirmation dialog restates what is known | `Settlement.GetFloatMenuOptions(Caravan)` postfix; a confirmation only through `CaravanArrivalActionUtility.GetFloatMenuOptions`' `confirmation` parameter | ours | C# | Medium | Yes for labels; a confirm dialog only through vanilla's `confirmation` parameter [I] |
+| **SD-4** Info card | The learned fact in the settlement's ⓘ card | `WorldObjectComp.GetDescriptionPart` (same comp as SD-1) | ours | C# | Easy, once SD-1's comp exists | Yes |
+| **SD-5** World-map badge and hover | A glyph on every learned settlement's icon; the fact in a tooltip on hover | `ExpandableWorldObjectsUtility.ExpandableWorldObjectsOnGUI` postfix + `TooltipHandler.TipRegion` | ours; donors FT&V `Patches_ExpandableWorldObjectsOnGUI`, RimPacts `Patch_WorldWarOverlayGUI` | C# | Medium | Yes |
+| **SD-6** A *What we know* map mode | A toggleable world overlay: tiles tinted by learned specialty, labels and tooltips per tile | Map Mode Framework `MapModeDef` + a `MapMode` subclass (`GetMaterial`, `GetTileLabel`, `GetTooltip`) | Map Mode Framework; donor FT&V `MapMode_FactionTerritories` | C# + XML | Medium | Yes [I] |
+| **SD-7** World search | Typing *"steel"* into the world search lists and highlights every settlement known for it | `Dialog_WorldSearch.ElementMatch` (private) postfix | ours | C# | Medium | Yes |
+| **SD-8** A campaign tab of our own | A ledger of every learned settlement, sortable by specialty, tier or distance, click to jump | `MainButtonDef` (XML) + a `MainTabWindow` | ours; donor RimPacts `MainTabWindow_RimPacts` | C# + XML | Medium | Yes |
+| **SD-9** Factions tab | The **faction's** public specialty only, in its row tooltip | `FactionDef.description`, which `FactionUIUtility.DrawFactionRow` shows; or a row postfix | vanilla | XML (or C#) | Easy | Yes. **Faction layer only** |
+| **SD-10** A letter at the reveal | *"Our caravan learned Ironhold is known for arms"*, with a jump button, kept in the History archive | `LetterStack.ReceiveLetter` with `LookTargets`, sent from #165's reveal | vanilla | C# (inside the reveal) | Easy, once #165's reveal exists | Yes, if sent from the synced reveal |
+| **SD-11** Alt-hover line | Holding Alt over a settlement already shows its name, faction and goodwill beside the cursor. A *"Known for: arms"* row joins them | `Verse.CellInspectorDrawer.DrawWorldInspector` (private) postfix | vanilla surface, ours to extend | C# | Medium | Yes |
+
+Every route is **[I]** as a composition. Its seams are [V].
+
+#### SD-0 — suppression
+
+**Gets us** [V]:
+- `Settlement.GetGizmos` yields *Show sellable items* whenever `TraderKind != null` and the faction is not `permanentEnemy`. It opens `Dialog_SellableItems`, which lists the settlement's whole trade profile from anywhere on the map.
+- A postfix can drop it or disable it with a reason (*"We have not traded here"*) while the settlement is unlearned. The gizmo only opens a window, so removing it per synced state changes nothing either client can *do*.
+
+**Must also cover** (§ *A settlement's specialty*, SV-6): RimPacts' `WITab_RptTrade` and BTG's inspect line, **if either ships**. Both show their values to everyone.
+
+**A small leak stays** [V]: `Settlement.GetInspectString` prints *"Requires trade permission: <title>"* from `TraderKind.TitleRequiredToTrade`. That tells the player an Empire settlement's trader is a royal one before any visit.
+
+#### SD-1 — inspect-pane line
+
+**Gets us** [V]:
+- `InspectPaneFiller.DoPaneContentsFor` draws `GetInspectString()` whenever a world object is selected.
+- `WorldObject.GetInspectString` appends every comp's `CompInspectStringExtra`. A comp patched onto the `Settlement` def backfills into existing saves (`engine/factions-and-worldgen.md` § *A `WorldObjectComp` added by XML patch backfills into an existing save*).
+- `Settlement.GetInspectString` already prints the relation and goodwill. Ours sits beneath.
+
+**Levers:** the one place a player always looks when they click a settlement. It shows three facts in a line each, or *"Nothing known"*.
+
+**Cannot:** hold more than a few lines, nor anything laid out.
+
+#### SD-2 — settlement inspect tab
+
+**Gets us** [V]:
+- `WorldInspectPane.CurTabs` returns `SingleSelectedObject.GetInspectTabs()`, which is `def.inspectorTabsResolved`.
+- `Settlement` inherits `WITab_Terrain`, `WITab_Planet` and `WITab_Orbit` from `StaticWorldObjectBase` (`Data/Core/Defs/WorldObjectDefs/WorldObjects.xml`).
+- **`InspectTabBase.IsVisible` is virtual.** The tab can hide itself until the settlement is learned, so *"nothing shows before it is learned"* holds on the tab strip too.
+- **Donor:** RimPacts appends `WITab_RptTrade` to every non-player `Settlement` through a `WorldObject.GetInspectTabs` postfix, and gates `IsVisible` on the faction (`3762723122/Assemblies/RimPacts.dll`).
+
+**Levers:** room for the full picture — the goods it is known for, tier, garrison band, when and how it was learned. It can also carry #166's *what it would pay*.
+
+**Cannot:** be seen without selecting the settlement and opening the tab.
+
+**Consequence:** adding through the def's `<inspectorTabs>` relies on XML list inheritance appending to the parent's three [I]. The `GetInspectTabs` postfix is RimPacts' form and needs no def edit.
+
+#### SD-3 — at the commit
+
+**Gets us** [V]:
+- `Settlement.GetFloatMenuOptions(Caravan)` builds the right-click options for a caravan: *Visit*, *Trade*, *Offer gifts*, *Attack*. Attack's label is `"AttackSettlement".Translate(settlement.Label)`.
+- For an allied or neutral faction, vanilla already wraps Attack in `Dialog_MessageBox.CreateConfirmation("ConfirmAttackFriendlyFaction")`. It passes that dialog as the `confirmation` argument of `CaravanArrivalActionUtility.GetFloatMenuOptions`. That is the shape of a commit dialog that restates what is known.
+- **Multiplayer wraps options a default-priority postfix appends** (`engine/determinism.md` § *Multiplayer's float-menu sync wraps options a postfix appends*).
+- **Only vanilla's confirmation closure is special-cased** [V, `2606448745/1.6/AssembliesCustom/Multiplayer.dll`]:
+  - `SyncActions.WorldObjectCaravanMenuWrapper` recognises only `CaravanArrivalActionUtility`'s `<>c__DisplayClass0_1<T>`. It swaps that closure's inner `action` for the sync, so the dialog opens locally and the confirmed act is synced.
+  - Any other dialog wrapped around an option falls to the default wrap. That syncs the dialog's *opening* and leaves its confirm button unsynced.
+  - **So a commit dialog is MP-safe only when built through the `confirmation` parameter** [I on our use; V on the wrapper] (**T-80**).
+
+**Levers:** the fact is in front of the player at the exact moment they commit, which is the requirement's own wording.
+
+**Cannot:**
+- appear except to a player who has selected a caravan and right-clicked;
+- reach the transport-pod and shuttle menus. `GetTransportersFloatMenuOptions` and `GetShuttleFloatMenuOptions` are separate seams. While pods are aimed, `WorldTargeter.BeginTargeting`'s `extraLabelGetter` puts a label beside the cursor for the hovered target [V]. The other vanilla cursor text is SD-11's Alt-held inspector.
+
+**Consequence:** option labels must come only from synced state, so both clients build the same list (**T-82**'s index rule, applied to float menus) [I].
+
+#### SD-4 — info card
+
+**Gets us** [V]: `Dialog_InfoCard(WorldObject)` → `StatsReportUtility.StatsToDraw(WorldObject)` shows `GetDescription()`, which appends each comp's `GetDescriptionPart`. It is free once SD-1's comp exists. `SpecialDisplayStats` is a second, stat-row seam, but only by override or postfix, since comps have no hook for it.
+
+**Cannot:** be found by a player who does not click the ⓘ.
+
+#### SD-5 — world-map badge and hover tooltip
+
+**Gets us** [V]:
+- `WorldInterface.WorldInterfaceOnGUI` calls `ExpandableWorldObjectsUtility.ExpandableWorldObjectsOnGUI` each frame. That draws each expanded icon at `ExpandedIconScreenRect(o)`, on `Repaint` only.
+- **Vanilla draws no text or tooltip on the icon itself.** Its cursor text is the Alt-held inspector (SD-11) and the targeter's label while pods are aimed (SD-3). The only highlight is `Dialog_WorldSearch`'s yellow.
+- `TooltipHandler.TipRegion` acts only on `Repaint`, which is the same gate, so a tooltip over the icon rect composes.
+- **Donors:**
+  - FT&V draws a badge over every settlement under invasion from exactly this postfix (`FactionTerritories.Invasions.Patches_ExpandableWorldObjectsOnGUI`, `3626725895/Assemblies/FactionTerritories.dll`).
+  - RimPacts draws war dots per settlement from the same seam (`Patch_WorldWarOverlayGUI`).
+
+**Levers:** the only route that shows *where* the colony has learned things across the whole map at a glance, without clicking or holding a key. SD-11 shows one settlement at a time, under the cursor, while Alt is held. That makes SD-5 the planning surface on the map itself.
+
+**Cannot:** badge a settlement drawn as a mesh when zoomed in. `ExpandableWorldObjectsOnGUI` skips objects whose `TransitionPct` is 0 [V]; a close-zoom tooltip would need `GenWorldUI.WorldObjectsUnderMouse` instead [I].
+
+**Consequence:** Map Mode Framework prefixes the same method and returns `false` when its mode hides world objects [V], so our badge disappears in those modes.
+
+#### SD-6 — a *What we know* map mode
+
+**Gets us** [V] (`3296654393/1.6/Assemblies/MapModeFramework.dll`):
+- `MapModeDef` (XML) names a `mapModeClass`. `MapMode` exposes `GetMaterial(int tile)`, `GetTileLabel(int tile)` and `GetTooltip(int tile)`, with `doTooltip` and `displayLabels` switches on the def.
+- The mode is picked from MMF's own button strip on the world map.
+- **Shipped precedent:** FT&V's territory overlay is an MMF `MapMode_Region` subclass with its own label layer (`MapMode_FactionTerritories`, `WorldLayer_MapMode_OnGUI_FactionTerritoriesLabels`).
+
+**Levers:** a whole-world view of what the colony knows, tinted by specialty, which the player can toggle off.
+
+**Cannot:** stand without MMF, which becomes a dependency. It is only worth taking if FT&V's territory mode or another overlay brings MMF in anyway.
+
+**MP** [I]: MMF keeps the chosen mode in `MapModeComponent`, a `GameComponent`. Each player's choice is a per-client UI selection, and nothing in the tick reads it. MP Compat carries no MMF patch: ASCII and UTF-16 sweeps of `1629973374/1.6` for `mapmode` both return 0, validated on `PatchKCSG`. Confirm on a two-client run only if SD-6 is selected.
+
+#### SD-7 — world search
+
+**Gets us** [V]:
+- `Dialog_WorldSearch.ElementMatch` matches a typed query against `worldObject.Label`, landmark names and tile mutators.
+- A matched object is listed, and `ExpandableWorldObjectsUtility.IsHighlighted` paints it yellow on the map.
+- A postfix that also matches the settlement's **learned** specialty makes *"where can we get steel?"* a search.
+
+**Levers:** planning with no new window. The query cannot find an unlearned settlement by its specialty, because the postfix reads the knowledge record.
+
+**Cannot:** do more than list and highlight.
+
+**Consequence:** no mod in the corpus patches the dialog (sweep under *Status*), so nothing contests it.
+
+#### SD-8 — a campaign tab of our own
+
+**Gets us** [V]:
+- A `MainButtonDef` is pure XML. Set `minimized: true`, or every button shrinks ([`CURRENCIES.md`](CURRENCIES.md), the `MainButtonDef` note).
+- The window is a `MainTabWindow` of ours.
+- **Donor:** RimPacts' `MainTabWindow_RimPacts` lists factions with a per-row detail and jumps the camera to a settlement with `CameraJumper.TryJump`.
+
+**Levers:**
+- the campaign ledger — every learned settlement, sorted by specialty, tier, difficulty or distance;
+- the requirement's *"deciding which to take, in what order"* made a list;
+- #61's own-tab option would host it.
+
+**Cannot:** show anything in place on the map. It is a list the player opens.
+
+**Consequence:** it is the heaviest route here, and it overlaps with SD-5 and SD-7. Take it if #61's own tab is built, and not otherwise.
+
+#### SD-9 — factions tab (faction layer only)
+
+**Gets us** [V]: `FactionUIUtility.DrawFactionRow` tooltips `faction.def.LabelCap` plus `faction.def.Description`. The faction's specialty written into its def's description is public from worldgen, with zero code.
+
+**Cannot:**
+- show a settlement's own specialty. The tab is per faction.
+- wait for first contact. The tab lists every visible faction from the start, so *"learnable at first contact"* needs SF-3's gate and a row postfix.
+
+**Consequence:** the row is contested by VFE Classical, RimPacts and Faction Territories (#61 A1).
+
+#### SD-10 — a letter at the reveal
+
+**Gets us:**
+- a named moment when the colony learns something, sent from #165's reveal with a `LookTargets` jump [V seam];
+- the History tab's archive keeps it.
+
+**Cannot be the store.** A letter is a snapshot, and the requirement forbids a stale one (*"always current; no stale snapshot is kept"*). The archive also culls unpinned letters by stack membership (**T-21**).
+
+**MP:** send it only from the synced reveal. A letter sent from UI code reaches one client.
+
+#### SD-11 — the Alt-hover line
+
+**Gets us** [V] (`Assembly-CSharp.dll`, `Verse.CellInspectorDrawer`):
+- While the `ShowCellInspector` key is held (`KeyBindingDefOf`, default Left/Right Alt, `Data/Core/Defs/Misc/KeyBindings/KeyBindings.xml`), `OnGUI` draws an immediate window beside the cursor.
+- On the world map, `FillWindow` calls `DrawWorldInspector`. That iterates `GenWorldUI.WorldObjectsUnderMouse`, gives each object a header of its `LabelCap`, and for a `Settlement` adds the faction and the relation with goodwill. It then adds the tile's biome, features, hilliness, road, river, movement difficulty and pollution.
+- The window's height comes from `numLines`, which every private `DrawRow`/`DrawHeader` increments. A postfix that adds rows through them sizes the window correctly [I on the postfix; V on the counter].
+
+**Levers:** a native hover line for a settlement — *"Known for: arms · Medieval"* — with no new window, no badge art and no click. It works at any zoom, because it uses `WorldObjectsUnderMouse`, which is not gated on the expanded icon.
+
+**Cannot:**
+- appear without the player holding Alt. It is a vanilla feature many players never discover.
+- sit in the right place without a transpiler, or reflection onto private `DrawRow`. `DrawWorldInspector` is private and writes all its rows in one loop, so a postfix appends after the tile rows rather than under the settlement's own header.
+
+**Consequence:** Vehicle Framework references `CellInspectorDrawer` (ASCII and UTF-16 hits, `3014915404/1.6/Assemblies/Vehicles.dll`) [I, name only], so check the patch order if both ship.
+
+#### Specialty, tier, difficulty — what each surface can truthfully say
+
+- **Specialty:** #165's record. It is **fixed and known for good** ([#174](https://github.com/cjd721/Rimworld-Archinity/issues/174)).
+- **Tier:** before conquest, an NPC settlement's tier is its faction's `Faction.def.techLevel`, read live [V, #167]. After conquest it is the stored tier (TR-1).
+- **Difficulty:** vanilla has nothing to show, because every vanilla settlement's garrison is 1150–1600 points whatever its faction or tier (#164, SM-1) [V].
+  - A difficulty band is only as real as the route that makes difficulty vary: SM-2/SM-3's layout list per faction, or SM-4's curve.
+  - It is **a prediction drawn from that route's inputs**. The garrison itself does not exist until the map is generated on arrival [V, #164].
+  - **The band must be a pure function of synced state**, never a map generation and never a `Rand` draw at render.
+
+#### Recommendation (not a selection)
+
+- **SD-0 regardless.** Without it, every other route is undercut by vanilla's public sellable-items window.
+- **Before committing:** SD-1 for the one-line fact, SD-2 for the full picture, and SD-3 at the moment of commitment. SD-4 comes free with SD-1's comp. SD-11 is a cheap extra that puts the fact where vanilla already puts goodwill on hover.
+- **For planning:** SD-5 (badge + hover) and SD-7 (search) are the cheapest surfaces on the map itself. SD-8 only if #61's own tab is built. SD-6 only if MMF ships for another reason.
+- **SD-10 as the reveal's voice**, never as its memory. **SD-9** as the zero-code carrier of the faction's public specialty.
+
+### Constraints
+
+- **One store, synced, keyed on the tile.** Every surface reads #165's record. A surface keeping its own copy — a static cache populated at draw, a `ModSettings` value (**T-18**) or `PlayerKnowledgeDatabase` — diverges between clients, and after a rejoin [V for `PlayerKnowledgeDatabase`: `GenFilePaths.ConceptKnowledgeFilePath`].
+- **Render code draws no `Rand`.** An inspect string, tab, tooltip or badge runs on one machine at a tick the other is not rendering (**T-39**; [`CHARTING.md`](CHARTING.md) § *The Waystone's out-of-reach signal*). So a lazily-rolled specialty (SS-3 without a seed) cannot be rolled from a display route. It is rolled at worldgen or in a synced context.
+- **Filter at draw time** (**T-21**). A surface that hides unlearned settlements hides them when it draws, never by editing a list the tick reads.
+- **A display that acts is a command.** SD-8's jump-to is camera-only and safe. Any button on SD-2 or SD-8 that *does* something is a synced command (**T-80**; float menu per `engine/determinism.md`).
+- **Identity** (**T-140**): a record keyed on `WorldObject.ID` orphans when a settlement is replaced; the tile does not.
+
+### Available mechanisms
+
+| Mechanism | Provides | Route | Evidence |
+|---|---|---|---|
+| `Settlement.GetGizmos` → `Dialog_SellableItems` | the public trade-profile leak | SD-0 | [V] `Assembly-CSharp.dll` |
+| `Settlement.GetInspectString`, `WorldObject.GetInspectString`, `WorldObjectComp.CompInspectStringExtra`, `InspectPaneFiller.DoPaneContentsFor` | inspect-pane text, per comp | SD-1 | [V] |
+| `WorldInspectPane.CurTabs`, `WorldObject.GetInspectTabs`, `WorldObjectDef.inspectorTabs`/`inspectorTabsResolved`, `WITab`, `InspectTabBase.IsVisible` | a per-object tab that can hide itself | SD-2 | [V] |
+| `Settlement.GetFloatMenuOptions(Caravan)`, `CaravanArrivalAction_AttackSettlement.GetFloatMenuOptions`, `ConfirmAttackFriendlyFaction` | the commit menu and vanilla's confirm shape | SD-3 | [V] |
+| `Dialog_InfoCard(WorldObject)`, `StatsReportUtility.StatsToDraw(WorldObject)`, `WorldObject.GetDescription`, `WorldObjectComp.GetDescriptionPart`, `WorldObject.SpecialDisplayStats` | the ⓘ card | SD-4 | [V] |
+| `WorldInterface.WorldInterfaceOnGUI`, `ExpandableWorldObjectsUtility.ExpandableWorldObjectsOnGUI`/`ExpandedIconScreenRect`/`IsHighlighted`, `TooltipHandler.TipRegion` | icon-space GUI on the world map; no vanilla hover | SD-5, SD-7 | [V] |
+| `Dialog_WorldSearch.ElementMatch`/`IsListed` | world search and map highlight | SD-7 | [V] |
+| `Verse.CellInspectorDrawer.DrawWorldInspector`/`DrawRow`/`numLines`, `KeyBindingDefOf.ShowCellInspector` | Alt-held hover inspector: label, faction, goodwill, tile | SD-11 | [V] |
+| MP `SyncActions.WorldObjectCaravanMenuWrapper` | special-cases only `CaravanArrivalActionUtility`'s confirmation closure | SD-3 | [V] `2606448745/1.6/AssembliesCustom/Multiplayer.dll` |
+| `FactionUIUtility.DrawFactionRow` | faction row, def description in tooltip | SD-9 | [V] |
+| `PlayerKnowledgeDatabase` | vanilla's "learned" store — a per-machine file | Constraints | [V] |
+| BTG `SettlementGetInspectString` | per-settlement line in the inspect pane | SD-1 donor | [V] § *A settlement's specialty* |
+| RimPacts `WITab_RptTrade` + `Patch_WorldObject_GetInspectTabs_RptTrade`; `Patch_WorldWarOverlayGUI`; `MainTabWindow_RimPacts` | settlement tab gated by `IsVisible`; per-settlement map glyphs; own campaign tab | SD-2, SD-5, SD-8 donors | [V] `3762723122/Assemblies/RimPacts.dll` |
+| FT&V `Patches_ExpandableWorldObjectsOnGUI`; `MapMode_FactionTerritories` | per-settlement badge; an MMF map mode with labels | SD-5, SD-6 donors | [V] `3626725895/Assemblies/FactionTerritories.dll` |
+| Map Mode Framework `MapModeDef`, `MapMode`, `MapModeComponent`, `ExpandableWorldObjectsOnGUI` prefix | switchable world overlays with per-tile colour, label, tooltip | SD-6 | [V] `3296654393/1.6/Assemblies/MapModeFramework.dll` |
+
+**What does not exist:**
+- a vanilla tooltip or text label on a world-object icon. The Alt-held inspector (SD-11) is vanilla's only settlement hover, and it shows owner and goodwill, not specialty;
+- any mod that shows a *learned*, per-settlement fact;
+- any patch on `Dialog_WorldSearch`.
+
+**Off the corpus:** RimPacts reflects into *Evolving Enemy Strongholds* (`EvolvingEnemyStrongholds.StrongholdData`: `intelLevel`, `militaryPower`, `tier`, `roleDefName`; a `ScoutUtility`) through `RptEesBridge`. That is a per-settlement intel record of exactly this shape, but the mod is **not on disk** in either root [I, name only]. It is a sourcing lead for [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14), not a carrier.
+
+### Status
+
+**Evidence class: READ**, established on [#178](https://github.com/cjd721/Rimworld-Archinity/issues/178). Seams [V] by decompiling `Assembly-CSharp.dll` 1.6 and the named mod assemblies; routes [I].
+
+**Sweeps.** Both roots, `.dll`, `-g '!**/obj/**' -g '!**/Referenced/**'`:
+
+| Sweep | Result | Validation |
+|---|---|---|
+| ASCII `WITab_` | RimPacts, WTL, VFEI2, VEF, Vehicles, VCR, MP; only RimPacts adds one to a settlement | — |
+| ASCII `ExpandableWorldObjectsOnGUI` | MMF, FT&V, RimPacts, MP | — |
+| ASCII `WorldInspectPane` | RimPacts, MP | — |
+| ASCII `-i` `Settlement_?GetInspectString`, `Settlement_?GetFloatMenuOptions` | BTG only | — |
+| ASCII `-i` `Settlement_?GetInspectTabs\|WorldObject_?GetInspectTabs` | RimPacts only | — |
+| ASCII `-i` `SettlementInfo\|SettlementDetail\|SettlementIntel\|SettlementKnowledge\|KnownSettlement\|ScoutedSettlement\|scouted\|scouting` | RimPacts (the EES bridge), Rim War (`ScoutingParty`, barred) | — |
+| ASCII `Dialog_WorldSearch`, `ElementMatch`; UTF-16 (typed literally) `ElementMatch`, `WorldSearch` | **0** | ASCII form on `ExpandableWorldObjectsOnGUI`; UTF-16 form on `Rpt_TT_Specialty` |
+| `-i` `mapmode` in MP Compat `1629973374/1.6`, ASCII and UTF-16 | **0** | `PatchKCSG` |
+| `CellInspectorDrawer\|DrawWorldInspector`, ASCII; UTF-16 typed literally | Vehicle Framework (both); FloatSubMenu (ASCII only) | — |
+| `EvolvingEnemyStrongholds`, ASCII and UTF-16; `stronghold` in every `About.xml` | RimPacts' bridge only | — |
+
+### Open questions
+
+- **Requirement, for Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2)** (`requirements/TERRITORY.md`). Only *"what it is known for"* is required to be earned. Are a settlement's **tier** and **how hard it is to take** public, as its owner is, or also earned by going? Nothing reads either way today.
+- **Requirement, for Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).** Is the *"Requires trade permission"* inspect line an acceptable leak (SD-0)?
+- **Selection, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)** with [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s own-tab call: which of SD-1 to SD-11 ship.
+- **Build, depends on [#164](https://github.com/cjd721/Rimworld-Archinity/issues/164)'s selection:** the difficulty band's inputs. Vanilla gives nothing to show.
+- **Unverified [I]:**
+  - SD-6 under two clients;
+  - the `<inspectorTabs>` inheritance merge (SD-2);
+  - close-zoom hover (SD-5);
+  - an SD-3 commit dialog routed through `confirmation`;
+  - SD-11's row placement.
 
 ---
 
@@ -2041,6 +2327,8 @@ It builds on §2 (the engine is VEF's `Outposts.dll`; #81's multiplayer harness 
 - **Possible? Yes.** Committed pawns, material and silver costs, and restatted yields are all shipped or XML. **As shipped, the carrier cannot tell pawn kinds apart, and staffing does not limit the count.** Each gap is closed by a contained piece of C# on a seam that has been read.
 - **Multiplayer? With work.** Every VEF route needs §2's harness. The routes here add deterministic reads of synced state, not new sync surface. §2c's settings gate is now unconditional (#170; see Constraints).
 
+> **Premise changed by #175:** committed pawns are consumed. OC-N1 and OC-N2 are retired, and the kind rule moves into the founding commit. See § *An outpost that consumes its pawns and runs on its own* (#179).
+
 ### Routes
 
 | Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
@@ -2213,6 +2501,8 @@ Where the fight's map comes from:
 
 - **Possible? Yes.** No shipped carrier exists: VEF's outpost engine raises no events of its own, and nothing in the corpus attacks a VEF outpost.
 - **Multiplayer? With work.** This is on top of #81's harness. The player's one decision must be a synced commit: a quest accept or choice, a world-object float-menu option, or a pod launch. It must never be a custom `ChoiceLetter` option (T-96) or VEF's give-items dialog (§2b B5).
+
+> **Premise changed by #175:** staff are consumed, and a lost outpost is destroyed into a ruin. There is no capture, rescue or evacuation. OU-D3 has nobody to send home, and OU-D4 applies only to #179's OR-1. The attack routes here stand. See § *An outpost that consumes its pawns and runs on its own* (#179).
 
 ### Routes
 
@@ -2410,6 +2700,252 @@ Evidence class **READ**, via [#171](https://github.com/cjd721/Rimworld-Archinity
   - whether staff can be *captured*, which a rescue beat needs.
 
   #8's *"loss must arrive as something the player acts on"* is written for holdings only.
+
+---
+
+## An outpost that consumes its pawns and runs on its own
+
+### Purpose and scope
+
+This answers the two clauses of [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *An outpost is built, paid for in people, and worth it* that [#175](https://github.com/cjd721/Rimworld-Archinity/issues/175) changed:
+- committed pawns are **consumed** (not recallable, not tracked, sold to the outpost), and the outpost then runs on its own with no staffing floor;
+- a destroyed outpost is a **ruin** a caravan can loot, and paying the build cost again rebuilds it.
+
+Resolved by [#179](https://github.com/cjd721/Rimworld-Archinity/issues/179). It re-answers only what the new premise changes; cost, yield levers and the harness stay in § *What an outpost costs* (#170) and §2 (#81), and the attack that destroys an outpost stays in § *An outpost's upkeep arrives as events* (#171).
+
+Route IDs: **OR-** for how the outpost runs without staff, **RU-** for the ruin and rebuild.
+
+### Verdict
+
+- **Possible? Yes.** Nothing ships it. **VEF's production reads the staff**: every yield formula takes the occupant list, all 5 shipped VOE `ResultOption` entries are per-pawn or per-skill, and `Outpost.Tick` destroys an outpost on the first tick it has no occupants. Five routes decouple it, from a gizmo filter to our own world object. **Nothing in the corpus leaves an outpost ruin**; four vanilla shapes and one of ours carry it.
+- **Multiplayer? With work.** The VEF routes still need §2's harness, and B1 (the founding commit) is where the pawn sale and the kind rule land. Consumption *shrinks* B5, because the Remove, Pack and item-transfer gizmos are deleted rather than synced. Our own world object (OR-5, RU-2) needs none of §2's harness. MP Compat covers none of this: its whole VOE patch is `Outpost_Artillery.Fire` and one `Outpost_Defensive` gizmo lambda, and it has no VEF Outposts class [V].
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **OR-1** Ghost staff | Pawns stay in `occupants`; every recall and transfer control is removed. Yield reads them exactly as shipped. | VEF + our gizmo filter; tabs removed by XML | patch + XML | Medium | With work (§2 harness) |
+| **OR-2** Frozen staff | OR-1, and the staff are also frozen: no aging, disease or death. The yield stays fixed at what was sent. | OR-1 + two prefixes on VEF's needs ticks | patch | Medium | With work (§2 harness) |
+| **OR-3** Consume, flat yield | Pawns are really sold and gone; the outpost runs at zero occupants on `BaseAmount` | our commit + a prefix on `Outpost.Tick`; XML restat | C# + XML | Medium | With work (§2 harness) |
+| **OR-4** Consume, stored snapshot | OR-3, but the yield scales with the count, skills and kinds sold, read from a record stored at the sale | OR-3 + our comp + production prefixes per class | C# | Medium–Hard | With work (§2 harness) |
+| **OR-5** Our own world object | A map-less outpost that never holds pawns: sale at founding, clock, delivery | ours; donors FT&V `FactionTerritories_VassalOutpost`, VEF `Deliver` | C# | Hard | Yes, our own `[SyncMethod]`s |
+| **RU-1** The outpost is its own ruin | Production stops, goods stay, label changes; rebuild clears the flag | VEF `Outpost` + our scribed comp | C# + XML | Medium | With work (loot is B5) |
+| **RU-2** Our ruin object | A persistent, readable ruin holding the goods; *Loot* and *Rebuild* from the caravan's menu | ours; donors vanilla `TradeRequestComp` (P4), VEF `CanSpawnOnWithExt` cost check | C# | Medium | Yes (world-object float menus are synced) |
+| **RU-3** Loot site | The goods lie on a real map the caravan walks, optionally guarded; with `leaveAbandonedSettlement`, a dated marker is left for the rebuild | vanilla `Site` + `ItemStash` part (Odyssey `AbandonedSettlement` part for a ruined layout) | XML + one C# call | Medium | Yes [I] |
+| **RU-4** Vanilla marker | A dated "abandoned settlement" marker; no loot | vanilla `AbandonedSettlement` | C#, no Harmony | Easy | Yes |
+| **RU-5** Re-found in place | *Rebuild* is VEF's own founding on the same tile, full price, any type | VEF as shipped | none | Easy | With work (B1) |
+
+The two halves compose. Pick one OR route for how the outpost runs, and one RU route (RU-4 or RU-5 only as a complement) for how it ends.
+
+#### What production reads today [V]
+
+- `Outpost.ProducedThings()` = `ResultOptions.SelectMany(ro => ro.Make(CapablePawns.ToList()))`. `ResultOption.Amount(pawns)` = `(BaseAmount + AmountPerPawn × pawns.Count + Σ AmountsPerSkills) × ProductionMultiplier`, and `AmountBySkill.Amount` sums each pawn's skill level.
+- **At zero occupants the base path yields `BaseAmount`, and no shipped def sets it.** VOE's 1.6 `Outposts.xml` has **0** `BaseAmount` and **5** `ResultOption` entries across 4 defs: Logging's is `AmountPerPawn`, and Drilling's, Production's two and Trading's are `AmountsPerSkills`.
+- **The C# yields read staff too.** In VOE and in VFE Classical's three classes:
+  - `Town` recruits per capable pawn.
+  - `Science` researches per capable pawn.
+  - `Hunting`, `Farming` and `Mining` synthesize per-skill or per-pawn options, and ore options carry `MinSkills`.
+  - `Drilling` accrues `workDone` from `TotalSkill(Construction)`. Its `ProductionString` divides by that total with **integer division**, and only while the well is not `Ready`. Founding requires Construction 20, so as shipped this throws only if staff are emptied or lose the skill before the well is ready, which is exactly what OR-3 does.
+  - `Defensive` intercepts only with `PawnCount > 0`.
+  - Only `Scavenging`'s product ignores staff; staff only shorten its interval.
+- **Zero occupants destroys the outpost.** `Outpost.Tick` sends *"Abandoned"* and calls `Destroy()` on the first tick that `PawnCount == 0`.
+- `TicksToPack` divides by `occupants.Count`. It is read only by the Pack gizmo.
+- **Delivery never reads staff.** `Deliver` and its five methods depend on the delivery map only.
+
+#### OR-1 — ghost staff
+
+- **Gets us:** the shipped yield formulas, untouched, and *"Bob runs the outpost now"* taken literally, since Bob is still in `occupants`.
+  - A postfix on `Outpost.GetGizmos` drops Remove, Pack and Stop-pack.
+  - A postfix on `Outpost.GetCaravanGizmos` drops Add pawn, Take items and Give items.
+  - `GetTransportersFloatMenuOptions` drops VEF's add-to-outpost pod option.
+  - The four `WITab_Outpost_*` tabs are removed from `OutpostBase` by XML patch.
+
+  Nothing remains for the player to recall, tend or equip.
+- **Cannot:** stop the staff living.
+  - They age (`SatisfyNeedsInterval` calls `AgeTickInterval`), sicken, heal and use medicine.
+  - A death on the per-tick path removes the pawn, and the last one triggers *"Abandoned"*.
+  - A death on the interval path leaves a dead producer (**T-152**).
+  - `Town` keeps adding recruits. "Not tracked" holds for the player, not for the save.
+- **Consequences:** **T-148 becomes the intended behaviour.** Sold pawns *should* leave the storyteller's population, so #170's OC-N2 is retired. **T-151 still binds:** a destroyed outpost must kill or otherwise dispose of the staff first.
+
+#### OR-2 — frozen staff
+
+- **Gets us:** OR-1 with a **build-time snapshot for free**. Prefixes returning `false` on `Outpost.SatisfyNeeds()` and `Outpost.SatisfyNeedsInterval(int)` stop every per-pawn tick VEF runs: needs, health, tending and aging.
+  - Skills never change, so the yield stays fixed at what was sent.
+  - Nobody dies, so neither *"Abandoned"* nor T-152 can fire.
+  - Medicine is never drawn.
+- **Cannot:** grow or decline with its people. `Town`'s recruitment and `Science`'s research still run, because they are production, not needs.
+- **Also:** VOE `Outpost_Encampment.Tick` refills food and rest, tends, and calls `HealthTick` directly. It needs the same freeze, one more prefix [V].
+
+#### OR-3 — consume, flat yield
+
+- **Gets us:** the requirement read strictly. The pawns are sold inside the synced founding commit that §2c item 3 already has to write, and they cease to exist for the colony.
+  - Vanilla supplies the sale [V]. `Pawn.PreTraded(TradeAction.PlayerSells, …)` records the *SoldPrisoner* tale, clears the faction, and calls `relations.Notify_PawnSold`, so relatives get vanilla's sold-family thoughts. If the pawn's home or host faction is foreign, it applies `GoodwillToMakeHostile` under *MemberSold*, which **makes that faction hostile**, not merely annoyed. `Tradeable_Pawn.ResolveTrade` records `HistoryEventDefOf.SoldSlave` for ideology precepts.
+  - The yield becomes `BaseAmount`, an existing `ResultOption` field restatted by XML, as in §2a.
+  - One patch keeps a zero-occupant outpost alive. `Tick`'s abandonment branch sits between `WorldObject.Tick` and `SatisfyNeeds`, so this is a transpiler or a reimplementing prefix, not a bare `return false`.
+- **Cannot:** reward sending more or better people, which the requirement's *"return justifies the pawns"* clause leans on.
+  - `Town`, `Science`, `Hunting`, `Farming`, `Mining` ores, `Drilling` and `Defensive` yield nothing or break at zero staff. Each is dropped or gets an override (§2a's content call, widened).
+  - VEF's four occupant tabs show empty lists until removed.
+- **Consequences:** T-148, T-151 and T-152 all vanish, because there are no occupants.
+
+#### OR-4 — consume, stored snapshot
+
+- **Gets us:** OR-3, plus a yield that scales with the people sold.
+  - A scribed comp on `OutpostBase` records, at the sale, the count, the skill totals and the kinds. A kind weight is #170's OC-Y3.
+  - Production reads the comp instead of `CapablePawns`.
+- **Cannot:** use VEF's yield maths unchanged. `ResultOption.Amount` takes a `List<Pawn>` and has no reference to its outpost, and `CapablePawns` and `TotalSkill` are non-virtual. The snapshot therefore enters through prefixes on `ProducedThings` and `ProductionString`, and again on each class that overrides them (§2a's non-uniform seam) [V seams; the composition is I].
+- **Weight:** Medium–Hard because of that fan-out. OR-2 buys the same fixed yield with two prefixes.
+
+#### OR-5 — our own world object
+
+- **Gets us:** an outpost with nothing to decouple. It is a plain `WorldObject`, like FT&V's `FactionTerritories_VassalOutpost`, which stores only defNames and a name [V, §3].
+  - It holds a def, a yield record like OR-4's, a clock (§0 P3) and delivery copied from VEF's `Deliver`. Delivery never reads staff, but it is an instance method on `Outpost`, so it is copied, not called.
+  - The founding sale is our own synced float-menu option or `[SyncMethod]`.
+  - **Not a `MapParent`, so T-150 does not apply.** M-proxy and FT&V's overlay donor work against it as they already do against FT&V's object, which is #171's OU-A1 at its cheapest.
+  - §2's B1–B5 never arise. T-148, T-149, T-151 and T-152 do not apply.
+- **Cannot:** reuse VOE's or VFE Classical's content classes, VEF's tabs or VEF's delivery without copying them. It is §2's *Build B*, minus occupants, needs, health, packing and tabs. That is why it drops from "not recommended" to a live route.
+
+#### Choosing, requiring or forbidding a pawn kind
+
+- **Vanilla tells them apart** [V, #170]. `IsFreeNonSlaveColonist`, `IsSlaveOfColony` and `IsPrisonerOfColony` are all public on `Pawn` in 1.6.
+- **Consumption moves the rule into the commit.**
+  - VEF's founding commit adds **every** caravan pawn: prisoners, and **pack animals**, which a sale would then consume as well [V, `Dialog_CreateCamp.DoOutpostDisplay`].
+  - It validates only `IsFreeColonist`, which in 1.6 includes slaves [V, `Utils.HumanColonists`].
+  - §2c item 3 must replace that commit with our synced `FoundOutpost` anyway. Choosing the pawns, and requiring or forbidding a kind, is a filter inside it at negligible extra weight.
+  - OR-1 removes the caravan Add gizmo and the pod option, so the commit becomes the **only** entry, and #170's OC-K2 postfix on `Utils.CanAddPawn` is no longer needed.
+  - T-149 dissolves too, because the commit charges `CostToMake` explicitly rather than inside `AddPawn`'s last-humanlike branch.
+- **Display:** VEF's founding tooltip (`RequirementsStringBase`) lists requirements. A kind rule needs a line there, or in our own dialog, for the player to see why a founding is refused.
+
+#### What destruction does today [V]
+
+- **VEF has two exits.**
+  - At zero occupants `Tick` sends *"Abandoned"* and calls `Destroy()`.
+  - `ConvertToCaravan`, at the end of packing, hands everyone and everything back.
+- `PostRemove` calls `OutpostsMod.Notify_Removed`, which is empty. **`containedItems` is a plain `List<Thing>`, not a `ThingOwner`**, so a destroyed outpost's goods vanish with it, and its occupants are dropped (T-151).
+- **No corpus mod leaves an outpost ruin** (*Available mechanisms*).
+- **Our code does the destroying.** #171's attack routes (OU-A1 or OU-A2 lost, /forfeit or /roll) end in a call of ours, which must:
+  1. take the goods out of `containedItems`;
+  2. dispose of any occupants (OR-1 and OR-2: *they fell*, and VEF's own path already turns corpses into goods);
+  3. destroy the outpost, or flag it (RU-1);
+  4. place the ruin.
+
+#### RU-1 — the outpost is its own ruin
+
+- **Gets us:** the cheapest ruin on VEF.
+  - A scribed flag on a `WorldObjectComp` added to `OutpostBase` by XML is the OU-D2 shape. The stall prefix it needs is the same patch.
+  - The goods stay in `containedItems`.
+  - A `Label`/`Material` postfix marks it ruined.
+  - A ruined `Outpost` still blocks founding on its own and neighbouring tiles (`CanSpawnOnWithExt`), so nobody founds over it [V].
+- **Rebuild:** a caravan float-menu option of ours, which is synced as a world-object option (§0 P5). It checks the caravan against `CostToMake` the way `CanSpawnOnWithExt` does, takes it, clears the flag, and resets `ticksTillProduction`.
+- **Cannot:** loot through VEF's *Take items* dialog in multiplayer, which is B5. Loot is ours: a float-menu option or a synced dialog commit.
+- **With OR-1:** the staff died with the outpost, so a rebuilt one has nobody to read. Rebuild then has to take pawns again, which is a requirement call (see *Open questions*).
+- **With OR-2, OR-3 and OR-4:** the staff are frozen and survive with it, or the stored snapshot does. The outpost resumes as built.
+- **Consequence:** T-150 stays, since it is still a `MapParent`.
+
+#### RU-2 — our ruin object
+
+- **Gets us:** a ruin that stands until rebuilt and says what it was.
+  - A plain `WorldObject` with a `ThingOwner` of the surviving goods, the remembered outpost def and name, and OR-4/OR-5's snapshot if one exists.
+  - *Loot* and *Rebuild* are options on its caravan float menu. Multiplayer patches every `WorldObject.GetFloatMenuOptions(Caravan)` override through `SyncWorldObjCaravanMenus` [V, `Multiplayer.dll`], so both are synced.
+  - *Loot* moves the goods into the caravan with no map.
+  - *Rebuild* takes the cost in P4's `TradeRequestComp` shape (Multiplayer registers vanilla's `TradeRequestComp.Fulfill` as a sync method [V]; ours needs its own) and spawns a fresh outpost of the remembered def.
+  - The inspect string is ours: type, date destroyed, what survives, and what rebuilding costs. This is the ruin's player-facing surface, shared with #178.
+- **Cannot:** give the player a map to fight across. Pair it with RU-3 if the loot should be contested.
+- **Consequence:** it is not a `MapParent`, so T-150 does not apply to the ruin.
+
+#### RU-3 — loot site
+
+- **Gets us:** a real map visit with vanilla parts.
+  - `SiteMaker.MakeSite` with vanilla's `ItemStash` part.
+  - The outpost's goods go into `SitePart.things`, scribed `Deep`. `GenStep_ItemStash` spawns exactly `parms.sitePart.things` as the stockpile [V].
+  - `SitePartWorker_ItemStash` fills `things` only from QuestGen, so outside a quest the goods are ours to place [V].
+  - A threat part can be added for scavengers.
+  - Odyssey's `AbandonedSettlement` part (`GenStep_Settlement`, `generatePawns=false`) generates a walkable ruined settlement instead. It is Odyssey-only and **dead content today**: its only user, `Gravcore_AbandonedSettlement`, is commented out of `Script_GravShip.xml` [V].
+- **The site leaves its own marker.** Vanilla `SitePartDef.leaveAbandonedSettlement` makes `SitePartWorker.PostDestroy` spawn a player-faction `AbandonedSettlement` on the tile when the site goes, on the surface layer only. Odyssey's `GravcoreLocationBase` sets it [V]. RU-3 + RU-4 is therefore **one XML flag** on our site part, and the marker is the rebuild anchor.
+- **Cannot:** stay a loot site. `Site.ShouldRemoveMapNow` removes the site as soon as its map is left with no pawn, building or live threat blocking it, **whether or not the goods were taken** [V]. What stands afterwards is the lootless marker, anchoring RU-4's or RU-5's rebuild.
+- **Order matters (T-150):** the outpost must be gone before the site is added, or `MapParentAt` finds the outpost first.
+
+#### RU-4 — vanilla marker
+
+- **Gets us:** vanilla `AbandonedSettlement`, a plain `WorldObject` (`canHaveMap` false). Its inspect string shows *"Abandoned: date (time ago)"* for the player's faction [V]. It costs one spawn call, or no code at all when RU-3's `leaveAbandonedSettlement` spawns it.
+- **Cannot:** hold loot or offer anything. Nothing in vanilla removes it [I]. It works only as RU-3's or RU-5's anchor.
+
+#### RU-5 — re-found in place
+
+- **Gets us:** VEF's founding flow already works on the ruin's tile. `CanSpawnOnWithExt` rejects only a tile at or beside a settlement, or beside an `Outpost` [V]. *Paying the build cost again* is founding again: `CostToMake` plus pawns.
+- **Cannot:** remember the type, name or snapshot, or waive the pawns.
+
+#### How *rebuild* reaches the player
+
+Every channel below is a synced commit:
+- **At the ruin, by caravan:** a world-object float-menu option (RU-1, RU-2) or VEF's founding gizmo (RU-5, B1).
+- **From home, by pods:** a `TransportersArrivalAction` of ours in the shape of VEF's `TransportPodsArrivalAction_AddToOutpost`. Pod launch is synced [V, #171].
+- **As an offer:** #171's OU-N2 quest, *"rebuild for N"*, through `QuestPart_Choice`.
+
+#### Recommendation (not a selection)
+
+- **OR-2 + RU-1 is the cheapest faithful build on VEF.**
+  - The shipped yield formulas are untouched and reward who was sent.
+  - The staff are gone to the player and can never die, desert or come home.
+  - The ruin is the same object.
+  - It adds about four patches to §2's harness, and it deletes most of B5's sync surface.
+- **OR-5 + RU-2 is the clean alternative.** It drops §2's harness entirely and makes #171's overlay attack (OU-A1) work with FT&V's donor. It costs VOE's content classes and a copied delivery layer.
+- **OR-3 fits only if yields are flat by design.**
+- **RU-3 is worth adding to either** if looting a ruin should be a fight. With `leaveAbandonedSettlement` it is also a complete ruin → marker → re-found loop, from vanilla parts.
+
+### Constraints
+
+- **Production reads the staff, and zero staff destroys the outpost** [V] (*What production reads today*). Any route that empties `occupants` must patch `Tick`'s abandonment and restat or override the yield.
+- **`containedItems` is not a `ThingOwner`** [V]. A bare `Destroy()` loses the goods as well as the pawns (T-151). The ruin's loot exists only if our destroy moves it first.
+- **T-148 inverts under this premise.** Leaving the storyteller's population is what a sale means, so #170's OC-N2 must **not** be built. The trap's mechanism stays true.
+- **T-150 binds every VEF route and RU-1**, because `Outpost` is a `MapParent`. OR-5 and RU-2 are free of it.
+- **T-152 binds OR-1 only.** OR-2 freezes health, and OR-3, OR-4 and OR-5 have no occupants.
+- **The player's decisions must be synced commits** (#171 Constraints): the founding sale, *Loot* and *Rebuild*. VEF's gizmos and dialogs are not synced (B5). Deleting them is the cheapest sync.
+- **No capture, no rescue** (#175). #171's *Loss* options *evacuate* and *capture* are out; only *they fell* remains, and only for OR-1 and OR-2.
+
+### Available mechanisms
+
+| Mechanism | What it provides | Evidence |
+|---|---|---|
+| `Outposts.Outpost.Tick` / `TickInterval` / `ProducedThings` / `Produce` / `CapablePawns` / `TotalSkill` / `IsCapable` | Abandonment at zero; production clock; yield from occupants | [V] `2023507013/1.6/Assemblies/Outposts.dll` (identical SHA-1 under `common/RimWorld/Mods`, T-22) |
+| `Outposts.ResultOption.Amount` / `AmountBySkill.Amount` | `BaseAmount` + per-pawn + per-skill | [V] same |
+| `Outposts.Outpost.SatisfyNeeds()` / `SatisfyNeedsInterval(int)` | Every per-occupant tick: needs, health, tending, aging | [V] same |
+| `Outposts.Outpost.GetGizmos` / `GetCaravanGizmos` / `GetTransportersFloatMenuOptions` | Remove, Pack, Stop-pack, Add, Take, Give, pod add | [V] same |
+| `Outposts.Dialog_CreateCamp.DoOutpostDisplay`, `Utils.HumanColonists` / `CanSpawnOnWithExt` | Founding commits every caravan pawn; tile rules | [V] same |
+| VOE `Outpost_*` (10), VFE Classical `VFEC.Outposts.*` (3) | Staff-reading yields; Drilling's integer division; Encampment's own need tick | [V] `2688941031/1.6/Assemblies/VOE.dll`, `2787850474/1.6/Assemblies/VFEC.dll`. VOE's `1.6/Factory` folder is commented out of `loadFolders.xml` and never loads |
+| `Verse.Pawn.PreTraded`, `RimWorld.Tradeable_Pawn.ResolveTrade` | The sale's tale, relations thoughts, goodwill and `SoldSlave` event | [V] 1.6 `Assembly-CSharp.dll` |
+| `RimWorld.Planet.SitePart.things`, `GenStep_ItemStash`, `SitePartWorker_ItemStash`, `SiteMaker.MakeSite`, `Site.ShouldRemoveMapNow` | Loot site from our goods; removed once its map is left unblocked, looted or not | [V] same; `Data/Core/Defs/Sites/Parts/ItemStash.xml` |
+| Odyssey `SitePartDef AbandonedSettlement`, `WorldObjectDef ClaimableSite` | Ruined-settlement layout site; dead content (its quest is commented out of `Script_GravShip.xml`) | [V] `Data/Odyssey/Defs/Sites/GravcoreLocations.xml` |
+| `SitePartDef.leaveAbandonedSettlement` → `SitePartWorker.PostDestroy` | A player-faction `AbandonedSettlement` is left when the site goes (surface only) | [V] 1.6 `Assembly-CSharp.dll`; `GravcoreLocationBase` |
+| `RimWorld.Planet.AbandonedSettlement`, `DestroyedSettlement` | Dated marker; post-defeat map holder that removes itself with its map | [V] 1.6 `Assembly-CSharp.dll`, `Data/Core/Defs/WorldObjectDefs/WorldObjects.xml` |
+| Multiplayer `SyncWorldObjCaravanMenus`, `SyncMethod.Register(typeof(TradeRequestComp), "Fulfill")` | Synced world-object caravan menus; synced trade-request fulfil | [V] `2606448745/1.6/AssembliesCustom/Multiplayer.dll` |
+| MP Compat `VanillaOutpostsExpanded` | `Outpost_Artillery.Fire` + one `Outpost_Defensive` lambda; no VEF Outposts class | [V] `1629973374/1.6/Assemblies/Multiplayer_Compat.dll` |
+
+**`DestroyedSettlement` is not a map-less ruin** [V]. It is a `MapParent` created by `SettlementDefeatUtility.CheckDefeated` to adopt a live map. Its `ShouldRemoveMapNow` removes the world object along with the map. VFE Medieval 2's merchant-guild camp and Better Traders Guild use it the same way.
+
+**Wide pass.**
+- **Outposts:** both roots, `*.dll`, `-i`, ASCII `outpost` and null-interleaved UTF-16 `o\x00u\x00t\x00p\x00o\x00s\x00t\x00` typed literally, excluding `obj/` and `Referenced/`, piped to `corpus.py --which`. Both halves return the same ten mods as #170 (Better Architect Menu in UTF-16 only; [SR]Factional War in ASCII only). Validated: VEF and VOE hit. No player-founded, pawn-consuming carrier other than `Outposts.dll`.
+- **Yield without staff:** ASCII `tithe` and `vassal` return VFE Empire, Worksites Expanded, Rim War, FT&V and RimPacts. Their no-staff yields are §3's and P1's holdings machinery, not outposts. FT&V's object is OR-5's donor.
+- **Ruins:** `-i "passiveincome|ruinedoutpost|destroyedoutpost|outpostruin|ruinsite"`, same form, returns **0**. The validator is the same sweep plus `destroyedsettlement`, which returns five mods (FT&V, RimPacts, VFE Medieval 2, VFE Security, Better Traders Guild). Every 1.6 hit that was read handles a *defeated settlement's* map. **No mod ships an outpost ruin or a rebuild.**
+
+### Status
+
+READ, via [#179](https://github.com/cjd721/Rimworld-Archinity/issues/179), building on #81, #170, #171 and #175. The mechanisms are [V] against the 1.6 assemblies and defs cited. Every route is [I] by construction: the seams are read, the compositions are unbuilt.
+
+### Open questions
+
+- **Requirement — Conrad, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2):**
+  - does *rebuild* cost pawns again, or only materials and silver? Under OR-1 the staff died with the outpost, so a pawn-free rebuild needs OR-2, OR-3, OR-4 or OR-5.
+  - does *"not tracked"* allow the pawns to persist unseen in the save (OR-1, OR-2), or must they cease to exist (OR-3 to OR-5)?
+  - may pack animals be consumed with a caravan, or does the commit exclude them?
+- **Story call (Conrad):** whether the sale carries vanilla's consequences: sold-family thoughts, *MemberSold* turning a foreign prisoner's faction hostile, and the `SoldSlave` precept event.
+- **Build (next map):**
+  - where OR-3's abandonment patch sits (a transpiler, or a prefix reimplementing `Tick`);
+  - what OR-4's snapshot records;
+  - whether RU-1's loot is a float-menu option or a synced dialog.
+- **Balance (#119):** `BaseAmount` values under OR-3; whether a ruin's goods are all, part or a roll of `containedItems`; the rebuild price.
+- **Content (#119 / #14):** under OR-3, the VOE and VFE Classical classes that yield nothing at zero staff (`Town`, `Science`, `Hunting`, `Farming`, `Mining` ores, `Drilling`, `Defensive`) are dropped or overridden.
+- **Shared surface with [#178](https://github.com/cjd721/Rimworld-Archinity/issues/178):** a ruin is read through its world-object inspect string and float menu. RU-2 owns both; RU-1 patches VEF's; RU-3 gets vanilla's site description.
 
 ---
 

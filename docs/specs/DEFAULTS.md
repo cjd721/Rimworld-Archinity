@@ -19,6 +19,10 @@ Two surfaces, one mechanism:
   [#155](https://github.com/cjd721/Rimworld-Archinity/issues/155). This is the clause #28
   could not reach; its answer is *The whole kit, weapon included*, below, and it
   **corrects** one claim #28 left standing.
+- **A bill's configuration can be pasted onto another bill**, carrying the settings and
+  not the recipe, across recipes and benches.
+  [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157). Its answer is *A bill's
+  configuration, pasted onto another bill*, below. It sits on top of the #95 defaults.
 
 They share a document because they share an answer. Vanilla builds both objects in C# with
 hardcoded field initialisers and exposes **no XML seam** to either; both therefore want the
@@ -346,6 +350,405 @@ does with it. Listing those checks is #119's act, not this document's.
 bill's configuration — shares a mechanism after all:
 `StorageSettingsClipboard.CopyPasteGizmosFor` is vanilla's shipped "copy this
 configuration onto that one" gizmo pair, and the outfit stand already carries it **[V]**.
+*(#157 narrows this: the storage clipboard takes a `StorageSettings`, which a bill does not
+have. Bills use their own `BillUtility.Clipboard`. The storage clipboard is a pattern to copy,
+not a mechanism the two share. See* A bill's configuration, pasted onto another bill*.)*
+
+---
+
+## A bill's configuration, pasted onto another bill
+
+This answers `docs/requirements/COLONY.md` § *Bills arrive configured, and a configuration can be
+reused*, in its copy-paste clause. It was established by
+[#157](https://github.com/cjd721/Rimworld-Archinity/issues/157), evidence class **READ**, against
+RimWorld 1.6.4871 rev590 and the corpus pinned in `docs/data/MOD-SNAPSHOT.md`. The #95 defaults
+(*Half one*, below) are the layer underneath it, and neither replaces the other.
+
+### Verdict
+
+- **Possible?** **Yes, and one mod already ships it.** Better Workbench Management puts a
+  *"Paste all settings (except output product) from copied bill into this one"* button on every
+  bill row and in the bill dialog. It works across recipes and across benches **[V]**. It fails
+  the requirement in one place: **it copies the material restriction only when the two recipes'
+  fixed ingredient filters are identical**. In the ticket's own example, plate armour is
+  `Metallic`+`Woody` and the simple helmet is `Metallic`, so *"steel only"* is dropped with no
+  message **[V]** by reading (**T-156**).
+- **Multiplayer?** **With work.** None of the shipped paths is synced. Multiplayer watches bill
+  fields only inside `Bill.DoInterface` and `Dialog_BillConfig.DoWindowContents`. A paste writes
+  some fields that are not watched in either scope, and neither MP nor MP Compat carries a
+  command for BWM **[V]**. One synced command taking *(source bill, target bill)* would make a
+  paste safe. MP already knows how to serialise a live `Bill` **[V]**.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A** | A per-bill *Paste settings* button, across recipes and benches. Also: paste the bills as new ones, optionally **linked** so that later edits mirror | Better Workbench Management (`falconne.BWM`, `935982361`) | dependency, no code | **Easy** | **No.** It partly desyncs, and no compat exists |
+| **B** | Route A's behaviour, with the paste routed through one synced command of ours | BWM, plus a compat patch in `Archinity.Altar` | dependency + C# (Harmony + MP API) | **Medium** | **With work** |
+| **C** | Our own configuration paste. We choose the translation rules and take no dependency | our code. Donors: BWM `MirrorBills`, vanilla `Bill.Clone`, `BillRepeatModeUtility`, MP's timetable paste | C# | **Medium** | **With work.** One SyncMethod |
+| **D** | Route C's paste with no command of our own. It relies on MP's existing field watches and synced setters | our code | C# | Medium | **No, not recommended** |
+| **E** | Named bill configurations: a stored library the players author once and then apply anywhere | our code. Donor: the `OutfitDatabase`/`Policy` shape | C# | **Hard** | With work |
+
+**Every route is [I] as a route.** The mechanisms each one composes are [V] and cited below.
+Whether they compose into the requirement stays untested until something is compiled.
+
+#### Route A — Better Workbench Management as it ships
+
+**What it gets us.**
+
+- **Configuration-only paste onto an existing bill, today.** The flow has three steps:
+  - Vanilla's copy icon sets `BillUtility.Clipboard`.
+  - BWM's `ITab_Bills_TabUpdate_Detour` moves the moused-over bill into its own handler and
+    nulls vanilla's clipboard.
+  - `BillCopyPaste.DoPasteInto(Bill_Production)` calls
+    `ExtendedBillDataStorage.MirrorBills(source, target, preserveTargetProduct: true)` **[V]**.
+
+  The button is drawn on every bill row (a postfix on `Bill_Production.DoConfigInterface`) and
+  in the bill dialog (a postfix on `Dialog_BillConfig.DoWindowContents`). It shows whenever
+  exactly one bill is copied and the target is a different bill **[V]**. **There is no recipe
+  check and no bench check.** The clipboard holds a reference to the *live* source bill, not a
+  clone **[V]**.
+- **All seven configuration fields are handled** by `MirrorBills` **[V]**:
+  - **Always copied:** search radius, store mode and group (`SetStoreMode`), `paused`, the pawn
+    restriction and skill range. The last two are skipped when BWM's own per-bench restriction
+    is on for the target.
+  - **Copied only when the target can count** (see the next bullet): target and repeat counts,
+    the pause pair, the include group and `hpRange`.
+  - **Copied only when both products qualify:** `qualityRange`, `includeEquipped`,
+    `includeTainted` and `limitToAllowedStuff`.
+  - **Behind a mod setting:** `suspended`.
+  - **Never copied:** the bill's name.
+  - **The ingredient filter:** see *What it cannot do*.
+- **It never forces `TargetCount` onto a target that cannot count. The gate covers that one
+  mode and no other.** `MirrorBills` runs `if (sourceBill.repeatMode != TargetCount || flag)`
+  **[V]**, so every other mode is copied without a check. That includes Compositable Loadouts'
+  `W_PerTag`, which also counts products (`Inventory.BillUtility.Satisfied` →
+  `WorkerCounter.CountProducts`) **[V]**. BWM will therefore paste `W_PerTag` onto a recipe that
+  cannot count **[V]** by reading. For `TargetCount`, `MirrorBills` copies the mode only when
+  `CanOutputBeFiltered(target)` holds. That check is `specialProducts == null &&
+  products.Count == 1`, or the target's counter is `RecipeWorkerCounter_MakeStoneBlocks` or
+  `RecipeWorkerCounter_ButcherAnimals` **[V]**. This hand-copies vanilla's two
+  `CanCountProducts` overrides (both return `true`) **[V]**. It errs safe: Medieval Overhaul's
+  `RecipeWorkerCounter_GrindWheat` counts `products.Count >= 1` and `MakeWoodPlanks` returns
+  `true` **[V]**, so BWM *under*-pastes onto those recipes and never over-forces them. **T-58 is
+  respected for `TargetCount` only.**
+- **Extras beyond the requirement:** paste all of a bench's bills as new bills onto another
+  bench; **linked** bills, which mirror each other's settings from then on; a product output
+  filter; count-away; and a per-bench worker restriction **[V]**.
+- **Nice Bill Tab** (`Andromeda.NiceBillTab`, `3520130671`) has no paste of its own. When BWM is
+  loaded, it reaches BWM's `DoCopy` / `CanPasteInto` / `DoPasteInto` by reflection from its own
+  float menus (`BetterWorkbenchesIntegration`) **[V]**. So Route A also works inside Nice Bill
+  Tab.
+
+**What it cannot do.** It loses the material restriction whenever the fixed filters differ, as
+described under *The material restriction* below. It gives no feedback when a field is skipped.
+It pastes onto one bill at a time, with no "apply to all bills on this bench". It has **no bill
+type check**: `CanPasteInto(Bill_Production)` accepts Glittertech's `Bill_Glittertech` /
+`Bill_Overclock` and the mech bills. That is the same hazard #95's gate 1 exists for **[V]**.
+
+**Consequences.** Shipping BWM brings in its whole feature set. It also brings its standing
+Multiplayer debts:
+
+- the **T-18** read in its `MakeNewBill` postfix (see *The corpus — what shaped the build*);
+- linked-bill mirroring that runs from **UI code every frame**
+  (`MirrorBillToLinkedBills`, called from the `ITab_Bills.TabUpdate` prefix and the dialog
+  postfix) **[V]**;
+- the paste gap described next.
+
+**Multiplayer: No.** BWM ships no `0MultiplayerAPI` reference and MP Compat has no class for it.
+`falconne.BWM`, `ImprovedWorkbenches` and `NiceBillTab` return zero across every
+`1629973374` binary, including `Referenced/`, in both encodings. The only `falconne.*` string
+is `falconne.AFF` **[V]**. A row paste runs inside `Bill.DoInterface`'s watch scope, so some
+fields are synced and some are not (see *What Multiplayer already syncs*). The same paste made
+from Nice Bill Tab's float menu runs **outside every watch scope**. The mechanism is **[V]**.
+That the initiating client diverges is **[I]**, and one two-client test would settle it.
+
+#### Route B — BWM, with the paste routed through one synced command
+
+The idea: patch `BillCopyPaste.DoPasteInto(Bill_Production)` so that it calls a static method
+of ours, `(Bill_Production source, Bill_Production target)`, registered with
+`MP.RegisterSyncMethod`. That method then calls `MirrorBills`. Both arguments are live bills,
+which MP's `Bill` sync worker serialises as `billStack` + `loadID` **[V]**.
+
+**Why the registration can't sit on `MirrorBills` itself:** it is also called every frame by the
+linked-bills mirror, so a registration there would send a command per frame per linked bill
+**[V]** on the call sites. The per-bench worker restriction `WorldComponent`, the extended-data
+store and `paused` are all written inside `MirrorBills`, so they ride the same command.
+
+**What it gets us:** Route A's behaviour, synced, including its safe T-58 gate.
+
+**What it cannot do:** everything Route A cannot do. It inherits the strict filter rule. It also
+does not fix linked bills, which stay a separate unsynced mechanism.
+
+**Consequences:** a hard dependency on BWM's internal method shape, with no API contract. It
+adds the first `0MultiplayerAPI` reference to our assembly. Whether BWM ships at all is
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s call.
+
+#### Route C — our own configuration paste
+
+A copy action and a *paste configuration* action on a bill row and in the bill dialog. The
+clipboard is per-player UI state that the simulation never reads, so it is not a **T-18**. The
+paste is one static method `(source, target)` registered with `MP.RegisterSyncMethod`. Its body
+reads only the two bills and Defs, so it passes the **Divergence** gate. Every setter the
+method needs is public in vanilla:
+
+- `SetStoreMode`, `SetIncludeGroup`;
+- `SetPawnRestriction`, `SetAnySlaveRestriction`, `SetAnyMechRestriction`,
+  `SetAnyNonMechRestriction`, `SetAnyPawnRestriction`;
+- the public fields on `Bill_Production` **[V]**.
+
+The donors are exact:
+
+- BWM's `MirrorBills` is a complete, shipped field-by-field gating of exactly this job **[V]**.
+- Vanilla's `Bill.Clone` / `Bill_Production.Clone` give the list of what a bill carries **[V]**.
+- `BillRepeatModeUtility.MakeConfigFloatMenu` shows the `CanCountProducts` refusal and its
+  player message **[V]**.
+- MP's own `PawnColumnWorker_CopyPasteTimetable.PasteTo` prefix is the shipped shape of "sync a
+  clipboard paste as target + clipboard" (`SyncTimetable.DoSync(p, clipboard)`) **[V]** on the
+  registration.
+
+**What it gets us.**
+
+- **We choose the material rule**, which is the one thing Route A gets wrong.
+- The T-58 gate can call the virtual `recipe.WorkerCounter.CanCountProducts(target)` instead of
+  a hand-copied rule.
+- A bill-type allowlist, as in #95's gate 1.
+- A player message when a field is skipped.
+- A bulk lever: "paste onto every bill on this bench" is the same command in a loop.
+
+**What it cannot do:** linked bills. That is a different feature, and nothing requires it.
+
+**Consequences:** the same first `0MultiplayerAPI` reference as Route B. It is also a third
+bill-row UI element on the surface that BWM, Nice Bill Tab and Glittertech already draw on.
+
+#### Route D — our paste, riding MP's existing surface (not recommended)
+
+It is possible in principle to issue the paste from inside `Dialog_BillConfig.DoWindowContents`,
+so that MP's watches catch the writes. The store and include-group changes would go through
+the synced `SetStoreMode` / `SetIncludeGroup`, and the filter would go through
+`ThingFilter.SetAllow` while a `ThingFilterContext` is drawn. **The coverage has holes that no
+placement closes:**
+
+- No single scope watches every field. The row scope misses `hpRange`, `qualityRange` and the
+  include criteria, and the dialog scope misses `paused` **[V]**.
+- The pawn-restriction fields are watched only inside the worker dropdown's own option actions
+  **[V]**.
+- `SyncThingFilters` intercepts per-def `SetAllow` calls only while a filter is being drawn
+  **[V]**.
+
+Not recommended: it costs as much C# as Route C and syncs less.
+
+#### Route E — named bill configurations
+
+A stored list of player-authored configurations, such as *"Armour, Good+, steel, crafter
+12+"*. The players author each entry once and apply it to any bill. It could be seeded from the
+#95 defaults table. The donor is the policy shape: `OutfitDatabase` holds `Policy` objects
+scribed in the save, and MP registers its mutators **[V]** (see *Persistence and multiplayer*).
+
+**What it gets us:** configurations that outlive the clipboard, are shared by both players, and
+have names.
+
+**Costs:** new saved state, a management UI, and one synced command per mutation. **Hard.**
+Named because a narrative session may want the "house standard" framing. The requirement asks
+only for paste.
+
+**Recommendation — not a selection.** **Route C**, unless BWM ships for other reasons, in which
+case B is the cheaper way to reach the same point. C and B cost the same. C owns the material
+rule and the T-58 call, and does not inherit BWM's Multiplayer debts. Selection is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+
+### Which fields paste flat, and which need translating
+
+**The ticket's premise, corrected.** A bill's `ingredientFilter` is not built from the recipe's
+`fixedIngredientFilter`:
+
+- It is **copied from `recipe.defaultIngredientFilter`** in the `Bill` constructor **[V]**.
+- A recipe's default falls back to a copy of its fixed filter **only when none is authored**
+  (`RecipeDef.ResolveReferences`) **[V]**.
+- Vanilla authors many defaults. `ApparelMakeableBase` and `ArmorSmithableBase` disallow Gold,
+  Silver, Plasteel, Jade, Uranium and Bioferrite. The meal recipes disallow `Meat_Human`,
+  `Meat_Megaspider` and `InsectJelly`. The weapon bases disallow Silver and Gold **[V]**.
+
+The fixed filter is the **ceiling**. The bill's own filter sits inside it, and an ingredient is
+used only if both allow it (`Bill.IsFixedOrAllowedIngredient`) **[V]**.
+
+| Configuration clause | `Bill` member(s) | Across recipes | Why |
+|---|---|---|---|
+| Repeat mode | `repeatMode` | **Gated** | `TargetCount` is legal only where `recipe.WorkerCounter.CanCountProducts(target)`. **T-58**. The method is virtual and overridden in vanilla (2 counters) and in Medieval Overhaul **[V]** |
+| Target count | `repeatCount`, `targetCount`, `pauseWhenSatisfied`, `unpauseWhenYouHave` | Flat | Plain numbers, counted per product. The `unpause < target` invariant is enforced only by the dialog **[V]** |
+| Durability range | `hpRange` | Flat | A counting filter (#95). Its slider renders on almost every product. On counted resources it is not free (*What the mode switch costs*) |
+| Quality range | `qualityRange` | Flat, but inert unless the target product has `CompQuality` | `CountValidThing` tests it only on things with the comp **[V]**. BWM copies it only when both products have the comp |
+| Material / ingredient restriction | `ingredientFilter` (and `limitToAllowedStuff`, which counts products *by* that filter) | **Needs translating** | See below |
+| Worker skill range | `allowedSkillRange` | Flat, **but its meaning moves** | It is read against the *target* recipe's `workSkill`: "12+" pasted from smithing onto cooking means Cooking 12+. It is inert when `workSkill` is null, and hidden while a pawn restriction is set **[V]** |
+| Pawn restriction | `pawnRestriction`, `slavesOnly`, `mechsOnly`, `nonMechsOnly` (all private) | Flat, through the public setters | The four modes exclude each other. `ValidateSettings` clears a dead or departed pawn **[V]** |
+| Store destination | `storeMode`, `storeGroup` (private) | Flat within a map. **It needs a check across maps** | `SetStoreMode` is public **[V]**. A specific stockpile is map-bound, and `ValidateSettings` turns a group not on the target's map into *Drop on floor* **[V]**. `CanPossiblyStore` flags a stockpile that will not accept the target's product as *(incompatible)* **[V]** |
+
+**Adjacent fields the requirement does not name:** `includeGroup` (map-bound, like the store
+group), `includeEquipped` / `includeTainted` (meaningful only for weapons and apparel),
+`ingredientSearchRadius`, `suspended` and `paused` **[V]**.
+
+**Must never paste:** `recipe`, `precept`, `style`, `globalStyle`, `graphicIndexOverride`,
+`xenogerm` and `playerCustomName`, the bill's label. `Bill.Clone` copies `precept`, `style` and
+`xenogerm`, and `Bill_Production.Clone` copies the name **[V]**. So **"clone the source, then
+swap the recipe" is the wrong build**. Configuration paste writes onto the target; it does not
+replace it.
+
+#### The material restriction — the one field that needs translating
+
+**`ingredientFilter` holds an absolute allowed set, not the player's edits.** A `ThingFilter`
+carries:
+
+- `allowedDefs` (a `HashSet<ThingDef>`) and `disallowedSpecialFilters`;
+- its own *ingredient-side* hit-point and quality ranges;
+- two flags, `allowedHitPointsConfigurable` / `allowedQualitiesConfigurable`.
+
+`CopyAllowancesFrom` overwrites all of it **[V]**. A flat paste therefore gives
+*target fixed ∩ source's whole set*, and the outcome depends on how the two recipes relate:
+
+| Case | Example | Flat paste gives | BWM's rule gives |
+|---|---|---|---|
+| Identical fixed filters | two `Metallic`-only smithing recipes | **Exactly the intent** | Exactly the intent |
+| Overlapping | plate armour (`Metallic`+`Woody`) → simple helmet (`Metallic`) **[V]** defs | **The intent**. "Steel only" narrows to steel | **Nothing copied.** The helmet keeps its own default, and "steel only" is lost silently |
+| Disjoint | plate armour → parka (`Fabric`+`Leathery`) **[V]** defs | **Allows nothing.** The bill never starts, with no message **[I]** outcome | Nothing copied (safe) |
+| Source untouched | a default meal filter pasted elsewhere | **The source recipe's defaults** overwrite the target's, which can widen or narrow it | Copied only when the fixed filters match |
+
+Two smaller effects:
+
+- The two `…Configurable` flags come from the *source*, so a flat paste can hide the target's
+  ingredient HP/quality sliders **[V]** that they are copied; **[I]** that the sliders then
+  hide.
+- `Bill.ExposeData` strips any def the recipe's fixed filter forbids when the game saves
+  **[V]**. Out-of-range entries do not persist, but an empty intersection does.
+
+**The translation rules a build could choose between.** These are levers for #119, not a
+design:
+
+- **Strict equality**, which is BWM's rule. Safe and silent, but it fails the ticket's own
+  example.
+- **Intersect, with an empty-result guard.** Keep the target's filter and message the player if
+  nothing would survive.
+- **Replay the player's edits.** Take what the player removed from the source's default and
+  apply it to the target's current filter.
+
+### What Multiplayer already syncs on a bill, and what a paste adds
+
+All of this is **[V]** from `2606448745/1.6/AssembliesCustom/Multiplayer.dll` (`SyncFields`,
+`SyncMethods`, `SyncFieldUtil`, `SyncDictRimWorld`).
+
+| Mechanism | Bill members | Active where |
+|---|---|---|
+| Sync **fields**, watched in `Bill.DoInterface` | `suspended`, `allowedSkillRange`, `ingredientSearchRadius`, `repeatMode`, `repeatCount`, `targetCount`, `pauseWhenSatisfied`, `unpauseWhenYouHave`, `paused` (also watched in `ShouldDoNow`) | Bill row |
+| Sync **fields**, watched in `Dialog_BillConfig.DoWindowContents` | the row's set **minus `paused`**, plus `includeEquipped`, `includeTainted`, `limitToAllowedStuff`, `hpRange` and `qualityRange` when the recipe has a `ProducedThingDef` | Bill dialog |
+| Sync fields, re-watched inside each repeat-mode menu option (MP's `MakeConfigFloatMenu` transpiler → `SyncBillConfigFloatMenuOptions`) | `repeatMode`, `repeatCount`, `targetCount`, `pauseWhenSatisfied`, `unpauseWhenYouHave` | Repeat-mode menu |
+| Sync fields, watched only inside the worker dropdown's option actions (a `WatchDropdowns` wrapper from a `GeneratePawnRestrictionOptions` postfix) | `pawnRestriction`, `slavesOnly`, `mechsOnly`, `nonMechsOnly` | Worker dropdown |
+| Sync **methods** | `Bill_Production.SetStoreMode`, `Bill_Production.SetIncludeGroup`, `BillStack.AddBill` (`ExposeParameter(0)`), `BillStack.Delete`, `BillStack.Reorder` | Anywhere in the interface |
+| `SyncThingFilters` | per-def / category / special `SetAllow`, `SetAllowAll`, `SetDisallowAll` | Only while a `ThingFilterContext` is being drawn |
+| Nothing | `CopyAllowancesFrom` on a filter; the pawn restriction outside its dropdown; `hpRange`, `qualityRange` and the include criteria outside the dialog | — |
+
+**How a watch works, and why placement decides everything.** MP wraps each `[MpPrefix]` target
+with `SyncFieldUtil.FieldWatchPrefix` (priority 801) and `FieldWatchPostfix` (priority -2). The
+postfix compares every watched field with its value at entry. A changed field is **reverted
+locally and sent as a command**, and anything unwatched simply stays changed on one machine
+**[V]**. So a paste is safe only if every field it writes is either watched in the scope where
+it runs, or written through a synced method (**T-155**).
+
+**A new command needs only one thing MP already has.** The `Bill` sync worker writes the bill's
+`BillStack` and `loadID` and finds the bill again on read **[V]**. A **live** source bill is
+therefore a legal argument. A *detached* clone is not, because it sits in no stack; it would
+travel by `ExposeParameter`, which the 1.6 `0MultiplayerAPI.dll` exposes on `ISyncMethod`
+**[V]**. The API also carries `RegisterSyncMethod`, `RegisterSyncField` and `WatchBegin` **[V]**.
+MP has sync workers for `WorldComponent`, `MapComponent` and `GameComponent` too **[V]**, which
+is what makes a Route B registration against BWM's `WorldComponent` possible if it were ever
+wanted.
+
+### Constraints on every route
+
+- **T-58.** Never set `TargetCount` without asking the target's counter. Ask the **virtual**,
+  because it is overridden by vanilla and by Medieval Overhaul **[V]**.
+- **Bill types.** Paste onto `Bill_Production` and `Bill_ProductionWithUft` only, as in #95's
+  gate 1. Otherwise Glittertech's overclock bills and the mech bills get repeat modes they were
+  never built for **[V]** on the type hierarchy.
+- **Recipe identity is not stable under VFE Medieval 2.** On benches linked to a mannequin stand,
+  `VFEMedieval.RecipePatches` replaces `bill.recipe` with a runtime clone ("contracted", 90%
+  ingredients) in `BillStack.AddBill`, `Bill_Production.Clone` and `ExposeData` **[V]**. The
+  clone shares the original's filters (a memberwise `Clone`) **[I]**. Any "same recipe?" test in
+  a paste must not compare by reference.
+- **The store destination is map-bound.** A paste across maps loses a specific stockpile to
+  *Drop on floor* at the next validation **[V]**.
+- **A repeat mode can carry state that lives outside the bill.** Compositable Loadouts'
+  `W_PerTag` mode keeps its tag in `LoadoutManager` and patches BWM's `MirrorBills` to carry it
+  **[V]**. A paste of our own that copies `repeatMode` without that state produces a per-tag
+  bill with no tag **[I]**. Paste only vanilla's three modes, or carry the tag the same way.
+  `W_PerTag` also counts products (`Inventory.BillUtility.Satisfied` → `CountProducts`) **[V]**.
+  **So a paste's T-58 check must cover every mode that counts, not only `TargetCount`.** BWM's
+  check does not.
+
+### Survey — bill-management mods on disk
+
+The wide pass covered both mod roots. Every sweep excluded `obj/`, and `Referenced/` was
+excluded when hunting implementers. Sweeps run:
+
+- ASCII `Dialog_BillConfig`, `ITab_Bills`, `Bill_Production`, `allowedSkillRange`,
+  `SetPawnRestriction`, `unpauseWhenYouHave`;
+- case-insensitive `clipboard` in both encodings, with the null-interleaved patterns typed
+  literally;
+- `pastebill` and `billtemplate` over `.dll` and `.xml`;
+- `.cs` source.
+
+Validators came from the same heaps:
+
+- the ASCII sweeps return BWM, which is known to carry all three field names;
+- the UTF-16 `clipboard` sweep returns Nice Bill Tab and HugsLib;
+- `CopyBillTip` hits vanilla in UTF-16, and `allowedSkillRange` hits `Multiplayer.dll` as a
+  literal.
+
+Paths the tool left unattributed were the second copies under
+`common/RimWorld/Mods`, which are **T-22** duplicates.
+
+| Mod | packageId | Workshop | What it does to bills | Configuration-only paste? | Multiplayer |
+|---|---|---|---|---|---|
+| Better Workbench Management | `falconne.BWM` | `935982361` | Copy one or all bills; paste as new (optionally linked); **paste settings into an existing bill**; `MakeNewBill` postfix (store mode, bench restriction); `CountProducts` detour; output filter; drag reorder. The 1.6 dll is byte-identical to its root copy **[V]** | **Yes** | No compat, no API **[V]** |
+| Nice Bill Tab | `Andromeda.NiceBillTab` | `3520130671` | Replaces `ITab_Bills.FillTab`. Its add-bill flow preselects a material. Vanilla's whole-bill paste becomes a float option. It fronts BWM's copy/paste by reflection **[V]** | Only through BWM | No compat **[V]** |
+| Ushankas Glittertech Expansion | `Ushanka.GlittertechExpansion` | `3522676478` | Its own bill types. `ITab_MemoryCellMods` has a vanilla-shaped whole-bill `PasteClipboardBill` **[V]** (1.6 dll; the `Source/ITab_BillsMemoryCell.cs` on disk is stale) | No | — |
+| Vanilla Factions Expanded - Medieval 2 | `OskarPotocki.VFE.Medieval2` | `3444347874` | A `FillTab` prefix/postfix at `int.MaxValue`/`int.MinValue` priority swaps `def.allRecipesCached` for mannequin-linked benches. Recipe swaps on add, clone and load **[V]** | No | — |
+| Compositable Loadouts | `Wiri.compositableloadouts` | `2679126859` | Adds a `W_PerTag` `BillRepeatModeDef` whose loadout tag lives in its own `LoadoutManager`. `BillProduction_Clone_Patch` carries the tag on a clone, and `ExtendedBillDataStorage_Patch` postfixes **BWM's `MirrorBills`** to carry it on a paste. A `BillStack.DoListing` button **creates** configured bills (filter, quality, HP, `limitToAllowedStuff`) from colonists' loadout items **[V]** | No. It **extends** BWM's paste | No compat (existing record) |
+
+**Not bill mods, despite hits:** Replimat and VEF's `PipeSystem` (the storage clipboard), Vehicle
+Framework's `SmashTools` and Vanilla Gravship Expanded (their own clipboards), HugsLib (log
+sharing). VFE Power's `ITab_Bills` references exist only in its 1.1–1.3 assemblies **[V]**.
+**Vanilla's own copy/paste is the wholesale clone the ticket rules out.** `ITab_Bills.FillTab`
+greys the paste icon unless the bench's `AllRecipes` contains the clipboard's recipe, then adds
+`Clipboard.Clone()` as a **new** bill **[V]**.
+
+### Open questions
+
+**Requirement gaps, for Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2).**
+[#129](https://github.com/cjd721/Rimworld-Archinity/issues/129), which wrote
+`docs/requirements/COLONY.md`, is closed.
+
+1. **When the target cannot be made of the source's material**, should the paste leave the
+   target's restriction alone, refuse, or tell the player? Plate armour → parka is the case.
+   Each translation rule above answers this differently.
+2. **Does "the configuration" include suspended, paused, search radius and count-from
+   stockpile?** The requirement lists seven clauses; a bill carries these four as well.
+3. **One bill per paste, or "every bill on this bench"?** The worked case is three pastes, and a
+   bulk paste is a cheap lever on Route C.
+4. **Pasting "do until you have X" onto a bill that cannot count** (T-58): should the target
+   keep its own mode, as BWM does, or drop to "repeat N" with the pasted number?
+
+**Unverified.** That BWM's paste desyncs the initiating client in a live two-client session
+is **[I]**; the watch mechanism is **[V]**. That MP's `Bill` worker resolves a `Bill_Production`
+argument through its worker tree is **[I]**. That `ExposeParameter` resolves a detached bill's
+cross-references (pawn, stockpile) is **[I]**, though vanilla clipboard paste already relies on
+it through `AddBill`.
+
+**Build questions, deferred to #119:**
+
+- the material translation rule;
+- whether the clipboard holds a live reference (a dangling source must be handled) or a
+  snapshot (which then needs `ExposeParameter`);
+- the first `0MultiplayerAPI` reference in `Archinity.Altar`;
+- where the buttons sit next to BWM and Nice Bill Tab if either ships.
 
 ---
 
@@ -993,8 +1396,8 @@ here.
 >
 > #129 also adds a requirement this document does not cover: **a bill's configuration can be
 > copied onto another bill, carrying the settings and not the recipe.** That is
-> [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157), and it lands here when it
-> resolves.
+> [#157](https://github.com/cjd721/Rimworld-Archinity/issues/157). Its routes are in *A bill's
+> configuration, pasted onto another bill*, above.
 
 **The quality floor is a requirement, not a mechanism, and nothing owns it.** #95 names the
 problem exactly: *"Good status" is not a number*, and `QualityCategory.Good` is index 4 of 0–6.

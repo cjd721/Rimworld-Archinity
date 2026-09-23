@@ -381,6 +381,34 @@ no error. Per-faction or per-settlement generators need a getter postfix (KCSG's
 `ScenPart_PlayerFaction`. [V]. `ORBIT.md` § *The build → 6* already records the three-branch
 getter; this is the surface consequence.*
 
+### T-154 — Odyssey layout placement gives up without telling anyone
+
+Every XML placement path in an Odyssey layout skips when it finds no valid cell:
+
+- `RoomGenUtility.SpawnCratesInRoom` loops `while (num > 0 && room.TryGetRandomCellInRoom(…))`,
+  so a crate that fits nowhere is simply not made.
+- Prefabs pass through a validator and skip.
+- `RoomPart_CornerThing` and Better Traders Guild's `RoomPart_Mech` return when no cell is found.
+- `CompLootSpawn` **destroys** any item its crate refuses.
+
+The important room is always *assigned* (`LayoutWorker_Structure.PostGraphsGenerated` falls back
+to the largest room), but it can be *sealed*: `CreateDoors` skips a connection with no good door
+cell and does not log it. Two cases do log, and still carry on: a `LayoutDef.roomDefs` entry with
+`countRange.min ≥ 1` that no room can resolve gives only `Log.ErrorOnce("Layout failed to spawn
+all required rooms…")`, and `RoomPart_AncientEngine` / `RoomPart_SentryDrone` log an error. **The
+player meets the stronghold, not the log** — an objective that XML "guarantees" can be absent or
+unreachable.
+
+**Fix:** anything quest-critical needs a post-generation check (`SitePartWorker.PostMapGenerate`,
+`ORBIT.md` R2) or a placement that cannot fail (`GenStep_AncientAltar`'s `map.Center` fallback).
+
+*[#151](https://github.com/cjd721/Rimworld-Archinity/issues/151), `docs/specs/ORBIT.md` § *A
+stronghold a quest generates* → *Guaranteed contents* (C1) and *Reachability*. Decompiled 1.6
+`LayoutWorker.ResolveRoomDefs`, `LayoutWorker_Structure.CreateDoors` / `PostGraphsGenerated`,
+`RoomContentsWorker.TryPlacePrefabs`, `RoomGenUtility.SpawnCratesInRoom`,
+`CompLootSpawn.PostSpawnSetup`; `BetterTradersGuild.RoomParts.RoomPart_Mech`. [V]; the sealed
+room in play is [I].*
+
 ## Living on an orbit layer
 
 Four of these belong with **T-48** and are filed here for the same reason it is: the orbit

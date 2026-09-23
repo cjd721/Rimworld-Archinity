@@ -47,6 +47,17 @@ Established on [Deferred orbital instantiation](https://github.com/cjd721/Rimwor
 
 ## The reveal gate — what closes orbit, and what opens it
 
+> ⚠️ **Under re-examination, 2026-09-23 —
+> [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** The claims in this section
+> about closing orbit — Route A's closure list, *"four of the ten need no scanner"*, and the
+> scanner's row in *What the player obtains* — are being re-checked. The trigger is
+> [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)'s findings:
+> - A second vanilla giver, the hackable `AncientUplink`.
+> - Two more givers and two more tagged quests in the corpus.
+> - Emptying `givenBy` makes the givers throw.
+>
+> This is a flag, not a rewrite. The verdict stands until #180 resolves.
+
 > Established on [#148](https://github.com/cjd721/Rimworld-Archinity/issues/148), answering
 > `docs/requirements/SPACE.md` § *The reveal*: **before the reveal there is no view of the
 > orbital map, no flight to it and no orbital sites of any kind.** Evidence class **READ**,
@@ -329,7 +340,9 @@ one world, both founders**.
   nine leads plus `OrbitalFugitive`. Whether that price is acceptable is a design call.
 - **Requirement, #127 or `GLITTERTECH.md`:** whether orbital traders may hail the colony before the reveal.
 - **[#149](https://github.com/cjd721/Rimworld-Archinity/issues/149)** decides how the six scanner quests get
-  held shut, since it decides what `OrbitalScanner` is for.
+  held shut, since it decides what `OrbitalScanner` is for. #149 answered the apparatus question
+  (`CHARTING.md` § *The orbital scanner and Charting*); how these quests are held shut against every one of
+  their givers moved to [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).
 - **[#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)** no longer bounds the reveal; the
   `OrbitalTech` gate covers six of ten orbit-placing quests and nothing else.
 - **[#18](https://github.com/cjd721/Rimworld-Archinity/issues/18)** gains a pre-worldgen line if route B is
@@ -592,7 +605,14 @@ and therefore de-fogging the interior. It does not:
 inherits that override [V]. What roofs the interior is the sketch —
 `LayoutRoomDef.roofDef`, with `noRoof` to suppress it — applied per room as the layout
 spawns [V]. **A `roomDefs` entry that leaves `roofDef` unset, or sets `noRoof`, is an
-unroofed room; an unroofed room is `ExposedToSpace` and can never pressurise.** Check
+unroofed room; an unroofed room is `ExposedToSpace` and can never pressurise.**
+> **Correction, 2026-09-23 ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)):**
+> the `roofDef`-unset half is wrong. A room def with no `roofDef` **is roofed**:
+> `RoomContentsWorker.TrySetRoof` uses `roofDef ?? RoofDefOf.RoofConstructed`, unless the room def
+> or the layout sets `noRoof` [V]. Only `noRoof` makes an open bay. See § *A stronghold a quest
+> generates → Constraints*.
+
+Check
 `roofDef` on every Odyssey room def before borrowing it into a layout, and read the fog
 behaviour below as *unproven* rather than settled: it follows from roofs existing, and the
 roofs are now known to arrive by a different route than the one the claim was built on.
@@ -750,6 +770,311 @@ techprint route [`RELIGION.md`](RELIGION.md) decision 21 relies on once the Chur
 hostile. Recorded on [the faction grid](https://github.com/cjd721/Rimworld-Archinity/issues/34),
 which owns the worldgen column. Had it been taken, it would first have required checking
 `replacesFaction` — the prune runs over defs you excluded (**T-10**).
+
+## A stronghold a quest generates
+
+> Established on [#151](https://github.com/cjd721/Rimworld-Archinity/issues/151), answering
+> `docs/requirements/GLITTERTECH.md` § *Strongholds* and the #151 line of
+> `docs/requirements/SPACE.md`. Evidence class **READ**: decompiled 1.6 `Assembly-CSharp.dll`,
+> Odyssey/Ideology/Core defs, `BetterTradersGuild.dll`, `VFED.dll`, `KCSG.dll`, Ushanka's
+> Glittertech defs, and two-root corpus sweeps. § 6 above is cited, not re-run: it answers *how the
+> station builds*; this section answers *what a quest can make it hold, and what happens around it*.
+
+### Verdict
+
+- **Possible? Yes.** Every clause has a verified seam. Two clauses need a small piece of C# of
+  ours: **a specific quest item placed inside the station, and a guarantee that it arrived and can
+  be reached.** Everything else — rooms, defenses, garrison, the hostile environment, a timeout —
+  is XML over vanilla and Odyssey. One clause is a choice rather than a gap: vanilla **destroys a
+  quest site when the player leaves it**, so "the objective survives leaving" and "the map is
+  discarded" are two different shipped behaviours, and both exist.
+- **Multiplayer? Yes.** It all runs in quest generation and map generation, which are simulation
+  code seeded by vanilla (§ *Persistence and multiplayer*), plus scribed quest and site state. No
+  UI is synced. The one carrier outside MP Compat, Better Traders Guild, matters only if its code
+  runs outside map generation (`docs/data/MOD-VERDICTS.md`).
+
+### The shape: a quest site, or a standing settlement a quest points at
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **S1 — Quest site** (§ 6 route B) | The stronghold appears when a quest needs it and goes when it resolves. The quest holds its contents, its threat points and its failure | vanilla `Site` + Odyssey platform + our quest node | XML, plus the C# rows below | Medium | Yes |
+| **S2 — Standing settlement** (§ 6 route A) | Glitterite holdings on the board from the reveal. A later quest aims at one | vanilla `Settlement` + `RevealOrbit` + a genstep of ours | XML + C# | Medium, and it still needs S1 as a fallback | Yes |
+
+**Recommended, not selected: S1.** The requirement says *generated by the quest that needs it*, and
+S1 is the only shape in which the quest owns the site from its first tick.
+
+**S2 — what it gets us.** Strongholds the player can see and route around before any quest
+exists, the way `SPACE.md` wants the Glitterite settlements seen. **Contents can be guaranteed, but
+only by code:** a `Settlement` map is generated by the world object's `MapGeneratorDef` on every
+entry, and a settlement is not destroyed when the player leaves — `Settlement.ShouldRemoveMapNow`
+leaves `alsoRemoveWorldObject` false, so the next visit generates a **fresh** map [V]. A quest
+item therefore needs a genstep in the Glitterite `MapGeneratorDef` that reads a world-side record
+of what the quest wants. Better Traders Guild ships exactly this:
+`GenStep_GenerateQuestVaultStock` reads `WorldObjectComp_QuestVault` off `map.Parent` and stocks
+the vault [V]. VFE Deserters ships the same shape keyed on the site, through
+`WorldComponent_Deserters.DataForSites` read by `GenStep_PlotRaid` [V].
+**What breaks if the player clears it first.** `SettlementDefeatUtility.CheckDefeated` replaces a
+beaten settlement with a `DestroyedSettlement` [V]. A later quest has no target, and
+`QuestNode_GetNearbySettlement` never returns a hostile settlement (`docs/engine/quests.md`
+§ *Offers*), so picking another one is a node of ours. If none survives, the quest must generate a
+site anyway — **S2 carries S1 inside it as its fallback.** Blocking defeat is possible (BTG patches
+`IsDefeated`/`CheckDefeated`) and contradicts *"a settlement destroyed or taken stays that way."*
+
+### Guaranteed contents
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **C1 — Layout only** | A guaranteed objective *room*, filled with authored crates, buildings and prefabs | Odyssey layout: `importantRoomDef`, `LayoutRoomDef`, `RoomPart_CrateDef`, `RoomPart_ThingDef` | XML | Easy | Yes |
+| **C2 — Quest-held item, placed by a room part of ours** | The quest makes the exact `Thing`, tags it, and the station spawns it in the objective room. The quest hears it spawn, get found, get destroyed and leave | our `QuestNode` + our `RoomPartWorker`, donors `QuestNode_Root_RelicHunt` and `RoomPart_AncientEngine` | C# + XML | Medium | Yes |
+| **C3 — Vanilla item stash on the site** | A quest-chosen item on the site with no code | vanilla `ItemStash` site part | XML | Easy — **not recommended for the objective** | Yes |
+| **C4 — World-side record, read by a genstep of ours** | The same as C2, and the only route that also reaches a standing settlement | BTG / VFED donors above | C# + XML | Medium | Yes |
+| **C5 — Layout fixed at quest time** | The quest knows the whole floor plan before the player arrives | vanilla ancient-complex pattern | C# | Hard — **not recommended** | Yes |
+| **C6 — A KCSG structure** | A hand-drawn floor plan | KCSG | XML | Medium — **not recommended on orbit** | With work |
+
+**C1.** `LayoutWorker_Structure.PostGraphsGenerated` **always** assigns `importantRoomDef`: first
+choice is the largest room with a 7×7 rect adjacent to a logical neighbour, and the fallback is the
+largest room outright [V]. Odyssey's `RoomPart_CrateDef` takes a `crateDef` and a `thingSetMaker`,
+so a crate holding one fixed `ThingDef` is pure XML. `RoomPart_ThingDef` with
+`RoomPart_CornerThing` places any building [V]. A `CompProperties_LootSpawn` container fills itself
+from a `ThingSetMakerDef` on spawn [V].
+**What it cannot do:** every XML placement path gives up silently when it finds no valid cell
+(**T-154**).
+`RoomGenUtility.SpawnCratesInRoom` loops `while (num > 0 && TryGetRandomCellInRoom…)`, prefabs go
+through a validator, and `CompLootSpawn` destroys any item the crate refuses [V]. **Nothing holds
+the item, so nothing can be told it is gone.** Good for artifacts and Intel sources; not enough for
+a quest-critical goal.
+
+**C2.** Vanilla's relic hunt is the whole pattern. `QuestNode_Root_RelicHunt` makes the relic at
+quest generation, stores it in `SitePartParams.relicThing` (scribed deep until spawned), and
+generates the site. `GenStep_AncientAltar` places it, and **its cell search cannot fail**: it falls
+back to `map.Center` [V]. Tagging the thing with `QuestUtility.AddQuestTag` makes it send
+`Spawned`, `Unfogged`, `Destroyed`, `SwappedMap` and `LeftBehind` to the quest [V]. Odyssey's
+`RoomPart_AncientEngine` is the placement donor: it spawns a fixed thing at the centre of the
+largest ≥5×5 rect of its room. It logs an error if there is none [V].
+**Levers:** which item; that a stronghold carries none at all (the node simply does not make one),
+which covers *"not every one holds a guaranteed item"*; the item named in the quest description;
+success on pickup, on extraction or on destruction.
+**Consequence:** until the map exists the item lives in the site part, and destroying the site
+destroys an unspawned item with it (`SitePart.PostDestroy`) [V].
+
+**C3.** `SitePartWorker_ItemStash.Notify_GeneratedByQuestGen` puts slate `itemStashSingleThing` into
+`SitePart.things`, and `QuestGen_Sites.GenerateSite` calls it [V]. `GenStep_ItemStash` then scatters a
+7×7 store. But it refuses any rect overlapping `UsedRects`, and `GenStep_OrbitalPlatform` adds the
+whole station rect to `UsedRects` [V]. **On a platform the stash lands outside the hull, on a dock,
+or nowhere** [I, from V parts].
+
+**C5.** The ancient-complex quests build the `LayoutStructureSketch` at quest time and push quest
+things into `thingsToSpawn` [V]. Only `LayoutWorkerComplex.Spawn` consumes that list, and
+`GenStep_OrbitalPlatform.GeneratePlatform` (private) builds its own sketch at map time [V]. Taking
+this route means replacing the platform genstep.
+
+**C6 — why KCSG stays off the orbit layer.** Re-checked for this ticket rather than inherited. Space
+terrain sets `exposesToVacuum`, and `KCSG.GenStep_CustomStructureGen` has no terrain-fill field [V].
+Every `.` cell inside a room therefore stays vacuum and keeps the room from pressurising. The fix is
+to author every interior cell of `terrainGrid`: labour, not an engine block (§ *Failure and recovery*
+item 3). Its settlement path also carries **T-33** and **T-143**. Odyssey's layout system gives a
+different station every time for free; KCSG gives the same one. Ushanka's Glittertech ships its
+Glitterite outposts and facilities as KCSG quest sites — **surface only** [V].
+
+### Enemies and defenses
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **E1 — Room threats** | Traps, drones, turrets and dormant clusters per room, scaled by the quest's points | Odyssey `RoomPartDef`s + `LayoutRoomDef.threatPointsScaleCurve` | XML | Easy | Yes |
+| **E2 — Garrison** | Glitterite defenders on a defend-base lord | vanilla `GenStep_SettlementPawnsLoot` | XML | Easy | Yes |
+| **E3 — Station defenses** | Sentry drones scaled by points, cannons, exterior turret prefabs | `GenStep_OrbitalPlatform` fields | XML | Easy | Yes |
+| **E4 — Response raids** | Glitterite raids on a countdown once the player is inside | vanilla `TimedDetectionRaids` | XML | Easy | Yes |
+| **E5 — Boss-scale leader** | One named mech in the objective room | BTG `RoomPart_MechDef` as shipped, or our copy of it; a named pawn from quest slate through a genstep of ours | XML / C# | Easy with BTG; Medium ours | Yes |
+
+**E1.** `RoomContentsWorker.TrySpawnParts` passes each room part
+`threatPointsScaleCurve.Evaluate(points)`, and `GenStep_OrbitalPlatform.Generate` feeds it the site
+part's `points` [V]. Odyssey ships `DormantThreatCluster`, `DormantMechCluster`, `SentryDrone`,
+`WaspDrone`, `HunterDrone`, `CornerArmoredTurret`, `CornerMiniTurret` and `ExplosiveCrate` as XML room
+parts [V].
+
+**E2.** `GenStep_SettlementPawnsLoot` reads `SpawnRect`, which the platform genstep sets [V]. Linked
+to the site part at an order after 200, it spawns the map faction's `Settlement` pawn group, and
+`Archinity_Glitterites` defines one [V]. Spawn cells must be standable, and in a pressurised room
+for any pawn concerned by vacuum [V].
+**What it cannot do:** scale with the quest. It calls `MapGenUtility.GeneratePawns` with no points,
+which rolls **1150–1600** [V]. It also drops the faction's settlement loot unless `lootMarketValue`
+is zero. A quest-scaled garrison is a genstep of ours calling the same method with `points` —
+small C#. Ushanka's `QuestNode_AncientForces`, fired on `site.MapGenerated`, is the quest-node form
+of the same thing.
+
+**E4.** `Site.PostMapGenerate` starts the countdown from the largest
+`SitePartDef.forceExitAndRemoveMapCountdownDurationDays` (default 4). It skips it when a part sets
+`disallowsAutomaticDetectionTimerStart` **or the map was generated by a gravship landing** [V].
+
+**E5.** Biotech's `Mech_Diabolus`, `Mech_Warqueen` and `Mech_Apocriton` exist [V].
+`BetterTradersGuild.RoomParts.RoomPart_Mech` spawns any `pawnKindDef` from a `RoomPart_MechDef`
+into a room lord [V]. Put in the `importantRoomDef`'s parts, it places the boss with the objective.
+It returns silently if no cell is standable [V]. A *particular* leader — the faction's own, or one
+the story has named earlier — has to travel in the quest slate, like VFED's noble, who is spawned at
+the throne by `GenStep_PlotRaid` [V].
+
+### Reachability, and noticing when it fails
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **R1 — Layout guarantees only** | The objective room is never breached, has no outer doors, and one outer door can be pre-hacked | Odyssey / vanilla layout | XML | Easy | Yes |
+| **R2 — Verify and repair after generation** | A checker confirms the objective exists and can be reached, and re-places it if not. This is also the only loud detector of the "void" failure | our `SitePartWorker.PostMapGenerate` | C# | Medium | Yes |
+| **R3 — Reward on arrival** | The prize is a quest reward on `site.MapGenerated`, so it cannot fail to generate — and nothing has to be carried out | Odyssey gravcore pattern | XML | Easy | Yes |
+
+**R1 is "usually", not "always".** The important room gets `noExteriorDoors` [V]. Its interior doors
+come from `CreateDoors`, which skips a connection when no good door cell exists, with no log [V]. A
+room placed by the fallback has no adjacency test at all [V]. The result can be a sealed vault
+inside `OrbitalAncientFortifiedWall` — **7,500 HP, not deconstructible** [V]. Obtainable with
+explosives; not what a heist beat promises [I]. A room demanded by `countRange.min` that fits nowhere
+produces `Log.ErrorOnce("Layout failed to spawn all required rooms…")` and generation carries on [V]
+(**T-154**).
+`ensureOneDoorUnlocked` pre-hacks one exterior `Building_HackableDoor` [V].
+
+**R2.** `Site.PostMapGenerate` calls `PostMapGenerate(map)` on every part's worker [V], after every
+genstep, so it sees the finished station. It can test that the quest thing is spawned and reachable
+from outside, then re-place it by `GenStep_AncientAltar`'s cannot-fail rule. It also catches T-54's
+void (§ *Failure and recovery*), because a missing platform means a missing objective.
+
+**R3.** `QuestNode_Root_Gravcore_OrbitalAncientPlatform` ends the quest **`Success` on
+`site.MapGenerated`** with a gravcore in its `RewardChoice`. The grav engine in `AncientEngineRoom`
+is scenery for the fiction [V]. That is a guarantee by construction, and it is not a raid.
+
+### Map lifetime — leaving and coming back
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **M1 — Vanilla discard** | Leave, and the map and the site are gone. The quest hears `site.MapRemoved` and ends as its script says | vanilla `Site` | XML | Easy | Yes |
+| **M2 — Keep the site while the objective is still there** | Leave without the item and the site stays. Come back to a fresh map with the same item in it. Leave with it and the quest gets a "taken" signal | vanilla `SitePartWorker_AncientAltar` + C2 | XML worker + C2's C# | Medium (C2's weight) | Yes |
+| **M3 — Park the gravship** | The map never unloads while the ship is on it | vanilla Odyssey | none (player-side) | — | Yes |
+
+**M1 is vanilla, and it is stricter than it sounds.** `Site.ShouldRemoveMapNow` refuses while
+pawns remain on the map or on a pocket map sourced from it, while a grav engine or anchor stands
+there, or while a transporter is inbound. Otherwise it removes the map. It sets
+`alsoRemoveWorldObject = true` unless a live condition causer or a hostile raid source remains, and
+`MapParent.CheckRemoveMapNow` then destroys the site [V]. **There is no "return" to a vanilla quest
+site. An objective not taken is lost with the map.** The scripts choose the outcome. The hack
+complex and Odyssey's `Gravcore_Mechhive` end `Fail` on `site.MapRemoved` [V]. Odyssey's two
+gravcore platforms carry an `Unknown` end on `site.MapRemoved`, but they end `Success` on
+`site.MapGenerated` first, so that part never fires (R3) [V]. This matches the requirement's
+*"discarded on leaving, with only the outcome persisting."*
+
+**M2 comes free from one type test.** `Site.ShouldRemoveMapNow` keeps the world object whenever any
+part's worker `is SitePartWorker_AncientAltar` and `ShouldKeepMapForRelic` holds: the relic is still
+on the site's map [V]. That worker's `Notify_SiteMapAboutToBeRemoved` then despawns the relic back
+into the site part. If the relic has already left, it sends `relicLostSignal`, which the relic quest
+uses as its **success** signal [V]. The class sits in `Assembly-CSharp` and contains no DLC check
+[V]. So a `SitePartDef` naming it as `workerClass`, with C2's node filling `relicThing`, gets
+keep-and-return with no new code. A subclass inherits the behaviour, because the test is `is`.
+**Consequence:** the second visit is a new map — new layout, new garrison — around the same item.
+
+**M3.** `Map.AnyBuildingBlockingMapRemoval` is true while a `GravEngine` or `GravAnchor` stands on
+the map [V]. A gravship landed at the stronghold keeps it loaded indefinitely. A map generated by
+that landing also starts no detection countdown (E4).
+
+**What the unvisited site does.** `QuestPart_SpawnWorldObject.Cleanup` destroys the site only if it
+was never spawned [V]. **A spawned site the player never entered outlives its failed quest** unless
+the script destroys it — `QuestNode_DestroyWorldObject` on the end signal (BTG's Smugglers' Den
+does this on `End`), or `QuestNode_WorldObjectTimeout` with `destroyOnCleanup` (Ushanka's
+Glittertech sites) [V].
+
+### Failure and regeneration
+
+An ended quest cannot be accepted again (`docs/engine/quests.md` § *What ends a quest*).
+Regeneration always means **generating the script again**: a new quest, a new tile, a new site and
+a new map.
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **F1 — A standing parent re-offers** | A failed stronghold comes back as a fresh one after an interval, and success retires it | vanilla `QuestPart_SubquestGenerator` subclass, Odyssey gravcore donor | C# + XML | Medium | Yes |
+| **F2 — The quest re-offers itself** | The failure regenerates the same script at once | our part on the end seam, #145's shape | C# | Medium | Yes |
+| **F3 — VEF `grantAgainOnFailure`** | A free re-grant with no code | VEF | XML | Easy — **not recommended** for plot | Yes |
+| **F4 — Storyteller refire** | A chance of another one, eventually | vanilla `minRefireDays` | XML | Easy — **not recommended**: no guarantee | Yes |
+
+**F1 needs no patch and nothing inside the child.** `QuestPart_SubquestGenerator.CanGenerateSubquest`
+counts only `EndedSuccess` children against `maxSuccessfulSubquests`, so a failed child frees its
+slot [V]. `QuestPart_SubquestGenerator_Gravcores.GetPossibleSubquests` excludes a script only while
+a child of it is `Ongoing` or `EndedSuccess`, so **`Fail` and `Unknown` both put it back in the
+pool** [V]. The parent hears the child end by polling `GetSubquests()` states each tick. That is a
+fourth way to hear an end, beside the three in `docs/engine/quests.md`. The Charting spine
+(`CHARTING.md` § 2, `QuestPart_ChartingSpine : QuestPart_SubquestGenerator`) is already this class.
+⚠ The base `TryGenerateSubquest` calls `QuestUtility.GenerateQuestAndMakeAvailable` with **no
+`CanRun`**. All three shipped subclasses test `CanRun` themselves: `RelicHunt` and
+`ArchonexusVictory` inside `GetNextSubquestDef`, and `Gravcores` inside `GetPossibleSubquests` [V]. A
+subclass of ours must do the same, or it meets **T-71**.
+**F2/F3** are #145's routes, recorded in `CURRENCIES.md` § *A failed bought quest returns to the
+shop*, with its hazards. **F4** needs `everAcceptableInSpace` to fire into an orbital colony at all
+(§ *Constraints*).
+
+### Lore to inspect
+
+**Placed the same way, with one difference.** A lore record (`CHARTING.md` § 10) is a building
+`ThingDef`, so C1's paths place it with no code: room `prefabs`, `fillEdges`, `fillInterior`,
+`scatter`, `RoomPart_CornerThing`. It has the same silent-skip failure, which lore can afford. A
+record the plot needs is C2.
+**The difference:** the layout spawns buildings with the **site faction**, and `RoomPart_CornerThing`
+falls back to `AncientsHostile` [V]. So every placed record meets **T-62**, which `CHARTING.md` § 10
+already routes around.
+**A factual correction to that section** (dated inline there). It says an abandoned site's map *"is regenerated on
+re-entry."* For a quest site that is not so: the site is destroyed (M1). It holds only for a
+standing settlement (S2) and for M2. The world-scoped `readLore` key is still right, because a
+regenerated *stronghold* (F1) can present the same record again.
+
+### Constraints
+
+- ⚠ **§ 6's roof claim is wrong, and it matters for every room def borrowed.** § 6 says a
+  `LayoutRoomDef` that leaves `roofDef` unset is unroofed. **It is roofed:**
+  `RoomContentsWorker.TrySetRoof` roofs every cell unless the room def or the layout sets `noRoof`,
+  using `RoomDef.roofDef ?? RoofDefOf.RoofConstructed` [V]. Only `noRoof` makes an open bay. The fog
+  claim § 6 demoted rests on this; the roofs arrive by this route.
+- **Givers, not weights.** A stronghold quest reaches orbit through a `CanRun` path (a parent
+  generator or our own giver) with `autoAccept`, never through the storyteller's roll (§ *The reveal
+  gate → Constraints*). **Our giver must itself be gated on the reveal flag**, or it opens orbit
+  early — #148's *closing orbit means closing givers* applies to our quests too.
+- **Silent skips are the norm in layout generation.** Required rooms log once and carry on; crates,
+  prefabs, corner things and BTG's mech return quietly; `RoomPart_AncientEngine` and
+  `RoomPart_SentryDrone` log an error and carry on [V]. Only R2 turns any of it into a guarantee.
+- **T-54** removes an orbital `GenStepDef` silently; R2 is the in-game detector (§ *Failure and
+  recovery*).
+
+### Available mechanisms — the corpus
+
+Wide pass on both roots: `<linkWithSite>` over `*.xml` (13 mods); `RoomContentsWorker`,
+`RoomPartWorker`, `LayoutRoomDef`, `thingsToSpawn` and `relicThing` over `*.dll`, ASCII, with
+`!**/obj/**` and `!**/Referenced/**`, through `corpus.py --which` [V]. `relicThing` returned zero,
+validated by `thingsToSpawn` from the same heap (3 mods).
+
+| Mod | What it ships that bears on this | Shape |
+|---|---|---|
+| Odyssey | gravcore platform quests; `RoomPart_AncientEngine` in the objective room; success on arrival | layout + C# node |
+| Ideology (vanilla assembly) | relic hunt: quest-held item, cannot-fail placement, keep-site-while-item-remains, "taken" signal | C# node + site worker |
+| Better Traders Guild | orbital Smugglers' Den quest site; `WorldObjectComp_QuestVault` read by a genstep; `RoomPart_Mech`; ~20 `RoomContents_*` subclasses | layout + C# |
+| VFE Deserters | `DataForSites` world record read by site gensteps; the target pawn placed at a known feature | KCSG + C# |
+| Ushanka's Glittertech | Glitterite-themed quest sites, forces spawned on `site.MapGenerated`, timeout that destroys | KCSG + XML, surface |
+| VQE Ancients | `LootableBuilding` / `StudiableBuilding` quest signals (`CHARTING.md` § 10) | KCSG |
+| Vanilla Gravship Expanded | `RoomPart_BigBreach`, orbital gensteps | layout + C# |
+
+**No mod ships a quest-held item placed inside a generated orbital station** [V, the sweep above].
+The nearest is BTG's vault, whose stock is generated, not chosen by the quest. C2 is vanilla's relic
+hunt with Odyssey's engine-room placement put in place of the altar.
+
+### Status
+
+**Verified available mechanism. Not selected, not built.** Every seam above is [V] against the
+decompiled 1.6 assemblies or shipped defs named in it. **Every route is [I] as a composition**, and
+M2's claim that an XML-named `SitePartWorker_AncientAltar` works on an orbital site depends on C2
+for its placement half.
+
+### Open questions
+
+| Question | Kind | Owner |
+|---|---|---|
+| Per stronghold: carry a quest item or not, and does leaving without it lose it (M1) or keep the site (M2)? | Requirement | `docs/requirements/GLITTERTECH.md` § *Strongholds*; beats [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) |
+| What counts as the objective obtained: pickup, extraction (M2's signal) or arrival (R3)? | Requirement | same |
+| Who re-offers a failed stronghold, and after how long: a Glitterite campaign parent, the Charting spine, or the quest itself? | Requirement + capability overlap | GLITTERTECH; [#149](https://github.com/cjd721/Rimworld-Archinity/issues/149) for orbital givers |
+| Which room kinds and flavours each stronghold presents | Content | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
+| Whether the boss is a mech kind (E5 as shipped) or a named character carried in the quest | Requirement | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) |
+| One worker class carrying C2's placement, R2's check and M2's keep; where the quest thing lives (`relicThing` or `SitePart.things`); garrison scaling | Build | next map |
+| **RUN, one client, optional:** generate the candidate layout 20× in dev mode and count `Layout failed to spawn all required rooms` and sealed objective rooms. This prices R1 against R2; it does not change the verdict | Measurement | next map |
 
 ## Persistence and multiplayer
 
@@ -944,6 +1269,16 @@ arrive only from a built, powered, un-roofed `OrbitalScanner` (`CompOrbitalScann
 `PlaceWorker_NotUnderRoof`), which costs 180 steel, 6 industrial and **2 spacer components**
 and requires the `OrbitalTech` research project [V].
 
+> ⚠️ **Under re-examination, 2026-09-23 —
+> [#180](https://github.com/cjd721/Rimworld-Archinity/issues/180).** #149's findings contest this
+> paragraph's claim that the gate is bounded:
+> - The hackable `AncientUplink` is a second vanilla giver of these quests.
+> - The corpus adds two more givers and two more tagged quests.
+> - Emptying `givenBy` makes the givers throw.
+>
+> This is a flag, not a rewrite. See `CHARTING.md` § *The orbital scanner and Charting →
+> Constraints*.
+
 Two things follow.
 
 1. **The real gate is when `OrbitalTech` and `ComponentSpacer` become reachable**, which is
@@ -1064,11 +1399,12 @@ leg is settings-gated and recoverable rather than terminal, the BTG counts were 
   [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46)); which orbital powers exist and
   how many settlements each gets
   ([#34](https://github.com/cjd721/Rimworld-Archinity/issues/34)); when `OrbitalTech` becomes
-  reachable ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)); **which room
-  kinds a Glitterite stronghold must present**, which `docs/requirements/GLITTERTECH.md`
-  states only in prose and no ticket currently owns
-  ([#46](https://github.com/cjd721/Rimworld-Archinity/issues/46),
-  [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47)).
+  reachable ([#20](https://github.com/cjd721/Rimworld-Archinity/issues/20)); what a
+  stronghold must hold is now stated in `docs/requirements/GLITTERTECH.md` § *Strongholds*,
+  and how a quest makes it hold it is § *A stronghold a quest generates*
+  ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)); the room kinds and
+  flavours stay with [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46) and
+  [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47).
 
 The map-generation half is established on
 [#66](https://github.com/cjd721/Rimworld-Archinity/issues/66), which **corrected the framing
@@ -1297,7 +1633,7 @@ sweep having run, not of its completeness.
 | Whether the surviving institution also swaps `Faction.def` | If yes, pay #8's leak list | [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34) |
 | Orbit `subdivisions` — 6, or back to 5 | ~27 frozen orbital settlements versus ~9 | [#18](https://github.com/cjd721/Rimworld-Archinity/issues/18) |
 | **How many stronghold *flavours* the campaign distinguishes** | ~40–60 lines of XML each; the mechanism does not wait on the number, and each flavour re-rolls per encounter | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
-| **Which room kinds a Glitterite stronghold must present** — the exemplar vault, the archive, the command core | The bespoke `LayoutRoomDef`s cannot be authored without it. `docs/requirements/GLITTERTECH.md` states the contents in prose and **never as a map requirement**; no ticket owns that gap today | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) — **gap** |
+| **Which room kinds a Glitterite stronghold must present** — the exemplar vault, the archive, the command core | The bespoke `LayoutRoomDef`s cannot be authored without it. `docs/requirements/GLITTERTECH.md` § *Strongholds* now lists what a stronghold's map must present; the capability answer is § *A stronghold a quest generates* ([#151](https://github.com/cjd721/Rimworld-Archinity/issues/151)) | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | Whether the outer blast doors must be hacked to enter, per flavour | `ensureOneDoorUnlocked` on the layout def; free either way | [#58](https://github.com/cjd721/Rimworld-Archinity/issues/58) |
 | Breach chance per flavour, and whether any stronghold is deliberately derelict | One weight in `LayoutDef.parts`; costs nothing | [#46](https://github.com/cjd721/Rimworld-Archinity/issues/46), [#47](https://github.com/cjd721/Rimworld-Archinity/issues/47) |
 | Whether Glittertech Expansion's art is reused inside our `LayoutRoomDef`s | Content reuse without KCSG — GTE `ThingDef`s referenced from vanilla room defs. Its surface quests are unaffected either way | [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14) |

@@ -411,6 +411,26 @@ on the building type. Live only if Medieval Overhaul ships
 (`Assembly-CSharp.dll`). See `docs/engine/determinism.md` § *MP serialises the comms-console
 dialogue*.*
 
+### T-156 — BWM's "paste settings" keeps the target's material filter whenever the two recipes' fixed filters differ
+
+Better Workbench Management's *Paste all settings (except output product)* runs
+`BillCopyPaste.DoPasteInto(Bill_Production)` → `ExtendedBillDataStorage.MirrorBills(source,
+target, preserveTargetProduct: true)`. It copies `ingredientFilter` only if `DoFiltersMatch` finds
+the two recipes' `fixedIngredientFilter`s def-identical. Every other field pastes. Plate armour
+(`Metallic`+`Woody`) → simple helmet (`Metallic`) therefore loses a *"steel only"* restriction,
+**with no message** — the player sees every other setting arrive and has no reason to check the
+materials.
+
+The same strict rule is what stops BWM producing an empty filter on a disjoint pair (plate →
+parka), so the fix is a choice of rule, not a bug to patch out: strict equality, intersect with an
+empty-result guard, or replay the player's edits relative to the source's default
+(`DEFAULTS.md`).
+
+*[#157](https://github.com/cjd721/Rimworld-Archinity/issues/157), `docs/specs/DEFAULTS.md` § *A
+bill's configuration, pasted onto another bill*. `935982361/1.6/Assemblies/ImprovedWorkbenches.dll`
+(`ImprovedWorkbenches.ExtendedBillDataStorage.MirrorBills`, `DoFiltersMatch`);
+`Data/Core/Defs/ThingDefs_Misc/Apparel_Various.xml`, `Apparel_Headgear.xml`. [V] by reading.*
+
 ---
 
 ## Rituals and titles
