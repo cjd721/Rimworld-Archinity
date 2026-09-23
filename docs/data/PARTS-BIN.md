@@ -1322,7 +1322,11 @@ clients generate structurally different bases from the same seed.** **[V]** This
 Compatibility and only needs enabling ([#88](https://github.com/cjd721/Rimworld-Archinity/issues/88)). The
 `tiledStructures` / `structureLayoutDefs` paths of `GenStep_CustomStructureGen` do
 *not* go through it — **so authoring your own quest sites with KCSG is MP-safe; letting
-VBGE regenerate faction settlements is not.**
+VBGE regenerate faction settlements is not.** Its layout sets are specialty-flavoured
+(Production/Mining/Slavery/Logging/Defence, Outlander Fields) and picked by the tile-seeded map
+generation, so they are stable per tile but unrecorded (cross-ref
+[#165](https://github.com/cjd721/Rimworld-Archinity/issues/165)) [I]
+([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164)).
 
 **Worksites Expanded `3687071198`** — not previously on any list, and it belongs here.
 **11 XML `QuestScriptDef`s of "opportunity site" shape** (mining, farming, component,
@@ -1370,6 +1374,21 @@ overrides `ProducedThings()` to use `Reward_ItemsStandard` and `Outpost_Town` ov
 to yield pawns — neither reads `ResultOptions` at all — while `Outpost_Hunting`, `Outpost_Farming`,
 `Outpost_Mining` and `Outpost_Drilling` generate or gate options in code. 7 of 13 defs are
 restattable by xpath alone.
+
+**What 1.6 ships, beyond the engine [V]:** no loaded outpost def carries a build cost (0 of 13). The
+only `CostToMake` in the corpus is on VOE's Factory outpost, whose 1.6 load folder is commented out of
+`2688941031/loadFolders.xml`, so the def does not load. And 10 of 13 set no `MinPawns`, so one free colonist founds them (#170).
+No shipped outpost event, and one inert feature (#171):
+- `Outposts.Outpost.raidFaction` / `raidPoints` are scribed and read nowhere in `Outposts.dll`,
+  `VOE.dll`, `VFEC.dll` or `MedievalOverhaul_OutpostCompat.dll`.
+- The engine raises only the delivery letter, plus *"Abandoned"* at zero occupants.
+- `Outpost_Defensive.InterceptRaid`, a prefix on `IncidentWorker_RaidEnemy.TryExecuteWorker`,
+  returns `true` immediately while its static `DoRaid` is false. `DoRaid` is only ever set inside
+  its own unreachable branch, so the advertised raid-size reduction never applies.
+- Upkeep events are ours to build: see `docs/specs/TERRITORY.md` § *An outpost's upkeep arrives as
+  events* ([#171](https://github.com/cjd721/Rimworld-Archinity/issues/171)).
+
+For the engine's roster, cost and population behaviour see `docs/engine/mods/vef-outposts.md`.
 
 ### 7.7 What still is not XML
 

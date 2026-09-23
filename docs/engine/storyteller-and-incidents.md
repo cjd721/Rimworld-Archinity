@@ -123,7 +123,7 @@ and `CaravanDemand` (ThreatSmall). Each targets `Caravan` and fires by `mtbDaysB
 - **None of them reads where the caravan is**, beyond the biome MTB and `CaravanIncidentUtility.CanFireIncidentWhichWantsToGenerateMapAt`. That check refuses a tile holding a map or a world object whose def lacks `allowCaravanIncidentsWhichGenerateMap`. `Settlement` lacks it, so nothing fires on a settlement's own tile [V].
 - **`StorytellerComp_CategoryIndividualMTBByBiome` skips any def with no `mtbDaysByBiome` entry for the target's biome** [V]. A biome a def does not list never fires it, and nothing is logged. Vanilla's three caravan encounters list Core biomes only, so they never fire in Odyssey's `Grasslands`, `Glowforest`, `Scarlands`, `GlacialPlain` or `LavaField` (**T-119**). With `applyCaravanVisibility`, the MTB is divided by `Caravan.Visibility`. The roll is `Rand.MTBEventOccurs(mtb, 60000, 1000)`.
 - **`Storyteller.AllIncidentTargets` adds every `Find.WorldObjects.Caravans` entry with `IsPlayerControlled`** [V]. Vehicle Framework's `VehicleCaravan : Caravan` is included. Its `AerialVehicleInFlight` is not a `Caravan` and is not included [V].
-- **The per-tile movement hook is `Caravan_PathFollower.TryEnterNextPathTile` (private)** [V], called from `PatherTickInterval`. **A Vehicle Framework caravan never runs it.** VF's `Patch_WorldPathing.StartVehicleCaravanPath` prefixes `Caravan_PathFollower.StartPath` and diverts to `VehicleCaravan.vehiclePather`, a sealed `VehicleCaravan_PathFollower` with its own private `TryEnterNextPathTile` [V].
+- **The per-tile movement hook is `Caravan_PathFollower.TryEnterNextPathTile` (private)** [V], called from `PatherTickInterval`. **A Vehicle Framework caravan never runs it.** VF's `Patch_WorldPathing.StartVehicleCaravanPath` prefixes `Caravan_PathFollower.StartPath` and diverts to `VehicleCaravan.vehiclePather`, a sealed `VehicleCaravan_PathFollower` with its own private `TryEnterNextPathTile` [V]. **It does carry the vanilla `CaravanArrivalAction` objects and calls their `StillValid` every tick** (`VehicleCaravan_PathFollower.PatherTick`), so a patch on an arrival action reaches VF caravans and a patch on the pather does not (#152).
 - **Multiplayer syncs the meeting and demand dialogs by method.** `SyncMethods` calls `Sync.RegisterSyncDialogNodeTree` on exactly `IncidentWorker_CaravanMeeting.TryExecuteWorker` and `IncidentWorker_CaravanDemand.TryExecuteWorker`. Registration is a postfix (`SyncUtil.PatchMethodForDialogNodeTreeSync`) on those `MethodInfo`s [V]. A subclass that overrides `TryExecuteWorker` without calling base is outside it [I] (**T-82**, **T-95**). A `Dialog_Trade` constructed inside the synced click becomes an `MpTradeSession` (`DialogTradeCtorPatch`) [V].
 
 *[#136](https://github.com/cjd721/Rimworld-Archinity/issues/136), `docs/specs/POLITICS.md` §
@@ -168,3 +168,42 @@ changes how hard the raid comes and not what it drops.
 `docs/specs/PRESSURE.md`. `RimWorld.IncidentWorker_Raid.AdjustedRaidPoints`,
 `RimWorld.IncidentWorker_RaidEnemy.TryGenerateRaidInfo`,
 `RimWorld.QuestGen.QuestNode_GenerateThreats` — `Assembly-CSharp.dll` 1.6.4871.*
+
+## A pinned faction skips the storyteller's candidate filter
+
+Both raid workers honour a faction set in `IncidentParms`, and neither then asks
+`FactionCanBeGroupSource` [V] — the arrival-layer, `defeated`, `temporary` and temperature checks
+live in `IncidentWorker_PawnsArrive.FactionCanBeGroupSource`, which both override and call through
+`base`:
+
+- **`IncidentWorker_RaidFriendly.TryResolveRaidFaction`** returns `true` when `parms.faction` is
+  set, skipping `FactionCanBeGroupSource` and its Ally test. Callers: `CallForAid`,
+  `RoyalTitlePermitWorker_CallAid`, VFE Classical's `Beacon`.
+- **`IncidentWorker_RaidEnemy.TryResolveRaidFaction`** returns `true` at once when `parms.faction`
+  is set, is `HostileTo(Faction.OfPlayer)`, and is not `deactivated` (unless `parms.forced`). It
+  skips `FactionCanBeGroupSource`, so **the `defeated` rejection binds only the storyteller's random
+  pick**, and an authored raid that pins a defeated faction fires. What stays closed to a defeated
+  faction is that pick and goodwill (`CanChangeGoodwillFor`'s first clause). Worksites Expanded's
+  `WorkSiteRevengeTracker` clears `faction.defeated` for the faction of an active revenge
+  sequence, which is the shipped precedent
+  for bringing a faction back after its last base is lost.
+
+Contrast the caravan encounters above, which ignore or overwrite a pinned faction (**T-118**).
+The storyteller's own path to a pinned faction is `docs/engine/factions-and-worldgen.md` §
+*Raid faction selection*.
+
+*[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168), [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172); `docs/specs/TERRITORY.md` § *A sworn faction owes services* and §
+*How a holding ends*. `RimWorld.IncidentWorker_RaidFriendly`, `RimWorld.IncidentWorker_RaidEnemy`,
+`RimWorld.IncidentWorker_PawnsArrive.FactionCanBeGroupSource` — `Assembly-CSharp.dll` 1.6;
+`294100/3687071198/Assemblies/MiningOutpost.dll` `WorkSiteRevengeTracker`.*
+
+## The comms asks: prices, cooldowns, and no relation-based trade price
+
+- **The comms asks' prices and cooldowns** [V]. Trader −15 / 240,000 ticks; orbital −30 / 900,000;
+  military aid −25 / 60,000; Ally-only; aid refused below Industrial (`CantMakeItInTime`, which
+  charges nothing); offered only when `map.IsPlayerHome`.
+- **No relation-based trade price exists** [V]. `Tradeable.InitPriceDataIfNeeded` reads the
+  negotiator stat, a leader +0.02 and `ITrader.TradePriceImprovementOffsetForPlayer`
+  (`Settlement_TraderTracker`: a virtual 0.02).
+
+*[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168). `RimWorld.FactionDialogMaker`, `RimWorld.Tradeable` — `Assembly-CSharp.dll` 1.6.*

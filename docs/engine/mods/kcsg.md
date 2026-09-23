@@ -98,7 +98,33 @@ the `modExtensions` of abstract `VFEM2_MedievalFactionBase`, pointing at an
 **Vanilla Base Generation Expanded** is 100% def-only (634 StructureLayoutDef,
 21 SettlementLayoutDef, 6 SymbolDef, no assembly, VEF only), but its faction
 patch covers **only Empire, Tribals, Outlanders and Pirates**. It contains no
-keeps, gatehouses, curtain walls, towers, chapels, stables or taverns.
+keeps, gatehouses, curtain walls, towers, chapels, stables or taverns. Its
+Defence layouts carry `pawnGroupMultiplier` 1.45–1.8, with turrets and mortars
+on the Outlander and Empire sets.
+
+**VFE Insectoids 2** uses `chooseFromSettlements` (`VFEI2_InsectoidSettlement`),
+plus a Harmony prefix on `SymbolResolver_Settlement.AddHostilePawnGroup` scaling
+its garrison by player wealth.
+
+**VFE Classical** uses `chooseFromlayouts` (`VFEC_ClassicalSettlement1`).
+
+([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164))
+
+### Which settlement branch a faction takes
+
+- A faction's `CustomGenOption` routes its settlements to `KCSG_Base_Faction`.
+- `chooseFromSettlements` runs the generated path (`SettlementGenUtils`, T-33),
+  with `defenseOptions`.
+- `chooseFromlayouts` places one `StructureLayoutDef` (no T-33, no
+  `defenseOptions`).
+- When the **faction** has none, a **Settlement whose own `WorldObjectDef`**
+  carries a `CustomGenOption` gets `KCSG_WorldObject`.
+- The postfix matches any world object on the tile, but `GenStep_WorldObject`
+  reads `map.Parent.def`, so a marker object with the extension null-refs.
+- `SpawnAtWorldGen` spawns `Site`s only.
+
+([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164),
+`2023507013/1.6/Assemblies/KCSG.dll`)
 
 ### Reusable medieval vocabulary
 
@@ -129,8 +155,11 @@ is a manned battlement).
   beside it, or patch the tag.
 - The settlement garrison comes from `faction.pawnGroupMakers` via
   `SymbolResolver_Settlement.AddHostilePawnGroup` under `LordJob_DefendBase`,
-  points equal to `DefaultPawnsPoints x defenseOptions.pawnGroupMultiplier`.
-  Layout-placed pawns are additional.
+  points equal to `DefaultPawnsPoints` (1150–1600), ×
+  `GenOption.settlementLayout.defenseOptions.pawnGroupMultiplier` whenever that
+  static is non-null. On `chooseFromSettlements` that is the current layout. On
+  `chooseFromlayouts` it is **whatever layout was last generated in the process**
+  (`docs/TRAPS.md` **T-143**). Layout-placed pawns are additional.
 
 ### Enemy siege against the player
 

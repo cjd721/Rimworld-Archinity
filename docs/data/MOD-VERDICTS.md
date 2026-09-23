@@ -1175,6 +1175,122 @@ how a derived stand def fails silently.
 all. Two rows above (VFE – Insectoids 2, Better Traders Guild) are cargo per
 `docs/agents/capability-research.md` § *Conflicts are cargo, not verdicts*.
 
+## What the map #2 territory batch found
+
+Merged from the drafts for #152, #154, #160, #164, #165, #167, #168, #170, #171 and #172, after
+reconciliation. Every mod below already has a row (tier, barred or declined); these are amendments
+to it, and no verdict moves. Evidence marks are the resolving agent's.
+
+**RimPacts – Diplomacy Overhaul** — `wowgag.RimPacts` (`3762723122`, `Assemblies/RimPacts.dll`).
+Four sets of findings, one block:
+
+- **Settlement transfer.** `CedeOne` transfers by `SetFaction`, so the object is kept. It has no
+  handling of in-flight caravans **[V]**. ([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152))
+- **The corpus's only per-settlement specialty.** `RptSpecialtyUtility.SpecialtyOf(Settlement)` is
+  derived rather than stored: the pool comes from the tile's mutators and landmark together, else
+  hilliness, else (Spacer and above) a tech pool, else biome, filtered and extended by faction tech; the pick is by the ID hash (`HashCombineInt(ID, 977)`, so
+  it re-rolls on replacement, **T-140**); the tables are C#. It is spent in stock
+  (`Patch_SettlementStock_Specialty`), in tribute (`TributeGoodsDefFor`) and in prices, and shown
+  publicly in `WITab_RptTrade` **[V]**. Donor for `docs/specs/TERRITORY.md` SS-2.
+  ([#165](https://github.com/cjd721/Rimworld-Archinity/issues/165))
+- **Two more design donors for sworn-faction services** **[V]**: `TreatyWorker_Trade` /
+  `Patch_Tradeable_GetPriceFor` (−8% / +8% prices plus an extra caravan), and
+  `Dialog_RptGoodsRequest` / `GoodsOrder` (the player orders specific goods, and a caravan brings
+  them for sale). Still no MP sync, and **T-18**: the goods fee and trade frequency are read from
+  `RimPactsMod.Settings`. ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168))
+- **One live revolt model** **[V]**: the **tributary revolt** (`TreatyWorker_Tribute.OnQuarter` →
+  `RevoltChanceFor`), a quarterly roll off the shared stream (`Rand.Chance`, no `PushState`) on
+  `Settings.quarterDays` (**T-18**), reported by an informational letter afterwards. It rolls only
+  when `RptFactionUtility.TributeRatio(faction) < 1.2` (`< 1.5` for the Empire). `RevoltChanceFor`
+  is 0 / 0.15 / 0.35 by stability, ×1.5 for the Empire, ×0.7 at `subjugationBasis >= 70`,
+  × `GovernorRevoltFactor`, halved by a hostage and during `tributeArmamentCheckTick`, floored at
+  0.05 or 0.10 (0.075 or 0.15 for the Empire).
+- **The settlement hold reversion is unreachable in 1.6** **[V]**. `holdBySettlement` is set to 30
+  by `NoteConquered` (called from `CapturePlayerDefeatedSettlement`, `CaptureSettlement` and
+  `AbsorbTransferOne`) and only raised by `ProcessHoldQuarter` (+8 a quarter, removed at 70), so its
+  `< 25` branch — `Rand.Chance(0.2f)` → `TryRevertConquered`, a `SetFaction` back to the original
+  owner by name — never runs. A shape donor only. Its only declared dependency is Harmony **[V]**.
+  ([#172](https://github.com/cjd721/Rimworld-Archinity/issues/172))
+
+**Faction Territories and Vassalage** — `jaeger972.factionterritories` (`3626725895`,
+`Assemblies/FactionTerritories.dll`). Declined as a dependency; these are donor facts **[V]**:
+
+- **`Invasions.Utility.ApplyWinnerToSettlement` has two shapes.** It uses a bare `SetFaction` when a
+  map is open, and destroy-and-recreate (`Remove` + `MakeWorldObject(def)` + `SetFaction` + `Add`,
+  new ID) when `!mapStillOpen && !HasMap` — every in-absentia resolution (**T-140**).
+  `ApplyWinnerToVassalOffMap` recreates.
+- **`VassaliseUtility.ExecuteCedeToFactionAtTile` is public and uncalled.** It is a generic "replace
+  whatever is on this tile with a Settlement of faction X". It refuses the player.
+- **The vassal invasion is cast for a third party.** `Invasions.Utility.TryCreateForVassalOutpost`
+  sets defender and map-defender to the holding's original faction, and has no attacker≠original
+  guard. `TryCreateForSettlement` has one. `FindEligibleAttackers` admits any hostile territory
+  claimant, the parent included. With attacker == defender, `ResolveWithWinner`'s
+  `winner == attacker` always holds, so the holding is always lost. Copy with the sides re-cast.
+- **Points outlive holdings.** `VassalagePointsComponent.pointsByFactionId` is keyed by the original
+  faction's loadID and is never cleared. The spend button needs `HasAnyVassalForFaction`, so the
+  credit is stranded until another holding of that faction exists.
+
+([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152),
+[#172](https://github.com/cjd721/Rimworld-Archinity/issues/172))
+
+**Vanilla Factions Expanded – Classical** — `OskarPotocki.VFE.Classical` (`2787850474`). Two
+findings, one entry:
+
+- **The corpus's only shipped *"a won-over faction grants standing boons"* system.** Its senate
+  `PerkDef` catalogue (19 perks, per-Republic `FactionDef` extension): `Auxilia` sends troops on
+  raids; `Tributum` pays a donation and halves one faction's prices; `VeniVidiVici` recruits that
+  faction's pawns at will. `Buildings.Beacon` is a built ally call, synced by MP Compat
+  (`LightCommand`). `PerkWorker` applies and unapplies Harmony patches at runtime **[V]**. A donor
+  for `docs/specs/TERRITORY.md` OS-5/OS-10.
+  ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168))
+- **Conflict cargo.** Ships four outpost `WorldObjectDef`s on VEF's engine
+  (`1.6/Defs/WorldObjectDefs/Outposts.xml`: `Outpost_Farming`, `Outpost_Hunting`, `Outpost_Logging`,
+  `Outpost_Mining`), loaded unconditionally, **with the same defNames as VOE's four**. Which set wins
+  when both load is unverified [I]. None carries `CostToMake`.
+  ([#170](https://github.com/cjd721/Rimworld-Archinity/issues/170))
+
+**Better Traders Guild** — `shunter.bettertradersguild` (`3684587591`). Two findings, one entry:
+
+- **An in-map reinforcement call and a replaced defeat test.** `JobDriver_BTGCallResupply` →
+  `ResupplyRaidUtility.TryTriggerReinforcementRaid` fires a forced `RaidEnemy` at
+  `DefaultThreatPointsNow`; `SettlementDefeatUtility.IsDefeated` / `CheckDefeated` patches and a
+  `SecurityCensus` `MapComponent` replace the fall test. The raid is gated by the
+  `resupplyTriggersRaid` ModSettings bool (**T-18**). Donor for `docs/specs/TERRITORY.md` SM-7
+  **[V]**. ([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164))
+- **A per-settlement `TraderKind` override.** `SettlementTraderTrackerGetTraderKind` is a getter
+  postfix that picks under `Rand.PushState(HashCombineInt(ID, ticks))`; the result is cached in a
+  scribed `TradersGuildWorldComponent.cachedTraderKinds : Dictionary<int,string>` and printed in a
+  `GetInspectString` postfix. It is scoped to the Traders Guild and rotates on restock. Donor for
+  SS-3 **[V]**. `corpus.py --check` flags this mod as updated since the pin (2026-09-15); this read
+  is of the current file. ([#165](https://github.com/cjd721/Rimworld-Archinity/issues/165))
+
+**Rim War** — `Torann.RimWar`. `SettlementUtility.ConvertSettlement` transfers a settlement by
+`Destroy()` + `AddNewHome`. That gives it a new object and a new ID, and every inbound player order
+is cancelled with vanilla's vague message. It has no handling of in-flight caravans **[V]**.
+([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152))
+
+**Medieval Overhaul** — `dankpyon.medieval.overhaul`. Ships a Medieval-era comms console, the
+messenger table (`Building_ScribeTable : Building_CommsConsole`), which opens the full vanilla
+faction dialogue (**T-141**). It is relevant to the radio beat in
+`docs/requirements/WORLD-INFRASTRUCTURE.md`, either as a pre-radio rung or as a hazard. No MP
+Compatibility class for the mod (both-encoding sweep of `1629973374/1.6`, zero hits).
+([#154](https://github.com/cjd721/Rimworld-Archinity/issues/154))
+
+**VFE Deserters** — `oskarpotocki.vfe.deserters` (`3025493377`). `DeserterServiceDef` is an XML menu
+of services, each with a `MethodReference<Action>` worker and an Intel cost. MP Compat syncs it
+through `ReplaceServicePurchaseButton` → `SyncedPurchaseService` (`Referenced/` dll). A donor for
+`docs/specs/TERRITORY.md` OS-4. ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168))
+
+**Worksites Expanded** — `godsfathermixtape.worksitesexpanded`. `WorkSiteRevengeTracker` is a shipped
+counter-attack sequence against a player-settled captured site: a warning, then 1–4 raids over 45
+days, clearing `defeated`, with no settings **[V]**. A donor for `docs/specs/TERRITORY.md` H-T3. Its
+verdict stays *Undecided*. ([#172](https://github.com/cjd721/Rimworld-Archinity/issues/172))
+
+**VFE – Insectoids 2** — `OskarPotocki.VFE.Insectoid2`. Prefixes KCSG
+`SymbolResolver_Settlement.AddHostilePawnGroup` (insects only), garrison × wealth curve; carries
+**T-143**'s stale-static read **[V]**. (The mod is declined.)
+([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164))
+
 ## Open
 
 - **`rwmt.MultiplayerCompatibility` is a required member of the shipping set, not a

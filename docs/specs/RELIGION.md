@@ -363,6 +363,193 @@ generic "Def field = weight curve keyed on a custom stat" mechanism to borrow. B
 subclass per storyteller behaviour Reverence is meant to move; that is
 [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)'s to price.
 
+## Reverence scales the Goodwill a faction gains
+
+### Purpose and scope
+
+This section answers the last paragraph of [`docs/requirements/RELIGION.md`](../requirements/RELIGION.md) § *Reverence — Religious Penetration, Not Goodwill++*. Goodwill gain is not independent of Reverence:
+
+- At low Goodwill and substantial Reverence, positive changes are **reduced**.
+- At extreme Reverence, positive changes **accelerate sharply**.
+
+The section lives here because the input is the Reverence ledger (§ *The build — Reverence* §1). The goodwill pipeline it acts on is [`POLITICS.md`](POLITICS.md)'s, which this section cites rather than restates. The curve is balance and belongs to [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119). Which gains count is a requirement (#97 open questions 1–3). This section keeps that choice open and does not make it. Capability: [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160).
+
+### Verdict
+
+- **Possible? Yes.** Every goodwill change during play passes one method, with its reason in scope. Scaling positive gains per faction is one Harmony prefix there, a shape a shipped mod already uses.
+- **Multiplayer? Yes.** Multiplayer syncs no goodwill. The scaler runs inside the simulated action that caused the change, on both clients. It must read only scribed state (Reverence, Goodwill), with no `Rand`, no `ModSettings` (T-18) and no draw-time cache (T-20).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| A — reason-aware scaler at the choke point | Every positive gain from any source is scaled per faction; which reasons count is XML; the landed number is reported | our code, prefix on `Faction.TryAffectGoodwillWith` (seam proven by RimPacts `Patch_RptGoodwill`) | C# patch + XML | Medium | Yes |
+| A2 — A, with the difference paid as its own named change | As A, plus a per-change reason line in the message and in the Recent-events tooltip | our code, A plus a guarded second write | C# patch + XML | Medium | Yes |
+| B — scale vanilla's adjuster | Every positive player-pair gain is scaled; two previews agree for free; **reason-blind** | our code, postfix on `Faction.CalculateAdjustedGoodwillChange` | C# patch | Medium | Yes, if pure |
+| C — scale at each source | Only opted-in gains are scaled; preview equals payment | our code, at our own quest parts / VEF `DoImpact` override, plus per-source postfixes on vanilla calculators | C# (+ patches) | Medium → Hard | Yes, if pure |
+| D — Reverence as natural goodwill — *partial, not recommended alone* | Drift toward a Reverence baseline; gains toward it get at most ×1.25; **cannot reduce a gain** | our `GoodwillSituationWorker` | C# worker + XML | Medium | Yes |
+| E — a ceiling in place of damping — *partial* | The wary band is a hard cap, not a reduction; no acceleration | our `GoodwillSituationWorker.GetMaxGoodwill` | C# worker + XML | Medium | Yes |
+
+#### A — reason-aware scaler at the choke point
+
+**What it gets us:**
+
+- Positive gains scaled by a curve on (Reverence, Goodwill), per faction, from every source that crosses `TryAffectGoodwillWith`: quests, gifts, released prisoners, trade, peace talks, rituals, drift, and our own ripple and demand writes.
+- An XML list (or a `DefModExtension` on each `HistoryEventDef`) of the reasons that count. Exempting drift, the ripple or particular factions is a data change.
+- The message *"changed from A to B (reason)"* and the goodwill tooltip's *Recent events* both report the landed number.
+
+**What it cannot do:**
+
+- See writes that bypass the method. During play, those are RimPacts `SetGoodwillDirect`, Rim War's war and alliance declarations, and Faction Customizer's editor.
+- Identify null-reason changes. These include FT&V's invasion reward, its vassalisation refund, and VEF's "set goodwill to X" deltas.
+- Explain why a gain was scaled.
+- Correct the previews that show the requested amount: gift dialog, quest reward stack, PeaceTalks letter, VEF's delayed-impact letter. These are already off today by vanilla's 25% rule.
+
+**Consequences:**
+
+- It stacks with vanilla's ×1.25 toward-natural adjustment.
+- A null-reason policy is owed.
+- It coexists with RimPacts' own prefix by Harmony priority, if RimPacts ships.
+- `POLITICS.md`'s *do not postfix `TryAffectGoodwillWith`* warning does not bite, because a prefix that only rewrites the amount does not re-enter.
+- [V] on the seam, the reason argument and the RimPacts precedent (which rewrites amounts but does not scale gains by reason); [I] that they compose.
+
+#### A2 — the difference as its own named change
+
+**What it gets us:** everything in A, plus a line that says why. The difference lands as a second change under our own `HistoryEventDef` (*"the government fears your faith"*, *"the faith has reached the court"*). It gets its own message and its own Recent-events row, on vanilla surfaces only.
+
+**What it cannot do:** keep the two halves atomic. The second write goes through `CanChangeGoodwillFor` and the ×1.25 rule on its own, so it can be refused or amplified separately.
+
+**Consequences:**
+
+- Two messages per affected gain.
+- The second write re-enters `TryAffectGoodwillWith` and needs a guard on its own reason.
+- The choice between A and A2 is a requirement for Conrad, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (first asked as #97's question 5; #97 is closed).
+
+#### B — scale vanilla's adjuster
+
+**What it gets us:**
+
+- The lightest seam: `CalculateAdjustedGoodwillChange` is vanilla's own magnitude step, and nothing in the corpus patches it.
+- The prisoner-release preview (`ITab_Pawn_Visitor`) already calls it, so it agrees automatically. The comms-console ask costs (`FactionDialogMaker`) call it too, but they are negative changes, which no route here scales.
+
+**What it cannot do:** see the reason. It knows only the sign, the faction and current goodwill.
+
+**Consequences:**
+
+- **It forecloses #119's choice of which gains count.** Not recommended unless #119 selects "every positive change".
+- It runs from draw code, so it must be a pure function.
+
+#### C — scale at each source
+
+**What it gets us:** exact legibility for what it covers. The vanilla calculators serve both the preview and the payment:
+
+- `FactionGiftUtility.GetGoodwillChange` feeds the gift dialog, the pod float menu and `GiveGift`.
+- `Faction.GetGoodwillGainForExit` feeds the release preview and `Notify_MemberExitedMap`.
+- `Reward_Goodwill.amount` feeds the reward stack and the quest part.
+- Our own quest parts and a VEF `DoImpact` override compute their amount directly.
+
+**What it cannot do:** reach anything it does not enumerate: drift, other vanilla sources, mod writes.
+
+**Consequences:**
+
+- One patch per vanilla source, so breadth makes it Hard.
+- A quest reward is priced when the quest is generated, so it reflects Reverence at the moment of the offer.
+- Each source must belong to one route, or A and C double-scale it.
+
+#### D — Reverence as natural goodwill (partial)
+
+**What it gets us:**
+
+- A drift target set by Reverence.
+- Via vanilla's 25% rule, gains moving toward that target get up to ×1.25.
+- A row in the natural-goodwill tooltip while the offset is non-zero.
+
+**What it cannot do:**
+
+- Reduce a positive gain.
+- Accelerate one "sharply".
+
+**Consequences:** **T-115** discards it under any VEF storyteller that sets `storytellerThreat`. This is the mechanism the specs named before #160; it moves the baseline, as #97 found.
+
+#### E — a ceiling in place of damping (partial)
+
+**What it gets us:** *"they will not warm past N while they fear your faith"*, as a `GetMaxGoodwill` cap listed under *Ongoing events*. It takes effect immediately and flips relation kind.
+
+**What it cannot do:** reduce or accelerate an individual gain. This is a different fiction from the requirement's.
+
+**Consequences:** **T-83** applies: the worker must return the cap itself, because `baseMaxGoodwill` is inert.
+
+#### Recommendation — not a selection
+
+**A.** It is the only route that covers every source and keeps #119's choice of which gains count as data.
+
+- Add **A2** if Conrad rules that per-change attribution is required.
+- **C's** calculators can later make particular previews tell the truth, for sources excluded from A.
+
+### Constraints
+
+- **Gates that no-op silently:**
+  - **T-110** refuses positive changes while a player map sits on a **hostile** faction's settlement.
+  - Quest goodwill locks.
+  - `permanentEnemy`, and the `permanentEnemyToEveryoneExcept` gates ([`POLITICS.md`](POLITICS.md) § *The goodwill pipeline*).
+  - **`defeated` on either side** (`CanChangeGoodwillFor`'s first clause) [V].
+  - Hidden or temporary factions (`HasGoodwill` false).
+  - VFED's Deserters postfix on `CanChangeGoodwillFor`.
+- **The landed amount can differ from the requested one.** It is ×1.25 on the part moving toward natural (a change moving away, or between NPCs, is untouched), × any scaler, clamped to ±100. The Recent-events record stores it before the clamp.
+- **Orientation.** The player may be either operand, and NPC↔NPC changes cross the same method. A scaler filters to player pairs.
+- **Refunds and set-to deltas are positive changes with a null reason.** Examples are FT&V's vassalisation rollback and VEF's scenario and new-faction goodwill. A positive-gain scaler turns a refund into a net change.
+- **T-115** (D), **T-83** (D, E) and **T-84** (`PreceptComp_GoodwillSituation` is inert, so it is not a route).
+
+### Available mechanisms
+
+- **The choke point** [V]. Every in-play change goes through `Faction.TryAffectGoodwillWith(other, change, canSendMessage, canSendHostilityLetter, HistoryEventDef reason, lookTarget)`: 53 vanilla call sites, each with the player on one side. It runs in this order:
+  1. `CanChangeGoodwillFor`
+  2. `CalculateAdjustedGoodwillChange`
+  3. clamp
+  4. `RecordEvent(reason, AffectedFaction, CustomGoodwill = adjusted)`, only when a reason is passed
+  5. write both sides
+  6. the message
+- **The other `baseGoodwill` writers** are faction creation — worldgen, and quest factions mid-play (`FactionGenerator.NewGeneratedFactionWithRelations` → `Faction.SetRelation`, from about ten quest nodes), which install relations rather than change them — plus `TryMakeInitialRelationsWith` and `ChangeGoodwill_Debug`, which only debug tables call. Situation caps are clamps applied on read.
+- **Reasons** [V]:
+  - Every vanilla positive source passes one: quest reward, gift, released prisoner or tended guest, trade, peace talks, destroyed enemy base, trade request, ritual, drift.
+  - The two shuttle quest parts can pass null.
+  - Our ripple's VEF `GoodwillImpactDelayed` carries an authored `historyEvent`.
+  - FT&V and several VEF paths pass null.
+- **Bypass writers in the corpus** [V]:
+  - During play: RimPacts `SetGoodwillDirect`, Rim War `RimWarFactionUtility`, Faction Customizer `Dialog_ModifyFactionRelation`.
+  - Worldgen only: VEF, VFED, EdB Prepare Carefully.
+  - VFE Empire writes no goodwill at all.
+- **The seam is proven** [V]. RimPacts `Patch_RptGoodwill.Prefix` rewrites `ref goodwillChange` in both directions, pre-dividing by 1.25: on positive changes a reason-blind cap for its independence-war foe (`IndepWarCap`) and two vetoes (`HunterLock`, `PlayerWarLock`); on negative comms-request changes, reason-keyed floors (`NegativeFloors`). It proves that a prefix can rewrite the amount and read the reason. It does not scale gains by reason.
+- **`SetRelation`-shaped writers also bypass the method** [V], on hidden or quest factions only: VFE Tribals (`3079786283/1.6/Assemblies/VFETribals.dll`, its wild-men site) and Multiplayer's synced `SetRelation`. A `baseGoodwill` sweep cannot see them.
+- **Seams nobody else holds** [V]. No corpus assembly references `CalculateAdjustedGoodwillChange` in either heap. Multiplayer patches neither method.
+- **Player surfaces** [V]:
+  - The message reads before and after.
+  - `FactionUIUtility.GetRecentEvents` sums `CustomGoodwill` per `HistoryEventDef` over 3,600,000 ticks (60 days), in the goodwill-number tooltip. It is a per-reason, per-faction surface no other spec names.
+  - The previews listed under routes A–C.
+
+### Status
+
+**READ**, established by [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160).
+
+- The seam, the reasons, the bypass list, the donor and the player surfaces are [V]. They come from a fresh decompile of Assembly-CSharp 1.6.4871 and the 1.6 assemblies of VEF, VFED, FT&V, RimPacts, Rim War, Faction Customizer and EdB Prepare Carefully.
+- Every route's composition is [I].
+- **Two claims are superseded:**
+  - The old "no verified route" (#97).
+  - § *Three corrections* 2's pointer to the situation worker as the coupling mechanism. That mechanism is route D, which is partial.
+
+### Open questions
+
+| Question | Owner |
+|---|---|
+| Route selection; the curve and band numbers | [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) |
+| Which positive changes count; whether negatives are touched | Conrad, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (first asked as #97's questions 1–2; #97 is closed) |
+| Per-change attribution required (A vs A2) | Conrad, via #2 (#97 question 5); the surface is unowned (#61 is closed) |
+| Exempt factions: the Church before betrayal, the Schism, same-faith factions, Glitterites | Conrad, via #2 (#97 questions 2–3) |
+| Null-reason policy; exempting refunds and set-to deltas | build, next map |
+| Harmony ordering against RimPacts' prefix | only if RimPacts ships ([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)) |
+| Whether RimPacts' and Rim War's direct writes ever touch the player pair [I] | unowned; matters only if either ships |
+| Two-client smoke test | [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16) |
+
 ## The build — Exaltation: the Empire becomes the Church in place
 
 **Transform Royalty's `Empire` in place. Keep every identifier it has; change only what the player
@@ -717,8 +904,10 @@ READ. The mechanisms are [V]; that they compose into per-decree costs and a host
   `<faction>Empire</faction>` and a `minTitle` in the existing ladder — a native fit, where the old
   build needed a copy. **VFE Empire's 29 `VFEI_` permits are usable as-is** if VFE Empire ships.
   The earlier draft said they could only be imitated, which was true of a second faction only.
-  `RoyalAid` carries pawn, item, targeting, explosion and temperature fields and nothing else; that
-  claim is inherited [I].
+  `RoyalAid`'s fields are `favorCost`, `points`, `overrideAcceptableTemperatureRange`, `pawnCount`,
+  `pawnKindDef`, `targetingRange`, `targetingRequireLOS`, `aidDurationDays`, `radius`,
+  `intervalTicks`, `explosionCount`, `warmupTicks`, `explosionRadiusRange` and `itemsToDrop` [V,
+  #168].
 - **Title-gated trade already exists, and an earlier draft called it inert.** All three Empire trader
   kinds carry `permitRequiredForTrading` — `Base_Empire_Standard → TradeSettlement`,
   `Empire_Caravan_TraderGeneral → TradeCaravan`, `Orbital_Empire → TradeOrbital` [V].
@@ -3287,9 +3476,10 @@ place to keep a number that must survive a months-long save.
    `naturalGoodwillOffset != 0`, and `GetOngoingEvents` only those whose `maxGoodwill < 100`
    [V]. A `GoodwillSituationWorker_Reverence` is visible **exactly when, and only when, it moves
    goodwill** — which is the coupling
-   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97) has not ruled on. It stays on
-   the table as the implementation of that coupling if #97 says yes, and it is not the answer to
-   requirement 5.
+   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97) asked about. The
+   requirement has since said yes, and the situation worker cannot implement it: it moves the
+   baseline and cannot reduce a gain. It is route D (partial) of § *Reverence scales the Goodwill a
+   faction gains*, and it is not the answer to requirement 5.
 3. **"The UI is a separate ticket" now names one.** It is
    [#61](https://github.com/cjd721/Rimworld-Archinity/issues/61), *The political and campaign UI
    surfaces*, and it exists.
@@ -3655,9 +3845,11 @@ unlikely.
    hostile** — persist, zero, or drop. T-07 and the `FactionManager.toRemove` path make this a
    real load-time case. Owner: [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97).
    The build prunes, as the safe default.
-3. **Whether Reverence modulates the Goodwill ripple.** Owner:
-   [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97). If it does, correction 2 above
-   names the mechanism.
+3. **Whether Reverence modulates the Goodwill ripple — resolved** by the requirement text
+   (2026-09-15) and by [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160): see § *Reverence scales the Goodwill a faction gains*. Which
+   gains count, exemptions and per-change attribution are Conrad's, via
+   [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (#97, where they were asked, is closed); the route and numbers are
+   [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 4. **The numbers.** Decay rate and its deadband, band thresholds and their count, per-event
    amounts, and what "sincerely converted" means as a `Certainty` threshold. All are XML Def
    fields by construction, so the build does not wait on them — **but no open ticket owns them.**

@@ -204,9 +204,21 @@ and sets `canExitMap false`. `Verse.ExitMapGrid.MapUsesExitGridNow` is false for
 apply. Nobody walks on and nobody walks off; every arrival and departure is a shuttle
 or the gravship.
 
+**The arrival gate is per faction, and vanilla opens it for four** [V].
+`IncidentWorker_PawnsArrive.FactionCanBeGroupSource` (which raids, traders and visitors all reach)
+refuses a faction whose
+`FactionDef.arrivalLayerWhitelist` lacks the layer, and vanilla lists Orbit only for **Empire,
+TradersGuild, Salvagers and Mechanoid**. Every other surface faction, and every modded one, never
+sends help, visitors or traders to a gravship home unless its def is patched. A pinned-faction
+`TryExecute` skips that check; vanilla's troop, labourer, strike and shuttle permits blacklist
+Orbit through `RoyalTitlePermitDef.layerBlacklist`. **Fix:** XML — add Orbit to the faction's
+`arrivalLayerWhitelist`, and to the incident's `layerWhitelist` where the storyteller should fire
+it. (*[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168), 2026-09-23.*)
+
 *[#71](https://github.com/cjd721/Rimworld-Archinity/issues/71),
 [#147](https://github.com/cjd721/Rimworld-Archinity/issues/147),
-[#148](https://github.com/cjd721/Rimworld-Archinity/issues/148), `docs/specs/ORBIT.md`.
+[#148](https://github.com/cjd721/Rimworld-Archinity/issues/148),
+[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168), `docs/specs/ORBIT.md`.
 `RimWorld.IncidentWorker.CanFireNow`, `RimWorld.QuestScriptDef.CanQuestOccurOnTile`,
 `RimWorld.IncidentWorker_GiveQuest.CanQuestOccurOnTile`,
 `RimWorld.QuestGen.QuestGen_Get.GetMap`. Corpus scope: Core plus Royalty, Ideology,
@@ -279,12 +291,95 @@ postfix) is exactly this, and never fires for a vehicle caravan [V].
 storyteller comp and does not care which follower moved the caravan. Aircraft in flight are
 `AerialVehicleInFlight`, not a `Caravan`, and neither hook reaches them [V].
 
+**This does not put VF caravans outside vanilla's arrival handling.** VF's follower carries the
+vanilla `CaravanArrivalAction` objects and calls their `StillValid` every tick
+(`VehicleCaravan_PathFollower.PatherTick`), so a patch on an arrival action reaches VF caravans
+and a patch on the pather does not [V] (#152; see **T-138** and **T-139**).
+
 *[#136](https://github.com/cjd721/Rimworld-Archinity/issues/136), `docs/specs/POLITICS.md` §
-*Settlements meet passing caravans*. `Vehicles.Patch_WorldPathing.StartVehicleCaravanPath`,
+*Settlements meet passing caravans*;
+[#152](https://github.com/cjd721/Rimworld-Archinity/issues/152) for the arrival-action
+paragraph. `Vehicles.Patch_WorldPathing.StartVehicleCaravanPath`,
 `Vehicles.World.VehicleCaravan_PathFollower.TryEnterNextPathTile` / `.PatherTick`,
 `Vehicles.World.VehicleCaravan`, `Vehicles.World.AerialVehicleInFlight` from
 `294100/3014915404/1.6/Assemblies/Vehicles.dll`; `RimWorld.Planet.Caravan_PathFollower.StartPath` /
 `.PatherTickInterval` / `.TryEnterNextPathTile` (`Assembly-CSharp.dll`). 1.6.4871.*
+
+### T-138 — An attack order carries on after its target passes to an ally, and turns the ally hostile with no confirmation
+
+`CaravanArrivalAction_AttackSettlement.CanAttack` checks only `Spawned`, `Attackable`
+(`Faction != OfPlayer`) and the enter cooldown. **It never checks the faction.** The *"attack a
+friendly faction?"* confirmation (`ConfirmAttackFriendlyFaction`) is a `confirmActionProxy` that
+runs **only when the order is given**. So when a settlement changes hands to an ally or neutral
+faction while a caravan is marching on it with an attack order, the re-check on every interval
+passes, the caravan arrives, and `SettlementUtility.AffectRelationsOnAttacked` drives the new
+owner to hostile. The player sees no prompt and no warning, only the attack letter after the fact.
+
+The same hole exists in two other places:
+
+- `TransportersArrivalAction_AttackSettlement.CanAttack` (pods and shuttles, checked on arrival
+  only);
+- Vehicle Framework's aircraft `ArrivalAction_AttackSettlement`. It is never re-checked, and
+  `ArrivalAction_LoadMap` resolves the target by `MapParentAt(tile)`.
+
+A deliberate attack on a non-hostile faction still prompts as usual. The hole is an order issued
+**before** the transfer.
+
+**Fix:** stop such orders inside the transfer command, or guard the attack actions'
+`StillValid`. See `docs/specs/TERRITORY.md` § *A caravan en route when its destination changes
+hands*.
+
+*[#152](https://github.com/cjd721/Rimworld-Archinity/issues/152), `docs/specs/TERRITORY.md` §
+*A caravan en route when its destination changes hands*. `Assembly-CSharp.dll` 1.6
+`CaravanArrivalAction_AttackSettlement`, `SettlementUtility.AttackNow`,
+`TransportersArrivalAction_AttackSettlement`; `3014915404/1.6/Assemblies/Vehicles.dll`
+`FlightPath.ConsumeNode`, `ArrivalAction_LoadMap.Arrived`, `ArrivalAction_AttackSettlement.MapLoaded`.*
+
+### T-139 — A custom `CaravanArrivalAction` that does not override `StillValid` never cancels itself
+
+`CaravanArrivalAction.StillValid` returns `true` in the base class. Vanilla's pather re-checks
+every interval (`Caravan_PathFollower.PatherTickInterval`) and on arrival, but only through that
+method. **An arrival action of ours will march a caravan to a target that has since been destroyed
+or has changed owner, and then call `Arrived` on stale state**, with no message. Transport pods
+re-validate only on arrival.
+
+Every one of our arrival actions must override `StillValid` with the target's `Spawned`, faction
+and tile checks:
+
+- the #92 / `TERRITORY.md` §1 attend option;
+- #154 RC-1, RC-4 and RT-1 (C1, C4 and T1 in `WORLD-INFRASTRUCTURE.md` § *The player's two verbs on
+  a route*);
+- #171 OU-A1 and OU-A3 (attend);
+- #172 H-T1 (attend) and every H-L release option that is an arrival action;
+- #167's advance option, if it is built as an arrival action rather than a direct float-menu
+  option on the holding.
+
+*[#152](https://github.com/cjd721/Rimworld-Archinity/issues/152); the list from
+[#154](https://github.com/cjd721/Rimworld-Archinity/issues/154),
+[#167](https://github.com/cjd721/Rimworld-Archinity/issues/167),
+[#171](https://github.com/cjd721/Rimworld-Archinity/issues/171) and
+[#172](https://github.com/cjd721/Rimworld-Archinity/issues/172). `Assembly-CSharp.dll` 1.6
+`CaravanArrivalAction.StillValid`, `Caravan_PathFollower.PatherTickInterval`.*
+
+### T-144 — An XML `<mapGenerator>` on the Settlement `WorldObjectDef` also rebuilds every new player colony
+
+Player and NPC settlements are made from the same def, `layer.Def.SettlementWorldObjectDef`:
+
+- `FactionGenerator` for NPCs;
+- `SettleUtility.AddNewHome` for a new colony;
+- `ScenPart_PlayerFaction` for the start.
+
+`Settlement.MapGeneratorDef` returns `def.mapGenerator` **before** its
+`Faction == OfPlayer → Base_Player` branch. A patch that gives the Settlement def a harder
+`mapGenerator` for enemy bases therefore generates the player's next colony as one too. It raises
+no error. Per-faction or per-settlement generators need a getter postfix (KCSG's
+`Postfix_Settlement_MapGeneratorDef` is the pattern) or a distinct `WorldObjectDef`.
+
+*[#164](https://github.com/cjd721/Rimworld-Archinity/issues/164), `docs/specs/TERRITORY.md` §
+*Taking a settlement must be hard*. `Assembly-CSharp.dll` 1.6 —
+`RimWorld.Planet.Settlement.MapGeneratorDef`, `SettleUtility.AddNewHome`, `FactionGenerator`,
+`ScenPart_PlayerFaction`. [V]. `ORBIT.md` § *The build → 6* already records the three-branch
+getter; this is the surface consequence.*
 
 ## Living on an orbit layer
 

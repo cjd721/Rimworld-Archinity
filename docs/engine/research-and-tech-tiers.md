@@ -250,6 +250,20 @@ where an excluded faction returns `Archotech`. The sibling
 are re-initialised only when the def *count* changes
 (`TechLevelDatabase.cs:109-116`).
 
+### WTL's trade-stock filter only lowers a ceiling, and it touches no world object when the level changes
+
+- `Patch_StockGenerator.GenerateThings_Prefix` (on `StockGenerator_Category`, `_MiscItems`, `_Tag`)
+  clamps `maxTechLevelGenerate` / `maxTechLevelBuy` down to `TechLevelUtility.CurrentFilterLevel(faction)`.
+  That value is `WorldTechLevel.Current`, except for factions in the `FactionsExcluded` setting,
+  which is T-18.
+- Vanilla trader kinds already cap themselves: `TraderKinds_Base_Neolithic.xml` generators carry
+  `maxTechLevelGenerate Neolithic`. An in-era settlement's stock therefore does not change at an
+  advance. Only generators with no cap of their own, the default being Archotech, rise with the
+  world era, and those belong to above-era settlements.
+- No WTL code outside worldgen and UI references `Settlement`, `WorldObject` or `SetFaction`.
+
+[V] `3414187030/1.6/Lunar/Components/WorldTechLevel.dll`, [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167).
+
 ### The scribed field and the volatile mirror are two different things
 
 `WorldTechLevel.GameComponent_TechLevel` holds one field, scribed as

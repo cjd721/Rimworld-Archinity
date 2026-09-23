@@ -342,6 +342,13 @@ Verified against 1.6.4871 and `Multiplayer.dll` (`2606448745`).
   on an offer held **outside** `Find.QuestManager` that nothing ticks — which is what makes a
   shop shelf possible, and what makes **T-124** possible on the same shelf.
   ([#144](https://github.com/cjd721/Rimworld-Archinity/issues/144))
+- **`QuestNode_GetSiteTile` cannot be aimed.** Its `nearTile` is slate `map` (a `Map`), else a
+  random player home map, and its distance is slate `siteDistRange` (default 7–27) [V,
+  `QuestNode_GetSiteTile.TryFindTile`]. A site near a settlement that is not the player's needs a
+  node of ours around `TileFinder.TryFindNewSiteTile(out tile, nearTile, min, max, …)`, which takes
+  any tile. ([#154](https://github.com/cjd721/Rimworld-Archinity/issues/154))
+- **`IncidentWorker_GiveQuest` makes any `QuestScriptDef` storyteller-fired in XML**
+  (`def.questScriptDef ?? parms.questScriptDef`) [V]. ([#154](https://github.com/cjd721/Rimworld-Archinity/issues/154))
 
 Established on [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131).
 

@@ -157,7 +157,8 @@ any per-player filtering is draw-time only (**T-21**).
   `DoImpact` gets this wrong and must be overridden.
 - **Magnitudes are not applied literally.** `CalculateAdjustedGoodwillChange` amplifies any
   change moving toward natural goodwill by 25% of the remaining gap; a −6 ripple can land as
-  more than −6 [V]. And `GoodwillWith` is clamped by `GetMaxGoodwill`, so a positive ripple
+  more than −6 [V]. Any Reverence scaler composes with this ×1.25 ([`RELIGION.md`](RELIGION.md)
+  § *Reverence scales the Goodwill a faction gains*). And `GoodwillWith` is clamped by `GetMaxGoodwill`, so a positive ripple
   into a faction already at its situation cap is a silent no-op [V].
 - **Two of our own factions cannot participate**, by their own defs, and it is **T-07** — not
   patchable after worldgen.
@@ -284,12 +285,13 @@ RimPacts' method bodies are [I] — identified from metadata names, not read.
 
 ## Outstanding decisions
 
-1. **Whether Reverence modulates the ripple.** `requirements/POLITICS.md` says Reverence is
-   "an input to this system, not a part of it", asserting a coupling without specifying it.
-   **The owner is [#97](https://github.com/cjd721/Rimworld-Archinity/issues/97)** — *Reverence
-   and Goodwill, how the two axes touch* — which is open and carries exactly this question;
-   [`RELIGION.md`](RELIGION.md) § *Outstanding decisions* hands it the same one from the other
-   side. The two capability tickets that established the halves, **#90 and #98, are both closed**
+1. **Whether Reverence modulates the ripple — resolved** by the requirement text (2026-09-15)
+   and by [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160): see [`RELIGION.md`](RELIGION.md) § *Reverence scales the Goodwill a
+   faction gains*. The ripple's positive edge is a reasoned write (VEF
+   `GoodwillImpactDelayed.historyEvent`), so route A can include or exempt it by data. Which gains
+   count, exemptions and attribution are Conrad's, via
+   [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (#97 is closed); the route and numbers are
+   [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s. The two capability tickets that established the halves, **#90 and #98, are both closed**
    and are named here as provenance, never as owners: #90 established propagation along the
    relationship graph writing Goodwill, and #98 established Reverence as a quantity, the events
    that change it and its display, with `RELIGION.md` as its spec (superseding #52 and #74).
@@ -802,9 +804,10 @@ if (faction.PlayerGoodwill < 40) { diaOption.Disable("NeedGoodwill".Translate(40
 in `Core/Languages/English/Keyed/Dialog_Trees.xml` [V]. Three further options —
 `RequestTraderOption`, `RequestOrbitalTraderOption`, `RequestMilitaryAidOption` — gate on
 `Disable("MustBeAlly")`, carry a `Disable("WaitTime")` cooldown keyed on the scribed
-`Faction.lastTraderRequestTick` / `lastMilitaryAidRequestTick`, and **all three spend goodwill**,
-with the price rendered into the option label from
-`-Faction.OfPlayer.CalculateAdjustedGoodwillChange(faction, -30)` [V]. So vanilla already ships
+`Faction.lastTraderRequestTick` / `lastMilitaryAidRequestTick`, and **all three spend goodwill**
+— a trade caravan −15, an orbital trader −30, military aid −25 — with the price rendered into the
+option label from `-Faction.OfPlayer.CalculateAdjustedGoodwillChange(faction, cost)` [V]. Military
+aid also links to `CantMakeItInTime` for a faction below Industrial (#168). So vanilla already ships
 *a numeric standing threshold, shown before it is reached, on an action that costs standing to
 take* — which is the whole of this capability and, separately, the whole of #73's price.
 

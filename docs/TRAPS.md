@@ -85,6 +85,15 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-125 | Two VEF quest-giver comps sharing a `questManagerID` silently share one shelf, built from whichever `QuestGiverDef` was used first |
 | T-126 | `generateOnce: true` fills the shelf twice, at a budget of 100 unless `maximumAvailableQuestCount` is set |
 | T-127 | `QuestNode_GetSiteTile`'s early-out guard is typed `int` against a `PlanetTile`, so it never fires and `siteDistRange` never measures from a caravan |
+| T-140 | Per-settlement state across an ownership change — `SetFaction` silently carries every comp, record and tithe to the new owner; destroy-and-recreate mints a new ID that re-rolls ID-derived values, orphans ID-keyed records and aborts inbound orders. FT&V's `ApplyWinnerToSettlement` takes both shapes, by attendance |
+| T-142 | A goodwill refund written as a second `TryAffectGoodwillWith` does not restore the balance — vanilla amplifies whichever leg moves toward natural goodwill, and a Reverence scaler on positive gains would skew the refund leg again |
+| T-145 | Under R1, a holding's tier or specialty read from `holding.Faction` reads the player's def, which `AdvanceEra()` rewrites at every boundary |
+| T-147 | VEF's `GoodwillCurrency` silently offers nothing for a quest with no `asker` on the slate |
+| T-148 | A pawn committed to a VEF outpost drops out of the storyteller's population — committing pawns silently raises population intent |
+| T-149 | Rejecting a humanlike from VEF `Outpost.AddPawn` silently skips the outpost's build charge |
+| T-150 | A map generated on a tile that already holds a `MapParent` is parented by it — M-proxy works only while the target is not a `MapParent`; a VEF outpost adopts the map with the `Encounter` generator and never removes it |
+| T-151 | Destroying a staffed VEF outpost drops its living pawns with no death, no letter and no world-pawn record |
+| T-152 | An outpost occupant who dies of disease or bleeding stays in `occupants` — it still counts, still produces, and the outpost is never abandoned |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -116,6 +125,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-120 | Map generation runs on both clients and outside MP's checksum — a `GenStep` that diverges without `Rand` (hash order, `GetHashCode`, `DateTime`) desyncs later, silently. Not yet swept |
 | T-135 | `GetClosestTile_NewTemp` resolves through a Burst job whose closest-tile tie-break depends on thread partitioning — two clients can pick different tiles |
 | T-137 | Multiplayer registers `OrderForceTarget` only for `ITargetingSource` implementors in the vanilla assembly — one declared in ours must register itself |
+| **T-143** | **KCSG's static `GenOption.settlementLayout` is never reset — a `chooseFromlayouts` faction's garrison is multiplied by whatever layout was generated last in the process, and diverges between clients after a rejoin** |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -153,6 +163,8 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-121 | No `FactionDef` restriction applies inside `Dialog_ReformIdeo` — every precept and meme gate silently lifts the moment the player clicks Reform |
 | T-122 | A precept refused by `disallowedPrecepts` vanishes from the issue menu instead of greying out; its rejection reason is the empty string |
 | T-123 | `FactionDef` **meme** fields on a player faction def are inert whenever a world exists — vanilla's own `PlayerTribe` `disallowedMemes` does nothing |
+| T-141 | A faction-dialogue option appended for the Industrial comms console also appears at Medieval Overhaul's messenger table, an era early |
+| T-146 | A permit granted without a title is permanent — vanilla never revokes it, and the "Call aid" gizmo keeps offering it after whatever granted it is gone |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 
@@ -175,6 +187,9 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-132 | Odyssey populates every planet layer at world creation, so the Orbit layer is never empty and the view gizmo is live from the first tick |
 | T-133 | Scrolling out on the world map switches planet layer without consulting `CanSelectLayer` — a disabled gizmo is not a closed layer |
 | T-134 | `canTraverseLayers: true` turns a cross-layer distance into a near-zero projected hop, and poisons a static cache that later default calls read |
+| T-138 | An attack order issued before a settlement passes to an ally or neutral lands anyway — `AttackSettlement` never re-checks the faction, and the new owner turns hostile with no prompt |
+| T-139 | `CaravanArrivalAction.StillValid` returns `true` in the base class — an arrival action of ours that does not override it marches on to a destroyed or transferred target |
+| T-144 | An XML `<mapGenerator>` on the Settlement `WorldObjectDef` also rebuilds every new player colony — player and NPC settlements share one def |
 
 ---
 
@@ -197,18 +212,17 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
-read whole. **All five are now over that line**, counted 2026-09-23 after the
-#140–#169 merge: `world-creation.md` (45), `content-and-buildings.md` (32),
-`multiplayer.md` (26), `defs-and-patching.md` (17) and `worldgen-layouts.md` (17) —
-the last of which was the only one short of it before this batch added seven orbit
-entries to it.
+read whole. **All five are now over that line**, counted 2026-09-23 after the map #2
+territory merge (#152–#172): `world-creation.md` (54), `content-and-buildings.md` (34),
+`multiplayer.md` (27), `defs-and-patching.md` (17) and `worldgen-layouts.md` (20).
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
 sharpened the case rather than changing it.** None of the five names the subject, so
 T-65, T-70 through T-73, T-76/T-77 and now **T-88 through T-91** sit in
 `world-creation.md` on the strength of factions and goodwill alone — filed under an
 *Incidents, quests and goodwill* heading inside it — and T-39 and T-48 are the same
-subject filed under determinism and worldgen respectively. **That is eleven entries
-inside `world-creation.md` and thirteen across the register**, against a host file
-whose remaining twenty are genuinely about factions and worldgen. Adding a group
+subject filed under determinism and worldgen respectively. **That is 24 entries under
+*Incidents, quests and goodwill* in `world-creation.md` and 26 across the register**, against
+a host file whose remaining 30 are 23 about factions and worldgen and 7 under *Holdings,
+outposts and world objects changing hands*. Adding a group
 changes this index's shape and is Conrad's call; it is recorded here rather than taken.

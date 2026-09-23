@@ -15,7 +15,8 @@ civilizations begin upgrading routes to allied neighbors over time"* — and
 should not begin covered in modern paved roads… other factions also build it."*
 
 This document owns the **world-map mobility ladder**: what road tiers mean for travel (§1), what
-exists at worldgen (§2), the era-driven construction process and the player's two verbs (§3), and
+exists at worldgen (§2), the era-driven construction process and the player's two verbs (§3, and
+§ *The player's two verbs on a route*), and
 **vehicles** ([#69](https://github.com/cjd721/Rimworld-Archinity/issues/69), §4), which multiply
 with roads and cannot be tuned apart from them.
 
@@ -37,9 +38,199 @@ It does **not** own:
   funding prices belong to the balance deferral in
   [map #2's *Not yet specified*](https://github.com/cjd721/Rimworld-Archinity/issues/2).
 
-One plot verb is still unanswered: *"finance, **protect**, capture and benefit from"*
-infrastructure. Finance, capture and benefit are below; **protect is a gap**, carried on the map's
-fog as *Protecting infrastructure*.
+The plot's verbs are *"finance, **protect**, capture and benefit from"* infrastructure. Finance,
+capture and benefit are below; **protect is answered in § *The player's two verbs on a route***.
+
+## The player's two verbs on a route — contribute, and answer a threat
+
+### Purpose and scope
+
+This section answers two clauses of [`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md):
+
+- *Player agency over routes.* Contribute to a specific, named route, distinguishably from a gift, through a channel that fits the era.
+- *Protecting infrastructure.* A route the player has a stake in comes under threat as an event the player answers. The road is never damaged, and the outcome moves goodwill and the ownership of the endpoint settlements.
+
+It was established by [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154). It **replaces the *"Protect is unanswered"* outstanding decision** and extends §3d with its entry points.
+
+It does not own:
+
+- The funding carrier itself, which is §3c/§3d's `fundedWork`.
+- The event machinery: [`TERRITORY.md`](TERRITORY.md) §1 (#92) and [`POLITICS.md`](POLITICS.md) § *The faction demand* (#91).
+- What an endpoint changing hands writes: `TERRITORY.md`, #172 and #164.
+- How much goodwill lands: #160.
+- Any number, all of which belong to [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+
+The threat shapes use the names shared across #154, #164, #171 and #172: **E-quest**, **E-overlay**, **E-site**, **E-march**.
+
+### Verdict
+
+- **Possible?** Yes, both verbs. Contribute is one carrier with five entry points that climb the eras by themselves. Threat has four event shapes that reach an endpoint settlement, plus a shared eligibility predicate: small C#, and one new field on `RouteProject` if *"the player funded it"* is to count as a stake.
+- **Multiplayer?** Yes for the float-menu, quest, transport-pod and overlay forms: Multiplayer already syncs those commits. The comms-console form needs work (T-82 index discipline, T-95, T-97). A caravan gizmo needs its own `[SyncMethod]` (T-80).
+
+### Routes
+
+#### Contribute — one carrier, several entry points
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| C1 — Caravan at an endpoint | A caravan at a named settlement funds a named route. Physical, available from the first era that has routes | `Settlement.GetFloatMenuOptions(Caravan)` postfix. Or §3d's `Caravan.GetGizmos` gizmo for path tiles | C# | Medium | Yes as a float-menu option. With work as a gizmo (T-80) |
+| C2 — The builder asks | An NPC-started, deadline-bearing delivery that names the route | `Script_TradeRequest.xml` shape + a route finder node + a fund-on-success `QuestPart` | XML + small C# | Medium | Yes |
+| C3 — Comms console | Remote funding, the radio beat | `FactionDialogMaker.FactionDialogFor` postfix. Payment copies `RequestAICoreQuest` | C# | Medium | With work (T-82, T-95, T-97) |
+| C4 — Transport pod or shuttle | Funding delivered by air to an endpoint | `Settlement.GetTransportersFloatMenuOptions` postfix + our `TransportersArrivalAction`, copying `TransportersArrivalAction_GiveGift` | C# | Medium | Yes |
+| C5 — Pledge remotely, deliver by caravan | A promise made by messenger or radio and kept by caravan | A C3 option that generates the C2 quest. `RequestAICoreQuest` already generates a quest from a dialogue option | C# | Medium | As C2 + C3 |
+
+**C1 — caravan at an endpoint.**
+
+- *Gets us:* the first-era verb. The most physical form, and the line on the map moves where the caravan stands. Levers:
+  - fixed lots (*"one lot: 200 blocks"*), each lot its own float-menu option, which syncs for free;
+  - or an amount window, which needs a `[SyncMethod]` on confirm.
+- *Cannot:* a float-menu option needs a world object, so this form works only **at an endpoint settlement**, not on an empty path tile. The path-tile form is §3d's gizmo, with its own sync.
+- *Consequences:* none beyond §3d.
+
+**C2 — the builder asks.**
+
+- *Gets us:* the NPC as the initiator. Contribution arrives as an ask with a deadline, which suits the requirement that infrastructure *"would happen without them"*. The requested good and count are XML fields. The quest can say *"for the road to Ruen"*. Declining is free unless we attach #91's refusal part.
+- *Cannot:* be initiated by the player.
+- *Consequences:* the route finder node is the same one every threat route uses.
+
+**C3 — comms console.**
+
+- *Gets us:* the continent-spanning beat. Payment draws from beacon-reachable stock and the option is disabled with a reason while stock is short. Vanilla already does exactly this for the AI-core request.
+- *Cannot:* be offered where there are no beacons, which are Industrial.
+- *Consequences:* the **messenger-table fact** under *Constraints*. If Medieval Overhaul ships, this option also appears at a Medieval building.
+
+**C4 — pod or shuttle.**
+
+- *Gets us:* an Industrial alternative to walking, limited by pod range.
+- *Cannot:* reach farther than the pod's fuel allows.
+- *Consequences:* the arrival action is serialized by Multiplayer's `TryLaunch` sync, so it must scribe itself cleanly.
+
+**C5 — pledge, then deliver.**
+
+- *Gets us:* remote agency before radio that does not pre-empt the radio beat. The promise is remote and the goods still travel.
+- *Consequences:* it needs both C2 and C3.
+
+#### Answer a threat — four event shapes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| T1 — E-overlay | *"Ashvale under attack"* on the map. Fight on the settlement's own map, or stay away. Staying away resolves as **E-overlay/roll** (a §0 P4 seeded roll decides) or **E-overlay/forfeit** (the endpoint falls, no roll) | #92 Build B, `TERRITORY.md` §1, with an authored trigger naming the endpoint and the attacker | C# | Hard alone. Medium on top of #92 | Yes (on a `Settlement` target; §1's harness is none) |
+| T2 — E-quest | An explicit accept/decline, with the cost of declining shown first. The answer can be a delivery, lent colonists, or a site | #91's demand + `QuestPart_DemandRefused` + the finder node + an ownership-transfer part | XML + small C# | Medium on top of #91 | Yes |
+| T3 — E-quest→E-overlay | T2's legibility, and T1's arena on accept. Declining or staying away resolves as /roll or /forfeit, as T1 | T2's shell spawns T1's object | C# | Medium on top of both, Hard in total | Yes (on a `Settlement` target) |
+| T4 — E-site on the road | *"A war camp on the road to Ashvale"*: a fightable map on the route. It grows if ignored and hits the endpoint on expiry | VFE Medieval 2's `VFEM2_OpportunitySite_SiegeCamp` as the donor + a tile node + an endpoint consequence part | XML + small C# | Medium | Yes [I] |
+| T5 — E-march | A war party that visibly marches up the road | A moving world object of our own. Rim War is a design donor only, because it is barred | C# | Hard | With work. **Not recommended**: no Multiplayer-safe donor, and T1 and T4 carry the same beat |
+
+**T1 — E-overlay.**
+
+- *Gets us:* the threat is visible on the map with no letter needed, it has a timeout, and it resolves in absentia. Winning or losing moves goodwill and the endpoint's owner, both already in #92's design.
+- *Two in-absentia shapes, equal routes:* **/roll**, a §0 P4 seeded roll (#92's shipped design), and **/forfeit**, where declining means the endpoint falls with no roll (#172's variant (b)). Which one runs is Conrad's call, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2): #8's rule that loss is *never a background roll* stands against #92's shipped in-absentia roll.
+- *Cannot:* offer an explicit decline. Declining means staying away, so the cost of declining can only be stated in the letter and inspect text, not in an accept UI.
+- *Consequences:* it carries #92's `CheckDefeated` block and its lord-trigger surgery (TERRITORY §1).
+
+**T2 — E-quest.**
+
+- *Gets us:* the requirement's *"accept or decline, with the consequence of declining legible in advance"*, shown in the accept UI. Three answer shapes, all XML:
+  - deliver arms (`Script_TradeRequest`);
+  - lend colonists (`QuestNode_LendColonistsToFaction`);
+  - go there (an E-site).
+- *Cannot:* show the threat on the map by itself. It also cannot put the fight on the settlement's own map, because that needs T1's object.
+- *Consequences:* it depends on #91's refusal part, already priced in POLITICS.
+
+**T3 — E-quest→E-overlay.** The composition `POLITICS.md` already anticipates. It is the most complete answer to the requirement. With /forfeit, the refusal part itself writes the loss. With /roll, the overlay still spawns and resolves in absentia.
+
+**T4 — E-site.**
+
+- *Gets us:* the nearest the fiction gets to *defending the road*, without the road ever being damaged. VFE Medieval 2's siege camp is the shipped shape: attack early against few enemies, or face a larger force later.
+- *Cannot:* be aimed at a route in XML. `QuestNode_GetSiteTile` roots at the player's home map, so it needs our own tile node.
+- *Consequences:* site-map generation (#88's concern) applies. The donor's raid-on-fail targets **our** colony, and the consequence part must target the endpoint instead.
+
+#### The eligibility predicate — which route, which endpoint, what the letter says
+
+The predicate is **one shared piece of C# for T1–T4**, Medium-lite and deterministic. A stake can be any of the following:
+
+| Stake | Readable from | Status |
+|---|---|---|
+| S-a — the player's colony is an endpoint | `RouteProject.from/to.Faction == Faction.OfPlayer` | Readable |
+| S-b — the player is allied with an endpoint's faction | `Faction.OfPlayer.RelationKindWith(f) == Ally` | Readable |
+| S-c — the player funded the route | **Nothing today.** `fundedWork` drains as the clock spends it | Needs one scribed accumulator on `RouteProject` |
+| S-d — the player paved part of it | **Nothing.** `OverlayRoad` stores a `RoadDef` per edge and no builder | Needs a ledger. Not recommended |
+
+**The attacker** is a faction `HostileTo` the endpoint's faction with a settlement within reach. Vanilla's initial goodwill of −80 or −100 yields such pairs. Only a `Faction` is needed, never a slate `Settlement`.
+
+**The letter** can attribute the builder, both endpoints, the tier, progress or completion, the attacker, and the player's contribution once S-c is stored.
+
+**The story gets one consequence for free.** The requirement says a captured endpoint **completes** its route, so losing a threat against a route still under construction **finishes the road for the enemy**.
+
+**Recommendation (not a selection).**
+
+- Contribute: C1 as the float-menu option plus C2, both synced for free. C3 at Industrial as the radio beat. C5 if Medieval Overhaul's messenger table ships.
+- Threat: T3 if #92 and #91 are both built. T2 if #92 is not. T4 as the cheapest in-person fight. /roll and /forfeit are equal shapes for the in-absentia branch, and the choice between them is Conrad's call, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2): #8's rule that loss is *never a background roll* stands against #92's shipped in-absentia roll.
+- Predicate: add S-c's field if *"funded it"* is a stake.
+- Selection belongs to #119.
+
+### Constraints
+
+- **The road is never the target.** Every threat route aims at an endpoint settlement. `OverlayRoad` cannot remove or downgrade a link (T-43), so no route here needs it to.
+- **A caravan gizmo or dialog button is not synced; a world-object float-menu option is** (T-80). Multiplayer's float-menu postfix runs at Harmony priority −2, so an option *our* default-priority postfix appends to `Settlement.GetFloatMenuOptions` is wrapped and synced as well.
+- **A comms option is synced by its index** (T-82). Disable an unavailable option, never omit it. Do not subclass `Dialog_NodeTree` (T-95). Set `resolveTree` (T-97). `AddAndDecorateOption` is a local function that cannot be patched.
+- **The comms console is not only radio.** Medieval Overhaul's messenger table (`DankPyon_ScribeTable`, Medieval research `DankPyon_CarrierBirds`) subclasses `Building_CommsConsole` and opens the same faction dialogue. `FactionDialogFor` receives only the negotiator, so an option cannot see which console opened it. Gate on research or the era clock.
+- **A custom `ChoiceLetter`'s options are not synced** (T-96). A plain letter is fine.
+- **An endpoint that changes hands by destroy-and-recreate orphans its route project.** `RouteProject` holds `Settlement from, to` by `Scribe_References` (§3c). Four transfers mint a new object and ID: `SettlementDefeatUtility.CheckDefeated`, a TERRITORY §3 R1 replacement, FT&V's and therefore Build B's `ApplyWinnerToSettlement` whenever it resolves with no map open (every E-overlay/roll or /forfeit taken in absentia: FT&V's `ApplyWinnerToSettlement` recreates in absentia and `SetFaction`s only when a map is open [V]), and Rim War's convert. Any of them leaves the project pointing at a destroyed object. Stakes S-a and S-b, and the rule that *a captured endpoint completes the route*, then read the wrong owner or null. **Endpoints must be re-bound by tile at transfer, or the transfer must be `SetFaction`** (per #152). See the merged ownership-change identity trap (**T-140**).
+- **An arrival action of ours never aborts unless it says so.** `CaravanArrivalAction.StillValid`'s base returns `true` (per #152 on the batch board). Transport pods re-validate only on arrival. The C1, C4 and T1 attend actions must override `StillValid` to re-check that the project is still `Building` and the endpoint still has the same owner. Otherwise a caravan keeps marching toward a route that has since changed hands.
+- **Goodwill amounts are requested, not landed.** Every goodwill write passes `TryAffectGoodwillWith`'s gates and the toward-natural amplification (#160).
+
+### Available mechanisms
+
+- **Caravan float menu:**
+  - `Settlement.GetFloatMenuOptions(Caravan)` yields Visit, Trade, OfferGifts and Attack [V].
+  - Multiplayer's `SyncAction` postfix is at priority −2 and its prefix at 801 (`Multiplayer.dll` `SyncAction`4.PatchAll`) [V].
+- **Delivery quest:**
+  - `QuestNode_TradeRequest_Initiate.requestedThingDef` / `requestedThingCount` are `SlateRef`s [V].
+  - `TradeRequestComp.Fulfill` is a registered `SyncMethod` [V].
+  - The quest's settlement comes from `QuestNode_GetNearbySettlement`, which searches near the player (and without a distance bound once `GravshipUtility.PlayerHasGravEngine()`), not along a route [V]. It requires `Settlement.Visitable`, which the player's own settlements never pass [V].
+- **Comms console:**
+  - `FactionDialogMaker.RequestAICoreQuest` pays with `TradeUtility.LaunchThingsOfType` and generates a quest in the same action [V].
+  - `CommsConsole` and `OrbitalTradeBeacon` both require `MicroelectronicsBasics` (Industrial) [V].
+  - Click sync is described in `docs/engine/determinism.md` § *MP serialises the comms-console dialogue*.
+- **Medieval Overhaul:**
+  - `MedievalOverhaul.Building_ScribeTable : Building_CommsConsole`. `GetCommTargets_Messenger` lists all visible non-temporary factions [V].
+  - `Faction.TryOpenComms(Pawn)` builds the dialogue with no console argument [V].
+  - No Multiplayer Compatibility class names the mod (ASCII and UTF-16 sweeps of `1629973374/1.6`, zero hits) [V]. Its comms path is vanilla's, so the click sync above applies [I].
+- **Transport pods:**
+  - `Settlement.GetTransportersFloatMenuOptions` yields VisitSettlement, GiveGift and AttackSettlement [V].
+  - `TransportersArrivalAction_GiveGift` scribes a settlement reference and calls `FactionGiftUtility.GiveGift` on `Arrived` [V].
+  - Multiplayer registers `CompLaunchable.TryLaunch` with `ExposeParameter(1)` [V].
+  - `TransportPod` research is Industrial [V].
+- **Quest offers:**
+  - `IncidentWorker_GiveQuest` fires `def.questScriptDef` from an `IncidentDef` [V].
+  - `QuestNode_GetSiteTile` takes its `nearTile` from slate `map` or a random player home map [V].
+- **E-site donor:** VFE Medieval 2 `VFEM2_OpportunitySite_SiegeCamp` (`1.6/Defs/QuestScriptDefs/SiegeCampQuest.xml`) combines `QuestNode_GetSiteTile`, `QuestNode_WorldObjectTimeout` and `VFEMedieval.QuestNode_SpawnRaidOnFail` [V].
+- **E-overlay and E-quest** are cited and not re-derived: `TERRITORY.md` §1 and §0 P1–P5, and `POLITICS.md` § *The faction demand*.
+- **Wide pass for other shipped threat carriers:**
+  - defNames matching defend/siege/relief/reinforce/escort/convoy/protect across both roots and `Data` found no quest that threatens a *third party's* settlement.
+  - Faction Territories and Vassalage is declined, [SR]Factional War is recommended against (TERRITORY), and Rim War is barred (`MOD-VERDICTS.md`).
+  - A sweep for messenger/courier/telegraph across both roots (DLLs and XML) found Medieval Overhaul's table as the only pre-radio remote channel.
+
+### Status
+
+- **Evidence class READ.** Every mechanism named above is [V] against 1.6 assemblies and defs. Every route is [I] until built.
+- The standing §3d caravan-gizmo recommendation stands as the path-tile form of C1.
+- The standing §3f claim that *"a `Complete` project is the attribution record"* holds for the builder only. It does not record the player's contribution (S-c).
+- Established by [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154). It shares event shapes with #171 and #172, and contribution shapes with [#131](https://github.com/cjd721/Rimworld-Archinity/issues/131) route G.
+
+### Open questions
+
+- **What counts as a stake, and whether a route still under construction can be threatened.** A requirement gap in `docs/requirements/WORLD-INFRASTRUCTURE.md`. No open ticket owns that document, so it is reported as a gap.
+- **Whether the messenger table is a rung or a hazard.** Story, #119. Whether Medieval Overhaul ships is [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.
+- **The cost of declining, and whether the in-absentia outcome still runs after a decline.** Balance, #119.
+- **What the endpoint's change of hands writes.** #172 and #164. It is also this section's own hazard: a destroy-and-recreate transfer breaks `RouteProject`'s endpoint references (see *Constraints*). Whether to re-bind by tile or to require `SetFaction` is a build question for #119.
+- **/roll or /forfeit for an endpoint declined or left unattended**, and whether the roll still runs after a decline. Conrad's call, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2): #8's rule that loss is *never a background roll* stands against #92's shipped in-absentia roll.
+- **Build questions for the next map:**
+  - fixed lots or an amount window for C1;
+  - the float-menu form, the gizmo form, or both;
+  - whether our arrival action round-trips through `ExposeParameter`;
+  - where the eligibility predicate is hosted (a `QuestNode`, an `IncidentWorker.CanFireNow`) and how it iterates `WorldComponent_RoadNetwork.projects` and picks (a §0 P4 seeded roll);
+  - the tile node's radius for T4.
 
 ## The build
 
@@ -307,9 +498,13 @@ Every 2500 ticks, per `Building` project, in `id` order:
   when a visible `WorldDrawLayer_Terrain` is dirty, so a clock landing edges while the world map is
   open could re-trigger it; the narrow form avoids it [I — the code path is read, the hitch is not
   observed].
-- **Invalidation, checked each pass.** An endpoint destroyed or unspawned, an endpoint's faction
-  changed, or the pair's relation no longer `Ally` moves the project to `Paused` or `Cancelled` —
-  which of the two is a requirement question. Laid edges stay: there is no removal path (**T-43**).
+- **Invalidation, checked each pass.** Three conditions are read: an endpoint destroyed or
+  unspawned, an endpoint's faction changed, or the pair's relation no longer `Ally`. An endpoint changing hands
+  completes the project for its new owner. The relation leaving `Ally` pauses it (requirements,
+  *When the politics change mid-build*). Laid edges stay: there is no removal path (**T-43**).
+  `from`/`to` are object references. A change of hands that destroys and recreates the settlement
+  leaves the project on a dead object. Re-bind by tile at transfer, or require `SetFaction`
+  (**T-140**).
 - **A later era supersedes.** Planning for the next era cancels unfinished lower-tier projects and
   re-plans; the new paths prefer the edges already laid (step 5), so the old prefix is upgraded in
   turn rather than abandoned.
@@ -349,6 +544,9 @@ Every 2500 ticks, per `Building` project, in `id` order:
   says an appended option needs no `[SyncMethod]` of ours, but **T-82** makes it sync by the
   option's **index**, and the goods would come from beacons rather than a caravan. What separates
   the two is whether funding requires physical presence — a requirement call. Caravan recommended.
+
+  The entry points are enumerated in § *The player's two verbs on a route* (C1–C5). The caravan
+  gizmo here is C1's path-tile form. At an endpoint settlement, the float-menu form syncs for free.
 
 #### 3e. Direct construction — the second verb, shipped
 
@@ -391,7 +589,8 @@ WorldComponent_RoadNetwork : WorldComponent
 **The roads themselves are engine state** in `SurfaceTile.potentialRoads`. The component holds only
 what the engine cannot: which projects exist, how far each has got, and who built what. **A
 `Complete` project is the attribution record** the superseded ledger was for, so there is one store,
-not two.
+not two. It records the builder, not the player's contribution. `fundedWork` drains as it is spent,
+so *"the road you paid for"* needs one more scribed accumulator on `RouteProject` (stake S-c).
 
 **Capture, do not degrade — unchanged.** A road's value follows the settlements at its ends, and
 `OverlayRoad` cannot remove or downgrade a link (**T-43**). *Capturing a corridor is capturing the
@@ -943,8 +1142,10 @@ the assembly we already ship.
   planner logs a warning naming the era when it plans none.
 - **An unreachable pair plans nothing.** `FindPath` returns `WorldPath.NotFound`; it logs a warning
   only when its frontier empties or it passes 500,000 tiles [V]. The planner skips the pair.
-- **An endpoint changes hands, or an alliance breaks, mid-build.** The project goes `Paused` or
-  `Cancelled` at the next pass; the laid prefix remains as a stub road. Not a softlock.
+- **An endpoint changes hands, or an alliance breaks, mid-build.** Per §3c, a change of hands
+  completes the project for the new owner and a broken alliance pauses it; the laid prefix stays.
+  A change of hands by destroy-and-recreate leaves the project on a dead object unless it is
+  re-bound by tile (**T-140**). Not a softlock.
 - **Funding spent in UI code desyncs.** Both donors that sell road work do it (*Available
   mechanisms*). §3's rule: goods leave the caravan inside `SyncedFund` and nowhere else.
 - **`SetAllLayersDirty()` on every finished edge** queues a `"GeneratingPlanet"` long event on the
@@ -1548,8 +1749,10 @@ sampled [V]: `ThreadAvailable` 8, `ThreadAlive` 8, `dedicatedThread` 32, `TaskMa
   `customRoadCosts` overrides the road ladder outright (§4c).
 - **Requirements gaps, handed back to
   [`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md).** No open
-  ticket owns that document, so these are reported as gaps rather than assigned. Each is a
-  one-branch switch in §3; none blocks the build.
+  ticket owned that document, so these were reported as gaps rather than assigned. Each was a
+  one-branch switch in §3; none blocked the build. **All six were handed back and resolved by
+  [#128](https://github.com/cjd721/Rimworld-Archinity/issues/128)** (see the requirement document's footer); item 4 is also answered at route depth
+  by § *The player's two verbs on a route*, C1–C5 (#154).
   1. Does *"between its own settlements and the settlements of allied neighboring factions"*
      include own-settlement ↔ own-settlement routes, or only routes to allies?
   2. Is a player colony an eligible partner for an NPC civilization allied to the player?
@@ -1563,12 +1766,9 @@ sampled [V]: `ThreadAvailable` 8, `ThreadAlive` 8, `dedicatedThread` 32, `TaskMa
 - **§3 depends on [`POLITICS.md`](POLITICS.md)'s alliance seed.** Until § *The build* §1 ships,
   vanilla supplies no NPC↔NPC alliance and §3 plans intra-faction routes only. POLITICS owns the
   seed; this is a build-order dependency, not an ownership gap.
-- **"Protect" is unanswered.** `docs/plot/INDUSTRIAL.md` § *Roads and Mobility* asks that
-  the player be able to *"finance, **protect**, capture and benefit from"* infrastructure.
-  This document answers finance (§3d, §3e), capture (the settlements at a route's ends) and
-  benefit (the speed ladder). **Protect has no mechanism and no design here** — nothing in the
-  corpus models a road as a thing that can be threatened, and `OverlayRoad` cannot express
-  damage. It sits on the map's fog as *Protecting infrastructure*.
+- **Protect is answered** by § *The player's two verbs on a route*
+  ([#154](https://github.com/cjd721/Rimworld-Archinity/issues/154)): four event shapes (E-overlay, E-quest, E-quest→E-overlay, E-site) aimed at a
+  route's endpoint settlement, plus one shared eligibility predicate.
 - **Road debris on a roadless map is an open lever with no owner.** Suppressing
   `AncientRoads` leaves 1–2 ancient vehicle wrecks per map and spreads them map-wide (§2).
   Removing them means reaching the `GenStep_ScatterRoadDebris` entry in the map generator's

@@ -567,6 +567,212 @@ No log line in any case.
 
 ---
 
+## Holdings, outposts and world objects changing hands
+
+### T-140 — Per-settlement state across an ownership change: `SetFaction` carries all of it, and destroy-and-recreate loses all of it
+
+A settlement changes hands in one of two shapes, and each fails silently in its own direction.
+Which shape a transfer takes decides what survives it.
+
+**Half 1 — `SetFaction` carries everything keyed on the settlement.** `WorldObject.SetFaction` is a
+bare `factionInt` write. `Settlement` and `MapParent` do not override it, and nothing is notified
+(`docs/engine/factions-and-worldgen.md` § *`WorldObject.SetFaction` is a bare field write*).
+Everything attached survives a transfer and now belongs to the new owner, with no error:
+
+- **Every `WorldObjectComp`** comes with it. A holding record or a rebuild debt
+  (`TradeRequestComp`) on an R2 settlement now marks the winner's settlement.
+  - Bare-`SetFaction` transfers include RimPacts' `CedeOne` (#152) — its `TryRevertConquered` has
+    the same shape but is unreachable in 1.6, because its hold meter only rises (#172) — and FT&V's `Invasions.Utility.ApplyWinnerToSettlement` **only when a map is open**.
+  - **Resolved in absentia** (`!mapStillOpen && !HasMap`), that same method destroys and recreates
+    (`Remove` + `MakeWorldObject(def)` + `SetFaction` + `Add`), so it falls under half 2: the comps
+    die and the ID is new.
+  - **So the #92 overlay's outcome takes both shapes depending on attendance.** A Build B copy
+    inherits whichever it copies.
+- **VFE Empire's `TitheInfo`** is keyed by reference on the `Settlement` in
+  `WorldComponent_Vassals.titheInfo` (`Dictionary<Settlement, TitheInfo>`). `DoDay` and
+  `TitheWorker.Deliver` never check `Settlement.Faction` or `Destroyed`, so a vassal whose settlement
+  changed hands keeps delivering to the same lord (#167). A destroyed or recreated one is half 2.
+- **Inbound caravans re-check against the new owner.** Trade and Visit abort on a hostile owner,
+  OfferGifts aborts on a non-hostile one, and Attack carries on (**T-138**).
+
+**Half 2 — destroy-and-recreate mints a new ID.** `WorldObjectMaker.MakeWorldObject` assigns
+`Find.UniqueIDsManager.GetNextWorldObjectID()` [V]. The paths that replace a settlement rather than
+rewrite it:
+
+- `SettlementDefeatUtility.CheckDefeated` → `DestroyedSettlement`;
+- a `TERRITORY.md` §3 R1 holding object, and R2's recreation;
+- a replacement for a def change (`TERRITORY.md` TR-3);
+- FT&V's `ApplyWinnerToSettlement` in absentia (above) and `ApplyWinnerToVassalOffMap`;
+- Rim War's `ConvertSettlement` (`Destroy()` + `AddNewHome`).
+
+On any of them, with no error:
+
+- **ID-derived values silently re-roll:** vanilla's `TraderKind` (`|ID.HashOffset()| % n`),
+  RimPacts' `SpecialtyOf` (`HashCombineInt(ID, 977)`), MP Compat's `GetTitheInfo` seed.
+- **Records keyed on the old object are orphaned:** by ID — BTG `cachedTraderKinds`, FT&V
+  `lastTickProcessedByWorldId`; by reference — a TR-1 tier comp, `WORLD-INFRASTRUCTURE.md`'s
+  `RouteProject.from/to` (`Scribe_References` to the old `Settlement`), and VFE Empire's `TitheInfo`,
+  whose old entry keeps paying in-session and is dropped with a logged null-key error at the next
+  load [I, `Scribe_References`]; the new object is not a vassal.
+- **Comps die with the object:** `WorldObjectsHolder.Remove` runs `PostPostRemove`, and `Destroy`
+  adds `PostDestroy` and the quest `Destroyed` signal.
+- **Every inbound player order aborts** at the next re-check, because the old object is no longer
+  `Spawned`, with vanilla's vague *"couldn't reach its destination"*. VF aircraft instead land on
+  whatever now owns the tile.
+
+**Fix:** whatever keys on a settlement must validate owner and existence on read, or be ended or
+re-bound by the transfer code. There is no hook to subscribe to. Derive from, or key on, `Tile` —
+the only identity that survives replacement — or copy the value at conversion. For inbound orders,
+rebind by tile inside the transfer command (`TERRITORY.md` CF-C); for a route project, re-bind its
+endpoints by tile or transfer by `SetFaction`.
+
+*[#152](https://github.com/cjd721/Rimworld-Archinity/issues/152),
+[#154](https://github.com/cjd721/Rimworld-Archinity/issues/154),
+[#165](https://github.com/cjd721/Rimworld-Archinity/issues/165),
+[#167](https://github.com/cjd721/Rimworld-Archinity/issues/167),
+[#172](https://github.com/cjd721/Rimworld-Archinity/issues/172); `docs/specs/TERRITORY.md` § *How
+a holding ends* and § *A caravan en route when its destination changes hands*.
+`RimWorld.Planet.WorldObject.SetFaction` / `.Destroy`, `RimWorld.Planet.WorldObjectsHolder.Remove`,
+`RimWorld.Planet.WorldObjectMaker.MakeWorldObject`; `294100/3626725895/Assemblies/FactionTerritories.dll`
+`FactionTerritories.Invasions.Utility.ApplyWinnerToSettlement`;
+`294100/2938820380/1.6/Assemblies/VFEEmpire.dll` `VFEEmpire.WorldComponent_Vassals.DoDay`. The
+dual shape read from `ApplyWinnerToSettlement`'s `!mapStillOpen && !HasMap` branch. 1.6.4871.*
+
+### T-145 — Under R1, anything a holding reads from its own owner reads the player's def, and the era advance rewrites it
+
+Under `docs/specs/TERRITORY.md` §3 R1, a taken settlement becomes a world object owned by
+`Faction.OfPlayer` (#120). `AdvanceEra()` write 3 sets `Faction.OfPlayer.def.techLevel` at every
+boundary (`docs/specs/ERA.md` § 3). A holding whose tier is computed the vanilla way,
+`holding.Faction.def.techLevel`, therefore climbs to the colony's era at every advance. Its yield
+and its advancement price move with it, and no error or letter says so. The idiom is correct for
+an NPC `Settlement` and is the one `TERRITORY.md` § *What a holding pays* P4 states, which is why it
+will get copied.
+
+**The same applies to anything else keyed on the owner's def** (#165): a specialty from a
+`FactionDef` extension, or a tech filter such as RimPacts' `SpecialtyOf` pool filter on
+`Faction.def.techLevel`, reads the player's def under R1. (`TraderKind` is not the hazard: an R1
+holding has no trader tracker, so the kind is copied at conquest.)
+
+The same shape applies one step removed. A tier **derived from the former faction**, as Faction
+Territories does (`VassalagePointsComponent.ResolveFactionTechLevelSafe` → `faction.def.techLevel`,
+live by loadID), climbs whenever the faction grid climbs that faction by `Faction.def` swap.
+
+**Fix:** store the tier (and the specialty) on the holding at conquest, read from the *former*
+faction (`TERRITORY.md` § *Paying to advance a holding* TR-1). Never read either from
+`holding.Faction`.
+
+*[#167](https://github.com/cjd721/Rimworld-Archinity/issues/167),
+[#165](https://github.com/cjd721/Rimworld-Archinity/issues/165). [V]
+`294100/3626725895/Assemblies/FactionTerritories.dll`
+`FactionTerritories.Vassalise.VassalagePointsComponent`, `FactionTerritories_VassalOutpost`;
+[V, spec] `docs/specs/ERA.md` § 3. The composition is [I] until built.*
+
+### T-148 — Outpost occupants are invisible to the storyteller's population
+
+`StorytellerUtilityPopulation.AdjustedPopulation` sums
+`PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive` plus
+`QuestUtility.TotalBorrowedColonistCount()`. `Outposts.Outpost.AddPawn` removes the pawn from its
+caravan, its `holdingOwner` and `Find.WorldPawns` and keeps it only in the outpost's private
+`occupants` list — on no map, in no caravan, in no transporter, in no quest. **The pawn stops
+counting.** Population intent rises, and the storyteller behaves as though the colony shrank:
+more joiners, never an error.
+
+Anything that parks pawns off-map in its own container has the same shape. Vanilla's own fix is
+the precedent: `QuestPart_LendColonistsToFaction` is summed back in by
+`TotalBorrowedColonistCount`.
+
+**Fix:** a postfix on `AdjustedPopulation` adding the occupants of every live `Outposts.Outpost`
+(`docs/specs/TERRITORY.md` OC-N2).
+
+*[#170](https://github.com/cjd721/Rimworld-Archinity/issues/170), `docs/specs/TERRITORY.md` §
+*What an outpost costs*. Verified against 1.6 `Assembly-CSharp.dll` and
+`2023507013/1.6/Assemblies/Outposts.dll`.*
+
+### T-149 — VEF charges an outpost's cost only when the caravan's last humanlike joins
+
+`CostToMake` is deducted, and `costPaid` set, inside the branch of `Outposts.Outpost.AddPawn` that
+runs when the joining pawn's caravan has **no humanlike left** — at which point the caravan's goods
+move into the outpost and the caravan is destroyed. The founding dialog calls `AddPawn` on every
+caravan pawn, so in the shipped flow the last humanlike's call charges (animals later in the list join
+after it). **Any rule that makes `AddPawn` /
+`Utils.CanAddPawn` return false for a humanlike** (a prisoner, a slave, a child) leaves that pawn in
+the caravan: the caravan survives, its goods stay in it, and the outpost is founded free. No error;
+`costPaid` simply stays false.
+
+**Fix:** a roster rule and the charge are one change. Either move rejected humanlikes out before
+the last `AddPawn`, or charge explicitly at founding.
+
+*[#170](https://github.com/cjd721/Rimworld-Archinity/issues/170), `docs/specs/TERRITORY.md` §
+*What an outpost costs*. Verified against `2023507013/1.6/Assemblies/Outposts.dll`
+`Outposts.Outpost.AddPawn`.*
+
+### T-150 — Any map generated on a `MapParent`'s tile belongs to that `MapParent`, and a VEF outpost never lets it go
+
+`GetOrGenerateMapUtility.GetOrGenerateMap(tile, …)` generates under
+`Find.WorldObjects.MapParentAt(tile)` if one exists. It uses the suggested def only when none does.
+`WorldObjectsHolder.MapParentAt` returns the **first** `MapParent` in list order on that tile.
+**M-proxy works only while the target is not a `MapParent`.** A temporary `Settlement` placed on
+the tile to borrow its map generation (FT&V's `GetOrCreateVassalBattleSettlement`) loses to an older
+`MapParent` already there. FT&V's own holding is a plain `WorldObject`, so the trick works for it.
+
+`Outposts.Outpost : MapParent` declares no `mapGenerator` (VEF `1.6/Defs/WorldObjectDefs/Base.xml`
+`OutpostBase`), so `MapParent.MapGeneratorDef` falls back to `MapGeneratorDefOf.Encounter`.
+`Outpost` does not override `ShouldRemoveMapNow`, whose base returns `false`, so
+`CheckRemoveMapNow` never removes the map. While the map exists, `Outpost.Tick` skips
+`SatisfyNeeds` for occupants.
+
+Vanilla caravan incidents are protected by default. `WorldObjectDef.allowCaravanIncidentsWhichGenerateMap`
+defaults `false`, and `OutpostBase` does not set it
+(`CaravanIncidentUtility.CanFireIncidentWhichWantsToGenerateMapAt`). Our own code has no such
+guard.
+
+**Fix:** never call `GetOrGenerateMap` on an outpost's tile unless an `Outpost` subclass or patch
+overrides `ShouldRemoveMapNow`. Otherwise fight on an adjacent tile (M-site).
+
+*[#171](https://github.com/cjd721/Rimworld-Archinity/issues/171), `docs/specs/TERRITORY.md` §
+*An outpost's upkeep arrives as events*. Verified against 1.6 `Assembly-CSharp.dll` and VEF
+`2023507013/1.6/Assemblies/Outposts.dll`.*
+
+### T-151 — `Outpost.Destroy()` on a staffed outpost silently discards its pawns
+
+`Outpost.AddPawn` removes each occupant from its caravan, its `holdingOwner` and `Find.WorldPawns`,
+and holds it only in `occupants` (scribed `LookMode.Deep`). `Outpost.PostRemove` calls
+`OutpostsMod.Notify_Removed`, whose body is **empty**. A `Destroy()` on a staffed outpost therefore
+leaves living colonists referenced by nothing: no death, no `Notify_PawnLost`, no letter, and they
+are gone at the next save. VEF's own exits are safe for living pawns: `ConvertToCaravan` makes a
+caravan first, and `Tick` destroys only at `PawnCount == 0`. For dead ones see **T-152**.
+
+**Fix:** any code of ours that ends an outpost must first evacuate the occupants
+(`ConvertToCaravan`), kill them, or transfer them to a holder, and only then destroy it.
+
+*[#171](https://github.com/cjd721/Rimworld-Archinity/issues/171), `docs/specs/TERRITORY.md` §
+*An outpost's upkeep arrives as events* → *Loss*. Verified against VEF
+`2023507013/1.6/Assemblies/Outposts.dll`.*
+
+### T-152 — An outpost occupant who dies of disease or bleeding stays an occupant, counts and produces
+
+VEF cleans up a death only on the per-tick path. `Outposts.Outpost.SatisfyNeeds(Pawn)` runs
+`if (!Spawned && !pawn.Dead) { OutpostHealthTick(pawn); if (pawn.Dead) { occupants.Remove(pawn);
+containedItems.Add(pawn.Corpse); } }`. In 1.6 the per-tick `Hediff.Tick` / `PostTick` are empty in
+the base; disease progression (`HediffComp_SeverityModifierBase.CompPostTickInterval`), injuries
+(`Hediff_Injury.TickInterval`) and bleeding run on the **interval** path, `TickInterval` →
+`SatisfyNeedsInterval` → `OutpostHealthTickInterval`, which simply returns on `pawn.Dead`. On the
+next tick `SatisfyNeeds` skips the pawn because it is dead.
+
+So a pawn killed by disease or bleeding stays in `occupants`. `PawnCount` never reaches 0, so the
+outpost is never abandoned, and `IsCapable` (humanlike, has skills) still counts the dead pawn as a
+producer. No letter, no error.
+
+**Fix:** handle occupant death ourselves, as a check in the synced tick, before anything reads
+`occupants`, `PawnCount` or the yield.
+
+*Found in review of [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171),
+`docs/specs/TERRITORY.md` § *An outpost's upkeep arrives as events* → OU-D4. `Outposts.Outpost.SatisfyNeeds`
+/ `.OutpostHealthTickInterval` / `.IsCapable`, `2023507013/1.6/Assemblies/Outposts.dll`; `Verse.Hediff`
+(`Assembly-CSharp.dll` 1.6). [V code; the in-play outcome is I — RUN listed in the spec.]*
+
+---
+
 ## Incidents, quests and goodwill
 
 ### T-65 — VEF's `forcedPointsRange` sentinel is `IntRange.One`, not its own default
@@ -1124,5 +1330,46 @@ C#; there is no XML route. See also **T-49**, which is the other half of how thi
 *[#146](https://github.com/cjd721/Rimworld-Archinity/issues/146), `docs/specs/CHARTING.md`.
 `RimWorld.QuestGen.QuestNode_GetSiteTile.RunInt` / `.TryFindTile`, `Verse.ConvertHelper`,
 `RimWorld.QuestGen.Slate.TryGet` (`Assembly-CSharp.dll`). 1.6.4871.*
+
+### T-142 — A goodwill refund through `TryAffectGoodwillWith` leaves a net change
+
+A "spend, then refund on failure" pattern calls `TryAffectGoodwillWith(-cost)` and, if the
+action fails, `TryAffectGoodwillWith(+cost)`. Both legs pass `CalculateAdjustedGoodwillChange`,
+which for a player pair adds 25% of `min(|gap to NaturalGoodwill|, |change|)` to a change moving
+**toward** natural goodwill and nothing to one moving away. Either leg, or both, is amplified
+depending on where goodwill sits against natural: at natural the spend is not amplified and the
+refund is; straddling it, both are. The refund therefore does not cancel the spend, and the
+player keeps a net loss or gain with no message saying so. The refund can also be refused
+outright by `CanChangeGoodwillFor`. The refund leg usually passes
+`canSendMessage: false`.
+
+FT&V ships this shape: `VassaliseUtility` spends `-settlementVassaliseGoodwillCost` and refunds
+`+cost` on failure, with `reason: null`. Any positive-gain scaler at the choke point (#160
+routes A, A2 and B) skews the refund leg a second time, because a null-reason refund is
+indistinguishable from a gain.
+
+**The fix:** restore by a write that bypasses the adjuster, or pre-compensate the refund the way
+RimPacts' `Patch_RptGoodwill` does (÷1.25 within the gap), or exempt it from any positive-gain
+scaler by authoring it with a dedicated `HistoryEventDef`. Writing "the difference back" through
+`TryAffectGoodwillWith` runs the adjuster and the gates again, so it does not restore exactly.
+
+*[#160](https://github.com/cjd721/Rimworld-Archinity/issues/160), `docs/specs/RELIGION.md` §
+*Reverence scales the Goodwill a faction gains*. `RimWorld.Faction.TryAffectGoodwillWith`,
+`.CalculateAdjustedGoodwillChange`; `3626725895/Assemblies/FactionTerritories.dll`
+`FactionTerritories.Vassalise.VassaliseUtility`. 1.6.4871.*
+
+### T-147 — VEF's `GoodwillCurrency` silently offers nothing for a quest with no `asker` on the slate
+
+`VEF.Storyteller.GoodwillCurrency.Allows` reads `slate.Get<Pawn>("asker")`, and returns false with
+`questInfo = null` when the asker or its faction is null, or when goodwill is below
+`minimunGoodwillRequirement` [V]. The shelf row never appears, and nothing says why. A sibling of
+**T-76**.
+
+**Fix:** every quest a goodwill-priced shelf offers must put an `asker` of the shelf's faction on
+the slate.
+
+*[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168), `docs/specs/TERRITORY.md` §
+*A sworn faction owes services* (OS-4). `VEF.Storyteller.GoodwillCurrency.Allows`
+(`2023507013/1.6/Assemblies/VEF.dll`).*
 
 ---

@@ -259,6 +259,18 @@ faction to a humanlike def leaves `ideos` null and this NREs.
 in this area are on `FactionDef` and are therefore per-def — they follow the new
 def correctly.
 
+### A shipped era-advance pass climbs factions and restocks their settlements
+
+Lemmy Progression (`3548896697/1.6/Assemblies/LemProgress.dll`) runs this chain on an era advance:
+`WorldEraManager.AdvanceToTechLevel` → `FactionUpgradeManager.UpgradeFactionsToTechLevel` →
+`FactionUpgrader.UpgradeToTechLevel`. It swaps `faction.def` to a def of the target level, choosing
+both the factions and the def through an unseeded `static System.Random` under `ModSettings` gates.
+`UpdateSettlements` then runs `TryDestroyStock` + `RegenerateStock` (by reflection) on every
+`Settlement` whose `Faction` is that faction. It is the one shipped instance of the climb this
+section describes, and it touches every NPC settlement of a climbed faction, including any
+settlement the campaign has marked as its own (`docs/specs/TERRITORY.md` § 3 R2). BLOCK per
+`docs/specs/ERA.md` § 6c. [V] [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167).
+
 ### `WorldObject.SetFaction` is a bare field write
 
 ```csharp
@@ -276,6 +288,95 @@ read path (`PawnGenerator.cs:209-219`) is real, but the **only add site**
 — with an invalid tile the lookup returns null and `?.` no-ops, so **the list is
 never populated** (a vanilla inversion bug). Old-tier pawns cannot resurface in a
 climbed settlement unless the save is legacy or a mod populates the list.
+
+### Ownership change and identity
+
+A world object changes hands in one of two shapes, and the shape decides what survives it.
+**`SetFaction`** (above) keeps the object and its `ID`. **Destroy-and-recreate** mints a new object
+and a new `ID` — `WorldObjectMaker.MakeWorldObject` assigns
+`Find.UniqueIDsManager.GetNextWorldObjectID()` [V]. What each shape silently carries or loses is
+`docs/TRAPS.md` **T-140**.
+
+**Which shape each shipped transfer takes** [V]:
+
+- `SettlementDefeatUtility.CheckDefeated` swaps in a `DestroyedSettlement`: recreate.
+- Rim War's `SettlementUtility.ConvertSettlement` is `Destroy()` + `AddNewHome`: recreate.
+- RimPacts' `CedeOne` is `SetFaction`. Its `TryRevertConquered` is too, but it is unreachable in
+  1.6: `holdBySettlement` is set to 30 by `NoteConquered` and only ever raised by
+  `ProcessHoldQuarter`, so the `< 25` branch that calls it never runs [V].
+- FT&V's `Invasions.Utility.ApplyWinnerToSettlement` takes **both**: a bare `SetFaction` when a map
+  is open, and destroy-and-recreate (`Remove` + `MakeWorldObject(def)` + `SetFaction` + `Add`, new
+  ID) when `!mapStillOpen && !HasMap` — every in-absentia resolution. A #92 Build B that copies it
+  inherits both shapes. Its `ApplyWinnerToVassalOffMap` recreates, and its generic
+  `VassaliseUtility.ExecuteCedeToFactionAtTile` has no caller.
+
+**An owner change reaches a caravan already on the road through its order's `StillValid`.**
+`Caravan_PathFollower` re-checks the pending `CaravanArrivalAction` in `StartPath`, on every
+`PatherTickInterval` and in `PatherArrived` [V]. On failure it posts
+`MessageCaravanArrivalActionNoLongerValid` (*"{0} couldn't reach its destination."*), a
+`NegativeEvent` message rather than a letter, and calls `StopDead()`, so the caravan halts
+mid-route. How each settlement order reacts to a `SetFaction` [V]:
+
+- Trade aborts if the new owner is hostile, the player, or has no trader.
+- Visit aborts on hostile, player or space.
+- OfferGifts aborts if the new owner is **not** hostile.
+- **Attack does not check the faction at all** (**T-138**).
+
+A destroy-and-recreate transfer sets `Spawned == false`, and every order aborts. **Vehicle Framework
+ground caravans run the identical check with the same vanilla actions**
+(`VehicleCaravan_PathFollower.PatherTick`). Its aircraft never re-check (`FlightPath.ConsumeNode`).
+Vanilla pods check on arrival only (`TravellingTransporters.Arrived`). An arrival action of our own
+never aborts unless it overrides `StillValid` (**T-139**).
+
+**`WorldObject.def` can be rewritten, but comps do not follow until reload.** `WorldObject.def` is a
+public field scribed by `Scribe_Defs`. `InitializeComps` runs only in `PostMake` and in
+`ExposeData` at `LoadingVars`. An in-place def write therefore keeps the old def's comps for the
+rest of the session. On the next load it rebuilds from the new def and drops any comp state the
+new def does not declare. Replacing the object instead assigns a new `ID`, which breaks anything
+keyed on the old object (**T-140**).
+
+**Ending a player-held world object** [V]:
+
+- **No incident can reach a map-less world object.** `WorldObject` implements `IExposable`,
+  `ILoadReferenceable` and `ISelectable`, not `IIncidentTarget`. Nothing in vanilla can raid,
+  destroy or take a player-held plain `WorldObject` (an R1 holding). Every ending is authored.
+- **`WorldObjectsHolder.Remove`** runs `PostRemove`, and so every comp's `PostPostRemove`.
+  **`WorldObject.Destroy`** additionally sets `destroyed`, notifies `FactionManager`, runs
+  `PostDestroy` on comps, and sends the quest-target `Destroyed` signal. A quest can listen for a
+  destroy, not for a bare remove. FT&V removes.
+- **No settlement can be factionless.** `Settlement_TraderTracker.TraderKind` dereferences
+  `settlement.Faction.def.baseTraderKinds` with no null check. Only the label getter guards null.
+- **A vanilla ruin leaves with its map.** `DestroyedSettlement.ShouldRemoveMapNow` sets
+  `alsoRemoveWorldObject = true` once nothing blocks map removal.
+
+**A settlement's trade identity is per settlement, and some of it is derived from its `ID`** [V]:
+
+- **`baseTraderKinds` supports a per-settlement pick that nothing uses.**
+  `TraderKind = Faction.def.baseTraderKinds[|ID.HashOffset()| % count]`, and no `FactionDef` in the
+  corpus (both roots + `Data`, comments stripped) lists more than one `<li>`, and no patch adds
+  one. Listing several gives each
+  settlement one of them, in XML. It re-rolls on replacement (**T-140**).
+- **`Settlement_TraderTracker.everGeneratedStock`** (scribed as `wasStockGeneratedYet`, surfaced as
+  `Settlement.EverVisited`) is set by `RegenerateStock`, which is reached on first
+  `StockListForReading`. It means *stock generated*, not strictly *player visited*.
+  `Dialog_SellableItems` prints `TraderNotVisitedYet` from it.
+- **The Show sellable items gizmo** (`Settlement.GetGizmos` → `Dialog_SellableItems`) lists every
+  def the settlement's `TraderKind.WillTrade`, for any non-permanent-enemy settlement, visited or
+  not. It is a public per-settlement trade profile.
+- **Stock generators receive the settlement's tile.** `StockGenerator.GenerateThings(PlanetTile
+  forTile, Faction)`; `StockGenerator_Animals` filters by tile temperature behind XML
+  `checkTemperature`.
+- **Worldgen uses one settlement def per planet layer:** `FactionGenerator` →
+  `layer.Def.SettlementWorldObjectDef`, at two sites.
+
+*[#152](https://github.com/cjd721/Rimworld-Archinity/issues/152), [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165), [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167), [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172); `docs/specs/TERRITORY.md` §
+*A caravan en route when its destination changes hands*, § *How a holding ends*. The two shapes are
+`ApplyWinnerToSettlement`'s `!mapStillOpen && !HasMap` branch; the cede has no call site in
+`FactionTerritories.dll`.
+`Assembly-CSharp.dll` 1.6.4871: `RimWorld.Planet.WorldObject.ExposeData` / `.InitializeComps` /
+`.SetFaction` / `.Destroy`, `WorldObjectsHolder.Remove`, `WorldObjectMaker.MakeWorldObject`,
+`Caravan_PathFollower`, `Settlement_TraderTracker`, `DestroyedSettlement.ShouldRemoveMapNow`;
+`294100/3626725895/Assemblies/FactionTerritories.dll`; `3014915404/1.6/Assemblies/Vehicles.dll`.*
 
 ### `AttackTargetsCache` indexes hostility at registration, not at query
 
@@ -314,6 +415,35 @@ The general model — what desyncs, and why `Rand` is the axis — is in
 
 ---
 
+## A settlement's map is thrown away and rebuilt
+
+**Leaving a settlement discards its map.** `Settlement.ShouldRemoveMapNow` is true once the map is
+not a home and holds:
+
+- no colony pawn and no rescue-quest relative (`MapPawns.AnyPawnBlockingMapRemoval`);
+- no grav anchor and no grav engine (`Map.AnyBuildingBlockingMapRemoval`, Odyssey);
+- no incoming transporter.
+
+`EnterCooldownComp` (on the `Settlement` def, `durationDays` 1, `autoStartOnMapRemoved`) then blocks
+re-entry for one day.
+
+**The next visit rebuilds it from the tile.** `MapGenerator.GenerateMap` seeds from
+`HashCombineInt(world seed, Tile)`, so the same inputs give the same base: faction def, map size,
+def set [I, follows from the seed]. The garrison is **full again**.
+`Settlement.previouslyGeneratedInhabitants` looks like a "survivors return" list, but vanilla never
+fills it: `PawnGenerator` adds to it only under `request.Inhabitant && !request.Tile.Valid`, an
+inverted condition. Nothing done on a visit carries over except what is off-map (killed world pawns
+stay dead, and the goodwill damage stands).
+
+`PostMapGenerate` starts `TimedDetectionRaids` (240,000 ticks) on every non-home settlement map.
+
+*[#164](https://github.com/cjd721/Rimworld-Archinity/issues/164), `docs/specs/TERRITORY.md` § *Taking a settlement must be hard*.
+`Assembly-CSharp.dll` 1.6: `Settlement.ShouldRemoveMapNow`, `EnterCooldownComp`,
+`MapGenerator.GenerateMap`, `PawnGenerator.GenerateOrRedressPawnInternal`,
+`Settlement.PostMapGenerate`. [V] except as marked.*
+
+---
+
 ## Raid faction selection
 
 Verified against 1.6.4871.
@@ -323,6 +453,8 @@ Verified against 1.6.4871.
 Ignorance Is Bliss gates via a postfix on `FactionCanBeGroupSource`.
 
 Empty-pool behaviour is **fail-open and fail-quiet** (`docs/TRAPS.md` T-17).
+
+**A pinned faction skips all of this** — `RaidFriendly` and `RaidEnemy` with `parms.faction` set: `docs/engine/storyteller-and-incidents.md` § *A pinned faction skips the storyteller's candidate filter*.
 
 **There *is* an XML lever on raid commonality, per `FactionDef`.**
 `FactionDef.raidCommonalityFromPointsCurve` is what `RaidCommonalityFromPoints` reads — a
@@ -557,6 +689,69 @@ schedule [V], which is why it moves roughly three times faster.
 
 **`Faction.defeated` has one vanilla writer**, `SettlementDefeatUtility.CheckDefeated`, when the
 last base falls on a map. A faction emptied by `SetFaction` transfers is not defeated.
+
+## The goodwill choke point, and what the player sees of a change
+
+Verified against RimWorld 1.6.4871 on [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160).
+
+**Every goodwill change made during play is `Faction.TryAffectGoodwillWith`.** It has 53
+vanilla call sites, each with `Faction.OfPlayer` on one side (four are debug actions). Inside,
+in order:
+
+1. `CanChangeGoodwillFor` — returns false silently; see T-110 and `defeated` (either side is refused by the first clause).
+2. `CalculateAdjustedGoodwillChange` — for player pairs, +25% of
+   `min(|gap to NaturalGoodwill|, |change|)` on a change moving toward natural. NPC↔NPC pairs
+   pass through untouched.
+3. Clamp to ±100.
+4. `HistoryEventsManager.RecordEvent(reason, AffectedFaction, CustomGoodwill = adjusted)`, only
+   when `reason != null`.
+5. Write `baseGoodwill` on both sides, then `CheckKindThresholds`.
+6. The message *"Relations with X have changed from A to B (reason)"*, when `canSendMessage`.
+
+The only other `baseGoodwill` writers are faction creation — worldgen
+(`TryMakeInitialRelationsWith`, `FactionGenerator` → `SetRelation`) and quest factions mid-play
+(`FactionGenerator.NewGeneratedFactionWithRelations` → `Faction.SetRelation`, from about ten quest
+nodes), which install relations rather than change them — and `ChangeGoodwill_Debug`, which only
+debug tables call. `SetRelation`-shaped writers in mods (VFE Tribals' wild-men site, Multiplayer's
+synced `SetRelation`) also bypass the method, on hidden or quest factions only; a `baseGoodwill`
+sweep cannot see them.
+In the corpus, the writes that bypass it during play are RimPacts `SetGoodwillDirect`, Rim War
+`RimWarFactionUtility` and Faction Customizer's editor. FT&V, VEF and VFED all go through it.
+FT&V and several VEF paths pass `reason: null`. A refund written as a second call does not
+restore the balance (**T-142**).
+
+**What the player sees.**
+
+- The message and the goodwill tooltip's *Recent events* (`FactionUIUtility.GetRecentEvents`)
+  show the landed number. *Recent events* is the per-`HistoryEventDef` sum of `CustomGoodwill`
+  over 60 days, for changes that carry a reason, before the clamp.
+- The prisoner-release preview and the comms-console ask costs call `CalculateAdjustedGoodwillChange`. The ask costs are negative changes.
+- The gift dialog, quest reward stack, PeaceTalks letter and VEF's delayed-impact letter show
+  the requested amount.
+
+## Royal titles and permits are per faction, not per Empire
+
+Verified on [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168) [V]:
+
+- **Everything is keyed on the faction instance.** `Pawn_RoyaltyTracker` keys permits, favour,
+  titles and heirs on a `Faction` instance.
+- **The UI and the flows are faction-generic:**
+  - `PermitsCardUtility` has a faction switcher over `AllFactionsVisible`;
+  - `FactionDialogMaker.FactionDialogFor` adds `permit.Worker.GetFactionCommDialogOptions` for any
+    faction the negotiator holds a title in;
+  - `QuestNode_Root_BestowingCeremony` takes a `bestowingFaction`;
+  - `TraderKindDef.TitleRequiredToTrade` resolves against its own `FactionDef`.
+- **Only the Empire carries `royalTitleTags` in the corpus.**
+- **A permit may be held with no title** (**T-146**).
+- **Every `RoyalTitleDef` obligation is optional XML:** `decreeMtbDays` −1, room and apparel
+  requirements, `foodRequirement`, `canBeInherited`, `maxPsylinkLevel`.
+- **Permit aid runs at Neutral.** `AidDisabled_NewTemp` tests only hostility, an underground map,
+  `layerBlacklist` and temperature.
+- **Multiplayer** SyncMethods: `AddPermit`, `RefundPermits`, `SetTitle`, `ResetPermitsAndPoints`,
+  `CallResourcesToCaravan`.
+
+*`docs/specs/TERRITORY.md` § *A sworn faction owes services*. `Assembly-CSharp.dll` 1.6;
+`2606448745/1.6/AssembliesCustom/Multiplayer.dll`.*
 
 ## Vanilla saves who started the game
 

@@ -406,9 +406,32 @@ keeps it in the list, which is what makes a gate on world state safe here. Note 
 `TotallyDisabled`, so it never touches an appended option's own reason. See `docs/TRAPS.md`
 **T-82** for the index-mismatch outcomes, including the one that swallows the click in silence.
 
+**The faction dialogue is not only reached by radio.** Medieval Overhaul's `DankPyon_ScribeTable`
+("messenger table", research `DankPyon_CarrierBirds`, techLevel Medieval, needs a linked
+`DankPyon_BirdPost`) is a `Building_CommsConsole` subclass. Its `GetFloatMenuOptions` lists every
+visible non-temporary faction through vanilla `Faction.CommFloatMenuOption`, which ends at
+`Faction.TryOpenComms(Pawn)` → `FactionDialogMaker.FactionDialogFor(negotiator, faction)` [V,
+`3219596926/1.6/Assemblies/MedievalOverhaul.dll` `MedievalOverhaul.Building_ScribeTable`;
+Assembly-CSharp `RimWorld.Faction.TryOpenComms`]. `FactionDialogFor` receives no console, so a
+postfixed option cannot tell a radio from a messenger. Gate era-sensitive options on research or
+the era clock, not on the building. The same holds for vanilla's own trader and military-aid
+requests, which therefore arrive one era early wherever MO ships (**T-141**,
+[#154](https://github.com/cjd721/Rimworld-Archinity/issues/154)).
+
 Established on [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93) and consumed by
 [#73](https://github.com/cjd721/Rimworld-Archinity/issues/73); the Multiplayer members were
 re-derived from `2606448745/1.6/AssembliesCustom/Multiplayer.dll` on 2026-09-12.
+
+## Multiplayer's float-menu sync wraps options a postfix appends
+
+Multiplayer's float-menu sync postfix is at Harmony priority −2 (prefix 801), so options appended
+by a default-priority postfix on a declared `GetFloatMenuOptions(Caravan)` are wrapped and synced
+[V, `Multiplayer.dll` `SyncAction`4.PatchAll`]. Contrast a caravan gizmo or dialog, which is not
+(**T-80**).
+
+Also synced as shipped: `TradeRequestComp.Fulfill`, and `CompLaunchable.TryLaunch` with its
+`TransportersArrivalAction` exposed (`ExposeParameter(1)`) [V, `SyncMethods.Init`].
+([#154](https://github.com/cjd721/Rimworld-Archinity/issues/154))
 
 ---
 

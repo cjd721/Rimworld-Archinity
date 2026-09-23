@@ -31,6 +31,7 @@ any major RimWorld update.
 | `gravship-and-substructure.md` | Affordances, what flies, the cell budget, and the two pressurisation rules |
 | `mods/medieval-overhaul.md` | MO's settings surface, resource chains and licensing |
 | `mods/kcsg.md` | Settlement and structure layout authoring |
+| `mods/vef-outposts.md` | VEF's outpost engine: who is committed, what ticks, limits and floors |
 | `mods/vqe-ancients.md` | Archite injection and its gates |
 
 Two neighbours own things this directory deliberately does not:

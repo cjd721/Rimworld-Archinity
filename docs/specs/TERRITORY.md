@@ -19,6 +19,18 @@ capabilities land here —
 [#81](https://github.com/cjd721/Rimworld-Archinity/issues/81) (player-founded outposts with
 real yields) — because they are one machine with two payloads.
 
+Holdings and outposts are answered section by section, above *The build*:
+
+- § *What a holding pays, and how the player takes it* — the form, schedule and taking of a holding's payment, and the rebuild debt ([#166](https://github.com/cjd721/Rimworld-Archinity/issues/166)).
+- § *Taking a settlement must be hard* — what builds a settlement's map and garrison, and what survives the map ([#164](https://github.com/cjd721/Rimworld-Archinity/issues/164)).
+- § *A settlement's specialty, and learning it before you commit* — the faction's and the settlement's specialty, and what reveals it ([#165](https://github.com/cjd721/Rimworld-Archinity/issues/165)).
+- § *Paying to advance a holding to a later era* — where a holding's era lives, and paying to rewrite it ([#167](https://github.com/cjd721/Rimworld-Archinity/issues/167)).
+- § *How a holding ends* — release, retaking, destruction and throwing off, each as a moment the player acts on ([#172](https://github.com/cjd721/Rimworld-Archinity/issues/172)).
+- § *A caravan en route when its destination changes hands* — what an in-flight order does when its target changes owner ([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152)).
+- § *A sworn faction owes services* — what a sworn faction can owe, and whether the player asks or only receives ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168)).
+- § *What an outpost costs* — materials, silver and committed pawns, and whether staffing bounds the count ([#170](https://github.com/cjd721/Rimworld-Archinity/issues/170)).
+- § *An outpost's upkeep arrives as events* — upkeep, attack and decline as events, never a management surface ([#171](https://github.com/cjd721/Rimworld-Archinity/issues/171)).
+
 It does **not** own:
 
 - **Roads and vehicles** — [`WORLD-INFRASTRUCTURE.md`](WORLD-INFRASTRUCTURE.md) owns the
@@ -180,7 +192,9 @@ free off cooldown, or for `royalAid.favorCost` favour while on it.
 XML-authored form, including a **pawn** payload — and a worked precedent that aid can be
 blacklisted per planet layer.
 
-**Cannot** [V]: exist without a royal title. Availability runs through
+**Cannot** [V]: be offered through the permits card, title-gated trade or the comms console
+without a title — but a permit can be held and used without one
+([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168); § *A sworn faction owes services* OS-2b). Availability runs through
 `RoyalTitlePermitDef.AvailableForPawn` (`permitPointCost`, `minTitle`, prerequisites) and
 `Pawn_RoyaltyTracker`, and the currency is royal favour. Using the *shape* for holdings means
 riding the royalty tracker or reimplementing the cooldown. `AidDisabled_NewTemp` blocks a hostile
@@ -198,7 +212,10 @@ existing `WorldObjectDef` backfills into a live save
 ([`engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md)).
 
 VEF supplies the other half [V]: `Outpost.AddPawn` consumes `Ext.CostToMake` out of the absorbed
-caravan's goods and sets a scribed `costPaid`.
+caravan's goods and sets a scribed `costPaid`. The charge fires only when the caravan's **last
+humanlike** joins — the deduction sits inside
+`if (!caravan.PawnsListForReading.Any(p => p.RaceProps.Humanlike))` [V]. A roster rule that rejects
+a humanlike therefore leaves the caravan alive and the cost uncharged (#170 OC-K2, **T-149**).
 
 **Correction, and it is load-bearing — stated precisely, because the imprecise form is dangerous.**
 **`costPaid` is a real gate, and it is not on the production path** [V]. Its four occurrences in
@@ -219,8 +236,10 @@ so a never-lapsing debt means an absurd expiration or an override.
 **Tech-tier scaling: yes, and it is XML** [V]. `FactionDef.techLevel` is a public `TechLevel` field
 and a settlement's owner is `Settlement.Faction`; a cost table keyed by `TechLevel` is a
 `DefModExtension` in the shape `OutpostExtension.CostToMake` already uses. **Caveat:**
-`RimWorld.Planet.Settlement` carries **no tier field of its own** [V] — the tier is its faction's.
-Whether a settlement can carry anything of its own is
+`RimWorld.Planet.Settlement` carries **no tier field of its own** [V] — the tier is its faction's —
+for an NPC settlement. A holding under R1 belongs to the player, so its tier must be stored at
+conquest from the former faction; see § *Paying to advance a holding to a later era*, TR-1, and
+**T-145**. Whether a settlement can carry anything of its own is
 [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165)'s.
 
 #### P5 — accrued credit spent on a menu
@@ -290,8 +309,10 @@ ask. **P5 is Easy only if the credit is silver or royal favour** — see *Open q
   both hardcoded; that is the single line every route has to cross.
 - **`costPaid` gates the build charge, not the yield** [V]. It is read and written only inside
   `Outpost.AddPawn`; the production path never consults it. The withhold is ours — the charge is not.
-- **`Settlement` has no tier or specialty of its own** [V]. Everything characteristic derives from
-  the faction until #165 says otherwise.
+- **`Settlement` stores no tier or specialty field** [V]. Vanilla does assign a per-settlement
+  `TraderKind` from `baseTraderKinds` by ID hash (idle in the corpus), and #165's SS-1–SS-3 give a
+  settlement a specialty of its own — see § *A settlement's specialty, and learning it before you
+  commit*. Under R1 a holding's tier is stored, not read from its owner (P4's caveat, #167).
 - **Vanilla trade knows two currencies** [V]. A third is a patch set, not a field.
 - **The tithe walk's order is client-dependent.** [V on the mechanism; [I] that it desyncs in play.]
   `WorldComponent_Vassals.DoDay` iterates a `Dictionary<Settlement, TitheInfo>` whose insertion
@@ -426,6 +447,1972 @@ the numbers, which are
 
 ---
 
+## Taking a settlement must be hard — a defended map and real defenders
+
+### Purpose and scope
+
+**Answers** [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *A holding is a settlement taken by force*: *"Taking one must be hard… real defenses and real defenders, with nobody helping… a settlement the colony can walk into does not satisfy this requirement"*, and § *Campaign progression* (difficulty follows the eras). Established on [#164](https://github.com/cjd721/Rimworld-Archinity/issues/164).
+
+**Owns:**
+- what builds a settlement's map;
+- how strong its garrison is, and whether that follows tech tier;
+- whether hand-authored and generated maps coexist;
+- what survives the map being discarded.
+
+**Does not own:**
+- what happens once the settlement falls: § 3 *Vassals* (R1/R2) and [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172);
+- tier changes to a holding: [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167);
+- the orbital strongholds: [`ORBIT.md`](ORBIT.md) § *The build → 6*, which this section reuses as SM-6's donor;
+- whether allies may join the fight: [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168) and *Open questions*.
+
+### Verdict
+
+- **Possible?** **Yes. Vanilla alone does not get there.** Every vanilla settlement carries a 1150–1600-point garrison regardless of faction or tier. Anything below Industrial gets sandbags and no turrets or mortars. KCSG layouts (XML) and one small C# hook on garrison size make the fight hard and tier-scaled. Set pieces and generated maps coexist. **Nothing done to a settlement map survives the players leaving**: it is rebuilt from the tile at full strength.
+- **Multiplayer?** **With work.** Maps generate in lockstep and vanilla seeds them from the world seed and the tile (#88, #104). Three conditions apply:
+  - KCSG's *generated* branch needs MP Compat's **T-33** transpiler.
+  - The stale KCSG static that sets garrison size (**T-143**) must be owned, and SM-4 owns it.
+  - Anything we write that runs at map generation draws only on `Verse.Rand` (**T-120**).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **SM-1** Vanilla settlement, pawn kinds re-authored | Tier-flavoured defenders; turrets and mortars from Industrial. **Not hard enough alone** | vanilla `Base_Faction` | XML | Easy | Yes |
+| **SM-2** KCSG generated layouts per faction | A varied walled base per faction; `defenseOptions` and `pawnGroupMultiplier`; tier by which layouts a faction def lists | VEF KCSG `chooseFromSettlements`; VBGE, VFEM2, VFEI2 content | XML | Easy | With work (T-33) |
+| **SM-3** KCSG hand-authored set pieces per faction | Exporter-built castles and forts with turrets, siege engines and **authored defenders** in the grid | VEF KCSG `chooseFromlayouts`; Medieval Overhaul, VFE Classical content | XML | Easy | Yes |
+| **SM-4** Garrison strength in C# | Garrison points on a curve we pick: tech tier, a per-settlement value, losses recorded on an earlier visit | ours; donor VFE Insectoids 2 prefix on KCSG `AddHostilePawnGroup`; vanilla `ResolveParams.settlementPawnGroupPoints` | C# | Medium | Yes |
+| **SM-5** Named set pieces for particular settlements | One named settlement always a citadel; its siblings stay generated | ours: distinct Settlement `WorldObjectDef`, or our `MapGeneratorDef` postfix + `WorldObjectComp` | C# + XML | Medium | With work |
+| **SM-6** Vanilla layout engine on the surface | Procedural fortress from a `StructureLayoutDef`, KCSG-free | ours: surface genstep shaped like `GenStep_OrbitalPlatform`; vanilla `LayoutWorker_Structure`, `GenStep_SettlementPawnsLoot` | C# + XML | Medium | Yes |
+| **SM-7** Defenders who fight back during the assault | In-map reinforcements, stoppable by killing the caller; a defeat test we own | ours; donor Better Traders Guild | C# | Medium | With work |
+
+| Requirement clause → | Real defenses | Real defenders | Follows tier | Set pieces + generated | Survives discard |
+|---|---|---|---|---|---|
+| SM-1 | Industrial+ only | 1150–1600 pts | pawn kinds only | — | no |
+| SM-2 | yes | × layout multiplier | by layout list | generated half | layout yes, damage no |
+| SM-3 | yes | authored + 1150–1600 | by layout list | set-piece half | layout yes, damage no |
+| SM-4 | — | **yes** | **yes** | — | **only route that can carry losses** |
+| SM-5 | per piece | per piece | per piece | **yes, per settlement** | as SM-2/SM-3 |
+| SM-6 | yes | via SettlementPawnsLoot | by layout def | generated half | layout yes, damage no |
+| SM-7 | — | **during the fight** | by threat points | — | — |
+
+#### SM-1 — vanilla, pawn kinds re-authored
+
+**Gets us [V]:**
+- `GenStep_Settlement` → `SymbolResolver_Settlement`, under `LordJob_DefendBase`.
+- **Garrison points** = `DefaultPawnsPoints` (1150–1600), unless `ResolveParams.settlementPawnGroupPoints` is set. `GenStep_Settlement` never sets it.
+- **XML reaches** the faction's `Settlement` `pawnGroupMakers`: which pawns the points buy.
+- **Industrial+ factions** get edge-defense turrets and mortars, and firefoam poppers.
+
+**Cannot [V]:**
+- raise the points;
+- give a pre-Industrial base turrets, mortars or a perimeter wall. `SymbolResolver_EdgeDefense` zeroes turrets and mortars below Industrial, and edge defense rolls 50% below Industrial.
+
+**Consequences:** the baseline #35 called "virtually pointless". It is free and sits under every other route for factions that no other route covers.
+
+#### SM-2 — KCSG generated layouts per faction
+
+**Gets us [V]:**
+- `KCSG.Postfix_Settlement_MapGeneratorDef` returns `KCSG_Base_Faction` for any non-player settlement whose faction def carries `KCSG.CustomGenOption`.
+- `SymbolResolver_Settlement` then builds the layout and pushes a `Settlement`-kind garrison of `DefaultPawnsPoints × defenseOptions.pawnGroupMultiplier`.
+- `defenseOptions`: `addEdgeDefense`, `addSandbags`, `addTurrets`, `addMortars`, and turret/mortar def lists.
+- **Shipped content:**
+  - VBGE: Empire, Tribal, Outlander, Pirate. Defence layouts ×1.45–1.8, turrets and mortars on the Outlander and Empire Defence sets.
+  - VFEM2: kingdom, clan, merchant guild.
+  - VFEI2: insect hives.
+
+**Levers:**
+- **Tier is the layout list a faction def carries.** A faction whose def climbs at an era boundary generates its new tier's base on its next generation ([`engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md) § *What survives a swap*) [V].
+
+**Cannot:**
+- turrets or mortars below Industrial (**T-30**; siege engines go in a layout grid instead);
+- any garrison curve beyond one multiplier per layout [V].
+
+**Consequences:**
+- **T-33** — `SettlementGenUtils.Sampling.Sample` uses an unseeded `System.Random`, fixed only by MP Compat's `PatchKCSG` [V].
+- **Mixing SM-2 with SM-3 in one load order arms T-143.**
+
+#### SM-3 — KCSG hand-authored set pieces per faction
+
+**Gets us [V]:**
+- The same faction hook with `chooseFromlayouts`: `SymbolResolver_RoomGenFromStructure` → `StructureLayoutDef.Generate`, plus a `Settlement`-kind garrison at `DefaultPawnsPoints`.
+- A layout places anything with a ThingDef, including turrets, trebuchets and **pawns** (`SymbolDef.pawnKindDef`, `defendSpawnPoint`), per [`engine/mods/kcsg.md`](../engine/mods/kcsg.md) § *Siege placement*.
+- **Shipped:** Medieval Overhaul's noble houses (three hand-built castles each); VFE Classical (`VFEC_ClassicalSettlement1`).
+- **The exporter** makes a layout from a base built in dev mode.
+
+**Levers:**
+- walls and gates of any era, which is the answer to SM-1's missing pre-Industrial perimeter;
+- defenders as authored as the walls;
+- tier by layout list, as SM-2.
+
+**Cannot:**
+- scale the *generated* garrison. No multiplier applies on this branch, except by **T-143**'s accident.
+- vary much: a set piece is the same fort every time, only rotated or picked from a short list.
+
+**Consequences:**
+- **This branch never calls `SettlementGenUtils.Generate`, so T-33 does not apply to it** [V]. It is MP-safe with or without MP Compat.
+- Authoring cost is one exported layout per fort.
+
+#### SM-4 — garrison strength in C#
+
+**Mechanisms [V]:**
+- KCSG `SymbolResolver_Settlement.AddHostilePawnGroup`, a private method with a shipped prefix precedent. VFE Insectoids 2 replaces it for `Faction.OfInsects` and multiplies points by a `SimpleCurve` of `WealthUtility.PlayerWealth` (25k→×0.25, 100k→×1, 1M→×10).
+- Vanilla `ResolveParams.settlementPawnGroupPoints`. `GenStep_Outpost` sets it from `sitePart.parms.threatPoints` and exposes `defaultPawnGroupPointsRange` to XML.
+
+**Levers [I]:**
+- points from `faction.def.techLevel`, from a value stored per settlement, from player wealth, or reduced by losses recorded on an earlier visit;
+- one seam covers SM-2, SM-3 and any KCSG faction; a second covers vanilla.
+
+**Cannot:** change *what* stands on the map. It is a garrison dial only.
+
+**Consequences:**
+- **Owning the multiplier removes T-143**, since the stale static is no longer read.
+- Inputs must be simulation state, never `ModSettings` (**T-18**).
+
+#### SM-5 — named set pieces for particular settlements
+
+**Mechanisms [V]:**
+- `Settlement.MapGeneratorDef` returns `def.mapGenerator` first, then `Base_Player` for the player, then `Base_Faction`.
+- KCSG's postfix then:
+  - (a) overrides that with `KCSG_Base_Faction` if the **faction** has a `CustomGenOption`;
+  - (b) otherwise returns `KCSG_WorldObject` if any world object on the tile has one.
+- `KCSG.GenStep_WorldObject` reads the extension from `map.Parent.def`, so (b) works **only when the Settlement's own def carries it**. A marker or overlay object (e.g. #92's) null-refs at generation.
+- **Every settlement, player or NPC, is built from `layer.Def.SettlementWorldObjectDef`** (`FactionGenerator`, `SettleUtility`, `ScenPart_PlayerFaction`). **Never put `<mapGenerator>` on that def**, because new player colonies would generate from it too.
+- **Precedents for a Settlement on a distinct def:**
+  - vanilla `ArchotechSettlement` (`Settlement_SecondArchonexusCycle`);
+  - Faction Territories' `ExecuteCedeToFactionAtTile`, which re-adds a Settlement by `defName` (§ 3 R2) (uncalled in FT&V; a precedent for the write, not a live path — #172).
+- An XML-patched `WorldObjectComp` on the Settlement def backfills existing saves ([`engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md) § *A `WorldObjectComp` added by XML patch backfills into an existing save*).
+
+**Levers:** a campaign beat can name *the* fortress, and the rest of its faction still generates under SM-2 or SM-3.
+
+**Cannot:** be placed by XML. Worldgen places one Settlement def for everyone, so the named piece is placed or re-defined by our code [V]:
+- at worldgen;
+- at a reveal;
+- by recreating the settlement (new ID, per #165 and #167 on the board);
+- by writing `def` in place (comps rebuilt only on reload, per #167).
+
+**Consequences:**
+- Our postfix and KCSG's run on the same getter, so priority must be set.
+- The placement must be a synced command or run at worldgen.
+
+#### SM-6 — vanilla layout engine on the surface
+
+**Mechanisms [V]:**
+- #66 established that `GenStep_OrbitalPlatform` + a `StructureLayoutDef` + `GenStep_SettlementPawnsLoot` (which needs the `SpawnRect` map var) yields a garrisoned procedural structure with no new C# **on orbit** ([`ORBIT.md`](ORBIT.md) § *The build → 6*).
+- **Surface pieces vanilla ships:**
+  - `GenStep_AncientRuins`, which takes a `layoutDef` (faction `AncientsHostile`);
+  - `LayoutWorker_Mechhive`;
+  - `PrefabDef`, which holds things and terrain but no pawns;
+  - `GenStep_ScatterGroupPrefabs`.
+- **No shipped surface genstep** places one layout as a faction base and sets `SpawnRect`.
+
+**Levers [I]:**
+- one layout def gives a different fortress every time;
+- no KCSG, so no T-33;
+- the garrison can be refilled by `GenStep_SettlementPawnsLoot`, whose XML sets the faction and loot.
+
+**Cannot:**
+- choose the settlement it applies to (SM-5's seam);
+- look like a tribal village or a medieval town without authored `LayoutRoomDef`s. Shipped rooms are Ancient-, Orbital- or Mechhive-flavoured [I].
+
+**Consequences:** one genstep of ours on a verified vanilla engine; **T-55** applies to any `LayoutWorker` we author.
+
+#### SM-7 — defenders who fight back during the assault
+
+**Donors [V]:**
+- **Better Traders Guild's defender job** (`JobDriver_BTGCallResupply` → `ResupplyRaidUtility.TryTriggerReinforcementRaid`) fires a forced `RaidEnemy` on the settlement map at `StorytellerUtility.DefaultThreatPointsNow`, 15% as a centre drop on a colonist.
+- **BTG replaces the defeat test**: patches on `SettlementDefeatUtility.IsDefeated`/`CheckDefeated` and a `SecurityCensus` `MapComponent`.
+- **Vanilla already adds** `TimedDetectionRaids.StartDetectionCountdown(240000)` on any non-home settlement map it generates.
+
+**Levers:**
+- a timer the player races;
+- a caller to kill first;
+- a fall condition that is not "every humanlike threat is down".
+
+**Cannot [V]:** BTG's version is gated on a `ModSettings` bool (**T-18**), so it cannot be used as shipped.
+
+**Consequences:** a custom defeat test moves the instant `CheckDefeated` swaps the Settlement for a `DestroyedSettlement`. That is the seam § 3 R1/R2, #152 and #172 all key on. Three writers touch it, and they should be one build question with one owner (see *Open questions*):
+
+  - §1 Build B's `CheckDefeated` block (#92);
+  - SM-7's replaced `IsDefeated`;
+  - § 3's last-base `defeated` intercept (R1/R4).
+
+
+#### What survives the map being discarded — every route
+
+**What vanilla does [V]:**
+- `Settlement.ShouldRemoveMapNow` is true once no colony pawn, rescue-quest relative, grav anchor or grav engine remains, and **the map is deinitialised**.
+- `EnterCooldownComp` (on the `Settlement` def, `durationDays` 1, `autoStartOnMapRemoved`) then blocks re-entry for one day.
+- `MapGenerator.GenerateMap` seeds `Rand` from `HashCombineInt(world seed, Tile)`, so the next visit **rebuilds the same base** for the same inputs [I, follows from the seed]. The inputs are the faction def, map size and the def set.
+- **Losses do not carry over.** `Settlement.previouslyGeneratedInhabitants` is never populated: `PawnGenerator` adds to it only under `request.Inhabitant && !request.Tile.Valid`. The garrison returns at full strength, with loot regenerated.
+- **Under SM-2 without MP Compat** the rebuilt base also differs from visit to visit (T-33).
+
+**Consequences for the story:**
+- **An assault is won in one sitting**, or started again.
+- **A raid-and-retreat cannot whittle a garrison down.**
+- **A settlement recreated on the same tile rebuilds the same layout**, since the tile is the only identity that survives replacement (#165).
+
+**Routes to make attrition survive:**
+- **SM-4 reading a loss record** kept on the Settlement (an XML-patched comp), Medium.
+- **Keeping the map alive** by overriding `ShouldRemoveMapNow`, Hard, which leaves a live map ticking on both clients. **Not recommended**: it is a second colony map in all but name, and costs performance under lockstep.
+
+#### Recommendation (not a selection)
+
+- **SM-3 for the factions whose bases should read as authored places** (medieval, classical), and **SM-2 for the rest**. Both are XML, and between them they cover walls and defenses at every tier.
+- **Add SM-4 under both.** It is the only route that makes the garrison follow tier, the only one that can carry losses across visits, and it removes **T-143**.
+- **SM-5 only for the handful of settlements the plot names.**
+- **SM-7 is flavour, worth it where a fall condition is wanted.**
+- **SM-6 if KCSG is ever dropped**, or for procedural variety without T-33.
+
+### Constraints
+
+- **Garrison points are not reachable from XML on a vanilla settlement.** `DefaultPawnsPoints` is `static readonly`, and `GenStep_Settlement` sets no `settlementPawnGroupPoints` [V].
+- **Below Industrial, no generator places turrets or mortars** (**T-30** for KCSG; `SymbolResolver_EdgeDefense` for vanilla) [V]. Pre-Industrial defenses must be in a layout grid.
+- **Player colonies and NPC settlements share one `WorldObjectDef`** [V]. A `mapGenerator` on it rebuilds new player colonies too (**T-144**). Per-settlement choice needs a getter postfix or a distinct def.
+- **A settlement's map does not persist** once the players leave, and its garrison resets [V].
+- **T-33** — KCSG `chooseFromSettlements` is unseeded without MP Compat. **`chooseFromlayouts` is not affected** [V].
+- **T-143** — KCSG's static `GenOption.settlementLayout` is never reset. On the `chooseFromlayouts` branch it multiplies garrison points by the last generated `SettlementLayoutDef`'s `pawnGroupMultiplier`: process history, divergent between clients after a rejoin [V mechanism, I consequence].
+- **T-120** — anything we run at map generation iterates ordered collections and draws only `Verse.Rand`.
+- **T-18** — no garrison or reinforcement rule may read `ModSettings`.
+- **T-55** — any `LayoutWorker` of ours goes in an `Archinity.*` namespace; write `<StructureLayoutDef>` for vanilla's and `<KCSG.StructureLayoutDef>` for KCSG's.
+- **T-29, T-32** — KCSG layout authoring.
+
+### Available mechanisms
+
+| Mechanism | What it is | Used by | Evidence |
+|---|---|---|---|
+| `GenStep_Settlement`, `SymbolResolver_Settlement` | vanilla base + garrison; `DefaultPawnsPoints` 1150–1600; Industrial gates on firefoam | SM-1 | [V] `Assembly-CSharp.dll` |
+| `SymbolResolver_EdgeDefense` | turrets and mortars zeroed below Industrial | SM-1 | [V] |
+| `ResolveParams.settlementPawnGroupPoints`, `GenStep_Outpost` | garrison points override; outpost fills it from site threat points | SM-4 | [V] |
+| `Settlement.MapGeneratorDef` | `def.mapGenerator` → `Base_Player` → `Base_Faction` | SM-5 | [V] |
+| `layer.Def.SettlementWorldObjectDef` | one def for player and NPC settlements | SM-5 constraint | [V] `FactionGenerator`, `SettleUtility`, `ScenPart_PlayerFaction` |
+| `Settlement.ShouldRemoveMapNow`, `EnterCooldownComp`, `MapGenerator.GenerateMap` seed | discard, 1-day cooldown, tile-seeded rebuild | persistence | [V] |
+| `Settlement.previouslyGeneratedInhabitants` / `PawnGenerator` | dead: the writer's condition is inverted | persistence | [V] |
+| `TimedDetectionRaids` | retaliation countdown on a generated settlement map | SM-7 | [V] |
+| KCSG `CustomGenOption`, `Postfix_Settlement_MapGeneratorDef`, `GenStep_Settlement`, `GenStep_WorldObject`, `SymbolResolver_Settlement`, `DefenseOptions`, `SymbolResolver_EdgeDefenseCustomizable` | faction and per-def settlement generation, garrison, defense options | SM-2, SM-3, SM-5 | [V] `2023507013/1.6/Assemblies/KCSG.dll` |
+| VBGE `Patches/Settlements.xml`, `SettlementDefs/*.xml` | Empire/Tribal/Outlander/Pirate layout sets, Defence ×1.45–1.8 | SM-2 | [V] `3209927822/1.6` |
+| VFEM2, VFEI2 faction `CustomGenOption` | `chooseFromSettlements` | SM-2 | [V] `3444347874/1.6`, `3309003431/1.6` |
+| Medieval Overhaul noble houses, VFE Classical | `chooseFromlayouts` set pieces; 33 pawn symbols in MO | SM-3 | [V] `3219596926/1.6`, `2787850474/1.6` |
+| VFE Insectoids 2 `SymbolResolver_Settlement_AddHostilePawnGroup_Patch` | garrison × wealth curve, one faction | SM-4 donor | [V] `3309003431/1.6/Assemblies/VFEInsectoids.dll` |
+| Odyssey `GenStep_OrbitalPlatform`, `GenStep_SettlementPawnsLoot`, `GenStep_AncientRuins`, `PrefabDef` | vanilla layout engine and garrison genstep | SM-6 | [V] (#66; this ticket) |
+| Better Traders Guild `ResupplyRaidUtility`, `SecurityCensus`, defeat patches | in-map reinforcement; custom fall test | SM-7 donor | [V] `3684587591/1.6/Assemblies/BetterTradersGuild.dll` |
+| MP Compat `VanillaExpandedFramework.PatchKCSG` | T-33 fix on `Sampling.Sample`; `KCSG_Skyfaller` push/pop | SM-2 | [V] `1629973374/1.6/Assemblies/Multiplayer_Compat.dll` |
+
+**Read and set aside:**
+- **Rim War's settlement reinforcement** (`AttackNow_SettlementReinforcement_Postfix`): Rim War is barred [I, name only].
+- **VEF `IncidentWorker_Reinforcements`**: a storyteller raid, not a settlement defense [V].
+- **VFE Settlers' `GenStep_SpawnWanted`** and **Factional War's camp gensteps**: sites, not settlements [V, type lists].
+- **KCSG `SpawnAtWorldGen`**: spawns `Site`s only (it casts to `Site`), so it cannot seed a set-piece Settlement [V].
+
+### Status
+
+**Evidence class: READ**, [#164](https://github.com/cjd721/Rimworld-Archinity/issues/164).
+
+- **Every mechanism in the table is [V]. Every route is [I] by construction.**
+- **Wide pass**, run by ASCII sweeps of both roots (`!**/obj/**`, `!**/Referenced/**`, case-insensitive) for:
+  - `settlementPawnGroupPoints`, `DefaultPawnsPoints`, `SymbolResolver_Settlement`, `GenStep_Settlement`, `pawnGroupMultiplier`, `AddHostilePawnGroup`, `einforcement`;
+  - an XML sweep for `KCSG.CustomGenOption`, and the MP Compat check for `RotAllThing`.
+- **The UTF-16 sweep was hand-typed null-interleaved**, validated against `Sampling`.
+
+**Premises corrected:**
+1. T-33's *"faction strongholds take the `SettlementLayoutDef` path regardless"*: `chooseFromlayouts` does not.
+2. `engine/mods/kcsg.md`'s garrison formula holds only on `chooseFromSettlements`.
+3. § 3 R2's regeneration note is vanilla map discard, not T-33.
+
+### Open questions
+
+- **Requirement — unowned, `requirements/TERRITORY.md`:**
+  - Should a failed assault leave the garrison weakened? Today it resets; only SM-4 can change that.
+  - Does *"nobody helping"* exclude allied aid? Per #168, a royal permit's aid runs at Neutral on any non-hostile map, and a settlement assault map is not excluded [I].
+- **Balance, build map ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)):**
+  - the garrison curve by tier;
+  - which factions get SM-3 set pieces;
+  - which settlements SM-5 names.
+- **Residual [I]:** KCSG's `SettlementUtility.Attack` postfix draws `Rand` in `LongEventHandler.ExecuteWhenFinished` (`GenOption.RotAllThing`), and MP Compat does not patch it. It is believed identical on both clients. Owner: [#16](https://github.com/cjd721/Rimworld-Archinity/issues/16).
+- **Build (unowned until selected):**
+  - Harmony priority against KCSG's getter postfix;
+  - where a named set piece gets its def;
+  - the loss record's shape;
+  - whether SM-7's fall test replaces or wraps `IsDefeated`.
+- **Build, one question ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)): who owns the defeat seam.** Three writers touch the moment
+  `CheckDefeated` swaps a settlement for a `DestroyedSettlement`: §1 Build B's `CheckDefeated` block,
+  SM-7's replaced `IsDefeated`, and §3's last-base `defeated` intercept (R1/R4). They must be
+  designed as one seam, not three.
+
+---
+
+## A settlement's specialty, and learning it before you commit
+
+### Purpose and scope
+
+This section answers [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) on three points:
+
+- § *A holding is a settlement taken by force*: *"what a holding pays is characteristic of what was taken… two layers: the faction's and the particular settlement's, with the tile making a yield plausible"*;
+- § *Player information and agency*: *"knowing is earned by going"* and *"a faction's own specialty is public"*.
+
+Established on [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165).
+
+**Owns:** whether a faction and a settlement can carry a specialty, what derives or stores it, and what reveals it.
+
+**Does not own:**
+- the payload's form and schedule: § *What a holding pays* ([#166](https://github.com/cjd721/Rimworld-Archinity/issues/166)). This section feeds its P1 selector.
+- retiering: [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167).
+- the discovery engine: [`CHARTING.md`](CHARTING.md) § *Natural discovery* ([#146](https://github.com/cjd721/Rimworld-Archinity/issues/146)), whose Routes A and D are this section's SV-3 and SV-4 seams.
+- the caravan encounter: [`POLITICS.md`](POLITICS.md) § *Settlements meet passing caravans* ([#136](https://github.com/cjd721/Rimworld-Archinity/issues/136)).
+
+### Verdict
+
+- **Possible? Yes, for both layers.** A faction's specialty is XML, and vanilla already announces part of it at first trade. A particular settlement can carry a durable specialty of its own by three different routes:
+  - vanilla's idle per-settlement trader selection (XML);
+  - a pure derivation from tile + faction (RimPacts ships one);
+  - a stored per-settlement record (VFE Empire and Better Traders Guild ship the shape).
+
+  Every named reveal has a seam. The fallback of *no settlement layer* is not needed.
+- **Multiplayer? Yes for derived and XML routes. With work for stored state and reveals.**
+  - Derivations read only shared, scribed values and draw no `Rand`.
+  - Stored rolls and knowledge writes must come from a synced context, or be seeded.
+  - The scouting outpost carries #146's T-18 settings work.
+
+### Routes
+
+**Faction layer**
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **SF-1** Vanilla legibility | Trade caravans arrive named by trader kind; an Ideology faction sends slavers only if its creed approves | vanilla (+ Ideology) | XML | Easy | Yes |
+| **SF-2** Declared specialty on the `FactionDef` | A named payload or category per faction for #166 to read; public from worldgen | vanilla `DefModExtension`; precedent FT&V `Dialog_Vassalage` | XML | Easy | Yes |
+| **SF-3** First-contact gate | Specialty hidden until the first envoy, caravan, comms call or meeting | ours | C# | Medium | With work |
+
+**Settlement layer**
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **SS-1** Several `baseTraderKinds` per faction | Each settlement draws one of several trade profiles: stock, buy list, prices | vanilla `Settlement_TraderTracker.TraderKind` | XML | Easy | Yes |
+| **SS-2** Derived from tile + faction | A specialty computed on demand from biome, hilliness, mutators and landmark; no record | ours; donor RimPacts `RptSpecialtyUtility` | C# | Medium | Yes |
+| **SS-3** Stored per settlement | Rolled once, scribed, hand-placeable, rewritable, immune to later table edits | ours; donors VFE Empire `TitheInfo` + MP Compat seed, BTG `TradersGuildWorldComponent` | C# + XML comp patch | Medium | Yes if seeded |
+| **SS-4** Settlement def variants at worldgen | Specialty as a def extension on one of several settlement defs | ours; patch `FactionGenerator` | C# + XML | Medium | Yes. **Not recommended**: SS-3 with worse reach |
+| **SS-5** No settlement layer | Faction specialty only; the requirement survives | SF-1/SF-2 | XML | Easy | Yes |
+
+**Reveal**
+
+| Route | Reveals on | Seam | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **SV-1** Visit | A caravan arriving to visit, trade, gift or attack | `CaravanArrivalAction_*.Arrived` | C# | Medium | Yes |
+| **SV-2** Trade | Opening trade there | vanilla `everGeneratedStock` / `EverVisited`, or the stock itself | none, or C# display | Easy–Medium | Yes |
+| **SV-3** Caravan nearby | Tile entry within N tiles, or a pinned meeting | [`CHARTING.md`](CHARTING.md) Natural discovery Route A; [`POLITICS.md`](POLITICS.md) #136 Route B | C# | Medium | Yes |
+| **SV-4** Scouting outpost | Its tick reveals settlements within range | [`CHARTING.md`](CHARTING.md) Natural discovery Route D | C# + XML | Medium | With work (T-18) |
+| **SV-5** First contact | Faction layer only | SF-3 | C# | Medium | With work |
+| **SV-6** Public at once | Nothing earned | vanilla `Dialog_SellableItems`, inspect strings | none | Easy | Yes. **Fails the requirement**; SS-1 does this by default |
+
+Every route is **[I]** as a composition; its mechanisms are [V].
+
+#### SF-1 — vanilla legibility
+
+**Gets us** [V]:
+- `IncidentWorker_TraderCaravanArrival.SendLetter` labels the letter with `traderKind.label`, so the first caravan says what the faction trades.
+- `TraderKindCommonality` zeroes a `"Slaver"`-category kind unless every ideo of the faction approves of slavery. A slaver tribe is readable from its creed.
+
+**Cannot:** hide anything.
+
+#### SF-2 — declared faction specialty
+
+**Gets us:** a `DefModExtension` on `FactionDef` [V seam]. FT&V already builds a holding catalogue from `faction.def.baseTraderKinds` filtered by `techLevel` [V, via #167].
+
+**Consequence:** it follows `Faction.def`, so a tier climb at an era boundary changes it. Under #120 R1, **never read it from `holding.Faction`**, which is the player. Read it from the remembered former faction.
+
+#### SF-3 — first contact
+
+**Gets us** [V]:
+- **No carrier exists.** `Faction` scribes no met state, and no mod in either root carries one. `firstcontact`, `knownfaction`, `unknownfaction`, `metfaction`, `contactedfaction`, `factionreveal`, `factionknown` and `everMet` all returned 0 in an ASCII `-i` sweep over `.dll`+`.xml`.
+- VEF's *FactionDiscovery* adds factions missing from a save; it is not knowledge.
+- The route is a `WorldComponent` set of factions, written from:
+  - trade and visitor incidents;
+  - `CaravanArrivalAction_Trade.Arrived`;
+  - the #136 meeting;
+  - `Faction.TryOpenComms`. Medieval Overhaul's messenger table reaches it before radio (#154).
+
+**Cannot:** reach a Neolithic colony by comms, since there is no console.
+
+**MP:** write from the incident or arrival, never from dialog construction (T-82, T-95) [I].
+
+#### SS-1 — several `baseTraderKinds`
+
+**Gets us** [V]:
+- `TraderKind` returns `Faction.def.baseTraderKinds[|ID.HashOffset()| % count]`, live, with no `Rand`.
+- **No faction in the corpus lists more than one.** Every `baseTraderKinds` node in both roots + `Data`, with comments stripped, has a single `<li>`, and no patch adds one.
+- That kind drives the stock (`RegenerateStock` passes `traderDef`, `tile`, `makingFaction`), the buy list, the prices, and #166 P5's menu.
+
+**Cannot** [V]:
+- consult the tile.
+- survive replacement: `WorldObjectMaker.MakeWorldObject` assigns a fresh ID. `SetFaction` keeps the ID (#152).
+- stay hidden: **Show sellable items** (`Settlement.GetGizmos` → `Dialog_SellableItems`) lists every `WillTrade` def to anyone.
+
+An R1 holding is a plain `WorldObject` with no trader tracker, so copy the kind at conquest.
+
+#### SS-2 — derived from tile + faction
+
+**Gets us** [V] (`3762723122/Assemblies/RimPacts.dll`, `RimPacts.RptSpecialtyUtility`):
+- `SpecialtyOf` (`RptSpecialtyUtility.BuildPool`) pools candidate defs from the tile's mutators and landmark together, else hilliness, else (Spacer and above) a tech pool, else biome.
+- It filters and extends the pool by `Faction.def.techLevel` (Industrial and Spacer factions add components) and picks `|HashCombineInt(ID, 977)| % count`, with no stored state.
+- RimPacts spends it in its stock (a `RegenerateStock` postfix), its tribute and its prices, and displays it to all in `WITab_RptTrade`.
+
+**It is a donor, not the rule** [V]:
+- the tables are C#;
+- **the tile computes the yield**, which is the requirement's "formula";
+- the ID hash re-rolls on replacement. Derive from `Tile`.
+
+**Consequences:**
+- **re-derivable means movable.** A later edit to tables or weights, or a faction's tier climb, silently changes every existing settlement's specialty in a running save.
+
+#### SS-3 — stored per settlement
+
+**Gets us** [V]:
+- **Storage option 1:** a `WorldObjectComp` patched onto the `Settlement` def (`PostExposeData`, `CompInspectStringExtra`, `GetCaravanGizmos`, `PostMapGenerate`). It backfills into existing saves (`engine/factions-and-worldgen.md`).
+- **Storage option 2:** a `WorldComponent` keyed on `PlanetTile`, which scribes ([`CHARTING.md`](CHARTING.md) Natural discovery).
+- **Donor 1:** VFE Empire's per-settlement `TitheInfo`, seeded under MP by MP Compat's `Rand.PushState(HashCombineInt(ID, tile))` (§ *What a holding pays* P1).
+- **Donor 2:** Better Traders Guild (`3684587591/1.6/Assemblies/BetterTradersGuild.dll`). It postfixes the `TraderKind` getter, draws under `Rand.PushState(HashCombineInt(ID, ticks))`, caches in a scribed `Dictionary<int,string>` on `TradersGuildWorldComponent`, and prints it in a `GetInspectString` postfix. It rotates on restock, so it is the shape rather than the rule.
+
+**Levers:**
+- the story can place a specialty by hand;
+- #167 can rewrite it;
+- balance edits do not move it;
+- a tile-keyed record survives conquest untouched.
+
+**Cost:** a shadow record. The comp form dies with the `Settlement`, so it must be copied at R1.
+
+**MP:**
+- seeded, or rolled in a synced context;
+- a lazy `Rand` draw from UI is client-local.
+
+#### SS-4 — settlement def variants (not recommended)
+
+[V] Worldgen creates every settlement from `layer.Def.SettlementWorldObjectDef` (`FactionGenerator`, two sites). That is one def per layer, and no mod varies it.
+
+Everything keyed on `WorldObjectDefOf.Settlement` would need the variants, including FT&V's cede path.
+
+#### The tile nudges, not computes
+
+**Vanilla's shape** [V]:
+- `StockGenerator.GenerateThings(PlanetTile forTile, Faction)` receives the settlement's tile.
+- `StockGenerator_Animals` filters by that tile's temperature behind the XML flag `checkTemperature`.
+- A stock generator subclass can weight by biome the same way. This is plausibility, not computation.
+
+**Inside SS-2 or SS-3** [I]: the faction authors the list, and biome and hilliness multiply the weights of a seeded pick. RimPacts is the counter-example to avoid.
+
+#### Reveal routes
+
+**The knowledge record.** Apart from vanilla's trade bit, it is ours. Hold one colony-wide record, which both players share, **keyed on the tile** so it survives conversion to a holding.
+
+- **SV-1** [V]: `CaravanArrivalAction_{VisitSettlement,Trade,OfferGifts,AttackSettlement}.Arrived` run from the pather in the world tick. Trade's arrival opens `Dialog_Trade`, which MP turns into an `MpTradeSession` (#136).
+- **SV-2** [V]: `Settlement_TraderTracker.everGeneratedStock` is scribed as `wasStockGeneratedYet`, set by `RegenerateStock`, and printed by `Dialog_SellableItems` as `TraderNotVisitedYet`.
+  - **It means "stock generated":** any code reading `Goods` sets it.
+  - If the specialty rides the stock (SS-1, or RimPacts' injection), the trade window reveals it with no code.
+- **SV-3:** cite [`CHARTING.md`](CHARTING.md) Natural discovery Route A (`WorldObject.PositionChanged`, which covers foot and vehicle caravans) plus a tile-distance check (`ApproxDistanceInTiles` / `TraversalDistanceBetween`). Alternatively, #136 Route B's pinned meeting.
+- **SV-4:**
+  - **No scouting outpost ships** [V]. VOE 1.6 has 13 defs and VFE Classical has 4, none of them a scout. Only Artillery and Defensive set `Range`.
+  - The route is Natural discovery Route D: an `Outpost` subclass walking settlements with VOE `Outpost_Artillery`'s `ApproxDistanceInTiles(target.Tile, Tile) <= Range`.
+  - `OutpostsMod.Setup` overwrites `OutpostExtension.Range` per client (T-18). Once §2c's unconditional `Setup` prefix is built, `Range` is safe as XML; until then, the range belongs on our own `DefModExtension`.
+  - The same tick can find (#146) and reveal (#165).
+- **SV-6:** SS-1's **Show sellable items**, RimPacts' tab and BTG's inspect line all show their values to everyone. Any selected display needs a knowledge check.
+
+#### Recommendation (not a selection)
+
+- **Faction layer:** SF-1 + SF-2. SF-3 only where a beat needs a secret trade.
+- **Settlement layer:**
+  - **SS-3 keyed on the tile** is the only route unchanged by conquest, era climbs and balance edits;
+  - **SS-1** is the cheapest and worth having as trade flavour regardless;
+  - **SS-2** if no record is wanted and a movable specialty is acceptable.
+- **Reveal:** SV-1 + SV-2 + SV-3, with SV-4 as the scouting outpost's job, all writing one tile-keyed record.
+
+### Constraints
+
+- **Identity.** `WorldObjectMaker.MakeWorldObject` assigns a new ID [V]. Anything derived from or keyed on `WorldObject.ID` re-rolls or orphans when a settlement is replaced: conquest (#120 R1), R2's recreation, or a cede by destroy-and-add. `SetFaction` keeps the ID (#152). **The tile is the only identity that survives replacement** (**T-140**).
+- **Owner.** Under R1 a holding's `Faction` is the player. A specialty read live from it — a `FactionDef` extension or a tech filter — reads the colony's def. An R1 holding has no trader tracker, so `TraderKind` is not read; copy it at conquest. This extends #167's tier warning (**T-145**).
+- **Era.** Every derived route reads `Faction.def`, which the era boundary may swap (`engine/factions-and-worldgen.md` § *Climbing a faction by swapping `Faction.def`*). Stored routes do not.
+- **A factionless settlement NREs in `TraderKind`** [V, #172]. SS-1 cannot serve a settlement with no faction.
+- **T-18** on any outpost range; **T-82 / T-95 / T-96** on any dialog-borne reveal.
+
+### Available mechanisms
+
+| Mechanism | Provides | Route | Evidence |
+|---|---|---|---|
+| `Settlement_TraderTracker.TraderKind` | Per-settlement pick from `baseTraderKinds` by ID hash; idle in the corpus | SS-1 | [V] `Assembly-CSharp.dll` |
+| `Settlement_TraderTracker.everGeneratedStock` / `EverVisited` | Scribed per-settlement "stock generated" bit | SV-2 | [V] |
+| `Dialog_SellableItems` (Show sellable items gizmo) | Public per-settlement trade profile; `TraderNotVisitedYet` line | SV-2, SV-6 | [V] |
+| `StockGenerator.GenerateThings(PlanetTile, Faction)`; `StockGenerator_Animals.checkTemperature` | Tile-aware stock, a plausibility filter in XML | Tile nudge | [V] |
+| `IncidentWorker_TraderCaravanArrival.SendLetter` / `TraderKindCommonality` | Trader kind named at arrival; slaver kinds gated on creed | SF-1 | [V] |
+| `CaravanArrivalAction_{VisitSettlement,Trade,OfferGifts,AttackSettlement}` | Arrival hooks in the world tick | SV-1, SF-3 | [V] |
+| `WorldObjectComp` (`PostExposeData`, `CompInspectStringExtra`, `PostMapGenerate`) | Per-settlement storage and display | SS-3 | [V] |
+| `WorldObjectMaker.MakeWorldObject`; `FactionGenerator` | New ID on creation; one settlement def per layer | Constraints, SS-4 | [V] |
+| RimPacts `RptSpecialtyUtility`, `Patch_SettlementStock_Specialty`, `WITab_RptTrade` | Derived per-settlement specialty, spent in stock, tribute and prices; public tab | SS-2 donor | [V] `3762723122/Assemblies/RimPacts.dll` |
+| BTG `SettlementTraderTrackerGetTraderKind`, `TradersGuildWorldComponent`, `SettlementGetInspectString` | Seeded, cached, scribed per-settlement trader kind, shown in inspect | SS-3 donor | [V] `3684587591/1.6/Assemblies/BetterTradersGuild.dll` |
+| VFE Empire `TitheInfo` + MP Compat seed | Stored per-settlement record, deterministic under MP | SS-3 donor | [V] § *What a holding pays* P1 |
+| FT&V `Dialog_Vassalage.BuildSettlementSimCatalog` | Holding catalogue from `faction.def.baseTraderKinds` | SF-2 precedent | [V] via #167 |
+| VEF `Outposts.Outpost` / VOE `Outpost_Artillery` range predicate | Range-bounded outpost action | SV-4 | [V] via #146 |
+
+**What does not exist:**
+- a met-faction record;
+- a scouting outpost;
+- any faction with more than one settlement trader kind;
+- a per-settlement specialty carrier other than RimPacts. The sweeps are listed under *Status*.
+
+### Status
+
+**Evidence class: READ**, established on [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165). Mechanisms [V]; routes [I].
+
+**Sweeps.** Both corpus roots + `Data`, with `obj/` and `Referenced/` excluded:
+
+| Sweep | Encoding and pattern | Result | Validation |
+|---|---|---|---|
+| Specialty, `.dll` | ASCII `-i` `specialty\|speciality\|specializ\|specialis` | RimPacts is the only real carrier; the rest is `Specialist`/`Specialized` | — |
+| Specialty, `.dll` | UTF-16, typed literally | RimPacts only | validated on `Rpt_TT_Specialty` |
+| Settlement specialty by another name, `.dll`+`.xml` | `settlement(trait\|type\|kind\|focus\|resource\|product\|export\|industry\|role)` | 0 | form validated on `settlement(defeat\|trader)` |
+| First contact | the eight met-faction terms, ASCII `-i`, `.dll`+`.xml` | 0 | — |
+| `baseTraderKinds` | two independent counts | none with more than one `<li>` | — |
+| `Settlement_TraderTracker` | `.dll` | 5 mods; Lemmy Progression, RimPacts and BTG read | — |
+
+**Premise corrected.** § *What a holding pays* → *Constraints* said *"`Settlement` has no tier or specialty of its own [V]"*. It has no **stored** one. Vanilla assigns a per-settlement `TraderKind` (idle), and RimPacts and BTG ship per-settlement specialty and trader-kind machinery. The P4 tier caveat is amended by #167 (holding tier under R1 is stored, not read from the owner).
+
+### Open questions
+
+- **Requirement, unowned (#35 closed).** Must a specialty stay fixed when its faction climbs a tier at an era boundary? Derived routes move with it; stored ones do not. It bears on [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167).
+- **Requirement, unowned.** Is vanilla's public **Show sellable items** an acceptable pre-visit leak?
+- **Requirement, unowned.** Does knowledge lapse?
+- **Balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).** Nearby distance, scouting range, reveal chance.
+- **Build, next map.**
+  - the storage shape (comp or tile-keyed);
+  - whether the specialty rides the stock;
+  - where the copy-at-conquest happens;
+  - the plug into #166 P1's `GetTitheInfo` replacement.
+
+---
+
+## Paying to advance a holding to a later era
+
+### Purpose and scope
+
+This section answers [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167) against [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *A holding is a settlement taken by force*, which carries two clauses: *"Paying to advance a holding is a route worth having"* and *"The era advance does not touch a holding"*. It also answers the second clause's twin in [`requirements/ERA.md`](../requirements/ERA.md): *"The advance never modifies anything the player built or owns."*
+
+It owns **where a holding's era lives, whether it can be rewritten, how what it pays follows it, what gates and prices the rewrite, and whether the era advance can reach it.** It does not own:
+
+- what a holding *is*: § 3 R1/R2, [#120](https://github.com/cjd721/Rimworld-Archinity/issues/120);
+- the payment forms: § *What a holding pays* P1–P5, [#166](https://github.com/cjd721/Rimworld-Archinity/issues/166);
+- the characteristic payload: [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165);
+- the era clock: [`ERA.md`](ERA.md), [#109](https://github.com/cjd721/Rimworld-Archinity/issues/109) / [#113](https://github.com/cjd721/Rimworld-Archinity/issues/113);
+- which factions climb at a boundary: [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34).
+
+### Verdict
+
+- **Possible? Yes. No shipped carrier does it, and every route is a few writes on state R1 or R2 already creates.** The tier can be rewritten, the payment can follow it, the price can be era-scaled from #166's table, and the gate can be the colony's era, research, nothing, or (fiddly) the parent faction's climb. **The era advance cannot touch a holding only under R1 with a stored tier.** Under R2, or with a derived tier, it can, silently.
+- **Multiplayer? Yes, with the usual work.** The advance is one synced player act writing plain fields, with no `Rand`. It must be a float-menu option on the world object (§0 P5), never a gizmo or dialog (**T-80**). TR-4's `SetFaction` is not synced by MP and has to sit inside our command.
+
+### Routes
+
+The T routes say where the era lives. They sit beneath R1/R2 and combine with any of P1–P5.
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **TR-1** Stored tier on the holding | A scribed `TechLevel` set at conquest from the **former** faction. The advance is one field write, and nothing else moves it | ours; R1 object field or R2 `WorldObjectComp` (backfills, `engine/factions-and-worldgen.md`) | C# + XML cost table | **Medium** (Easy on top of R1/R2) | **Yes** |
+| **TR-2** Derived from the former faction | Always the parent's current tier, the shape FT&V ships. **Cannot advance one holding, and climbs for free with its parent.** **Not recommended**: it breaks *"does not improve on its own"* | donor FT&V | C# | Easy | Yes; the era advance reaches it |
+| **TR-3** Derived from the holding's def | An XML tier table, one def per era. The cheap form is one `TitheTypeDef` per specialty × tier, and the advance rewrites `TitheInfo.Type` | vanilla `WorldObject.def` / VFE Empire `TitheTypeDef` | XML + C# | **Medium** | Yes (`TitheTypeDef` form); With work (world-object replacement form: a replacement object is created in the synced command) |
+| **TR-4** Advance by transfer (R2 only) | `SetFaction` to an existing later-era faction. **The map, defenders and trader become the new era's** | vanilla `WorldObject.SetFaction` | C# | **Medium**; **Hard** with per-era holder factions authored into the roster | With work |
+
+**What an advance rewrites, per payment route.** All [V] unless marked.
+
+| | Tier lives in | The advance rewrites |
+|---|---|---|
+| P1 tithe engine | `TitheInfo.Type` / `.Speed`. It has no tier field | `TitheInfo.Type` (+ `.Speed`), plain scribed fields |
+| P2 Outposts delivery | nowhere. `PackOrPods` keys on the colony's research | nothing |
+| P3 royal permit | which `RoyalTitlePermitDef` is offered | which permit the holding offers [I] |
+| P4 standing debt | #166's `TechLevel`-keyed cost `DefModExtension` | nothing. **P4 *is* the advancement price**: a second debt at the target tier's row |
+| P5 menu | R2: `Settlement_TraderTracker.TraderKind` = `Faction.def.baseTraderKinds[abs(HashOffset) % n]`, live, with each trader kind's own `maxTechLevelGenerate`. R1: no trader | R2: a `TraderKind` getter postfix for marked holdings, or TR-4. R1: FT&V's catalogue builder takes the tier as a parameter (`TraderSellablesUtility.GetSellableBuildingThingDefs(traderKind, TechLevel)`), so feed it TR-1 |
+
+**Every route is [I] as a route.** The mechanisms are [V].
+
+#### TR-1 — stored tier
+
+- **Gets us:** a holding frozen at the era it was taken, until the player pays. One number that every payment route reads. Under R1 nothing else in the game can reach it.
+- **Cannot:** under R2, change the place itself. Map, defenders and trader derive from `Faction.def` [V, `engine/factions-and-worldgen.md` § *What survives a swap*], so an advanced R2 holding pays in the new era and still generates its old-era map.
+- **Consequences:** the capture-time read must be the **former** faction's tier, never `holding.Faction`'s (see *Constraints*).
+
+#### TR-2 — derived from the former faction (not recommended)
+
+- **Gets us** [V]: `FactionTerritories_VassalOutpost` stores only the former faction's loadID, the settlement name and the `WorldObjectDef` defName. `VassalagePointsComponent` scales daily points by `GetTechLevelMultiplierPercent(faction.def.techLevel)`, resolved live, with the multiplier held in `ModSettings` (T-18). `Dialog_Vassalage.BuildSettlementSimCatalog` filters by `fac.def.techLevel`. This is **the corpus's only shipped "tier scales yield"**.
+- **Cannot:** advance one holding. A `Faction.def` climb of the parent retiers every holding it lost, for free.
+- **Consequence:** useful only as gate TG-2's *read*.
+
+#### TR-3 — tier in the def
+
+- **Gets us:** the most authorable form, a def per era.
+- **Cannot** [V]: an in-place `WorldObject.def` write is not clean. It is public and scribed, but `InitializeComps` runs only in `PostMake` and at `LoadingVars`, so the old comps persist until reload and the reload then drops state the new def lacks. Replacement gives a **new ID** and orphans everything keyed on the old object, including `TitheInfo`'s `Settlement` key.
+- **Consequence:** for P1, prefer the tier living in `TitheTypeDef` and rewrite `TitheInfo.Type`. No world object changes.
+
+#### TR-4 — advance by transfer (R2 only)
+
+- **Gets us:** the only route where the visited place is visibly of the new era. Its map is generated afresh on the next visit, as every NPC settlement's is (#164), from the new faction's def; **T-33** applies only if that faction uses KCSG's generated branch without MP Compat. The stock is rebuilt through `TryDestroyStock`.
+- **Cannot:** stay part of its former faction. No faction can be created mid-game (**T-07**), so a target must already exist, and a clean version means per-era holder factions in the worldgen roster.
+- **Consequences:** `SetFaction` is a bare field write with no notification and no MP sync. The leaks are listed in the engine doc (**T-12** and others).
+
+#### Price and gates
+
+**The price is era-scaled with no new mechanism.** It reads #166 P4's `TechLevel`-keyed table at the target tier, and is paid by a caravan on the tile (`TradeRequestComp.Fulfill`, synced) or by a float-menu option taking goods through `CaravanInventoryUtility.TakeThings` [V, #166].
+
+| Gate | Reads | Weight | Limit |
+|---|---|---|---|
+| **TG-1** colony era | `GameComponent_Era.CurrentEra` (unbuilt) or `WorldTechLevel.Current` [V] | Easy | none. This is the requirement's own wording |
+| **TG-2** parent climbed | former faction → `def.techLevel` [V shape] | Easy to read | **opens only if the grid climbs by `Faction.def` swap.** Never if it climbs by transfer to a successor, or if the parent was defeated [I]. #8 allowed dropping it |
+| **TG-3** research | `ResearchProjectDef.IsFinished` | Easy | none |
+| **TG-4** price only, plus #8's cooldown | — | Easy | none |
+
+#### Recommendation (not a selection)
+
+**Under R1: TR-1 + P4 as the price + TG-1**, with P1's payload rewritten through `TitheInfo.Type`. It is the only combination where the era advance provably cannot reach the holding, and it reuses #166's cost table unchanged. **Under R2: TR-1 for the payment, plus TR-4 only if the story wants the visited place to change era.** Drop TG-2.
+
+### Constraints
+
+- **The era advance can reach a holding in three ways, and each is silent.**
+  1. **`AdvanceEra()` write 3 sets `Faction.OfPlayer.def.techLevel`** ([`ERA.md`](ERA.md) § 3). An R1 holding is owned by the player (#120), so any tier read from `holding.Faction.def.techLevel` retiers every R1 holding to the colony's era at every boundary (**T-145**).
+  2. **The faction-grid pass (#34) reaches every R2 holding.** An R2 holding is an NPC `Settlement`, inside any pass over `Find.WorldObjects.Settlements`. Excluding holdings is a rule the pass must implement. **An overlay outcome can also replace an R2 holding in absentia**: Build B copying FT&V's `ApplyWinnerToSettlement` destroys and recreates when no map is open (`FactionTerritories.Invasions.Utility.ApplyWinnerToSettlement` [V]), which gives a new ID and orphans a TR-1 comp (**T-140**).
+  3. **A parent's `Faction.def` climb retiers a TR-2 holding** through derivation [V, FT&V].
+
+  **R1 + TR-1 is immune to all three**: FT&V's object is a bare `WorldObject`, not a `Settlement` [V].
+- **Shipped proof** [V]: Lemmy Progression's `FactionUpgrader.UpgradeToTechLevel` swaps `faction.def` on era advance, choosing through unseeded `System.Random`, then `UpdateSettlements` restocks every `Settlement` of that faction. BLOCK per [`ERA.md`](ERA.md) § 6c.
+- **Never retier by writing `FactionDef.techLevel`.** It reverts on load and mutates every faction sharing the def (**T-11**).
+- **World Tech Level touches no world object when the level changes** [V]. `Patch_StockGenerator` only *lowers* a trader's ceiling to `WorldTechLevel.Current` (`TechLevelUtility.CurrentFilterLevel`, except factions in a settings list, T-18). In-era stock does not climb, because vanilla trader kinds cap themselves. **An above-era R2 holding's uncapped generators do rise toward their own tier at each advance** [I on the consequence].
+- **VFE Empire's `WorldComponent_Vassals.DoDay`** checks neither the settlement's faction nor its existence [V]. `titheInfo` is a `Dictionary<Settlement, TitheInfo>` keyed by reference. Transfer by `SetFaction`: a P1 holding keeps paying, to the same lord. Destroyed or recreated: the old entry keeps paying until the next load, then is dropped with a logged null-key error [I, `Scribe_References`]; the new object is not a vassal.
+- **The commit is a float-menu option on the world object** (§0 P5; postfix-added options are synced too, per #154). Never a gizmo or dialog (**T-80**).
+
+### Available mechanisms
+
+| Mechanism | Provides | Route | Evidence |
+|---|---|---|---|
+| FT&V `FactionTerritories_VassalOutpost` | player-held holding storing the former faction by loadID; no tier field | TR-1 donor, TR-2 | [V] `294100/3626725895/Assemblies/FactionTerritories.dll` |
+| FT&V `VassalagePointsComponent`, `Dialog_Vassalage.BuildSettlementSimCatalog`, `TraderSellablesUtility.GetSellableBuildingThingDefs(TraderKindDef, TechLevel)` | yield and catalogue scaled by tier, derived live; the catalogue builder is already tier-parameterised | TR-2; P5 donor | [V] same |
+| VFE Empire `TitheInfo`, `WorldComponent_Vassals.DoDay` | payload as plain scribed `Type` / `Speed`; no faction or existence check | P1 × TR-1/TR-3 | [V] `294100/2938820380/1.6/Assemblies/VFEEmpire.dll` |
+| `WorldObject.def`, `InitializeComps`, `ExposeData` | public scribed def; comps rebuilt only at `PostMake` / `LoadingVars` | TR-3 | [V] `Assembly-CSharp.dll` |
+| `Settlement_TraderTracker.TraderKind`, vanilla `TraderKindDefs` | trader derived live from `Faction.def`; per-generator `maxTechLevelGenerate` | P5, TR-4 | [V] `Assembly-CSharp.dll`, `Data/Core/Defs/TraderKindDefs` |
+| `WorldObject.SetFaction`, `Faction.def` swap | transfer and climb, with their leaks | TR-4, Constraints | [V] `engine/factions-and-worldgen.md` |
+| WTL `Patch_StockGenerator`, `TechLevelUtility.CurrentFilterLevel` | stock ceiling clamp to world era; no world-object writes | Constraints | [V] `294100/3414187030/1.6/Lunar/Components/WorldTechLevel.dll` |
+| Lemmy `FactionUpgrader.UpgradeToTechLevel` / `UpdateSettlements` | shipped era-advance def swap + settlement restock | Constraints | [V] `294100/3548896697/1.6/Assemblies/LemProgress.dll` |
+| #166 P4 `TechLevel`-keyed cost extension; `TradeRequestComp` | era-scaled price, standing debt | price | [V] § *What a holding pays* |
+
+**What does not exist:** a paid upgrade of any world object, holding, outpost or vassal anywhere in the corpus. The wide pass is recorded under *Status*.
+
+### Status
+
+**Evidence class: READ**, established on [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167). Mechanisms are [V] and routes are [I].
+
+**Sweeps.** All of them covered both roots and `Data`, with `-g '*.dll' -g '!**/obj/**' -g '!**/Referenced/**'`:
+
+- **ASCII, `-i`**, over 12 upgrade and tier names. The only real hit is Lemmy Progression. `Retier` returned only false positives.
+- **UTF-16, `-i`**, escapes typed literally, over four names. **Zero.** The validator was a same-heap Scribe-key literal.
+- **`upgrade`** over the VEF `Outposts.dll`, VOE, FT&V and VFE Empire carriers. **Zero.**
+
+**Premises corrected:**
+
+1. #166 P4's *"the tier is its faction's"* is right for an NPC settlement and **wrong for an R1 holding**, whose faction is the player's.
+2. *"The era advance does not touch a holding"* is a requirement, not a property. It holds by construction only under R1 + TR-1.
+
+### Open questions
+
+- **Requirement gaps**, unowned; [#35](https://github.com/cjd721/Rimworld-Archinity/issues/35) is closed:
+  - May an advance exceed the former faction's tier, or is it capped at the colony's era?
+  - One rung per payment, or straight to the current era?
+- **Obligation on [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34), if R2 is selected:** the boundary pass must exclude holdings. The requirement needs a sentence in [`requirements/ERA.md`](../requirements/ERA.md).
+- **Build, for the next map:** where TR-1's field sits; whether P1's per-tier catalogue is defs or a tier-reading worker; which gates. Owned by [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119) once a route is selected.
+
+---
+
+## How a holding ends — released, retaken, destroyed
+
+### Purpose and scope
+
+**What this section answers:** whether a holding can end, how, and whether each ending can reach the
+player as a moment they act on. It covers the four endings in
+[`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *A holding is a settlement taken by
+force*: release, retaken by the parent, destroyed, and throwing the colony off. It answers each under
+both of §3's holding representations:
+- **R1:** a player-held world object;
+- **R2:** a marked NPC settlement.
+
+It also answers what happens to what the holding owed. It resolves
+[#172](https://github.com/cjd721/Rimworld-Archinity/issues/172).
+
+**The hard constraint** is [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)'s: no
+vassal-gets-raided simulation. **Loss must be something the player acts on**, never a background roll
+they read about afterwards.
+
+**Whether a holding *should* be losable is Conrad's call and is not made here.**
+
+**What this section does not own:**
+- **Ending a sworn faction:** [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168).
+  RimPacts' tributary revolt, below, is that ticket's donor.
+- **The outpost-attacked event:** [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171).
+  It is H-T1's twin.
+- **Caravans in flight when the owner changes:**
+  [#152](https://github.com/cjd721/Rimworld-Archinity/issues/152).
+- **What a holding pays:** *What a holding pays* above (#166).
+- **The ally-aid battle:** §1 (#92).
+
+**Shape names** are shared with #154, #164 and #171:
+- **E-letter:** a letter.
+- **E-quest:** the #91 declinable demand, [`POLITICS.md`](POLITICS.md) § *The faction demand*.
+- **E-overlay:** §1's world object on the tile; attend, or it resolves in absentia.
+- **E-site:** a vanilla `Site` the player travels to, delivered by a quest with a deadline.
+- **E-march:** a hostile world object moving toward the target (#154; not used here).
+- **E-quest→E-overlay, E-quest→E-site:** the #91 shell, whose accept or refusal spawns the arena.
+- **/roll, /forfeit:** the in-absentia branch. /roll is the §0 P4 seeded roll; /forfeit is a
+  deterministic loss with no roll.
+- **M-proxy, M-site, M-own:** where the fight's map comes from.
+
+### Verdict
+
+- **Possible? Yes.** Each of the four endings can reach the player as a moment they act on, under
+  both R1 and R2. Nothing on disk does it as shipped.
+  - VFE Empire ships a per-lord *Release all* button.
+  - RimPacts ships one live revolt roll, its tributary revolt, which reports afterwards. Its settlement hold reversion is unreachable code.
+  - Every compliant route is our code on verified seams. The donors are FT&V's vassal invasion,
+    Worksites Expanded's counter-attack sequence, and the POLITICS faction demand.
+- **Multiplayer? With work.** Every ending is authored on the world tick or committed by a synced
+  player act:
+  - synced: a caravan `FloatMenuOption` (§0 P5), `Quest.Accept` and a `QuestPart_Choice` pick [V];
+  - never the commit: a gizmo, a dialog or a modded `ChoiceLetter` (T-80, T-96);
+  - in-absentia rolls use §0 P4, and nothing reads ModSettings.
+
+### Routes
+
+"Moment" means what the player acts on. **Silent** means they read about it afterwards.
+
+| Route | Ending | What it gets the story | Under R1 | Under R2 | Moment | Carrier | Kind | Weight | MP |
+|---|---|---|---|---|---|---|---|---|---|
+| **H-L1** Return to the parent | Release | Hand the place back, and goodwill moves with it | Replace the object with the remembered faction's `Settlement` | Delete the record | The player's own act | ours; donor FT&V cede path | C# | Medium | With work |
+| **H-L2** Cede to another faction | Release | Give it to an ally, a rival or a sworn faction. **The only form "independent" can take** | Replace, with a chosen recipient | `SetFaction`, then delete the record | The player's own act | ours; same donor | C# | Medium | With work |
+| **H-L3** Abandon | Release | Gone, or a ruin | `Destroy()` | as H-L1 | The player's own act | ours | C# | Medium | With work |
+| **H-L4** The parent buys it back | Release | A release offered for a price | E-quest → H-L1 | E-quest → H-L1 | Accept or decline | vanilla quest + a QuestPart of ours | XML + C# | Medium | Yes |
+| **H-T1** Retake overlay | Retaken | A timer, then attend and fight, or lose it | E-overlay, M-proxy map | — (see H-T6) | Attend; E-overlay/roll or E-overlay/forfeit | ours; donors FT&V `TryCreateForVassalOutpost`, §1 Build B | C# | Medium on top of §1, Hard alone | With work |
+| **H-T2** Retake demand | Retaken | *"Return it or we come"* | E-quest; refusing fires H-T1 or a raid on home | E-quest → H-T6 | Accept or decline | POLITICS § *The faction demand* | XML + C# | Medium | Yes |
+| **H-T3** Counter-attack waves | Retaken | A warning, then 1–4 assaults over weeks | Each wave on M-proxy | — | Each wave | ours; donor Worksites Expanded | C# | Hard | With work |
+| **H-T4** Strike the staging camp | Retaken or destroyed | Break a nearby camp before its deadline | E-quest→E-site, M-site | E-quest→E-site, M-site | Go, or let it expire | vanilla site quest + our tile node | XML + C# | Medium | Yes [I] |
+| **H-T5** Silent reversion | Retaken | RimPacts' reversion shape: a `SetFaction` back to the original owner by name | — | — | **Silent** | RimPacts (shape donor only) | — | **not recommended**: the shipped code path is unreachable | — |
+| **H-T6** Repudiation | Retaken | The parent stops honouring the obligation | — | Delete the record on an event | E-quest grace period, or E-letter | ours | C# | Medium | With work |
+| **H-D1** Raze overlay | Destroyed | A named faction burns it | H-T1 with a destroy outcome | §1 overlay with a destroy outcome | as H-T1 | as H-T1 | C# | as H-T1 | Yes (R2) / With work (R1) |
+| **H-D2** The colony razes it | Destroyed | The player ends their own holding | A player act | Vanilla attack → `CheckDefeated` | The player's own act | vanilla (R2) / ours (R1) | — / C# | Easy (R2) / Medium (R1) | Yes / With work |
+| **H-O1** Unrest crosses a line | Throws off | Answerable grievance events; past a threshold, H-T1 or H-T2 | Fiction carried by an existing faction | Real population | Every step answered, no roll | ours; donor RimPacts | C# | Medium–Hard | With work |
+| **H-O2** RimPacts as shipped | Throws off | The quarterly tributary revolt roll only | — | — | **Silent** | RimPacts | as shipped | Hard, **not recommended** | No |
+| **H-V** VFE Empire release | Release, R0/R3 only | Release all of one lord's vassals | — | — | The player's own act | VFE Empire + MP Compat | as shipped | Easy | Yes |
+
+**Every route is [I] as a route.** The mechanisms each composes are [V].
+
+#### Release (H-L1 to H-L4)
+
+**Gets us [V]:**
+- **FT&V ships the replace write twice.**
+  - `VassaliseUtility.ExecuteCedeToFactionAtTile(tile, recipientLoadId, name, defName)` removes the
+    object on the tile and adds a `Settlement` of the recipient. It refuses the player. It is
+    **uncalled** in FT&V.
+  - `Invasions.Utility.ApplyWinnerToVassalOffMap` does the same for a lost holding.
+- **Under R2, a transfer is `WorldObject.SetFaction`,** a bare field write that `Settlement` and
+  `MapParent` do not override. It keeps the ID.
+- **Goodwill moves through `TryAffectGoodwillWith`.** State amounts as *requested* (#160).
+- **H-L4's accept is synced** (`SyncMethod.Register(typeof(Quest), "Accept")`), and
+  `IncidentWorker_GiveQuest` fires it from the storyteller in XML (#154).
+
+**Cannot [V]:**
+- **Leave a settlement factionless.** `Settlement_TraderTracker.TraderKind` dereferences
+  `settlement.Faction.def` unguarded, and T-07 forbids a new faction.
+- **Pay goodwill to a defeated parent, or return it to the storyteller's pool, without clearing
+  `Faction.defeated`.** `CheckDefeated` sets it on the last base, `CanChangeGoodwillFor` fails for
+  it, and `IncidentWorker_PawnsArrive.FactionCanBeGroupSource` rejects it. **An authored raid that pins it
+  still fires:** `IncidentWorker_RaidEnemy.TryResolveRaidFaction` checks only hostility and
+  `deactivated` [V].
+
+**A holding returned to its parent (H-L1) comes back at full garrison** [V]. It comes back with the
+same layout only [I], from the tile seed, and not under T-33 or after a def climb (#164).
+
+**Consequences:**
+- **R1 replacement mints a new ID.** Anything keyed on the old one is orphaned (#165, #167).
+- **Caravans bound for the tile abort** (#152). Under R2, `SetFaction` keeps the ID; each order then re-checks against the new owner (#152's table).
+- **The commit must be synced.** A caravan float option is synced (§0 P5), including one appended by
+  our postfix (#154). A gizmo needs `[SyncMethod]` (T-80).
+
+#### Retaken by the parent (H-T1 to H-T6)
+
+- **H-T1 [V].** FT&V's `TryCreateForVassalOutpost(outpost, attacker, now)` spawns `FT_BaseInvasion` on
+  a map-less player holding. It sends a letter: *"…will resolve in <period> unless you intervene"*.
+  - `GetOrCreateVassalBattleSettlement` borrows a map with a temporary proxy-faction `Settlement`
+    (M-proxy).
+  - `ApplyWinnerToVassalOffMap` removes the holding and re-adds the winner's `Settlement`.
+  - **Its sides are cast for a third party:**
+    - defender and map-defender are set to the holding's original faction;
+    - there is no attacker≠original guard;
+    - `FindEligibleAttackers` admits any hostile claimant, the parent included.
+  - **With the parent as attacker, `winner == attacker` always holds, and the holding is always
+    lost.** A donor to re-cast, not a drop-in.
+  - **Under R1 there is no defender for /roll.** /forfeit needs none.
+  - **The attend option must override `CaravanArrivalAction.StillValid`** (default true, **T-139**). So
+    must any H-L release option built as an arrival action.
+  - **M-proxy works only while the holding is not a `MapParent`,** because `MapParentAt(tile)`
+    returns the first one (**T-150**). If R1 is built as M-own, the holding generates the map itself and
+    needs a `ShouldRemoveMapNow`.
+- **H-T2.** The POLITICS demand is XML plus a `QuestPart_DemandRefused`. Its refusal fires H-T1
+  (E-quest→E-overlay) or a raid on home. **The holding goes only by a choice the player made.**
+- **H-T3 [V].** Worksites Expanded's `WorkSiteRevengeTracker`: a 60% start, a warning letter at 1–2
+  days, and 1–4 `ThreatBig` raids in windows of days 3–7, 12–20, 25–35 and 38–44 over 45 days. It
+  cancels once no player `Settlement` remains on the tile.
+  - It **clears `faction.defeated` for the faction of an active revenge sequence**, which returns the
+    parent to the storyteller's pool and to goodwill.
+  - Its `Rand` is shared-stream on a synced tick, and it reads no ModSettings.
+  - It needs a player map. An R1 holding has none.
+- **H-T4 (E-quest→E-site).** A deadline site near the holding, delivered by a quest. Its refusal part
+  is the #91 one. `QuestNode_GetSiteTile` cannot aim near an arbitrary
+  tile (#154 [V]), so this needs our tile node. There is no map borrowing.
+- **H-T5 — not recommended: the shipped code path is unreachable [V].** RimPacts'
+  `WorldComponent_RimPacts.holdBySettlement` has two writers: `NoteConquered` sets it to 30, and
+  `ProcessHoldQuarter` adds 8 a quarter and removes the entry at 70. Nothing decrements it, so its
+  `< 25` branch — `Rand.Chance(0.2f)`, then `TryRevertConquered`, a `SetFaction` back to the original
+  owner **by name** — never runs, and `TryRevertConquered` has no other caller. The branch is also
+  gated on the original owner not being defeated and the current owner holding more than one
+  settlement, and the whole model on `Settings.enableTerritory && enableDynamics` and
+  `Settings.quarterDays` (T-18). `NoteConquered` has three callers (`CapturePlayerDefeatedSettlement`,
+  `CaptureSettlement` for NPC captures, `AbsorbTransferOne`). **What survives is the reversion's shape**
+  (`SetFaction` back by name), a donor for shape only. The meter is a five-quarter timer, not a loss
+  trigger.
+- **H-T6.** Under R2 the record **survives any `SetFaction` silently**. That includes FT&V's
+  `ApplyWinnerToSettlement` **when a map is open**. Resolved in absentia, it destroys and recreates
+  the settlement (`Remove` + `MakeWorldObject` + `SetFaction` + `Add`), so the record dies with the
+  old object and the parent gets a new ID. Build B inherits whichever shape it copies. The owner
+  must be checked by our code. A hostile turn arrives only as
+  vanilla's relation letter, which is not a moment. An E-quest grace period makes it one [I].
+
+#### Destroyed (H-D1, H-D2)
+
+- **Under R1, nothing in vanilla can end a holding by accident** [V]. `WorldObject` is not an
+  `IIncidentTarget`, so every R1 loss is authored. H-D1 is H-T1 with a destroy outcome and a named
+  attacker. FT&V's own attacker pick belongs to its scheduler, the background simulation #8
+  excluded.
+- **H-D2 under R2 is vanilla.** `CheckDefeated` swaps in a `DestroyedSettlement` and destroys the
+  original, and the comp record dies with it.
+
+#### Throws the colony off (H-O1, H-O2)
+
+**RimPacts carries one live model [V].**
+- **The tributary revolt, at faction level, is #168's.**
+  - `TreatyWorker_Tribute.OnQuarter` starts after a 1,800,000-tick grace period.
+  - It rolls only when `RptFactionUtility.TributeRatio(faction) < 1.2` (`< 1.5` for the Empire); at
+    or above that ratio tribute is paid and nothing is drawn.
+  - It draws `Rand.Chance(RevoltChanceFor)` off the shared stream (no `PushState`): 0 at stability
+    ≥70, 0.15 at 40–69, 0.35 below that; ×1.5 for the Empire; ×0.7 at `subjugationBasis >= 70`;
+    × `GovernorRevoltFactor`; halved by a hostage and by an active `tributeArmamentCheckTick`;
+    floored at 0.05 or 0.10 (0.075 or 0.15 for the Empire).
+  - A hit kills the governor, breaks the treaty and applies −30 goodwill.
+  - It sends an **informational** `Rpt_TributeTrouble` letter, and schedules a revenge raid with a
+    50% chance, 120,000 ticks later.
+- **The settlement hold reversion** is dead code in 1.6 (H-T5).
+
+**Is it reachable without its dependency and its settings? Not as shipped.**
+- Its only declared dependency is Harmony.
+- Its captures for the player go through RimPacts' runtime puppet faction (T-07).
+- The quarterly clock reads `Settings.quarterDays` (T-18).
+- No roll is seeded, and MP Compat does not cover RimPacts.
+
+**H-O1 copies the part that is compliant.** In RimPacts the player's levers come before the roll:
+the tribute ratio gate (keep tribute high enough and nothing is drawn), and
+`ChoiceLetter_RptTributeEvent`s that move stability by 5–15.
+- Swap the modded letter for a quest or a `QuestPart_Choice`, both synced.
+- Replace the roll with a threshold that fires H-T1 or H-T2.
+- The grievance value is state aimed at the colony, not a currency [I].
+
+#### Debt and credit at the end
+
+| What is owed | At the ending, as shipped | Evidence |
+|---|---|---|
+| **Rebuild debt** (payment route P4, a comp) | **Extinguished.** It dies with the object on `Remove` (`PostPostRemove`) and on `Destroy` (`PostDestroy` + the `Destroyed` quest signal). **Under R2 it follows a `SetFaction` to the new owner** | [V] `WorldObjectsHolder.Remove`, `WorldObject.Destroy`, `SetFaction` |
+| **Accrued tithe** (P1) | **Forfeited on release.** `ReleaseAllVassalsOf` zeroes `DaysSinceDelivery` without delivering. Transfer by `SetFaction`: it keeps paying, to the same lord. Destroyed or recreated: the old entry keeps paying until the next load, then is dropped with a logged null-key error [I]; the new object is not a vassal | [V] `VFEEmpire.WorldComponent_Vassals.DoDay`, `titheInfo` (keyed by reference) |
+| **Stored goods** (P2 `Store`) | **Lost** with `Destroy` (#171) | [V] |
+| **Bespoke credit** (FT&V points) | **Stranded.** It is kept per original faction but hidden until another holding of that faction exists | [V] `VassalagePointsComponent`, `VassalageUI` |
+| **Silver or favour credit** (payment route P5) | Already the player's; nothing is owed | [V] |
+
+**Routes for what was owed [I]:**
+1. **Extinguish.** Free, the default.
+2. **Pay out, then end.**
+3. **A colony-level ledger** keyed by tile or former faction, reattached if the place is retaken.
+   Donor: FT&V's points.
+4. **Convert it into the ending's price.** Unpaid debt becomes goodwill owed, or H-L4's price.
+
+#### Recommendation (not a selection)
+
+- **Release:** H-L1 or H-L2 through a caravan float option, plus H-L4 if a release should be
+  *offered*.
+- **Loss:** **H-T2 → H-T1.** The holding goes only through the player's own choice, reusing the #91
+  and #92 builds. Take E-overlay/forfeit if #8 is read strictly.
+- **Destruction:** H-T4 is the cheapest real fight.
+- **Throwing off:** H-O1 is the only compliant form.
+- **Under R2, H-T6's owner check is needed whatever is chosen.**
+
+### Constraints
+
+- **No vanilla path ends an R1 holding** (`WorldObject` is not an `IIncidentTarget`). Every loss is
+  ours to author, so none can happen silently by accident [V].
+- **`SetFaction` has no hook** [V] (**T-140**). An R2 record, a comp-held debt and a VFE tithe all survive a
+  transfer unless our code ends them.
+- **A defeated parent cannot take goodwill and is never picked by the storyteller** [V]. An
+  authored raid that pins it still fires (`IncidentWorker_RaidEnemy.TryResolveRaidFaction`) [V].
+  Anything else means clearing `Faction.defeated`, as Worksites Expanded does.
+- **No factionless settlement** [V], and **no new faction** (T-07).
+- **Player commits:** caravan float options, `Quest.Accept` and `QuestPart_Choice` are synced. Gizmos,
+  dialogs and modded `ChoiceLetter`s are not (T-80, T-96).
+- **Rolls:** seeded per §0 P4. Nothing reads ModSettings (T-18). This rules out RimPacts as shipped.
+- **R1 fights borrow a map** (M-proxy, M-own) or happen elsewhere (M-site).
+- **Every attend or release arrival action of ours must override `CaravanArrivalAction.StillValid`**,
+  which defaults to true (#152, **T-139**).
+
+### Available mechanisms
+
+| Mechanism | What it provides | Routes | Evidence |
+|---|---|---|---|
+| FT&V `VassaliseUtility.ExecuteCedeToFactionAtTile` | Replace any object on a tile with a named faction's `Settlement`. Uncalled; refuses the player | H-L1, H-L2 | [V] `294100/3626725895/Assemblies/FactionTerritories.dll` |
+| FT&V `Invasions.Utility.TryCreateForVassalOutpost` / `GetOrCreateVassalBattleSettlement` / `ResolveWithWinner` / `ApplyWinnerToVassalOffMap` | Overlay on a map-less holding, a borrowed map, and a transfer. Sides cast for a third party | H-T1, H-D1 | [V] same |
+| FT&V `VassalagePointsComponent`, `VassalageUI` | A per-original-faction credit that outlives the holding; shop hidden without a holding | debt/credit | [V] same |
+| Worksites Expanded `WorkSiteRevengeTracker` | Warning, then scheduled counter-attack raids; clears `defeated`; no settings | H-T3 | [V] `294100/3687071198/Assemblies/MiningOutpost.dll` |
+| RimPacts `WorldComponent_RimPacts.ProcessHoldQuarter` / `TryRevertConquered` / `NoteConquered` | Settlement hold meter; its reversion branch is unreachable (the meter only rises) | H-T5 (shape only) | [V] `294100/3762723122/Assemblies/RimPacts.dll` |
+| RimPacts `TreatyWorker_Tribute.OnQuarter`, `RevoltChanceFor`, `TryTributeEvent`, `ResolveTributeEventA/B` | Tributary revolt roll; stability events answered by choice | H-O2; donor H-O1, #168 | [V] same |
+| VFE Empire `WorldComponent_Vassals.ReleaseAllVassalsOf` | Per-lord release; forfeits accrual; synced by MP Compat | H-V | [V] `294100/2938820380/1.6/Assemblies/VFEEmpire.dll` |
+| `SettlementDefeatUtility.CheckDefeated`, `IncidentWorker_PawnsArrive.FactionCanBeGroupSource` | `defeated` on the last base; the storyteller never picks a defeated faction, though a pinned `IncidentWorker_RaidEnemy` does not check it | all retakes, H-D2 | [V] `Assembly-CSharp.dll` |
+| `WorldObject.SetFaction` / `Destroy`, `WorldObjectsHolder.Remove` | Bare owner write; comp teardown and quest signal | all | [V] same |
+| `Settlement_TraderTracker.TraderKind` | Unguarded `Faction.def`, so no factionless settlement | H-L2 | [V] same |
+| Multiplayer `SyncMethod.Register(Quest, "Accept")`, `SettlementAbandonUtility.Abandon`, choice-letter registrations | Synced commits; modded letters absent | all | [V] `294100/2606448745/1.6/AssembliesCustom/Multiplayer.dll` |
+
+**What does not exist:** no mod ships a holding ending that gives the player the moment. The wide
+pass found only RimPacts and Worksites Expanded outside #120's six vassal mods. The remaining hits are
+pawn-level slave rebellion (Slave Rebellions Improved, VME, VEF, MP) and name-only false positives.
+
+### Status
+
+**Evidence class: READ**, on [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172). Every
+mechanism in the table is [V]; every route is [I].
+- **Roots and filters:** both roots, `-g '*.dll' -g '!**/obj/**' -g '!**/Referenced/**'`, attributed
+  with `corpus.py --which`.
+- **ASCII `-i`:** `Independence`, `Secede`, `Secession`, `Reclaim`, `Retake`, `Rebellion`, `Uprising`,
+  `Insurrect`, `Liberat`, `Revolt`.
+- **UTF-16 `-i`** with literal `\x00` escapes: the same stems, plus `releaseVassal`.
+- **Validators from the `#US` heap:** `RevoltBack` hit RimPacts (the ASCII form missed it), and
+  `ReleaseAllVassals` hit VFE Empire.
+
+**Premises corrected:**
+1. **§3 R1's *"its invasions against vassals are what #8 excluded".*** What #8 excluded is FT&V's
+   *scheduler*. Its vassal-invasion *object* is the donor for an authored retake, though its sides
+   need re-casting.
+2. **The ticket's *"under R1 ordinary destruction paths may not apply".*** Under R1 none apply at all.
+   Under R2 they do, and `SetFaction` carries the record silently.
+3. **The ticket's *"RimPacts carries a vassal-revolt model".*** It carries one live one, the
+   tributary revolt: an unseeded roll on a settings clock with an after-the-fact letter. Its
+   settlement hold reversion is unreachable, because the hold meter only rises [V].
+4. **The ticket's *"VFE Empire ships Release all and nothing finer".*** Confirmed. It is also per lord
+   and forfeits the accrual.
+5. **A retake by the parent runs into `defeated`.** Taking its last base defeats it. The parent then
+   leaves the storyteller's pool and can no longer take goodwill, though a pinned raid still fires.
+
+### Open questions
+
+**Requirement gaps**, unowned since #35 is closed:
+1. **What happens at the end to an unpaid rebuild debt or accrued credit?** Extinguish, pay out, carry
+   or convert.
+2. **Is a declined retake /forfeit or /roll?** The answer decides whether §1's
+   in-absentia shape satisfies #8 for holdings.
+3. **Can a holding be returned to a defeated parent, and can a defeated parent retake it?** A pinned
+   raid needs nothing. Goodwill, or a return to the storyteller's pool, needs `defeated` cleared.
+
+**Handed to siblings:**
+- **The R2 owner check on transfer:** #152 and #167.
+- **Ending a sworn faction:** #168.
+- **The outpost-attacked twin of H-T1:** #171.
+
+**Build questions, deferred to the next map:**
+- the R1 defender weight for /roll;
+- M-proxy against M-own;
+- which synced surface commits a release;
+- where the colony-level ledger lives.
+
+---
+
+## A caravan en route when its destination changes hands
+
+### Purpose and scope
+
+This section answers [#152](https://github.com/cjd721/Rimworld-Archinity/issues/152): **what
+happens to a player's in-flight commitment (a caravan, a vehicle, a pod) when the world object
+it is heading to changes faction, and by which routes the commitment can be kept.**
+
+It serves [`requirements/ERA.md`](../requirements/ERA.md) § *The era advance* (*"Nothing else
+may change on a delay… while the player is caravanning toward it"*). It applies equally to the
+Schism's transfers ([#130](https://github.com/cjd721/Rimworld-Archinity/issues/130)), revolts
+([#131](https://github.com/cjd721/Rimworld-Archinity/issues/131)), and conquest (§ 3 R1/R2).
+
+**This section is a clause of the settlement-transfer command, not a system of its own.**
+
+It does not own:
+- **Which** settlements transfer — [#34](https://github.com/cjd721/Rimworld-Archinity/issues/34).
+- **How** the transfer is written — `engine/factions-and-worldgen.md`, on rules settled by [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) (closed); open build choices are [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+- **Selecting a route** — [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+
+### Verdict
+
+- **Possible?** **Yes.** Vanilla already re-checks a caravan's order on every movement interval,
+  and cancels trade, visit and gift orders when the new owner rules them out. The gaps are:
+  - an **attack order carries on against a settlement that has passed to an ally or neutral**;
+  - the abort message gives no reason;
+  - VF aircraft and pods do not re-check while they are in the air.
+
+  Every route closes these gaps inside the transfer command.
+- **Multiplayer?** **Yes**, provided the transfer is one synced command. The re-check runs on the synced world tick and reads synced state. Routes CF-A–CF-E and CF-G draw no `Rand`. Route CF-F is Yes as an E-quest, and With work only as our own dialog or a modded letter (T-82/T-95/T-96).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **CF-A** Vanilla as shipped | Friendly→friendly transfers are seamless. Trade, visit and gift orders stop mid-route with *"couldn't reach its destination"*. **Attack orders land on allies.** Not recommended alone | vanilla + VF | — | Easy | Yes |
+| **CF-B** Re-check and abort with a letter | The transfer sweeps every inbound caravan, VF vehicle and pod. Invalidated orders stop, with a letter naming the new owner. Closes the attack hazard for transfers we author | our transfer command | C# | Medium | Yes |
+| **CF-C** Re-target | Rebind the order to a recreated settlement, swap it to what the new relation allows, or send the caravan on to the former owner's nearest settlement | our transfer command | C# | Medium | Yes, with a deterministic "nearest" (T-135) |
+| **CF-D** Protect the endpoint | The selection skips settlements with anything inbound. **Not recommended for the era advance** | our transfer selection (#34) | C# | Medium | Yes |
+| **CF-E** Accept the loss and warn | Vanilla's behaviour stands. The transfer letter names the affected caravans | our transfer letter | C# | Medium | Yes |
+| **CF-F** The arrival becomes an encounter | A scene with the new owner at the gate | our arrival action + dialog | C# | Medium–Hard | Yes as an E-quest or a synced E-letter; With work as our own dialog (T-82/T-95) or a modded letter (T-96) |
+| **CF-G** Guard the order itself | Attack orders (caravan, pod, aircraft) refuse once the target's faction is no longer the one ordered against, **whoever made the transfer** | Harmony on vanilla + VF arrival actions | C# | Medium | Yes [I] |
+
+**CF-A — vanilla as shipped.**
+- **Gets:** nothing to build. A caravan heading to a settlement that passes to another friendly faction arrives and trades with the new owner.
+- **Cannot:**
+  - explain why an order stopped;
+  - avoid stranding the caravan mid-route;
+  - stop an attack order turning an ally hostile with no confirmation. VF aircraft and pods share this hole.
+- **Consequences:** the hazard fires on the campaign's own authored transfers — the Schism taking Church ground, or an ally absorbing a hostile settlement.
+
+**CF-B — re-check and abort with a letter.**
+- **Gets:** a sweep inside the synced transfer over:
+  - `Find.WorldObjects.Caravans`, reading `pather` or VF's `vehiclePather` `Destination` / `ArrivalAction`;
+  - VF `AerialVehicleInFlight.flightPath` (`Last`, `ArrivalAction`);
+  - travelling pods.
+
+  All of these are public [V]. Each invalidated order gets `StopDead()` and one letter that says what happened. An attack order whose target is now non-hostile is stopped the same way.
+- **Cannot:** see transfers made by anything other than our command.
+- **Consequences:** no state and no `Rand`. It is the smallest honest answer.
+
+**CF-C — re-target.**
+- **Gets** three levers [I as composed]:
+  - rebind to the recreated object at the same tile, which is needed because destroy-and-recreate aborts every order;
+  - swap Trade and OfferGifts when the relation flips;
+  - send the caravan on to the former owner's next settlement.
+- **Cannot:** know what the player intended. A re-aimed trade run may not be wanted.
+- **Consequences:** `StartPath` inside the synced command is the same call a synced order click makes. Pick "nearest" deterministically, not through `GetClosestTile_NewTemp` (**T-135**).
+
+**CF-D — protect the endpoint.**
+- **Gets:** the commitment is never broken. It fits #34's rule that factions the player knows are treated differently.
+- **Cannot:** keep the advance whole. An exempted settlement stays with its old faction **for good**, because a later transfer is the delay #128 forbids. That is close to the half-re-authored world `requirements/ERA.md` names as the failure. It also lets either player freeze a settlement by sending a caravan.
+- **Consequences:** usable for a blow-by-blow Schism, which can pick another target. Not for the advance.
+
+**CF-E — accept the loss and warn.**
+- **Gets:** one line in the advance's historian letter or the Schism/revolt letter.
+- **Cannot:** warn in advance of the era turn. [#113](https://github.com/cjd721/Rimworld-Archinity/issues/113) fixed that capstone completion calls `AdvanceEra()` directly, with no rite and no confirmation. Quest-driven transfers can warn ahead.
+- **Consequences:** leaves the attack hazard open unless it is paired with CF-B's attack clause or CF-G.
+
+**CF-F — the arrival becomes an encounter** (an E-letter or E-quest fired at arrival; no E-overlay needed).
+- **Gets:** the handover as a beat: parley, toll, or being turned away.
+- **Cannot:** reuse `IncidentWorker_CaravanMeeting`. It ignores `parms.faction`, and MP registers only vanilla's `TryExecuteWorker` (`engine/storyteller-and-incidents.md`).
+- **Consequences:** our own dialog carries T-82/T-95, and a modded letter carries T-96. It needs CF-B's sweep to know which caravans are affected.
+
+**CF-G — guard the order itself.**
+- **Gets:** these patches, which fail when the target's faction differs from the one the order was aimed at:
+  - a postfix on `CaravanArrivalAction_AttackSettlement.StillValid`, which covers vanilla **and** VF ground caravans;
+  - a postfix on `TransportersArrivalAction_AttackSettlement.StillValid`;
+  - a prefix on VF's `ArrivalAction_LoadMap.Arrived`, filtered to `ArrivalAction_AttackSettlement` (which declares no `Arrived` of its own), or on `FlightPath.ConsumeNode`, since aircraft have no `StillValid`.
+- **Cannot:** remember the ordered faction without adding scribed state to vanilla action objects. That is a build question.
+- **Consequences:** the only route that also covers Rim War, RimPacts, Faction Territories and quest `SetFaction` transfers.
+
+**Recommendation (not a selection):** **CF-B, with CF-C's rebind** for destroy-and-recreate transfers, and **CF-E's line** in the advance letter. Add **CF-G** if any transfer we do not author ships. **CF-F** is where the story wants to go, and it costs dialog-sync work.
+
+### Constraints
+
+- **The transfer's shape decides what an in-flight order does** [V]:
+  - **`SetFaction`** keeps the object, and each order re-checks against the new owner.
+  - **Destroy-and-recreate** sets `Spawned == false`, and every order aborts.
+  - **#92's overlay outcome takes both shapes** if Build B copies FT&V: FT&V's `ApplyWinnerToSettlement` recreates in absentia and `SetFaction`s when a map is open [V] (**T-140**). That is exactly the per-beat shape question handed to #119.
+- **`CaravanArrivalAction.StillValid` defaults to `true`** [V]. Any arrival action we write for §1, #154 or #171 never aborts unless it overrides `StillValid`. **T-139.**
+- **`CaravanArrivalAction_AttackSettlement` has no faction check** [V]. The "attack a friendly faction?" confirmation runs only when the order is given. **T-138.**
+- **VF aircraft never re-check**, and resolve their target by tile [V].
+- **Patch the arrival action, not the pather.** VF ground caravans reuse vanilla's actions under their own pather (**T-117**) [V].
+- **No warning can precede the era advance.** #113 gives it no confirmation.
+
+### Available mechanisms
+
+- **Vanilla `Caravan_PathFollower`** [V]:
+  - `StartPath` checks `StillValid` when the order is given.
+  - `PatherTickInterval` re-checks every interval. On failure it posts a `NegativeEvent` message (`MessageCaravanArrivalActionNoLongerValid`: *"{0} couldn't reach its destination."*, plus `FailMessage` if set) and calls `StopDead`.
+  - `PatherArrived` re-checks and otherwise posts *"arrived at its destination"*.
+  - `Destination` and `ArrivalAction` are public.
+- **Settlement arrival actions** [V]:
+  - `Trade.CanTradeWith`: `Spawned`, no map open, not player, not `permanentEnemy`, not hostile, `CanTradeNow`, negotiator.
+  - `VisitSettlement.CanVisit`: `Settlement.Visitable`, which is not player, not hostile, not space.
+  - `OfferGifts.CanOfferGiftsTo`: **hostile** only.
+  - `AttackSettlement.CanAttack`: `Spawned`, `Attackable` (not player), enter cooldown.
+  - `Enter.CanEnter`: `HasMap`, cooldown.
+  - All of them hold a `Settlement` reference and check `Tile == destinationTile`.
+- **`SettlementUtility.AttackNow` → `AffectRelationsOnAttacked`** [V]: drives a non-hostile owner to hostile.
+- **Vehicle Framework (`3014915404/1.6/Assemblies/Vehicles.dll`)** [V]:
+  - `Patch_WorldPathing.StartVehicleCaravanPath` forwards the vanilla action to `VehicleCaravan_PathFollower.StartPath`.
+  - `PatherTick` (from `VehicleCaravan.Tick`) runs the identical re-check, and `PatherArrived` re-checks.
+  - For aircraft, `IArrivalAction` has only `Arrived`, and `FlightPath.ConsumeNode` calls it unchecked.
+  - `ArrivalAction_LoadMap.Arrived` resolves `MapParentAt(tile)`.
+  - `ArrivalAction_AttackSettlement.MapLoaded` calls `AffectRelationsOnAttacked`.
+  - `ArrivalAction_Trade.Arrived` re-checks for a negotiator.
+- **Vanilla pods and shuttles** [V]:
+  - `TravellingTransporters.Arrived` checks only on arrival, then falls back to landing on the map or forming a caravan.
+  - `TransportersArrivalAction_AttackSettlement.CanAttack` has no faction check.
+- **Shipped transfer code** [V]:
+  - Rim War `SettlementUtility.ConvertSettlement` is `Destroy()` + `AddNewHome`.
+  - RimPacts `CedeOne` is `SetFaction`.
+  - Faction Territories' generic cede (`ExecuteCedeToFactionAtTile`) has no caller. Its live transfer, `Invasions.Utility.ApplyWinnerToSettlement`, **recreates** the settlement when it resolves with no map open and **`SetFaction`s** it when a map is open [V, `FactionTerritories.Invasions.Utility.ApplyWinnerToSettlement`; the cede has no call site in the assembly]. `ApplyWinnerToVassalOffMap` recreates.
+  - **None of the three handles in-flight caravans** [V]. The wide pass swept `StopDead`,
+    `get_ArrivalAction` and `CaravanArrivalAction` (ASCII `#Strings` heap, both roots,
+    `!**/obj/**`, `!**/Referenced/**`). It returned 13, 2 and 11 mods. `get_ArrivalAction` hit
+    only Rim War and VF, and both were read. The other hits were not depth-read. By name, they
+    are mods' own arrival actions or pawn pathing, and none of them is a settlement-transfer
+    system [I].
+
+### Status
+
+**READ.** Every mechanism is [V] and cited by `Type.Method` above. Routes CF-B–CF-G are [I] as compositions. Established by [#152](https://github.com/cjd721/Rimworld-Archinity/issues/152).
+
+### Open questions
+
+- **Transfer shape per beat** (`SetFaction` or recreate). It decides whether an order carries on or aborts. *[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).*
+- **Odyssey gravship travel toward a tile that changes hands.** Not read. *Unowned; proposed ticket.*
+- **A caravan inside the settlement's map at the moment of transfer.** Map pawns keep the old faction. *Unowned (first raised on #8 § 4, now closed).*
+- **Build questions for the next map:** CF-B's letter text, CF-C's re-target precedence, and how CF-G stores the ordered faction.
+
+---
+
+## A sworn faction owes services — every form that can take
+
+### Purpose and scope
+
+**What this section answers:** what a sworn faction can owe the colony, every shape in which it can
+reach the player, whether the player can **ask** or only **receive**, and what Reverence and Goodwill
+can gate. It resolves [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168) against
+[`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *A sworn faction owes services, not
+goods*, and answers the two questions that document hands here by name: a holding whose parent later
+swears itself, and whether a sworn faction can stop being one.
+
+**Cited, not re-derived:** §3 *Vassals* R4 (the faction-level record in a `WorldComponent`) and R5
+(vanilla ally machinery); *What a holding pays* P1–P6; [`RELIGION.md`](RELIGION.md) § *Revolt*
+O1–O7, § *The Schism* H1–H3 (holding an alliance), § *The build — Reverence* (the store, bands and
+decay); [`POLITICS.md`](POLITICS.md) § *Standing as a content gate* and § *Settlements meet passing
+caravans*; [`CURRENCIES.md`](CURRENCIES.md) (VEF's quest-giver shelf).
+
+**What this section does not own:**
+
+- **How a faction comes to swear itself** — submission and revolt are
+  [`RELIGION.md`](RELIGION.md)'s doors.
+- **Reverence scaling Goodwill** — [#160](https://github.com/cjd721/Rimworld-Archinity/issues/160).
+  This section only notes where that scaling touches a service priced in Goodwill.
+- **How a holding ends** — [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172). This
+  section reuses its end paths for the "return the holding" answer below.
+- **A settlement's own specialty** — [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165).
+  What a *faction* is known for is answered here; what one *settlement* is known for is not.
+
+### Verdict
+
+- **Possible? Yes.** Every kind of service the requirement names has at least one carrier in 1.6,
+  and every delivery shape exists. **The player can ask** through four shipped surfaces: the royal
+  aid menu, the comms console, VEF's quest-giver shelf and a caravan's float menu on a settlement.
+  **Reverence can gate which services are available, and how often, without being spent**, on
+  seams that are already verified. Most carriers are vanilla. The one piece nothing ships is **naming
+  the sworn faction as the source**, and every route names it in a small C# piece or in XML.
+- **Multiplayer? Yes** for the vanilla carriers used as they ship: permits, comms asks, quests and
+  friendly raids. **With work** for anything that hosts its own action: a comms option of ours
+  (T-82, T-97, whitelisted host), a targeting permit worker in our assembly (**T-137**), VEF's
+  shelf (one sync registration), or boons that patch at runtime. **No** for RimPacts as shipped.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **OS-1** Vanilla comms asks | Request a trade caravan, an orbital trader or military aid from the sworn faction. The price in Goodwill is shown, and so is the cooldown | vanilla `FactionDialogMaker` | XML (`FactionDef.canRequest*`) | **Easy** | **Yes** |
+| **OS-2** The sworn faction's permits | A per-faction menu of services on cooldowns: troops, lent labourers and specialists, goods drops of what the faction is known for, a shuttle, strikes, title-gated trade. The set follows the Reverence band | vanilla Royalty permits; VFE Empire workers as donors | XML permits + C# grant hook | **Medium** | **Yes** with vanilla workers; **With work** for our own targeting worker (T-137) |
+| **OS-3** Gated comms options of ours | Any service as a visibly locked or unlocked option, with the Reverence threshold, a price in Goodwill and a cooldown. The option can start a quest, send troops or send people | vanilla `FactionDialogMaker` + POLITICS's D2 postfix, standing gate | C# | **Medium** | **With work** |
+| **OS-4** A service shelf | A menu window of the sworn faction's services, each one a quest, priced in Goodwill with a minimum-Goodwill gate | VEF `QuestGiverDef` + `GoodwillCurrency` (donor: VFED services) | XML + C# gate + 1 sync registration | **Medium** | **With work** |
+| **OS-5** Standing boons | Passive services that follow the band: troops when raided, better prices at its traders, a periodic donation, the right to recruit its visitors | ours; donor VFE Classical `PerkDef` / `PerkWorker` | C# + XML catalogue | **Medium** | **With work** |
+| **OS-6** On the faction's own schedule | Offers, visits, gifts and help arriving unasked, at a frequency the band sets | vanilla storyteller + `IncidentWorker_GiveQuest`; ours to name the faction | XML + a `StorytellerComp` | **Medium** (Easy as R5 alone) | **Yes** |
+| **OS-7** On a fixed schedule | A fixed basket or labour on a clock, keyed to the faction | §3 R4 record + P1 tithe engine; donor RimPacts' tributary | C# + XML | **Medium** | **With work** |
+| **OS-8** People who are offered or lent, never dumped | A specialist lent for N days who returns, or a quest whose reward is a pawn the player picks | vanilla `Permit_CallLaborers` / VFE Empire `Permit_CallTechfriar` shape; `Reward_Pawn` + `QuestPart_Choice` | XML (+ the trigger from OS-2/OS-3/OS-6) | **Easy–Medium** | **Yes** |
+| **OS-9** Asked in person | A caravan standing at a sworn settlement asks for guides, recruits, resupply or shelter | `Settlement.GetFloatMenuOptions` postfix (§0 P5, synced) | C# | **Medium** | **Yes** |
+| **OS-10** A signal the colony builds | A beacon or signal fire that calls the sworn faction's warband, usable before any comms console exists | ours; donor VFE Classical `Buildings.Beacon` | XML building + C# | **Easy–Medium** | **With work** |
+| RimPacts as shipped | Treaties, tributaries, goods orders, defence pacts. **Not recommended**: no sync, T-18 rolls, creates factions (T-07); §3 R6 | RimPacts | as shipped | Hard | **No** |
+
+**Every route is [I] as a route.** The mechanisms each composes are [V], and the composition is
+inferred until built. **The routes compose.** OS-2 or OS-3 carries asking, OS-6 carries the faction's own
+initiative, OS-8 decides what "people" means, and OS-5 is the always-on layer.
+
+#### Who asks, and who only receives
+
+| Shape | Carriers | The player… |
+|---|---|---|
+| Semi-random sends on the faction's schedule | OS-6, R5, OS-5 (troops when raided) | **receives** |
+| Specific things on a fixed schedule | OS-7 | **receives**, and may set the cadence (P1's cadence setting) |
+| Categories it is known for | OS-2 (permits per `FactionDef`), OS-1 (its `caravanTraderKinds`), OS-7 (RimPacts' specialty goods as donor) | **asks** under OS-1/OS-2, **receives** under OS-7 |
+| A favour requested on a cooldown | OS-1, OS-2, OS-3, OS-10 | **asks** |
+| A menu like a holding's, but greater | OS-2 (the royal aid menu), OS-4 (the shelf), OS-3 (the comms list) | **asks** |
+| Offered, then chosen | OS-6 offers carrying OS-8 choices | **receives the offer, chooses the content** |
+| Asked in person | OS-9 | **asks**, at the cost of travel |
+
+**The failure the requirement names is answered by OS-8, not by the schedule.** A borrowed specialist
+who leaves by shuttle cannot be sold, and a pawn reward the player picks is not a random body.
+
+#### OS-1 — vanilla comms asks
+
+**Gets us** [V] (`RimWorld.FactionDialogMaker`):
+
+- **Three shipped asks.** A trade caravan costs −15 Goodwill with a 4-day cooldown; an orbital trader
+  −30 and 15 days; military aid −25 and 1 day. The adjusted price is rendered in the option label.
+- **Per-faction switches in XML.** `FactionDef.canRequestTraders`, `canRequestOrbitalTrader` and
+  `canRequestMilitaryAid`.
+- **A choice of caravan.** The player picks from the faction's `requestable` `caravanTraderKinds` —
+  *what it is known for*, as trade.
+
+**Cannot** [V]:
+
+- **Answer anyone below Ally.** Each ask is `Disable("MustBeAlly")` otherwise.
+- **Send troops from a faction below Industrial.** `techLevel < Industrial` links to
+  `CantMakeItInTime`, so a Neolithic or Medieval sworn faction never answers this ask.
+- **Be reached without a comms console.** The one earlier surface is Medieval Overhaul's messenger
+  table (per #154).
+- **Read Reverence**, or vary its cooldowns.
+
+**Consequences.** A sworn faction has to be **held at Ally** for OS-1, R5, OS-10 and the storyteller's
+friendly raid. [`RELIGION.md`](RELIGION.md) H1–H3 are the levers that hold it, and they supersede
+§3 R4's *"cannot hold the relation still"*.
+
+#### OS-2 — the sworn faction's permits
+
+**Gets us** [V] (`Assembly-CSharp.dll`):
+
+- **Permits are keyed to a faction instance, not to the Empire.** `Pawn_RoyaltyTracker` stores
+  `FactionPermit(faction, title, permit)`. The permits card ships a faction switcher, and the royal
+  aid gizmo lists every held permit of every faction.
+- **A permit needs no title.** `AddPermit` stores whatever title is current, which can be null. The
+  "Call aid" gizmo appears whenever any permit is held, and vanilla never removes a titleless permit
+  automatically; the only faction-keyed removal is the player's *Return all permits*
+  (`Pawn_RoyaltyTracker.RefundPermits`, titled factions only) (**T-146**).
+  So a Reverence band can **grant** a founder this faction's permits and **revoke** them, with no
+  title ladder (**OS-2b**).
+- **Or a title ladder** (**OS-2a**). Give the sworn faction's `FactionDef` `royalTitleTags` and titles;
+  the engine is faction-generic (`GainFavor`, `CanUpdateTitleOfAnyFaction`, bestowing quests, the
+  permit comm options in `FactionDialogFor`). Every vanilla title obligation is optional XML:
+  `decreeMtbDays` −1, room and apparel requirements null, `maxPsylinkLevel`, `canBeInherited`. **No
+  faction but the Empire carries titles anywhere in the corpus**, so OS-2a has no precedent.
+- **The catalogue, all XML, via `RoyalAid`:** troops by `pawnKindDef` + `pawnCount` or by `points`;
+  lent labourers (`Permit_CallLaborers` → quest lodgers who leave); goods drops (`itemsToDrop`); a
+  transport shuttle; strikes; `aidDurationDays`; `cooldownDays`; `layerBlacklist`. VFE Empire adds a
+  regiment, a techfriar and an absolver as worker donors.
+- **What it is known for is free.** Each `RoyalTitlePermitDef` names a `FactionDef`, so each sworn
+  faction's permit set is its own authored catalogue.
+- **"How often" by band.** A higher band grants the next permit in a `prerequisite` chain, and
+  `AddPermit` replaces the prerequisite, so a shorter cooldown or a larger force can replace the
+  smaller one.
+- **It runs at Neutral.** `AidDisabled_NewTemp` refuses only a hostile faction, an underground map,
+  a blacklisted layer or bad temperature. A pinned `RaidFriendly` skips the Ally filter.
+- **Legible for free.** Each option reads *free* or *cooldown N days*.
+
+**Cannot:**
+
+- **Be priced in anything but royal favour on cooldown** [V]. `FillAidOption` offers use while on
+  cooldown only for `favorCost` favour. With no favour ever granted, the permit is **cooldown-only**
+  (`ConfigErrors` requires `favorCost > 0`).
+- **Revoke itself** [V]. Revocation is a write of ours on the live `AllFactionPermits` list.
+- **Act without a holder.** The permit sits on a pawn, who must be on the map, or in a caravan for
+  `usableOnWorldMap` [V].
+- **Offer title-gated trade (OS-2a only)** [V]. `permitRequiredForTrading` needs a title that grants
+  the permit, so OS-2b loses it.
+
+**Consequences:**
+
+- **OS-2a breaks if the sworn faction's def is ever swapped (T-36).**
+- **Multiplayer.** `AddPermit`, `SetTitle`, `RefundPermits` and `ResetPermitsAndPoints` are
+  Multiplayer SyncMethods, and vanilla workers' targeting is registered. A targeting worker of ours
+  is not (**T-137**).
+
+#### OS-3 — gated comms options of ours
+
+**Gets us.** Any service can sit behind a `DiaOption` appended by POLITICS's D2 postfix, locked with
+*"requires N Reverence — currently M"* ([`POLITICS.md`](POLITICS.md) § *Standing as a content gate*
+§3) [V seam]. Its action can do any of three things:
+
+- **generate a quest** — vanilla's `RequestAICoreQuest` does exactly this [V];
+- **pin the faction on `RaidFriendly`**, which honours a set `parms.faction` [V];
+- **price itself in Goodwill** the way vanilla's asks do [V].
+
+**Cannot:** reuse vanilla's cooldowns. `lastMilitaryAidRequestTick` exists per faction [V], but any
+band-scaled cooldown is a field of ours [I].
+
+**Consequences:** the enabled action must live on a whitelisted type (T-82, T-97,
+[`docs/engine/determinism.md`](../engine/determinism.md)).
+
+#### OS-4 — a service shelf
+
+**Gets us** [V] (`VEF.Storyteller`):
+
+- **`QuestGiverDef` scopes the shelf to one faction.** `fixedQuestGiverFaction` is a `FactionDef`,
+  and `onlySpecifiedQuests` lists the services.
+- **The price and the gate ship.** `GoodwillCurrency` debits Goodwill, and `minimunGoodwillRequirement`
+  refuses below a threshold.
+- **Every entry is an authored quest**, so any OS-8 shape is a shelf entry.
+
+**Cannot:**
+
+- **Read Reverence.** It needs our gate node, the way `CURRENCIES.md` builds its currency subclass.
+- **Offer an entry with no asker** [V] (**T-147**). `GoodwillCurrency.Allows` returns false when the slate has
+  no `asker`.
+
+**Consequences:** `CURRENCIES.md`'s three defects and its one sync registration apply unchanged.
+VFE Deserters' `DeserterServiceDef` menu is the same shape, synced by MP Compat's
+`SyncedPurchaseService` [V], but it is bound to Intel and the Deserters.
+
+#### OS-5 — standing boons
+
+**Donor** [V] (`2787850474/1.6/Assemblies/VFEC.dll`): VFE Classical's senate. A Republic's
+`FactionDef` extension lists one `PerkDef` per senator and a final perk. Three of the shipped perks
+are sworn-faction services in all but name:
+
+- **`Auxilia`** — a 25% chance of reinforcements on every raid;
+- **`Tributum`** — an annual donation, and halved prices at one faction's vendors;
+- **`VeniVidiVici`** — a gizmo that recruits that faction's pawns at will.
+
+**Gets us:** the always-on layer, band by band. Its price lever is the virtual
+`Settlement_TraderTracker.TradePriceImprovementOffsetForPlayer` (a flat 0.02 in vanilla) or a
+postfix on `Tradeable`'s price setup. RimPacts and VFE Classical both patch prices per faction [V].
+**Vanilla has no relation-based price at all** [V].
+
+**Cannot:** be asked for. These services are received.
+
+**Consequences:** `PerkWorker` applies and removes Harmony patches at runtime. Doing that in synced
+context on both clients is [I].
+
+#### OS-6, OS-7 — the faction's own schedule, and a fixed one
+
+- **OS-6.** [`#154`](https://github.com/cjd721/Rimworld-Archinity/issues/154) verified that
+  `IncidentWorker_GiveQuest` makes any quest storyteller-fired from XML. Naming the sworn faction
+  needs a quest node or comp of ours, since `QuestNode_GetFaction` has no record filter (§3 R4). A
+  `StorytellerComp` scaled by band is [#60](https://github.com/cjd721/Rimworld-Archinity/issues/60)'s
+  shape. R5 is the free background.
+- **OS-7.** §3 R4's record with P1's clock, or RimPacts' quarterly tributary as design: silver, goods
+  in the faction's specialty, or **one labourer each quarter for five days** (`TributeLaborer`) [V].
+  This is the route nearest to "goods". The requirement's *services, not goods* is the check against
+  it.
+
+#### OS-8 — people, offered or lent
+
+- **Lent** [V]: vanilla `Permit_CallLaborers` and VFE Empire's `Permit_CallTechfriar`. The script
+  generates its pawn with `<faction>$permitFaction</faction>`. The pawn:
+  - joins as a controllable lodger with its work restricted;
+  - leaves by shuttle after `aidDurationDays`;
+  - costs Goodwill if it dies or goes missing.
+- **Offered** [V]: `Reward_Pawn` exists, and a quest's `QuestPart_Choice` pick is synced (per #171).
+  `QuestNode_GeneratePawn` exposes `kindDef`, faction, traits and gender in XML, but **not an ideo**.
+  A *convert* is `PawnGenerationRequest.FixedIdeo` from C# [V field].
+
+#### OS-9, OS-10 — asked in person, and a signal the colony builds
+
+- **OS-9.** An option our postfix appends to `Settlement.GetFloatMenuOptions` rides Multiplayer's
+  float-menu sync (per #154) [V]. It must never be a caravan gizmo (T-80).
+- **OS-10** [V]. VFE Classical's `Beacon` is a building whose gizmo fires `RaidFriendly` with a chosen
+  Ally faction and a map cooldown. MP Compat syncs its `LightCommand` lambda. Ours would pin the
+  sworn faction, and it answers the Neolithic era, where OS-1 does not exist.
+
+#### Every service, by carrier
+
+| Service | Carriers |
+|---|---|
+| **Troops** | OS-1 (Industrial+ only), OS-2 `CallAid`, OS-3 pinned `RaidFriendly`, OS-5 Auxilia-shaped, OS-6 / R5 help when raided, OS-10 |
+| **Pawns** — recruits, converts, specialists | OS-8 lent specialists and picked rewards, OS-2 labourers, OS-5 recruit-at-will, OS-7 labour tribute |
+| **Goods in kind, as it is known for** | OS-2 goods permits per `FactionDef`, OS-1 its trader kinds, OS-4 shelf entries, OS-7 basket (the requirement's boundary) |
+| **Trade access and prices** | OS-1 requested caravans and orbital traders; OS-2a title-gated trader kinds (`permitRequiredForTrading`); OS-5 price offset — no vanilla carrier, two mod donors |
+| **Safe passage** | Non-hostility already gives it ([`POLITICS.md`](POLITICS.md) § *Settlements meet passing caravans*, A/B). Extras: OS-2 transport shuttle; RimPacts' ambush exemption and caravan speed near treaty settlements as donors |
+| **Political weight** | [`POLITICS.md`](POLITICS.md)'s ripple with a seeded sworn edge; an intercession quest (`QuestNode_ChangeFactionGoodwill` on a third faction, XML); #92's ally-aid battle; a `GoodwillSituationWorker` natural offset for its friends (**T-115** caution) |
+| **Following into orbit** | Per-`FactionDef` XML: `arrivalLayerWhitelist` must list Orbit. OS-2 permits must not blacklist Orbit. Comms and permits work from the gravship because it `IsPlayerHome` (P2 § *Where payment arrives*) |
+
+#### Reverence and Goodwill — the gate, and whether Reverence can be spent
+
+**Reverence can gate which services and how often, without being spent** — three seams, all [V]:
+
+1. **Permits per band (OS-2).** A `ReverenceBandDef` effect ([`RELIGION.md`](RELIGION.md) §5 bands)
+   grants or revokes permits. *Which* is the permit set; *how often* is each permit's
+   `cooldownDays`, upgraded along a `prerequisite` chain.
+2. **The standing gate (OS-3, OS-4, OS-6 offers).** `StandingAxisDef` Reverence on a `DiaOption` or a
+   quest's accept, shown before it is reached. A band-scaled cooldown is ours [I].
+3. **Frequency of what is received (OS-5, OS-6).** Boons and storyteller weights keyed on the band.
+
+**Goodwill pays; Reverence opens.** That is the pairing the requirement's own grammar already uses
+for institutions (*"Reverence unlocks the diplomatic option; normal Goodwill remains the spend
+lever"*). The vanilla asks (OS-1), the shelf (OS-4) and the lent-pawn penalties all spend Goodwill
+already. **#160 couples the two.** If high Reverence accelerates Goodwill gain, a sworn faction's
+services refill faster with no mechanism of their own. Vanilla renders the ask price from
+`CalculateAdjustedGoodwillChange`. #160's routes scale **positive** gains only, and an ask is a
+negative change, so an ask's price label stays true. It would drift only if #97 extends scaling to
+negatives (#160 open question).
+
+**Reverence can be made spendable, and what it would cost** [I]:
+
+- **Mechanically** it is a debit on the §1 record — a `QuestCurrency` subclass or a permit-favour
+  analogue. Medium.
+- **It contradicts a stated requirement.** The grammar table in
+  [`requirements/RELIGION.md`](../requirements/RELIGION.md) says Reverence *"gates … rather than
+  being spent"*, while [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) keeps spending
+  open.
+- **It drains the eligibility it was earned for.** Submission, revolt, institutions and #160's
+  Goodwill curve all read the same number.
+- **It hands the player a dial on betrayal.** Global Reverence sets the Church's betrayal threshold.
+- **It stacks with decay** (§4).
+- **Royal favour as a separate per-faction pool** avoids touching Reverence, but it raises the
+  third-currency question.
+
+#### A holding whose parent faction later swears itself
+
+This answer reads a holding as **R1**. That reading rests on §3 *Open questions* (*"answered: it
+becomes the colony's"*); siblings still keep R2 live, and whether R2 stays open is Conrad's to confirm.
+FT&V's model remembers the parent by load ID (per #167). All three outcomes are expressible:
+
+| Outcome | How | Weight |
+|---|---|---|
+| **Stays a holding** | Nothing happens. It keeps paying as a holding | none |
+| **Folds into the oath** | Our code retires the holding's own payout and adds its yield as a service, or a permit, of the sworn relationship. Delivery shared with OS-7 | Medium |
+| **Returns** | #172's release: a `Settlement` recreated for the parent (the shape of FT&V's `ExecuteCedeToFactionAtTile`, which ships uncalled) | Medium |
+
+A return gets a new ID (per #165) and a full garrison [V]; the same layout is [I] — it follows from
+the tile seed, and does not hold under T-33 or a def climb (#164). Under **R2** the holding is still the parent's settlement, so folding is the default and
+"stays" would need two relationships on one faction. **Choosing among the three is a requirement.**
+
+#### Can a sworn faction stop being one?
+
+Yes, by every cause the question names:
+
+- **Reverence collapses.** Decay (§4) crosses a band down. The band-change letter (§5) is the
+  E-letter. Permits are revoked (OS-2) or options relock (OS-3). This can be **erosion**, services
+  shrinking band by band, or **an end** at the submission threshold.
+- **Betrayal.** The colony attacks it. Vanilla's `AffectRelationsOnAttacked` and the member-death
+  hooks make it hostile, and **every relation-riding carrier stops on its own**:
+  - permits refuse a hostile faction;
+  - comms asks and friendly raids need Ally.
+
+  A deliberate attack prompts `ConfirmAttackFriendlyFaction` as usual. #152's hole is different: an
+  attack order issued **before** the faction swore or became allied, which then lands without a
+  prompt.
+- **It throws the colony off.** RimPacts' tributary revolt is the shipped model (per #172). It is a
+  silent roll **off the shared stream** (`Rand.Chance`, no `PushState`) with choice letters beforehand, so under #8's rule it must arrive as an
+  E-quest or E-letter the player answers.
+- **Defeat in war.** No background war exists (#13), so this can only happen in an authored #92
+  ally-aid battle. `Faction.defeated` is set **true** only by `CheckDefeated` in vanilla; Worksites Expanded clears it
+(per #172).
+
+Each ending writes the §3 R4 record, revokes OS-2 permits and, for H3's latch, needs its
+"attacks can break it" hook. **The requirement states no intent either way.**
+
+### Constraints
+
+- **Vanilla addresses a faction only when the caller names it.** The storyteller's ally comps pass
+  none (§3 R5). Direct `RaidFriendly` / `RaidEnemy.TryExecute` with `parms.faction` set is honoured
+  (per #168 and #172) [V]; one engine entry covers both workers.
+- **Ally is a latch, not a number** — ≥75 up, ≤0 down ([`POLITICS.md`](POLITICS.md) §0). Every
+  vanilla ask needs it. Permits do not.
+- **Vanilla comms military aid refuses factions below Industrial** [V].
+- **No relation-based price exists in vanilla** [V]. Trade prices are a patch.
+- **Orbit refuses every surface faction** unless its `FactionDef.arrivalLayerWhitelist` lists Orbit
+  (Empire, TradersGuild, Salvagers and Mechanoid only, in vanilla), and orbit takes only whitelisted
+  incidents [V]. **T-48** records the orbit gates.
+- **A titleless permit is permanent until we remove it** [V] (**T-146**). See *Open questions*.
+- **Every player act is a synced command** — T-80, T-82, T-95, T-96, T-97, T-137. Nothing is a
+  setting (T-18). Never swap the sworn faction's def (T-36, T-98).
+
+### Available mechanisms
+
+| Mechanism | What it provides | Route | Evidence |
+|---|---|---|---|
+| `FactionDialogMaker.RequestTraderOption` / `RequestOrbitalTraderOption` / `RequestMilitaryAidOption` / `CallForAid` | Ally-only asks: −15 / 4 d, −30 / 15 d, −25 / 1 d; aid refused below Industrial | OS-1 | [V] `Assembly-CSharp.dll` |
+| `FactionDialogMaker.RequestAICoreQuest` | A comms option that generates a quest | OS-3 | [V] |
+| `Pawn_RoyaltyTracker` (`AddPermit`, `GetPermit`, `RoyalAidGizmo`, `AllFactionPermits`, `SetTitle`, `GainFavor`) | Per-faction permits and titles; titleless permits held and usable | OS-2 | [V] |
+| `RoyalTitlePermitDef` / `RoyalAid` / `RoyalTitlePermitWorker(_CallAid, _CallLaborers, _DropResources, _CallShuttle)` | XML services with cooldown, favour, layer blacklist; aid at Neutral | OS-2 | [V] |
+| `RoyalTitleDef` | Every obligation optional in XML | OS-2a | [V] |
+| `PermitsCardUtility` | Faction switcher; shows permits only for titled factions | OS-2a | [V] |
+| `IncidentWorker_RaidFriendly.TryResolveRaidFaction` | Honours a pinned faction, skipping the Ally filter | OS-2, OS-3, OS-10 | [V] |
+| Multiplayer `SyncMethods` | `AddPermit`, `SetTitle`, `RefundPermits`, `ResetPermitsAndPoints`, `CallResourcesToCaravan` | OS-2 | [V] `2606448745/1.6/AssembliesCustom/Multiplayer.dll` |
+| `Permit_CallLaborers`; VFE Empire `Permit_CallTechfriar` | Lent pawns keyed to `$permitFaction`, returned by shuttle | OS-8 | [V] XML |
+| `Reward_Pawn`, `QuestNode_GeneratePawn`, `PawnGenerationRequest.FixedIdeo` | Offered pawns; converts from C# | OS-8 | [V] |
+| VEF `QuestGiverDef` / `GoodwillCurrency` | A faction-scoped quest shelf priced in Goodwill with a minimum | OS-4 | [V] `2023507013/1.6/Assemblies/VEF.dll` |
+| VFED `DeserterServiceDef` + MP Compat `SyncedPurchaseService` | A synced menu of services, Deserters-bound | OS-4 donor | [V] `3025493377`, `1629973374/1.6/Referenced/` |
+| VFE Classical `PerkDef` / `PerkWorker` (`Auxilia`, `Tributum`, `VeniVidiVici`) | Per-faction boons won from a government | OS-5 donor | [V] `2787850474/1.6/Assemblies/VFEC.dll` |
+| VFE Classical `Buildings.Beacon` + MP Compat `LightCommand` | A built signal calling an Ally's warband, map cooldown, synced | OS-10 donor | [V] |
+| `Settlement_TraderTracker.TradePriceImprovementOffsetForPlayer` (virtual, 0.02); RimPacts `Patch_Tradeable_GetPriceFor` | The price seam; a per-faction price donor | OS-5 | [V] |
+| RimPacts `TreatyDef`s, `TreatyWorker_Tribute`, `TributeLaborer`, `GoodsOrder` / `Dialog_RptGoodsRequest`, `FriendlyAid` | Treaties, labour tribute, player goods orders, disaster aid — all design donors | OS-7, OS-5 donors | [V] `3762723122/Assemblies/RimPacts.dll` |
+| `FactionDef.arrivalLayerWhitelist`; `PlanetLayerDef.onlyAllowWhitelisted*` | Orbit arrival gate | orbit | [V] |
+
+**What does not exist, where it shaped the routes:**
+
+- **No faction but the Empire carries titles.** An XML sweep of `royalTitleTags` over both roots and
+  `Data` finds Royalty only.
+- **No shipped system gives a *chosen* faction's services to the player under Multiplayer.** The
+  two-encoding wide pass narrowed to vanilla, RimPacts, VFE Classical, VFE Deserters and VFE Empire,
+  and all were depth-read where they carried a service. Every route therefore composes a vanilla
+  primitive with the sworn faction named by us.
+
+### Status
+
+**Evidence class: READ**, established on [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168).
+Every mechanism in the table is [V]; every route is [I] by construction.
+
+**Sweeps.** Both roots, `-g '!**/obj/**' -g '!**/Referenced/**'`, `.dll`. ASCII, and UTF-16LE built
+byte-wise by a Python reader rather than through a shell. Case-insensitive throughout. Validators
+came from the heap being searched: `TitheTypeDef` (ASCII) and `InStockpile` (UTF-16) both hit VFE
+Empire.
+
+| Term | Result |
+|---|---|
+| `MilitaryAid` | vanilla, RimPacts, Rim War; VFE Empire and Vehicles (ASCII only) |
+| `CallAid` | vanilla, Multiplayer; Mechanoids: Total Warfare (an icon path) |
+| `Reinforce` | 12 mods and vanilla. Carriers read: VFE Classical (`Beacon`, `Auxilia`), RimPacts. Others are raid or trader internals by name [I] |
+| `Tributary` | RimPacts only |
+| `Fealty`, `Liege`, `Overlord`, `Protectorate`, `Levy`, `Conscript`, `Hireling`, `Emissary`, `RequestAid` | **zero** in both encodings |
+
+The XML def-family frequency table (`<Ns.Type>` tags matching service-like names) finds
+`VFEC.Perks.PerkDef`, `VFEEmpire.TitheTypeDef`, `VFED.DeserterServiceDef`, `RimPacts.TreatyDef`
+and nothing else of the kind.
+
+**Premises corrected:**
+
+1. **P3's *"cannot exist without a royal title"* is wrong** [V]. A permit is held and used with no
+   title. Only the permits card, title-gated trade and the permit comm options need one.
+2. **§3 R5's *"cannot address a named faction"* holds only for the storyteller path** [V].
+3. **[`POLITICS.md`](POLITICS.md) §0's *"all three spend goodwill … −30"* is imprecise** [V]. The
+   prices are −15, −30 and −25, and military aid also refuses factions below Industrial.
+4. **[`RELIGION.md`](RELIGION.md) §5's inherited `RoyalAid` field list is now [V]**, with `points`,
+   `aidDurationDays` and `favorCost` added.
+5. **§3 R4's *"cannot hold the relation still"*** is superseded by
+   [`RELIGION.md`](RELIGION.md) H1–H3.
+
+### Open questions
+
+**Requirement gaps — to Conrad via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2)**
+(#35, the requirement's author, is closed):
+
+1. **Is a goods drop the player asks for on a cooldown a *service* or *goods*?** OS-2 goods permits and
+   OS-7 baskets sit on the requirement's hard boundary.
+2. **Reverence spend.** The religion grammar says *"gated, not spent"*; territory keeps spending
+   open. One of them must give.
+3. **May a sworn faction grant a founder a title of its own (OS-2a)?** Titles are otherwise the
+   Church's grammar. And **is royal favour with a sworn faction a third currency?** OS-2b avoids both
+   questions.
+4. **Must a sworn faction be held at Ally?** OS-1, R5 and OS-10 need it; OS-2 does not.
+5. **A holding whose parent swears** — stays, folds or returns.
+6. **Can a sworn faction stop being one**, and by which of the four causes?
+7. **Which sworn factions follow into orbit.**
+8. **Who holds the services.** A founder, any colonist, or one holder per player.
+
+**Build questions, next map (unowned until a route is selected):**
+
+- the band-effect grant/revoke hook;
+- the revoke write on `AllFactionPermits`;
+- our cooldown store (OS-3);
+- T-137 registration if a targeting worker is ours;
+- the OS-4 gate node;
+- the OS-5 runtime-patch discipline under Multiplayer;
+- OS-10's faction pin.
+
+**Owned elsewhere:** Reverence → Goodwill scaling and where its price is displayed:
+[#160](https://github.com/cjd721/Rimworld-Archinity/issues/160). The ending shapes' E-letter and
+E-quest: [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172)'s naming.
+
+---
+
+## What an outpost costs — materials, silver and committed pawns
+
+### Purpose and scope
+
+This answers [`requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *An outpost is built, staffed and worth it*: its cost in materials and silver, which pawns may be committed, whether staffing bounds how many outposts exist, and whether a yield can justify the pawns it takes. Resolved by [#170](https://github.com/cjd721/Rimworld-Archinity/issues/170).
+
+It builds on §2 (the engine is VEF's `Outposts.dll`; #81's multiplayer harness B1–B5) and cites that section rather than repeating it. Upkeep, and what happens when an outpost is attacked or loses staff, belong to [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171). A scouting outpost's reveal belongs to [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165) and to Charting. The numbers belong to [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+
+### Verdict
+
+- **Possible? Yes.** Committed pawns, material and silver costs, and restatted yields are all shipped or XML. **As shipped, the carrier cannot tell pawn kinds apart, and staffing does not limit the count.** Each gap is closed by a contained piece of C# on a seam that has been read.
+- **Multiplayer? With work.** Every VEF route needs §2's harness. The routes here add deterministic reads of synced state, not new sync surface. §2c's settings gate is now unconditional (#170; see Constraints).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **OC-S1** VEF outpost as shipped | Pawns leave the colony and live at the tile until removed or packed | VEF `Outposts.dll` + VOE / VFE Classical defs | as shipped | Easy | With work (§2 harness) |
+| **OC-S2** Timed lend quest | "Lend N colonists for D days". A contract that returns them, not a standing place. | vanilla `QuestPart_LendColonistsToFaction`, Royalty `Script_PawnLend` | XML quest | Easy→Medium | Yes [I] |
+| **OC-S3** Own engine | Any roster rule | our code (§2 Build B) | C# | Hard — **not recommended**, since the harness is a third of the work | With work |
+| **OC-K1** Founding gate on our subclass | A founding-only kind rule, e.g. at least one non-slave colonist; no Harmony | VEF's reflection hook `CanSpawnOnWith` | C# | Medium | With work |
+| **OC-K2** Per-pawn admission + roster invariant | Who may join, who may leave, and each kind's yield, for the outpost's whole life | Harmony on `Utils.CanAddPawn`, `Outpost.RemovePawn`, `Outpost.IsCapable` | C# | Medium | With work |
+| **OC-K3** Vanilla shuttle filter | Colonist / prisoner / slave / health / age flags, in XML | `CompShuttle.IsAllowed` (with OC-S2) | XML | Easy | Yes [I] |
+| **OC-C1** `CostToMake` restat | A one-time cost in materials and silver per outpost type, carried by the founding caravan | `OutpostExtension.CostToMake` | XML patch | Easy | With work |
+| **OC-C2** Computed cost | A cost scaled by era, or rising with each outpost held | our postfix on the three `CostToMake` readers | C# | Medium | With work |
+| **OC-C3** Build debt | Found now, pay from home, no yield until paid | VEF `costPaid` + `Dialog_GiveItems` / pod arrival (P4 shape) | C# + XML | Medium | With work |
+| **OC-N1** Continuous staffing floor | An outpost cannot be run below its minimum or kind rule | our patch on the Remove gizmo / `RemovePawn` | C# | Medium | With work |
+| **OC-N2** Population accounting | Committed pawns still count toward the storyteller's population, so the colony isn't refilled | our postfix on `StorytellerUtilityPopulation.AdjustedPopulation` | C# | Medium (one patch) | Yes |
+| **OC-N3** Hard cap | A fixed or era-keyed maximum | our check in the founding gate | C# | Medium | With work |
+| **OC-N4** Escalating cost | A soft bound through cost | = OC-C2 | C# | Medium | With work |
+| **OC-Y1** XML yield restat | Per-pawn, per-skill and per-cycle amounts, 7 of 13 VOE defs | `ResultOption` (§2a) | XML patch | Easy | With work |
+| **OC-Y2** C# yield for the rest | Scavenging, Town and the generated halves | our overrides (§2a) | C# | Medium | With work |
+| **OC-Y3** Yield by pawn kind | A slave, prisoner or colonist weighted differently | our override of `IsCapable` / `ProducedThings` | C# | Medium | With work |
+
+**OC-S1 — as shipped.**
+- *Gets:* `Outpost.AddPawn` removes the pawn from its caravan, its `holdingOwner` and `Find.WorldPawns`, and scribes it `Deep` in `occupants` [V]. It comes back through Remove (a one-pawn caravan) or Pack [V]. The outpost ticks only rest, `ProvidedFood`, chemical needs, health and tending; mood and suppression are never ticked, so there is no rebellion, escape or break [V].
+- *Cannot:* limit its own count (see OC-N0 under Constraints).
+- *Consequence:* committed pawns drop out of the storyteller's population (OC-N2).
+
+**OC-S2 — timed lend quest.**
+- *Gets:* a shuttle collects N pawns. `returnLentColonistsInTicks` later they come back by shuttle or pod, with the reward scaled by count × days. They stay counted through `QuestUtility.TotalBorrowedColonistCount` [V].
+- *Cannot:* be a place. It has no tile yield and it ends. The script is Royalty's; the quest part is core [V].
+
+**OC-K1 — founding gate on our subclass.**
+- *Gets:* `Dialog_CreateCamp` evaluates `ext.CanSpawnOnWithExt(...) ?? <worldObjectClass>.CanSpawnOnWith(PlanetTile, List<Pawn>)` by reflection, so a static method on our class runs whenever VEF's gate passes [V].
+- *Cannot:* see prisoners (the list is `HumanColonists`), police the roster after founding, or reach VOE's and VFEC's classes without subclassing each one.
+
+**OC-K2 — admission + invariant.**
+- *Gets:* one postfix on `Utils.CanAddPawn` covers the founding loop, the caravan Add gizmo and pod arrival, because all of them call `AddPawn` [V]. Vanilla supplies every distinction (`IsFreeNonSlaveColonist`, `IsSlaveOfColony`, `IsPrisonerOfColony`, `IsAnimal`) [V]. A rule such as *at least one colonist, slaves may add to it* is expressible here and nowhere cheaper.
+- *Consequence:* the build charge fires only when the caravan's **last humanlike** joins [V]. A rule that rejects a humanlike leaves the caravan alive and **the cost uncharged**, so OC-K2 and OC-C1 have to be built together (**T-149**).
+- *Also reaches:* VOE `Outpost_Defensive`'s Deploy removes occupants through `RemovePawn`, bypassing the Remove gizmo, and VOE `Outpost_Town.Produce` adds generated pawns through `AddPawn` — with the producing pawn's `kindDef` and **faction**, so a prisoner recruits foreigners. A kind rule on `CanAddPawn` would silently discard them, and Town growth enlarges T-148's invisible population over time [V].
+
+**OC-K3 — shuttle filter.**
+- *Gets:* `acceptColonists`, `acceptColonyPrisoners`, `allowSlaves`, `onlyAcceptColonists`, `onlyAcceptHealthy`, `minAge` and `requiredColonistCount` [V].
+- *Cannot:* express "at least one non-slave", because `allowSlaves` is all-or-nothing.
+
+**OC-C1 — `CostToMake`.**
+- *Gets:* any `ThingDef`, silver included, checked against the first player caravan on the tile (`PlayerControlledCaravanAt`, not necessarily the founding one) and charged to the founding caravan, shown in the founding tooltip, and charged once behind the scribed `costPaid` [V].
+- *Today:* **0 of 13** VOE and **0 of 4** VFE Classical 1.6 defs carry a cost [V].
+- *Cannot:* scale by era (it is static per def), be paid from home, or impose build time. `TicksToSetUp` is declared and read nowhere [V].
+
+**OC-C2 — computed cost.**
+- *Gets:* any cost function. It needs a postfix on `CanSpawnOnWithExt`, `RequirementsStringBase` and the charge in `AddPawn`.
+- *Consequence:* never write the value into `outpost.Ext`, which is shared by the def (§2b B3).
+
+**OC-C3 — build debt.**
+- *Gets:* VEF's ledger and its two reverse-delivery paths, plus one `if` of ours withholding production (P4 correction). Pushing back `ticksTillProduction` models build time (#171). Paying by pod is synced as shipped. Paying by caravan (`Dialog_GiveItems`) is §2b B5 (#171).
+
+**OC-N1 — staffing floor.**
+- *Gets:* the outpost is only as real as its staff. It pairs with #171's **OU-D4** (*staff in trouble*) and its *Loss* section.
+- *Consequence:* the rule must live inside the synced Remove commit (§2b B5), not only in the button's disabled state.
+
+**OC-N2 — population accounting.**
+- *Gets:* committed pawns count toward population intent, which is vanilla's own `TotalBorrowedColonistCount` precedent [V]. It is a deterministic read, so it is multiplayer-safe.
+
+**OC-N3 / OC-N4 — caps.**
+- *OC-N3:* a hard cap, if one is ever wanted.
+- *OC-N4:* the OC-C2 cost function, bounding the count through price.
+
+**OC-Y1–OC-Y3 — yield.**
+- *OC-Y1 and OC-Y2:* as in §2a.
+- *Levers:* `BaseAmount`, `AmountPerPawn`, `AmountsPerSkills`, `TicksPerProduction`, the `ResultOptions` list (silver included) and the delivery method (P2).
+- *OC-Y3:* weights by kind, and is OC-K2's yield half.
+
+**Recommendation (not a selection).** OC-S1 + OC-C1 + OC-Y1 is everything XML alone can do. Making staffing *the* limiter, as the requirement asks, needs **OC-N2 and OC-N1 together**. Any kind rule needs **OC-K2**, since OC-K1 covers founding only. The three share the founding gate and the roster seam. OC-S2 is a different beat (a contract, not a place) and is worth keeping for other uses.
+
+### Constraints
+
+- **OC-N0 — nothing bounds the count as shipped** [V]. `Outposts.dll` has no cap. `CanSpawnOnWithExt` rejects only a tile with a settlement base on or next to it, or a neighbouring `Outpost`. `MinPawns` and `RequiredSkills` are checked **only at founding**. After that the Remove gizmo is disabled only at one occupant, and `Tick()` abandons the outpost only at zero, so **every outpost can be run on one occupant of any kind, an animal included**.
+- **VEF cannot tell pawn kinds apart** [V].
+  - Founding counts `Pawn.IsFreeColonist`, which in 1.6 includes slaves (`hostFactionInt` null, `SlaveIsSecure` off-map) and excludes prisoners.
+  - The founding commit calls `AddPawn` on **every pawn in the caravan**.
+  - `Utils.CanAddPawn` checks only the ideology `Event`.
+  - `IsCapable` (humanlike + skills) makes a prisoner or slave produce like a colonist.
+- **Committed pawns leave the storyteller's population** [V] (**T-148**). `AdjustedPopulation` reads maps, caravans, travelling transporters and borrowed colonists only.
+- **The build charge and the roster share a seam** [V] (**T-149**). `CostToMake` is taken inside `AddPawn` only when the caravan's last humanlike joins.
+- **The staffing rule is a player setting** [V]. `MinPawns`, `Range`, `TicksPerProduction` and `TicksToPack` are `[PostToSetings]`. §2c item 1 now blocks `Setup` unconditionally (#170), so these and the two `Settings` multipliers keep their XML values in both modes. An MP-only gate would have left them editable in single-player, where the campaign is playtested, which the requirement forbids (T-18).
+- A removed prisoner leaves as a caravan of **their own faction** (`Outpost.GetGizmos` Remove lambda) [V code; the in-play effect is I].
+- All founding and roster writes are unsynced until §2's harness exists (T-80).
+
+### Available mechanisms
+
+| Mechanism | What it provides | Evidence |
+|---|---|---|
+| `Outposts.Outpost.AddPawn` / `RemovePawn` / `occupants` | Commitment, removal from the colony, deep-scribed roster | [V] `2023507013/1.6/Assemblies/Outposts.dll` |
+| `Outposts.Dialog_CreateCamp` (ctor + `DoOutpostDisplay`) | Founding validation over `HumanColonists`; commit of every caravan pawn; the `CanSpawnOnWith` reflection hook | [V] |
+| `Outposts.Utils.CanAddPawn` / `CanSpawnOnWithExt` / `RequirementsStringBase` | Per-pawn ideology gate; founding gates; the cost tooltip | [V] |
+| `Outposts.Outpost.IsCapable` / `CapablePawns` | Which occupants produce | [V] |
+| `OutpostExtension.CostToMake`, `MinPawns`, `TicksToSetUp` | Cost list; founding minimum; a dead field | [V] |
+| `RimWorld.StorytellerUtilityPopulation.AdjustedPopulation`, `QuestUtility.TotalBorrowedColonistCount` | Population the storyteller sees; the borrowed-pawn precedent | [V] Assembly-CSharp 1.6 |
+| `RimWorld.QuestPart_LendColonistsToFaction`, `CompShuttle.IsAllowed`, Royalty `Script_PawnLend` | Timed lend with population kept; XML pawn-kind filter | [V] |
+| VFE Classical `Outposts.xml` + `VFEC.Outposts.*` | A second content carrier on the same engine; 4 defs, same defNames as VOE's | [V] `2787850474/1.6` |
+
+**Wide pass.** I swept both roots with `-i` for `outpost` in `.dll`, ASCII and null-interleaved UTF-16 (validated on `Outposts.dll`), excluding `obj/` and `Referenced/`. I also enumerated every `<worldObjectClass>` in the corpus XML. Nothing turned up **no player-founded, pawn-staffed carrier other than `Outposts.dll`**. The alternatives cleared:
+
+- **FT&V `FactionTerritories_VassalOutpost`:** a vassal, consumes no pawns (§3).
+- **Worksites Expanded:** NPC sites.
+- **Rim War `Settler`:** NPC expansion driven by abstract points; barred as background war simulation.
+- **RimPacts:** an interop shim (#81).
+- **Medieval Overhaul:** a Harmony patch on VOE's hunting yield.
+- **Better Architect Menu:** an architect-menu reference to VEF's `Outposts.*` / `OutpostDeliverySpot` (a `#US` literal) [I].
+- **VFE Security:** the hit is in the 1.4 assembly only.
+- **Vanilla `Settle`:** a player-operated map, which fails *operates nothing*.
+- **Vanilla `Camp`:** a temporary map.
+
+### Status
+
+READ. The mechanisms are [V] against the 1.6 assemblies and defs cited. Every route is [I] by construction: the mechanisms are read, their composition is unbuilt. [#170](https://github.com/cjd721/Rimworld-Archinity/issues/170), building on [#81](https://github.com/cjd721/Rimworld-Archinity/issues/81).
+
+### Open questions
+
+- **Which pawn kinds may be committed.** A requirement: Conrad, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2) (the requirement's author, #35, is closed); balance with #119. All three candidate rules are expressible under OC-K2.
+- **Cost, `MinPawns` and yield numbers, and the era key for OC-C1/OC-C2.** Owned by #119. `docs/progression/` is empty.
+- **What an outpost below its floor does.** Owned by #171 (OU-D4 and *Loss*); pairs with OC-N1.
+- **VOE vs VFE Classical defName collision.** Sourcing, #14 / `MOD-VERDICTS.md`.
+- **Optional RUN:** one single-player save; compare the storyteller's "Adjusted population" debug readout before and after founding an outpost with 3 colonists.
+
+---
+
+## An outpost's upkeep arrives as events, not as a management surface
+
+### Purpose and scope
+
+This section answers [`docs/requirements/TERRITORY.md`](../requirements/TERRITORY.md) § *An outpost is built, staffed and worth it*. The clause it answers is *"an outpost's upkeep reaches the player as an event, never as a management surface"*: something happens, the player decides once, and it is over.
+
+It covers four questions:
+- whether an outpost can raise events;
+- whether an outpost can be attacked and defended;
+- whether an outpost can degrade or stop paying without a per-tick simulation or a screen;
+- whether any of that can be authored per outpost type.
+
+Resolved by [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171).
+
+**Not owned here:**
+- the engine and its multiplayer harness (§2, [#81](https://github.com/cjd721/Rimworld-Archinity/issues/81));
+- cost and staffing ([#170](https://github.com/cjd721/Rimworld-Archinity/issues/170));
+- the demand shell ([`POLITICS.md`](POLITICS.md) § *The faction demand*, [#91](https://github.com/cjd721/Rimworld-Archinity/issues/91));
+- the overlay battle (§1, [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92));
+- how often and how harshly any of this happens (balance, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
+
+Route IDs carry the **OU-** prefix.
+
+**Shape names**, shared with [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172) and [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154).
+
+Events the player answers:
+- **E-letter:** a letter.
+- **E-quest:** #91's declinable quest.
+- **E-overlay:** #92's overlay world object on the target's tile.
+- **E-site:** a vanilla `Site` the player travels to.
+- **E-march:** a hostile world object that moves toward the target (#154). **Not recommended.** No outpost route uses it: there is no MP-safe donor, and OU-A1 and OU-A2 give the same beat without movement.
+- **E-quest→E-overlay** and **E-quest→E-site:** #91's quest is the shell, and accepting it spawns the arena.
+
+What happens if the player does not come:
+- **/roll:** §0 P4's seeded roll.
+- **/forfeit:** a deterministic loss or degrade (#172's variant (b)).
+
+Where the fight's map comes from:
+- **M-own:** the target is its own map parent.
+- **M-site:** the site's own map.
+- **M-proxy:** FT&V's temporary settlement on the tile.
+
+### Verdict
+
+- **Possible? Yes.** No shipped carrier exists: VEF's outpost engine raises no events of its own, and nothing in the corpus attacks a VEF outpost.
+- **Multiplayer? With work.** This is on top of #81's harness. The player's one decision must be a synced commit: a quest accept or choice, a world-object float-menu option, or a pod launch. It must never be a custom `ChoiceLetter` option (T-96) or VEF's give-items dialog (§2b B5).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| OU-N1 E-letter on a clock | a notice at the outpost with an immediate effect | our World-tagged `IncidentDef` + worker | XML + C# | Medium | Yes. Options need `[SyncMethod]` (T-96) |
+| OU-N2 E-quest | a declinable ask with a deadline, a countdown and a refusal consequence | vanilla quests + #91's refusal part + our outpost picker | XML + C# | Medium | Yes |
+| OU-A1 E-overlay on the outpost (/roll or /forfeit) | a timed attack on the outpost, which the player attends or which resolves in absentia | §1 Build B generalised; FT&V as read donor | C# | Hard | With work (§0 P4, §0 P5; plus the map under M-own) |
+| OU-A2 E-quest→E-site | a hostile site near the outpost; ignoring it hurts the outpost | vanilla `Site` + #91 + our tile node and consequence part | XML + C# | Medium | Yes [I] |
+| OU-A3 E-quest→E-overlay | OU-A2's shell, with the fight at the outpost | #91 + §1 | C# | Hard | as OU-A1 |
+| OU-A4 staff ambush | the outpost's own pawns fight on a vanilla ambush map | `IncidentWorker_Ambush` + an XML flag + a map-removal override | XML + C# | Medium–Hard | Yes. **Not recommended** for upkeep: the player cannot decline it |
+| OU-D1 late payout | the next delivery slips | a write to `Outpost.ticksTillProduction` | C#, no Harmony | Easy on OU-N1/N2 | Yes |
+| OU-D2 stalled until answered | no yield until the player acts | a scribed flag on a `WorldObjectComp` added to `OutpostBase` by XML + a production-time prefix | XML + C# | Medium | Yes |
+| OU-D3 packing ultimatum | production stops, VEF's countdown shows, and the staff come home at zero | VEF `Packing` + `ConvertToCaravan` | C#, no Harmony | Easy–Medium | With work (the stop-pack gizmo, B5) |
+| OU-D4 staff in trouble | a real disease or injury that VEF's health tick runs; sending medicine is the answer (each tend spends a whole stack) | VEF occupant health tick + our hediff | C# worker, XML table | Medium | Yes |
+| OU-T1 per-type table | failures, weights and consequences per kind | our `DefModExtension` on each outpost `WorldObjectDef` | XML | Easy (once OU-N1/N2 exist) | Yes |
+| OU-T2 per-class behaviour | failures that touch type-specific state | VOE `worldObjectClass` | C# | Medium | Yes |
+| OU-T3 a quest per type | quests per kind | separate `QuestScriptDef`s | XML | Easy each | Yes |
+
+The routes compose:
+- **OU-N** carries the decision.
+- **OU-D** is the stake.
+- **OU-T** varies both by kind.
+
+#### OU-N1 — E-letter on a clock
+
+- **Gets us:** a letter pointing at the outpost. It applies OU-D1–D4 in the same synced tick.
+- **Trigger:**
+  - `Storyteller.AllIncidentTargets` includes `Find.World`, and vanilla storytellers already run World-tagged comps [V]. No clock of our own is needed.
+  - Alternatively, a `WorldComponent` gated on `IsHashIntervalTick` (§0 P3).
+- **Cannot:** offer a choice for free. A custom `ChoiceLetter`'s options act on one client only (T-96).
+- **Consequence:** with no decision elsewhere, this is the background roll the requirement rules out.
+
+#### OU-N2 — E-quest
+
+- **Gets us:** the whole loop, from shipped parts:
+  - `expireDaysRange` gives the offer window.
+  - `QuestPart_Choice` gives *pay this or that*.
+  - The Quests tab gives the countdown.
+  - #91's `QuestPart_DemandRefused` handles refusal.
+  - `IncidentWorker_GiveQuest` is the XML trigger.
+  - `QuestNode_DemandBudget` is the cap.
+- **Multiplayer:** `Quest.Accept` and `QuestPart_Choice` are synced [V].
+- **Cannot:** find an outpost, or act on one, in XML. The picker node and the consequence part are C#.
+- **Ways the demand can be paid:**
+  - By transport pod into the outpost. This is synced [V].
+  - By caravan through VEF's `Dialog_GiveItems`. This is unsynced until B5 is closed.
+  - At home, by a part of ours.
+  - At a settlement, in vanilla's `TradeRequest` shape.
+- **Traps:** T-71, T-77, T-101.
+
+#### OU-A1 — E-overlay on the outpost
+
+- **Gets us:** a named attacker, a timer, an attend-or-not decision, and a stated result.
+- **Read donor:** FT&V's `Invasions.Utility.TryCreateForVassalOutpost` already runs the overlay against a player-held, map-less world object [V]. It is typed to FT&V's own class.
+- **The map.** **M-proxy works only while the target is not a `MapParent`**, and an outpost is one (see *Constraints*). That leaves two options:
+  - **M-own:** the outpost is the map parent. This needs a `ShouldRemoveMapNow` override, plus spawning occupants onto the map and returning them afterwards.
+  - **M-site:** the fight happens on a site one tile away.
+- **Attend option:** our own `CaravanArrivalAction`. It must override `StillValid`, because the base returns `true` (#152's trap, **T-139**).
+- **In absentia:** either:
+  - **/roll:** §0 P4's seeded roll.
+  - **/forfeit:** a deterministic loss or degrade (#172 (b)).
+
+  Either way, the result is the OU-D family or a loss.
+- **Consequence:** this is §1's Build B built for two target kinds. #172 (H-T1) and #154 want the same thing.
+
+#### OU-A2 — E-quest→E-site
+
+- **Gets us:** a real fight on a vanilla site map, with the vanilla timeout and quest UI. `SitePartWorker_RaidSource` is the read shape for a site that threatens until it is destroyed (§0 P3).
+- **Cannot:**
+  - Place the site relative to an outpost in XML. `QuestNode_GetSiteTile` measures only from a player home map (#154), so the tile node is C#.
+  - Put the fight *at* the outpost. It happens near it, and the staff are absent.
+- **Consequence:** the best story-to-weight ratio among the attack routes.
+
+#### OU-A4 — staff ambush
+
+- **Gets us:** the committed pawns defending themselves on a vanilla map (`CaravanIncidentUtility.SetupCaravanAttackMap`) [V].
+- **Cannot, as shipped:**
+  - Map-generating caravan incidents are blocked on outpost tiles. `allowCaravanIncidentsWhichGenerateMap` defaults `false`, and `OutpostBase` does not set it [V].
+  - Once unblocked, the map's parent is the outpost and nothing removes the map.
+  - A caravan of *all* the occupants destroys the outpost.
+- **Consequence:** the player cannot decline it, so it is a set piece. **Not recommended** as routine upkeep.
+
+#### OU-D1–D4 — degrade without a per-tick simulation
+
+All four ride clocks VEF already runs. **None adds per-tick work.**
+
+- **OU-D1:** `ticksTillProduction` is a private scribed int, decremented by delta. Writing it delays the payout [V].
+- **OU-D2:** the production seam is not uniform [V]:
+  - `Outpost_Town` overrides `Produce()` (it yields pawns).
+  - `Outpost_Scavenging` and `Outpost_Drilling` override `ProducedThings()`.
+
+  A stall is still one contained patch; where it hooks is a build question. `OutpostBase` declares no `comps` today [V].
+- **OU-D3:** a packing outpost produces nothing (`if (Packing) … else if (production)`) and shows *"Packing: N days"*. At zero, `ConvertToCaravan` returns its occupants and goods as a caravan on the tile [V].
+  - **Limit:** VEF's stop-pack gizmo sets `ticksTillPacked = -1` [V]. The player can cancel the ultimatum for free unless the gizmo is suppressed or replaced. It is unsynced either way (B5).
+- **OU-D4:** occupant hediffs progress on VEF's clocks, an existing cost [V]. Disease progression, injuries, bleeding and tending run on the interval path (`TickInterval` → `SatisfyNeedsInterval` → `OutpostHealthTickInterval`); the per-tick `Hediff.Tick` is mostly empty in 1.6.
+  - **Tending spends whole stacks** [V]. `OutpostHealthTickInterval` takes every "best so far" medicine stack out of `containedItems` with `TakeItem`, and `TendUtility.DoTend` decrements the last one, which is never returned. A delivery of N medicine buys about one tend per stack, not N tends. A VEF defect we may want to patch (#119).
+  - **A pawn can die, but VEF cleans up deaths only on the per-tick path** [V code; in play I]. `SatisfyNeeds` removes a dead pawn and stores its corpse only if the death happened inside its own `OutpostHealthTick`. A death from disease or bleeding happens on the interval path, so the dead pawn stays in `occupants`, still counts toward `PawnCount` and, through `IsCapable`, still produces. The outpost is never abandoned by it (**T-152**). Handling death is ours: a check in the synced tick.
+  - At zero occupants, VEF sends *"Abandoned"* and destroys the outpost.
+  - **Food cannot run short:** `ProvidedFood` is conjured with no stock [V]. A food shortfall is our code.
+
+#### Loss
+
+`OutpostsMod.Notify_Removed` is empty, and the occupants are no longer world pawns (#170) [V]. A bare `Destroy()` on a staffed outpost therefore drops living pawns silently.
+
+A loss route has to choose what happens to them. Each choice is a different story:
+- **Evacuate** (`ConvertToCaravan`): *they fled home*.
+- **Kill:** *they fell*.
+- **Capture:** *they were taken*. This is the only choice that opens a rescue.
+
+#### OU-T1–T3 — per type
+
+- **OU-T1:** a `DefModExtension` of our own type on each outpost def. Mind T-06, T-02 and T-05.
+- **Two content carriers ship the same defNames:** VOE, and VFE Classical's four (#170). Which one wins is [I].
+- **OU-T2:** reaches the ten VOE classes only. `Outpost_Logging` and `Outpost_Trading` run `Outposts.Outpost`; `Outpost_Production` runs VEF's `Outposts.Outpost_ChooseResult` (§2).
+
+#### Recommendation (not a selection)
+
+**OU-N2, with OU-D3 and OU-D4 as the stakes, and OU-A2 for attacks.**
+- OU-N2 delivers the decision, the countdown and the refusal from synced, shipped parts.
+- OU-D3 and OU-D4 make *"unanswered"* visible through mechanics VEF already runs.
+- OU-A2 is the cheapest real fight.
+
+OU-A1 and OU-A3 are worth building only if §1's Build B is built for #172 or #154 anyway.
+
+### Constraints
+
+- **No shipped event attacks a VEF outpost** [V].
+  - `Outpost.raidFaction` and `raidPoints` are scribed and read nowhere.
+  - VOE's `Outpost_Defensive.InterceptRaid` is inert.
+- **An outpost has no map, and it adopts any map made on its tile** [V] (**T-150**). **M-proxy works only while the target is not a `MapParent`.**
+  - `OutpostBase` declares no `mapGenerator`, so `MapParent.MapGeneratorDef` falls back to `Encounter`.
+  - `WorldObjectsHolder.MapParentAt` returns the first `MapParent` on the tile.
+  - `ShouldRemoveMapNow` is not overridden, and the base returns `false`.
+  - `Tick` skips occupant needs while a map exists.
+- **The player's one decision must be a synced commit.**
+  - Synced: `Quest.Accept`, `QuestPart_Choice`, `CompLaunchable.TryLaunch`, and float-menu options on a world object (§0 P5, extended to postfix-added options per #154) [V].
+  - Not synced:
+    - custom `ChoiceLetter` options (T-96);
+    - every VEF gizmo and dialog (B5), including the stop-pack gizmo OU-D3 needs to govern;
+    - node-tree dialogs, where T-82 and T-95 apply.
+- **Any attend option of ours overrides `CaravanArrivalAction.StillValid`.** The base returns `true` (#152).
+- **Occupants must never be dropped by a bare `Destroy()`** (see *Loss*; **T-151**).
+- **No ModSettings** (T-18). VEF's `TimeMultiplier` scales `TicksToPack` when the player packs, so OU-D3's duration must be ours.
+
+### Available mechanisms
+
+- **VEF `Outposts.dll`** [V]:
+  - two clocks: `Tick` (needs, health, abandonment) and `TickInterval` (packing or production);
+  - `Packing` and `ConvertToCaravan`;
+  - medicine drawn from `containedItems` when tending;
+  - the *"Abandoned"* letter;
+  - `TransportPodsArrivalAction_AddToOutpost`, which scribes its outpost.
+
+  It has no incident workers, no raid use and no map.
+- **VOE `VOE.dll`** [V]: ten subclasses.
+  - Several override `Tick`, and all of those call the base.
+  - `Town` overrides `Produce`; `Scavenging` and `Drilling` override `ProducedThings`.
+  - `Defensive`'s raid intercept is inert.
+- **VFE Classical and Medieval Overhaul** [V]: yield variants only.
+- **FT&V** [V]: attacks its own map-less vassal object through the §1 overlay. It borrows a map through a proxy `Settlement`. Declined as a dependency (#8); it is the donor for OU-A1.
+- **Vanilla** [V]:
+  - World-tagged storyteller comps and `Storyteller.AllIncidentTargets`;
+  - `IncidentWorker_GiveQuest`;
+  - `IncidentWorker_Ambush` and `CaravanIncidentUtility`;
+  - `WorldObjectDef.allowCaravanIncidentsWhichGenerateMap` (default `false`);
+  - `GetOrGenerateMapUtility` and `MapParent.CheckRemoveMapNow`;
+  - `SitePartWorker_RaidSource` (§0 P3).
+- **Wide pass.**
+  - **How it ran:** `rg -a -l "Outposts"` over both roots and `*.dll`, excluding `obj/` and `Referenced/`, piped to `corpus.py --which`. Validated: VEF and VOE hit.
+  - **What it found:** seven mods.
+    - VEF, VOE, VFE Classical and Medieval Overhaul: read.
+    - FT&V and RimPacts: territory and interop reads only, cleared on #81 and #92.
+    - MP Compat: its two-line VOE patch (§2b).
+  - **Result:** no mod raises an event from a VEF outpost [V over the read assemblies].
+  - **UTF-16 half:** see #170's wide pass (§ *What an outpost costs*); it adds only mods already cleared there.
+
+### Status
+
+Evidence class **READ**, via [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171), building on #81, #92, #91 and #170. The mechanisms are [V]. That the routes compose them into working behaviour is [I] until built.
+
+### Open questions
+
+- **RUN (#119):** under M-own, what happens to occupants while the outpost has a map? `Tick` skips `SatisfyNeeds`, so observe whether they freeze or starve. One client is enough.
+- **RUN (#119):** give an occupant a lethal disease and observe `occupants` and the yield after the death (**T-152**).
+- **Build (#119):**
+  - where OU-D2's stall hooks, given the non-uniform production seam;
+  - which storyteller comp draws OU-N1's World incident;
+  - whether OU-D3 suppresses VEF's stop-pack gizmo or replaces it with a synced relief command;
+  - how occupants are spawned onto, and returned from, a battle map (OU-A1/A3).
+- **Story call (Conrad):** /roll or /forfeit for OU-A1/A3's in-absentia branch.
+- **Balance (#119):** cadence, severity, OU-D2/D3 durations, and a budget shared with #91's.
+- **Requirement gap — Conrad, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2)** (the requirement's author, #35, is closed):
+  - whether an outpost may be *lost* outright or only degraded;
+  - whether staff can be *captured*, which a rescue beat needs.
+
+  #8's *"loss must arrive as something the player acts on"* is written for holdings only.
+
+---
+
 ## The build
 
 **Both capabilities are already-solved problems with worked reference implementations in the
@@ -508,7 +2495,8 @@ finally { Rand.PopState(); }
 The winner is a pure function of tile, both faction load IDs and the tick — independent of where
 the shared stream sits, and the `finally` puts the stream back. `CODING_STANDARDS.md` § *The two
 gates* rules `Rand` on a synced tick safe anyway; this shape is stronger and free. **Every
-in-absentia outcome in this document uses it.**
+in-absentia outcome in this document that rolls uses it**; /forfeit resolves with no roll (§ *How a
+holding ends*).
 
 **P5 — a `FloatMenuOption` on a world object is synced; a gizmo or a dialog is not.**
 `Multiplayer.Client.SyncActions.Init` registers one `SyncAction` over
@@ -553,8 +2541,8 @@ clock, roll and sync are the same. What differs:
 | | #92 — ally-aid battle | #81 — outpost |
 |---|---|---|
 | Lifetime | transient, days | permanent until packed up |
-| Class | a bare `WorldObject` overlaying an existing `Settlement` | a `MapParent` that owns its own map |
-| Why | the settlement underneath already generates the map, so no site map generation is involved | colonists live there; it needs a map to enter |
+| Class | a bare `WorldObject` overlaying an existing `Settlement` | a `MapParent` with no `mapGenerator` and no map |
+| Why | the settlement underneath already generates the map, so no site map generation is involved | it holds its colonists off-map in `occupants`. If a map is ever forced on its tile it adopts it (`Encounter` fallback) and never removes it (**T-150**) |
 | Consequence | goodwill, ownership of the settlement underneath | items delivered to a home map |
 
 Because #92 never generates a site map, **it does not touch
@@ -691,7 +2679,7 @@ returns a false negative [V].
 
 | Piece | What it is |
 |---|---|
-| `Outposts.Outpost : MapParent, IRenameable` | `occupants` (`List<Pawn>`), `containedItems`, `ticksTillProduction`, `ticksTillPacked`, `costPaid`, `deliveryMap`, `raidFaction`/`raidPoints`. |
+| `Outposts.Outpost : MapParent, IRenameable` | `occupants` (`List<Pawn>`), `containedItems`, `ticksTillProduction`, `ticksTillPacked`, `costPaid`, `deliveryMap`, `raidFaction`/`raidPoints` (`raidFaction`/`raidPoints` are scribed and read nowhere — vestigial, #171). |
 | `Outposts.OutpostExtension : DefModExtension` | Per-type config, XML: `AllowedBiomes`/`DisallowedBiomes`, `CostToMake`, `MinPawns`, `RequiredSkills`, `Range`, `Event`, `TicksPerProduction` (default 900,000), `TicksToPack` (default 420,000), `ResultOptions`. |
 | `Outposts.ResultOption` | `Thing`, `BaseAmount`, `AmountPerPawn`, `AmountsPerSkills`, `MinSkills`. |
 | `Outpost.TickInterval(delta)` → `Produce()` → `Deliver(ProducedThings())` | Clock and payout. See P2 for why the gated path is safe here. |
@@ -771,12 +2759,15 @@ Founding, occupants, production, delivery, packing and every dialog are uncovere
 
 #### 2c. The harness, in `Archinity.Core`
 
-1. **One prefix on `OutpostsMod.Setup(Outpost)` returning `false` when `MP.IsInMultiplayer`.**
+1. **One prefix on `OutpostsMod.Setup(Outpost)` returning `false` unconditionally.**
    Closes **B2 and B3 together** and is the highest-value line in the build: with `Setup` never
-   running, every `[PostToSetings]` field — including the per-subclass multipliers — keeps its XML
-   value identically on both clients, and the shared `DefModExtension` is never written.
-2. **Two prefixes forcing `Settings.ProductionMultiplier` and `Settings.TimeMultiplier` to `1f`**
-   under the same gate. Closes the part of **B4** that `Setup` does not reach.
+   running, every `[PostToSetings]` field — `MinPawns`, `Range`, `TicksPerProduction`, `TicksToPack`
+   and the per-subclass multipliers — keeps its XML value in single-player and multiplayer alike,
+   and the shared `DefModExtension` is never written. Gating on `MP.IsInMultiplayer` would leave the
+   staffing limiter (#170) and the yield clock editable by the player in the mode the campaign is
+   playtested in.
+2. **Two prefixes forcing `Settings.ProductionMultiplier` and `Settings.TimeMultiplier` to `1f`**,
+   unconditionally. Closes the part of **B4** that `Setup` does not reach.
 3. **Closing B1 is a transpiler, or a prefix that reimplements the row.** There is **no commit
    method to wrap** — `MakeWorldObject`, `NameGenerator.GenerateName`, `Tile`, `SetFaction`,
    `Find.WorldObjects.Add` and the `AddPawn` loop are inline in a `Widgets.ButtonText` branch of
@@ -932,8 +2923,9 @@ none. Both can share §0's pattern.
 **Consequences:**
 - **A faction's last base still marks the faction defeated** unless we intercept before the write
   [V for where it is written].
-- **Copy only the vassalise half of Faction Territories.** Its invasions against vassals are what #8
-  session 2 excluded.
+- **Copy the vassalise half of Faction Territories; copy the invasion object only behind an
+  authored trigger, never its scheduler, and re-cast its sides** (see § *How a holding ends*).
+  What #8 session 2 excluded is the scheduler (#172).
 - **Create the object inside a synced command** (T-80), and never offer the choice as a modded
   `ChoiceLetter` (T-96).
 
@@ -945,8 +2937,8 @@ none. Both can share §0's pattern.
   ([`engine/factions-and-worldgen.md`](../engine/factions-and-worldgen.md) § *A `WorldObjectComp`
   added by XML patch backfills into an existing save*).
 - VFE Empire's `TitheInfo` is the precedent for marking a settlement rather than replacing it.
-- Conquest destroys the settlement. Faction Territories' `ExecuteCedeToFactionAtTile` shows the
-  recreation: a new `WorldObjectDefOf.Settlement`, `SetFaction` (a bare field write), and the old
+- Conquest destroys the settlement. Faction Territories' `ExecuteCedeToFactionAtTile` (uncalled in
+  FT&V; a precedent for the write, not a live path) shows the recreation: a new `WorldObjectDefOf.Settlement`, `SetFaction` (a bare field write), and the old
   name.
 
 **Levers:**
@@ -960,7 +2952,11 @@ none. Both can share §0's pattern.
 - **Resolve a hostile parent owning a vassal** without a rule from requirements [I].
 
 **Consequences:**
-- **The recreated settlement generates a new map on its next visit** (**T-33**).
+- **The recreated settlement generates its map afresh on its next visit, as every NPC settlement
+  does** — vanilla discards a settlement's map once the players leave and blocks re-entry for a day
+  (#164). The garrison returns at full strength [V]. The tile seed rebuilds the same layout [I] —
+  not under **T-33** (a KCSG `chooseFromSettlements` faction without MP Compat), and not if the
+  faction's def has climbed since.
 - **`defeated` must be cleared** if the recreated settlement was the faction's last base. It is a
   plain public field [V].
 
@@ -1011,7 +3007,8 @@ Independent paths [I]. **Not recommended.**
 **Cannot:**
 - **Make part of a faction a vassal.** That needs R2.
 - **Create a faction** (**T-07**).
-- **Hold the relation still.** Pinning belongs to #130 [I].
+- **Hold the relation still, by itself.** [`RELIGION.md`](RELIGION.md) § *The Schism* H1–H3
+  carry it (#130, #168).
 
 **Consequences:**
 - **Whole-faction conquest collides with `defeated`.** `CheckDefeated` writes it on the last base,
@@ -1028,7 +3025,9 @@ Independent paths [I]. **Not recommended.**
 - Visitors leave gifts at a base 25%, scaled by goodwill and wealth curves.
 - Allies send help when the colony is raided.
 
-**Cannot [V]:** address a named faction, because `MakeIntervalIncidents` passes none; or pay on a
+**Cannot [V]:** address a named faction, because `MakeIntervalIncidents` passes none — on the
+storyteller path. A direct `RaidFriendly.TryExecute` with `parms.faction` set sends that faction
+(#168), and `RaidEnemy` does the same, even for a defeated faction (#172). Nor can it pay on a
 schedule.
 
 **Consequences:** free background under any choice. It touches the storyteller that
@@ -1060,8 +3059,9 @@ schedule.
 **Yes** [I]:
 - **R1 or R2 with R4.** They key on a world object and on a faction respectively, so they never
   collide, and one delivery path can serve both.
-- **The only overlap is a rule for #35:** a settlement vassal whose parent later becomes a vassal
-  faction.
+- **The only overlap is one rule:** a settlement vassal whose parent later becomes a vassal
+  faction. § *A sworn faction owes services* → *A holding whose parent faction later swears itself*
+  answers it at route depth; the choice among its outcomes is Conrad's.
 - **R1 and R2 answer the same question two ways** (does a conquered settlement leave its faction?),
   so they coexist only as two different actions.
 - **R0 coexists by accident** if VFE Empire ships.
@@ -1164,8 +3164,10 @@ schedule.
   kinds (a **holding** taken, a **sworn faction** given) and hands the rest onward:
   - does a conquered vassal leave its faction or stay in it (R1 against R2) — **answered: it
     becomes the colony's, and "ours means owed, not operated" is the requirement**;
-  - what happens to a settlement vassal whose parent faction becomes a sworn faction — still
-    open, nearest owner [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168);
+  - what happens to a settlement vassal whose parent faction becomes a sworn faction — answered
+    at route depth in § *A sworn faction owes services* → *A holding whose parent faction later
+    swears itself* ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168)); choosing among
+    stays, folds or returns is Conrad's, via [#2](https://github.com/cjd721/Rimworld-Archinity/issues/2);
   - how vassalage ends → [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172);
   - where tribute arrives → [#166](https://github.com/cjd721/Rimworld-Archinity/issues/166);
   - which perks a vassal faction gives beyond tribute →
@@ -1180,7 +3182,8 @@ schedule.
 - **Build map (unowned until a route is selected):**
   - the storage shape, and whether R1/R2/R4 share one delivery path;
   - our own catalogue def, or `VFEEmpire.TitheTypeDef`;
-  - where to intercept the defeat of a last base;
+  - where to intercept the defeat of a last base — part of the one defeat-seam question in
+    § *Taking a settlement must be hard* → *Open questions*;
   - the raid-weight patch target;
   - how the rebuild cost is charged;
   - the display surface (#8's gizmo, or the faction row);
@@ -1194,7 +3197,7 @@ schedule.
 | **§1** `Trigger_BecameNonHostileToPlayer` transition surgery on the attacker's lord | new C# | ~10 lines | `Archinity.Core` |
 | **§1** authored trigger (`IncidentWorker` naming both factions) | new C# | ~50 lines | `Archinity.Core` |
 | **§1** `IncidentDef` and letter text | XML | ~25 lines | `Defs/IncidentDefs/Territory.xml` |
-| **§1** multiplayer harness under Build B | **none** — no settings of ours; P4 for the roll; P5 covers the attendance option | 0 | — |
+| **§1** multiplayer harness under Build B | **none** — no settings of ours; §0 P4 for the roll; §0 P5 covers the attendance option | 0 | — |
 | **§1** [SR]Factional War AI lift | **not needed** — vanilla targeting is faction-relative | 0 | — |
 | — *§1 Build A, only if #8's FT&V decline is reversed:* mod ships the above; we add the authored trigger, the transition surgery, **and** a settings neutraliser that must be a prefix on `Component.TryCreateInvasion` or a transpiler, **not** a field-read prefix | new C# | ~90 lines total | `Archinity.Core` |
 | **§2** engine, production, delivery, packing, tabs | **none** — VEF's `Outposts.dll` ships it | 0 | — |
@@ -1239,7 +3242,7 @@ the bulk and §2's is harness.
   proceeds unsynced [V].
 - **`UpdateRateTicks` is MP's to patch and not ours to override.** See P2, and *Failure and
   recovery*.
-- **Every outcome roll uses P4's seeded form.**
+- **Every outcome roll uses §0 P4's seeded form.**
 - **`ModSettings` are the live divergence surface in both donors.** Under the plan of record §1 has
   none (we write the code) and §2's are closed by one prefix. Both are **T-18** in origin.
 - **A save that predates either capability loads normally**, and **there is no freeze item** —
@@ -1333,6 +3336,9 @@ the bulk and §2's is harness.
 [#81](https://github.com/cjd721/Rimworld-Archinity/issues/81), both revised after an adversarial
 audit. No source tree was read as 1.6 fact: VOE ships 1.3-era source, [SR]Factional War's `Source/`
 calls a `TileFinder.TryFindNewSiteTile` overload absent from 1.6, and VEF ships none.
+
+The eight capability sections above *The build* carry their own *Status*, each naming its
+establishing ticket (#164, #165, #167, #172, #152, #168, #170, #171).
 
 `scratch/recon-vassalage-territory.md` is a prior 1,252-line recon of FT&V and Map Mode Framework.
 It is **gitignored** — readable to a local agent, invisible to a sandboxed one — so per
@@ -1449,7 +3455,7 @@ example of §1's behaviour — a scribed `List<WorkSiteDefense>`, a `GameCompone
 (`WorldObject.Destroy()`, quest failed, letter) or holds (its `QuestPart_WorldObjectTimeout`
 prolonged 5–7 days), then settling goodwill [V].
 
-**Not selected**: its roll is a bare `Rand.Chance` off the shared stream rather than P4's seeded
+**Not selected**: its roll is a bare `Rand.Chance` off the shared stream rather than §0 P4's seeded
 form, and `CreateTemporaryAttackerFaction` generates a `Faction` at runtime — the **T-15** shape, a
 standing hazard for a campaign whose roster is frozen at world creation (**T-07**). It is cited
 because it confirms §1's architecture in a second assembly, and because
@@ -1527,7 +3533,7 @@ ledger" is bounded by what was read, not proven empty.
 1. **§1 in-absentia.** Fire the authored incident, do not travel, wait past `timeoutTick`. The
    inspect string should go from *"Expires in: …"* to *"Winner: <faction>"*, a resolution letter
    should arrive, and the settlement should change hands if the attacker won. Because the roll is
-   P4-seeded, the winner can be **computed from the world object's own fields before the tick
+   §0 P4-seeded, the winner can be **computed from the world object's own fields before the tick
    arrives** — that prediction is the actual test.
 2. **§1 attendance.** Travel and take *"Join fight"*. Expect the attacking group under a
    `LordJob_AssaultColony` fighting the settlement's residents with no player involvement required;

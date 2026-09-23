@@ -175,8 +175,13 @@ Two carve-outs worth keeping [V]: the `structureLayoutDefs` and `tiledStructures
 branches of `GenStep_CustomStructureGen.Generate` **never reach `Sampling`**, so sites
 we author that way are safe even with the compat layer off. That is a design lever for
 [#57](https://github.com/cjd721/Rimworld-Archinity/issues/57) and
-[#66](https://github.com/cjd721/Rimworld-Archinity/issues/66) — belt-and-braces, not a
-substitute, since faction strongholds take the `SettlementLayoutDef` path regardless.
+[#66](https://github.com/cjd721/Rimworld-Archinity/issues/66) — and the same holds for a
+**faction's** `CustomGenOption` when it uses `chooseFromlayouts` (Medieval Overhaul's noble
+houses, VFE Classical): that branch runs `SymbolResolver_RoomGenFromStructure` →
+`StructureLayoutDef.Generate` and never calls `SettlementGenUtils.Generate`. Only
+`chooseFromSettlements` factions (VBGE, VFEM2, VFE Insectoids 2) reach `Sampling`. It is still
+belt-and-braces while any `chooseFromSettlements` faction ships. *[#164,
+`KCSG.SymbolResolver_Settlement.Resolve`, V]*
 
 **MP Compat's protection is a hardcoded per-mod allowlist, not a general mechanism.**
 It covers 21 of the mods on disk by name; anything else in the shipping set, and
@@ -187,7 +192,9 @@ sourcing, not a one-off.
 `Multiplayer.dll`, `Multiplayer_Compat.dll` 1.6, decompiled at the MOD-SNAPSHOT pin.
 Corpus-wide sweep of 1,057 assemblies: this is the only unseeded `System.Random` on a
 map-generation path. The `FixRNG` / `FixUnityRNG` contrast re-read from
-`Multiplayer.Compat.PatchingUtilities` (`Multiplayer_Compat.dll` 1.6) 2026-09-12.*
+`Multiplayer.Compat.PatchingUtilities` (`Multiplayer_Compat.dll` 1.6) 2026-09-12. The
+`chooseFromlayouts` carve-out corrected on
+[#164](https://github.com/cjd721/Rimworld-Archinity/issues/164), 2026-09-23.*
 
 ### T-39 — `QuestScriptDef.CanRun` draws on the shared `Rand` stream and memoises per tick
 
@@ -1050,5 +1057,47 @@ the source writes.
 *[#166](https://github.com/cjd721/Rimworld-Archinity/issues/166), `docs/specs/TERRITORY.md`.
 `Multiplayer.Client.SyncMethods`, `Verse.ITargetingSource.OrderForceTarget`
 (`2606448745/1.6/AssembliesCustom/Multiplayer.dll`, MP 0.11.5). 1.6.4871.*
+
+### T-143 — KCSG's static `GenOption.settlementLayout` is never reset, so a hand-authored faction base's garrison size depends on what was generated earlier in the process
+
+`KCSG.GenOption.settlementLayout` is a `public static` field. Two gameplay writers set it (plus a
+dev-mode quickspawn action):
+
+- `CustomGenOption.Generate`, on the `chooseFromSettlements` branch only;
+- `GenStep_CustomStructureGen.Generate`, when `settlementLayoutDefs` is used.
+
+**Nothing ever sets it back to null.** `KCSG.SymbolResolver_Settlement.AddHostilePawnGroup` then
+runs:
+
+```csharp
+if (GenOption.settlementLayout != null)
+    pawnGroupMakerParams.points *= GenOption.settlementLayout.defenseOptions.pawnGroupMultiplier;
+```
+
+It runs this on **both** branches, including `chooseFromlayouts` factions that never set the
+field: Medieval Overhaul's noble houses and VFE Classical. VBGE ships `pawnGroupMultiplier`
+1.45–1.8 on its Defence layouts. So a noble castle's garrison is ×1.8 if a VBGE Defence base was
+generated earlier in the same process, and ×1 after a restart. No error, no log.
+
+**Under Multiplayer it is a desync.** A client that rejoined or reloaded starts with a null static
+while the host's is not. The same settlement then generates different pawns on the two clients
+from an identical `Rand` state. MP's checksum does not see map generation
+(`docs/engine/determinism.md`), so it surfaces later as a pawn-named desync. This is the **T-120**
+class: divergence with no RNG in it.
+
+VFE Insectoids 2's `SymbolResolver_Settlement_AddHostilePawnGroup_Patch` copies the same read for
+its own faction.
+
+**Fix:** own the multiplier. A prefix on `AddHostilePawnGroup` that computes points from the
+current layout only (`docs/specs/TERRITORY.md` SM-4), or one that nulls the static when
+`customGenExt.UsingSingleLayout`. Do not let a garrison read `GenOption.settlementLayout` on the
+single-layout branch.
+
+*[#164](https://github.com/cjd721/Rimworld-Archinity/issues/164), `docs/specs/TERRITORY.md` §
+*Taking a settlement must be hard*. `2023507013/1.6/Assemblies/KCSG.dll` —
+`KCSG.SymbolResolver_Settlement.AddHostilePawnGroup`, `KCSG.CustomGenOption.Generate`,
+`KCSG.GenStep_CustomStructureGen.Generate`, `KCSG.GenOption`;
+`3209927822/1.6/Defs/SettlementDefs/*.xml`; `3309003431/1.6/Assemblies/VFEInsectoids.dll`.
+Mechanism [V]; MP consequence [I], by composition with #88's checksum finding.*
 
 ---

@@ -390,6 +390,27 @@ non-VRE alternative; `docs/specs/ANDROIDS.md` § *Available mechanisms*.
 `RimWorld.Bill_ProductionMech.CreateProducts`, `RimWorld.Bill_Mech.Gestator`,
 `Verse.RecipeDef.ProducedThingDef` / `.ConfigErrors`, `RimWorld.BillUtility.MakeNewBill`. 1.6.4871.*
 
+### T-141 — A faction-dialogue option appended for the Industrial comms console also appears at Medieval Overhaul's messenger table
+
+`FactionDialogMaker.FactionDialogFor(negotiator, faction)` carries **no console**, and Medieval
+Overhaul's messenger table (`DankPyon_ScribeTable`, research `DankPyon_CarrierBirds`, techLevel
+Medieval) is `MedievalOverhaul.Building_ScribeTable : Building_CommsConsole`. Its float menu lists
+every visible non-temporary faction through vanilla `Faction.CommFloatMenuOption`, which ends at
+`Faction.TryOpenComms(Pawn)` → `FactionDialogFor`. So an option postfixed onto the faction
+dialogue for the radio beat — and vanilla's own trader and military-aid requests — also appears
+at a Medieval building, an era early. Nothing errors; the option simply appears.
+
+**Fix:** gate era-sensitive options on research or the era clock with `DiaOption.Disable`, never
+on the building type. Live only if Medieval Overhaul ships
+([#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)).
+
+*[#154](https://github.com/cjd721/Rimworld-Archinity/issues/154),
+`docs/specs/WORLD-INFRASTRUCTURE.md` § *The player's two verbs on a route*.
+`3219596926/1.6/Assemblies/MedievalOverhaul.dll` `MedievalOverhaul.Building_ScribeTable`;
+`RimWorld.Faction.TryOpenComms`, `RimWorld.FactionDialogMaker.FactionDialogFor`
+(`Assembly-CSharp.dll`). See `docs/engine/determinism.md` § *MP serialises the comms-console
+dialogue*.*
+
 ---
 
 ## Rituals and titles
@@ -697,6 +718,34 @@ every gate.
 
 *[#134](https://github.com/cjd721/Rimworld-Archinity/issues/134). `RimWorld.GameComponent_PawnDuplicator.CopyHediffs`,
 `Verse.HediffDef.duplicationAllowed`. 1.6.4871.*
+
+### T-146 — A permit granted without a title is permanent, and the "Call aid" gizmo keeps offering it
+
+`Pawn_RoyaltyTracker.AddPermit(permit, faction)` stores
+`new FactionPermit(faction, GetCurrentTitle(faction), permit)`, and the title may be null. Every
+automatic vanilla removal keys on the `Title`:
+
+- `ReduceTitle` and `ResetPermitsAndPoints`, which returns at once when `currentTitle == null`;
+- `Notify_Resurrected`.
+
+The only faction-keyed removal is the player's *Return all permits*
+(`Pawn_RoyaltyTracker.RefundPermits`, from `PermitsCardUtility`), which requires
+`faction.def.HasRoyalTitles` and 8+ favour — out of reach for a titleless grant. `AddPermit` also
+replaces a permit's prerequisite.
+
+The load-time `RemoveAll` only de-duplicates prerequisites. `Pawn.GetGizmos` yields
+`RoyalAidGizmo` on `HasAidPermit` alone.
+
+A band drop, a broken oath or a hostile turn therefore removes nothing, and nothing says so.
+Hostility does grey the option (`AidDisabled_NewTemp`); neutrality does not.
+
+**Fix:** remove from the live `AllFactionPermits` list in the same synced command that ends the
+grant.
+
+*[#168](https://github.com/cjd721/Rimworld-Archinity/issues/168), `docs/specs/TERRITORY.md` §
+*A sworn faction owes services*. `RimWorld.Pawn_RoyaltyTracker.AddPermit` / `.ReduceTitle` /
+`.ResetPermitsAndPoints` / `.Notify_Resurrected`, `Verse.Pawn.GetGizmos`,
+`RimWorld.RoyalTitlePermitWorker.AidDisabled_NewTemp` (`Assembly-CSharp.dll`). [V]*
 
 ## Ideology authoring
 
