@@ -31,10 +31,6 @@ routes matter, and each era paves what the last one trod. The vanilla world must
 civilization's project. Direct construction lets the colony make its own route. They should
 not collapse into each other.
 
-**"Protect" is a relationship, not a surface.** What the player defends is not asphalt. A
-route under threat is an obligation that arrives, and what success or failure moves is
-standing and ownership.
-
 ## Required behavior
 
 ### Era-driven network growth
@@ -74,13 +70,13 @@ standing and ownership.
   the continent is itself a progression beat.
 - The player can also **build roads directly**, as the colony's own construction.
 
-### Protecting infrastructure
+### No route is threatened
 
-- A route the player has a stake in can come **under threat, arriving as an event the player
-  answers** — defend it, or decline.
+- **Routes are never threatened, and the player holds no stake in one.** A threatened-route
+  event was cut by [#174](https://github.com/cjd721/Rimworld-Archinity/issues/174): one more
+  thing to manage, for no gain the campaign needs.
 - **The road itself is never physically damaged.** Routes do not degrade, decay or need
-  repair. What the outcome moves is goodwill and the ownership of the settlements at the
-  route's ends.
+  repair.
 
 ### The mobility ladder
 
@@ -115,8 +111,6 @@ statement of this arc.
 
 - The player can see the road network and read the world's era and alliances from it.
 - The player can see which routes are under construction, and direct resources at one.
-- A route under threat reaches the player as something they can accept or decline, with the
-  consequence of declining legible in advance.
 
 ## Constraints
 
@@ -134,11 +128,10 @@ statement of this arc.
 
 ## Open questions
 
-- **The player's two verbs on a route — contribute, and answer a threat.** One capability
-  ticket, because both are the same shape: a player-facing interaction with a world-map
-  project, committed deterministically, paid in goodwill and in the ownership of the
-  settlements at the route's ends. Shares its contribution half with
-  [the revolt](https://github.com/cjd721/Rimworld-Archinity/issues/131).
+- **Contributing to a route** is answered by
+  [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154), which shares it with
+  [the revolt](https://github.com/cjd721/Rimworld-Archinity/issues/131). Its threat half is
+  cut ([#174](https://github.com/cjd721/Rimworld-Archinity/issues/174)).
 - **Road-dependent vehicle movement is answered, and what is left of it is balance.**
   [`docs/specs/WORLD-INFRASTRUCTURE.md`](../specs/WORLD-INFRASTRUCTURE.md) § 4 verifies that
   both halves are already expressible as data: the era road ladder can be put in front of

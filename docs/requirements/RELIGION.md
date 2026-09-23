@@ -7,7 +7,7 @@ Archinity deliberately reuses RimWorld’s existing political grammar rather tha
 | System                     | How it is earned                                                             | What it means / does                                                                                                                                                        |
 | -------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Goodwill                   | Normal faction diplomacy, gifts and quests.                                  | The government’s relationship with you. It remains the ordinary spend lever for normal faction favors.                                                                      |
-| Reverence                  | Conversion and religious propagation; public deeds; selected quest outcomes. | How deeply the player’s ideology has penetrated that faction’s population. Persistent but slowly decaying; gates religious/political possibilities rather than being spent. |
+| Reverence                  | Conversion and religious propagation; public deeds; selected quest outcomes. | How deeply the player’s ideology has penetrated that faction’s population. Persistent but slowly decaying; gates religious/political possibilities. Whether it is also spent is the build map's (#176). |
 | Exaltation → Church Titles | Church service and Church quests.                                            | The Church’s Honor-equivalent. Thresholds unlock rites and titles; titles grant permanent institutional privileges, requisitions and authority.                             |
 | Influence                  | A reward choice on Schism operations.                                        | Spendable leverage with the Schism: it buys the missions that advance the Schism's plot, and favors such as defections, covert access, aid and techprints. It is not a global diplomacy currency. |
 | Psychic Rank               | Willing-devotion rites and later campaign breakthroughs.                     | Actual channel/psylink capability. Independent of Church title. Ends in the unresolved “?” that becomes the self-authored final title in Ultra.                             |
@@ -48,12 +48,17 @@ At higher Reverence, the movement can institutionalize. Reverence unlocks the di
 
 Very high Reverence creates a second lever where Goodwill cannot function. A friendly faction whose population overwhelmingly follows the player’s ideology can become eligible for vassalage or submission. A hostile government sitting on top of a highly reverent population can face a [revolt](#revolt).
 
-Reverence gain is independent of Goodwill; Goodwill gain is not independent of
+Reverence gain is independent of Goodwill; Goodwill change is not independent of
 Reverence. At low Goodwill and substantial Reverence, a government becomes wary that the
-founders' religion is eroding its control, so positive Goodwill changes are reduced. At
-extreme Reverence—provisionally above 90—the faith has penetrated the ruling ranks and
-positive Goodwill changes accelerate sharply. The exact curve is balance, but the inverse
-middle and high-end reversal are requirements, not tuning accidents.
+founders' religion is eroding its control, so positive Goodwill changes are reduced and
+negative ones deepen. At extreme Reverence—provisionally above 90—the faith has penetrated
+the ruling ranks, positive Goodwill changes accelerate sharply and negative ones soften. The
+exact curve is balance, but the inverse middle and high-end reversal are requirements, not
+tuning accidents. **Losses scale as well as gains**, and **a faction the colony cannot hold
+Reverence with is exempt**, the Church among them
+([#176](https://github.com/cjd721/Rimworld-Archinity/issues/176)). Which reasons count, and
+whether the player sees the scaling as its own line, are the build map's; both are answered
+in [the spec](../specs/RELIGION.md) (#160, routes A and A2).
 
 ## Reverence as World Attention
 

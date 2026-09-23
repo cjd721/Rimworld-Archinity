@@ -34,7 +34,7 @@ pivots to another shape rather than to nothing.
 
 | | What the colony supplies | What it gets back |
 |---|---|---|
-| **Outpost** | Materials, silver and **its own people** | Goods, in kind, for as long as it is staffed |
+| **Outpost** | Materials, silver and **its own people** | Goods, in kind, for as long as it stands |
 | **Holding** | A war it fights alone, then a rebuild cost | Goods set by what that place and its faction are known for |
 | **Sworn faction** | Nothing material — devotion earned over the campaign | **Services**, not goods |
 
@@ -78,19 +78,23 @@ ally can pay is answered alongside sworn factions
 
 ## Required behavior
 
-### An outpost is built, staffed and worth it
+### An outpost is built, paid for in people, and worth it
 
 - **An outpost costs materials and silver to build**, era-appropriate, and the cost is real
   rather than the near-free placement the corpus ships today.
-- **An outpost is staffed by pawns the colony commits to it**, and they are gone from the
-  colony while they staff it. **Staffing is the intended limiter on how many outposts exist**
-  — a hundred committed pawns is a colony that does not exist, so no arbitrary cap should be
-  needed. Whether the count can be bounded by staffing alone, or needs a designed cap behind
-  it, is [#170](https://github.com/cjd721/Rimworld-Archinity/issues/170).
-- **Which pawns may be committed is open.** Colonists, slaves and prisoners are all
-  candidates, and whether the carrier can tell them apart at all is a capability question
-  ([#170](https://github.com/cjd721/Rimworld-Archinity/issues/170)). A rule such as *at least
-  one colonist, and slaves may add to it* is one route among several.
+- **An outpost consumes the pawns committed to it.** They leave the colony for good: the
+  player cannot recall them, the campaign does not track them, and they stop being the
+  colony's pawns. Mechanically the colony has sold them to the outpost; *Bob runs the outpost
+  now* is all that remains of them. **The pawns consumed are the intended limiter on how many
+  outposts exist** — a hundred committed pawns is a colony that does not exist, so no
+  arbitrary cap should be needed ([#175](https://github.com/cjd721/Rimworld-Archinity/issues/175)).
+- **Which kinds of pawn may be committed is the build map's**, but the build must be able to
+  choose: colonists, slaves, prisoners, any of them, and to require or forbid a kind.
+  [#170](https://github.com/cjd721/Rimworld-Archinity/issues/170) found vanilla can tell them
+  apart.
+- **Once built, an outpost runs on its own and is tracked as simply as possible.** It accrues
+  toward what it was built to produce and sends that to the colony on a schedule. No staff
+  are tracked, there is no staffing floor, and nothing is there to tend.
 - **An outpost's return justifies the pawns it consumes.** Two colonists surrendered for a
   trickle of meat is not a system worth having; this is the clause the yields will be tuned
   against.
@@ -99,20 +103,27 @@ ally can pay is answered alongside sworn factions
   scouting outpost is also how the colony finds things, which [Charting](CHARTING.md)
   § *Natural discovery* already owns.
 - **An outpost's upkeep reaches the player as an event, never as a management surface.**
-  Something happens to the outpost, the player decides once, and it is over. An attack, a
-  shortfall, a demand, its staff in trouble. Whether any of that is expressible is
-  [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171); what is settled is that
-  the alternative — a panel to visit and tend — is ruled out.
+  Something happens to the outpost, the player decides once, and it is over; a panel to
+  visit and tend is ruled out. **The one required event is an attack.** The player can go and
+  fight it off, or not, and an outpost left undefended is **destroyed**. No staff are
+  captured and there is no rescue beat.
+- **A destroyed outpost is not gone for good.** It stays on the map as a ruin a caravan can
+  go and loot for what survives, and paying the build cost again rebuilds it. Routes for the
+  attack are [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171)'s; the
+  consumed-pawn premise and the ruin are
+  [#179](https://github.com/cjd721/Rimworld-Archinity/issues/179)'s.
 
 ### A holding is a settlement taken by force
 
 - **Only a settlement can become a holding.** Not a quest site, a camp, a worksite or a
   scattered structure. A logging site the colony raids can never be made to pay it.
-- **Taking one must be hard.** A holding is earned against real defenses and real defenders,
-  with nobody helping. Whether settlement maps can be authored or generated to carry that,
-  and whether the difficulty can follow the owning faction's tech tier, is
+- **Taking one must be hard.** A holding is earned against real defenses and real defenders.
+  Whether settlement maps can be authored or generated to carry that, and whether the
+  difficulty can follow the owning faction's tech tier, is
   [#164](https://github.com/cjd721/Rimworld-Archinity/issues/164). A settlement the colony
   can walk into does not satisfy this requirement.
+- **The assault keeps vanilla's posture.** Allies may help: calling in military aid for an
+  assault is allowed. A failed assault leaves the garrison to recover as vanilla's does.
 - **A rebuild cost is owed at conquest, and the holding yields nothing until it is paid.**
   The place was broken to take it, and it produces nothing until it is put back. The caravan
   standing on the tile may pay on the spot, or the colony may go home and come back; the
@@ -130,7 +141,8 @@ ally can pay is answered alongside sworn factions
   yield *plausible* rather than computing one. Whether a settlement can carry anything of
   its own, or whether its faction's trade is the whole of it, is
   [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165); the requirement is the
-  characteristic payment, not the second layer.
+  characteristic payment, not the second layer. **A settlement's specialty is fixed**: it
+  does not climb when its faction climbs an era.
 - **The form the payment takes is open and every shape is on the table**
   ([#166](https://github.com/cjd721/Rimworld-Archinity/issues/166)): a fixed basket arriving
   on a clock; a credit the holding accrues that the player spends against that holding's own
@@ -141,18 +153,31 @@ ally can pay is answered alongside sworn factions
   Medieval holding is still a Medieval holding in the Spacer era, and Industrial yields mean
   going and taking an Industrial settlement.
 - **Paying to advance a holding is a route worth having.** The colony owns the place and its
-  former faction will not invest in it, so a large payment bringing it up to the colony's
-  current era is coherent and desirable. Whether it is expressible is
-  [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167); if it is not, *go take a
-  newer one* is an acceptable outcome rather than a failure.
-- **Whether a holding can be released or lost is open.** A thing that can only ever be
-  gained is a score rather than a holding, so both are worth having. But
-  [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8) excluded any
-  vassal-gets-raided simulation and that exclusion stands: **loss must arrive as something
-  the player acts on** — a letter, a fight they are invited to — never a background roll
-  they read about afterwards. [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172).
-- **The era advance does not touch a holding.** [Era](ERA.md) re-authors the world at a
-  boundary but never modifies what the player owns, and a holding is owned.
+  former faction will not invest in it, so paying to bring it forward is coherent and
+  desirable. **It advances one era per payment, and never past the colony's current era.**
+  Routes are [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167)'s; if none is
+  built, *go take a newer one* is an acceptable outcome rather than a failure.
+- **Once taken, a holding is the colony's, and its former faction no longer matters.** What
+  the holding needs from that faction — its era, its specialty — is fixed at conquest.
+  Nothing that faction later does reaches the holding, including swearing itself to the
+  colony: the holding stays a holding.
+- **Whether a holding can be lost is the build map's call, on cost.** If
+  [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172)'s routes make it simple,
+  it ships in one shape; if it needs background machinery, it is cut and holdings are never
+  lost. The shape: an event names a faction hostile to the colony coming for the holding with
+  an army, on a deadline of days. The player goes and fights on the holding's own map, with
+  any allies they can call, **or the holding is lost — forfeit, never a roll**.
+  [#8](https://github.com/cjd721/Rimworld-Archinity/issues/8)'s exclusion of a
+  vassal-gets-raided simulation stands.
+- **When a holding ends, lost or released, everything outstanding on it is gone.** Unpaid
+  rebuild debt and accrued credit are extinguished, not paid out or carried over. The
+  settlement passes to a faction drawn at random from those available; what *available*
+  means is the build map's.
+- **The era advance does not touch a holding.** A holding stores its own era, set at
+  conquest and moved only by paying to advance it. [Era](ERA.md) re-authors the world at a
+  boundary but never modifies what the player owns, and a holding is owned. How the holding
+  is represented (§ 3's R1 or R2 in [the spec](../specs/TERRITORY.md)) is the build map's,
+  provided this holds.
 
 ### A sworn faction owes services, not goods
 
@@ -172,6 +197,21 @@ ally can pay is answered alongside sworn factions
   specialists is a body to sell. Whether asking is expressible, and on what gate, is part of
   [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168); **that the player should
   have some purchase on what arrives is the requirement.**
+- **A delivery is a service.** Asking a sworn faction to send fifty components — once, or
+  every sixty days — is the service of a delivery, and is allowed. What is ruled out is its
+  settlements paying tribute on their own account.
+- **A sworn faction is held at Ally.** Sworn means allied; vanilla's asks and ally raids
+  need it anyway.
+- **The colony holds the relationship, not a founder.** Services are the colony's to call.
+  #168's comms asks, gated options, service shelf and scheduled routes (OS-1, OS-3, OS-4,
+  OS-6, OS-7) are faction-level already; its permit route (OS-2) hangs services on one
+  pawn, and serves only as a carrier.
+- **No faction but the Church grants titles.** A sworn faction's services never come as a
+  title ladder on a founder; #168's OS-2a is ruled out. Titleless permits (OS-2b) remain a
+  route.
+- **How a sworn faction stops being one, and which of its services follow the colony into
+  orbit, are the build map's.** The working intuition is that ground allies matter little
+  once the colony is in orbit.
 - **A faction cannot be conquered into a sworn faction.** The kind is entered only by being
   *given* — submission, or a revolt the colony backed. Taking a faction's settlements one by
   one is conquest and produces holdings; taking its last one ends the faction. This is why
@@ -181,8 +221,8 @@ ally can pay is answered alongside sworn factions
   faction that has sworn itself is not one the colony can go on conquering. This falls out
   of the faith and goodwill rules rather than needing a rule of its own, and it is what
   makes the choice per faction a real one.
-- **Whether a sworn faction follows the colony into orbit is open**, and may differ by
-  faction. [Religion](RELIGION.md) settles it only for the Schism's successor, which does.
+- [Religion](RELIGION.md) settles orbit for the Schism's successor, which follows the colony
+  up; every other sworn faction is the build map's, above.
 
 ### Hostility must cost the colony something
 
@@ -237,7 +277,12 @@ has to follow that move rather than assume a fixed tile
   trading with it, passing a caravan nearby, or watching it from a scouting outpost. Whether
   that knowledge is its faction's alone or the settlement's own is
   [#165](https://github.com/cjd721/Rimworld-Archinity/issues/165); **that it must be earned
-  is the requirement.**
+  is the requirement.** Nothing shows a settlement's specialty to a player who has not
+  learned it, and vanilla's *Show sellable items*, which today shows any settlement's trade
+  profile from anywhere on the map, is included.
+- **Once learned, known for good.** A discovered settlement's information stays available
+  forever and is always current; nothing lapses and no stale snapshot is kept. The point is
+  immersion — a Medieval colony has no magic map — not a handicap.
 - **A faction's own specialty is public**, learnable at first contact — the first envoy, the
   first comms-console call, the first trade.
 - **Planning a campaign against what has been learned is a feature, not a leak.** Deciding
@@ -256,10 +301,11 @@ has to follow that move rather than assume a fixed tile
   [Politics](POLITICS.md): *wars exist once the player has been told about them*).
   **Per-faction values are not excluded by this** where they are spent in events aimed at
   the colony — what is excluded is a simulation the player is not part of.
-- **No third currency.** Goodwill and Reverence are the levers. Whether Reverence can be
-  *spent* rather than only held is an open route
-  ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168)) with real cost to the
-  religion system; a new stat invented to sit beside them is not.
+- **No third currency.** Goodwill and Reverence are the levers; a new stat invented to sit
+  beside them is not, and neither is royal favour with a sworn faction. Whether Reverence is
+  *spent* as well as held is the build map's: both routes exist
+  ([#168](https://github.com/cjd721/Rimworld-Archinity/issues/168),
+  [#176](https://github.com/cjd721/Rimworld-Archinity/issues/176)).
 - **Glitterites are not subjugatable.** They are orbital, hostile, outside diplomacy and
   believe nothing. [Glittertech](GLITTERTECH.md) previously said a Glitterite settlement
   could be "made a vassal"; that was a stray phrase and has been struck. Glitterite ground
@@ -287,13 +333,6 @@ has to follow that move rather than assume a fixed tile
 - **What a holding pays, and how the player takes it** —
   [#166](https://github.com/cjd721/Rimworld-Archinity/issues/166): basket, accrued credit
   and menu, unprompted sends; delivery; the rebuild gate and its tech-tier scaling.
-- **A holding whose parent faction later swears itself** — does it fold into the sworn
-  relationship, stay a holding, or return. Nearest owner
-  [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168); not decided.
-- **Whether a sworn faction can stop being one** — Reverence collapsing, betrayal, defeat.
-  Holdings have [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172); nothing
-  parallel exists, and [#168](https://github.com/cjd721/Rimworld-Archinity/issues/168)
-  carries the question.
 - **Paying to advance a holding to a later era** —
   [#167](https://github.com/cjd721/Rimworld-Archinity/issues/167), which also confirms the
   era advance cannot retier or remove one.
@@ -313,9 +352,8 @@ has to follow that move rather than assume a fixed tile
   which pawns can be committed.
 - **An outpost's upkeep as events** —
   [#171](https://github.com/cjd721/Rimworld-Archinity/issues/171).
-- **Whether a holding should be losable at all** is Conrad's call and is deliberately not
-  made here. [#172](https://github.com/cjd721/Rimworld-Archinity/issues/172) answers whether
-  it can be.
+- **An outpost that consumes its pawns and runs on its own**, and its ruin —
+  [#179](https://github.com/cjd721/Rimworld-Archinity/issues/179).
 - **What the colony owes when *it* is the weaker party** — [Politics](POLITICS.md) wants a
   route back from defeat through peace, tribute or subordination. That is the colony paying
   a stronger faction, which is the mirror of this document and not part of it. It has no

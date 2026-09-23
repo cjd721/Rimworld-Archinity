@@ -97,7 +97,8 @@ being raided and calling in an ally is already ordinary play.
 **Reverence is an input to this system**, not a part of it. A faction whose population
 increasingly follows the founders' ideology reacts politically to that, whether or not
 it is allied. The measure itself, its decay and its religious consequences belong to
-[religion](RELIGION.md).
+[religion](RELIGION.md). So does the rule by which Reverence scales every Goodwill change
+with a faction, gains and losses alike ([Religion](RELIGION.md) § *Reverence*).
 
 **The planetary resolution produces an immutable outcome.** At the moment the early-Spacer
 political struggle resolves, authored rules evaluate the live campaign state and snapshot:

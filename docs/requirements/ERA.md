@@ -123,7 +123,9 @@ the advance, while the player is caravanning toward it, is a defect. The world c
 the moment the wand waves, and not afterward.
 
 **The advance never modifies anything the player built or owns.** No colony building,
-item, pawn or research is retiered, upgraded or invalidated at a boundary.
+item, pawn or research is retiered, upgraded or invalidated at a boundary. **A holding
+stores its own era**, set at conquest and moved only by the colony paying to advance it, so
+the advance never touches one ([Territory](TERRITORY.md)).
 
 **The advance happens as a single, indivisible act.** A world half re-authored — some
 settlements transferred, others not, because something interrupted the pass — is the failure
