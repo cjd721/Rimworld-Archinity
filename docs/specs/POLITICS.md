@@ -433,7 +433,7 @@ requirement is trying to cap.
 | **Silver** | Free. The deliberately boring control case. |
 | **Delivery to a named tile** | Free. `Script_TradeRequest.xml`, 100% XML [V]. |
 | **A loaned colonist for a duration** | Ships for Industrial+ askers as XML (L0). Pre-pod eras need a subclass of the vanilla part, Medium (L1/L2). See §3a. |
-| **A protected route** | **Partly, and it collides with #174.** An escort, or a threat to the asker's travellers removed, ships in XML (E1/E2). A threatened world-map route is cut by design. See §3a. |
+| **An escort, or a threat to the asker's travellers cleared** | Ships in XML (E1/E2); a caravan escort is C# (E3). Reworded from "a protected route" by #198: a threatened world-map route is cut by #174. See §3a. |
 | **A prisoner released** | XML when the release happens on the colony map (P1). Handing the prisoner back in person by caravan needs a patch (P2, **T-196**). See §3a. |
 | **A pawn skill threshold** | New. No `QuestPart_RequirementsToAcceptSkill` exists [V]. ~35 lines copying `QuestPart_RequirementsToAcceptColonistWithTitle` exactly: `CanAccept()` sweeps `PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_Colonists`, `CanPawnAccept(p)` tests the skill, `RequiresAccepter => true` makes the accepter pawn the specialist [V on the donor, I on the composition]. Display is free — `MainTabWindow_Quests.DoAcceptanceRequirementInfo` draws the red box, and `QuestUtility.CanAcceptQuest` refuses the accept [V]. **The button is greyed, not disabled** — `DoAcceptButton` sets `GUI.color = Color.grey` plus a warning tooltip while `Widgets.ButtonText` still fires; the refusal is one layer down in `AcceptQuestByInterface`, which emits `"MessageCannotAcceptQuest"` [V]. See [*Standing as a content gate*](#standing-as-a-content-gate) §2. |
 | **An embargo on trading with a third faction** | New. Nothing hears trading; `Faction.Notify_PlayerTraded(float, Pawn)` is the sole convergence point and raises no signal [V]. One ~6-line Harmony postfix broadcasting a global signal, plus a listener part — see *The `Quest.` prefix*, below. |
@@ -444,12 +444,12 @@ Resolved on [#192](https://github.com/cjd721/Rimworld-Archinity/issues/192). Evi
 **READ**: `Assembly-CSharp.dll` 1.6.4871 and `Multiplayer.dll`, decompiled fresh, plus the shipped
 Core, Royalty and Ideology quest XML.
 
-- **Possible?** **Partly.**
+- **Possible?** **Yes.**
   - The loan: **yes**, by subclassing the vanilla loan part.
   - The prisoner: **yes, in XML**, for a release on the colony's own map.
-  - The route: **partly.** An escort, or a threat to the asker's travellers removed, ships in XML.
-    **A threatened world-map route collides with [#174](https://github.com/cjd721/Rimworld-Archinity/issues/174)'s
-    cut and has no route here** (see below).
+  - The escort or cleared threat: **yes.** Both ship in XML. The requirement once read "a
+    protected route"; a threatened world-map route is [#174](https://github.com/cjd721/Rimworld-Archinity/issues/174)'s
+    cut and has no route here (see below).
 - **Multiplayer?** **Yes** for every XML route. **With work** for the settlement hand-over comp (L1,
   E3, P2b): its gizmo action must be registered as a `SyncMethod`, the shape MP already registers
   for `TradeRequestComp.Fulfill` [V].
@@ -522,18 +522,18 @@ Core, Royalty and Ideology quest XML.
   `Data/Royalty`). E1's payment arrives by drop pod [I]. Era-appropriate payment is the general
   reward question, not this section's.
 
-**The #174 collision, reported, not resolved.** `requirements/POLITICS.md` § *Demands ask for
-specific capabilities* lists **"a protected route"** and defines nothing.
+**The #174 collision, resolved by rewording.** `requirements/POLITICS.md` § *Demands ask for
+specific capabilities* once listed **"a protected route"**, while
 `requirements/WORLD-INFRASTRUCTURE.md` § *No route is threatened* says **"Routes are never
 threatened, and the player holds no stake in one"** (#174, resolution item 8).
 
 - **Reading 1**, a named world-map road under threat that the colony defends, is exactly what
   #174 cut, and it has no route here by design.
 - **Readings 2 and 3**, an escort (E2/E3) or a threat to the asker's travellers removed (E1), touch
-  no route state. The requirement's word is still *route*.
+  no route state.
 
-The two requirements documents disagree. The wording is
-[#198](https://github.com/cjd721/Rimworld-Archinity/issues/198)'s; the capability is answered either way.
+[#198](https://github.com/cjd721/Rimworld-Archinity/issues/198) reworded the requirement to readings
+2 and 3.
 
 **Wide pass.** Both roots, `*.dll` with `-g '!**/obj/**' -g '!**/Referenced/**'`. The sweep read
 the ASCII `#Strings` heap, then ran a null-interleaved `#US` pass that Python emitted itself. It was
@@ -837,11 +837,10 @@ reason; satisfying one rival demand visibly removes the other before the player 
    dismisses for both, by design.
 4. **Which demands exist, and what each asks for.** The real cost of this capability, and design
    work over the campaign's hand-authored factions.
-5. **What "a protected route" means.** `requirements/POLITICS.md` lists it as an ask, and
-   `requirements/WORLD-INFRASTRUCTURE.md` § *No route is threatened* ([#174](https://github.com/cjd721/Rimworld-Archinity/issues/174))
-   forbids a threatened route. An escort, or a threat to the asker's travellers removed, has routes
-   (§3a E1–E3). A defended world-map route has none, by that cut. The requirement's wording is
-   [#198](https://github.com/cjd721/Rimworld-Archinity/issues/198)'s.
+5. **What "a protected route" means.** Settled
+   ([#198](https://github.com/cjd721/Rimworld-Archinity/issues/198)): the ask is an escort for the
+   asker's people or a threat to their travellers cleared (§3a E1–E3). A defended world-map route
+   stays cut ([#174](https://github.com/cjd721/Rimworld-Archinity/issues/174)).
 
 ---
 

@@ -52,8 +52,8 @@ other, so helping one can antagonize another. A faction's identity is learned by
 meeting it — by trading with it, fighting it, or being told — never by reading a
 sheet.
 
-**Demands ask for specific capabilities.** A specialist on loan, a protected route,
-supplies for an army, military intervention, a prisoner released, an embargo on a
+**Demands ask for specific capabilities.** A specialist on loan, an escort for the
+asker's people or a threat to their travellers cleared, supplies for an army, military intervention, a prisoner released, an embargo on a
 rival. The ask should be inconvenient and pointed at something the colony could
 build but has not. Fungible payment is the weakest form and belongs to factions with
 nothing more interesting to want. Every demand carries a deadline and states its
