@@ -21,6 +21,35 @@ extension and the theory defs it keys on.
 
 ---
 
+## What each root-selection field actually gates
+
+**[V]**, decompiled 1.6.
+
+- **`isRootSpecial` gates nothing.** No gameplay code reads it. Only `IsRootAny` does, and
+  `IsRootAny` is read by debug actions and by `ConfigErrors`: `defaultChallengeRating > 0` on
+  a non-`IsRootAny` def is an error. Mods do read it — VEF, and the
+  `!isRootSpecial && IsRootAny` pool in `docs/specs/CURRENCIES.md`.
+- **The storyteller's gate is `IsRootRandomSelected`**, defined as `rootSelectionWeight != 0 &&
+  randomlySelectable`. `NaturalRandomQuestChooser.ChooseNaturalRandomQuest` filters on it, then
+  calls `CanRun`, then draws by `GetNaturalRandomSelectionWeight`.
+- **`GetNaturalRandomSelectionWeight` never reads `randomlySelectable`** and returns 0 for any
+  weight `<= 0`. So a quest that some other chooser draws by this weight must have
+  `weight > 0`. It is kept off the storyteller by `randomlySelectable false`, which is Odyssey's
+  `OpportunitySite_*_Giver` pair.
+- **The giver draws** (`TradeUtility.ReceiveQuestFromTrader`, `BookOutcomeDoer_GiveQuest`)
+  weight by raw `rootSelectionWeight`. They ignore `randomlySelectable` and `CanRun`.
+- **`IncidentDef.ConfigErrors`** flags any `questScriptDef` whose `rootSelectionWeight != 0`:
+  *"quest is run from both incident and random quest"*.
+- **These are plain public fields and can be written at runtime.** Better Traders Guild does
+  this with `rootSelectionWeight` from its settings (`BetterTradersGuildMod.ApplyQuestWeightSettings`).
+  But defs are not reloaded when a save loads (`SavedGameLoaderNow.LoadGameFromSaveFileNow`), so
+  a write outlives its save.
+
+Established on [#197](https://github.com/cjd721/Rimworld-Archinity/issues/197);
+`docs/specs/CHARTING.md` § 3 *Membership that changes with era*.
+
+---
+
 ## The `Quest.`-prefixed global signal is the only way XML can hear a world event
 
 Two independent halves compose into one bridge [V on both halves, **[I]** on the
@@ -155,7 +184,18 @@ precedents.
 > **Gotcha:** the indent only renders when parent and child are on the **same tab**.
 > `ShouldListNow` splits by `QuestState`, so a `NotYetAccepted` child draws flat on
 > Available while its `Ongoing` parent sits on Active. Every Odyssey `Gravcore_*` def sets
-> `autoAccept true` to avoid this.
+> `autoAccept true` to avoid this. **The same split sends every finished child to Historical,
+> drawn flat**. Only the parent's detail pane keeps it, as *"(finished) Has
+> subquest"* (`DoDefHyperlinks`). `docs/TRAPS.md` T-210.
+
+**Any code may parent any quest.** `Quest.parent` is a public field. Its only vanilla writers
+are `QuestPart_SubquestGenerator.TryGenerateSubquest` and `QuestPart_AddQuest.AddQuest`, and the
+tab reads nothing else (`QuestUtility.GetSubquests` filters on `q.parent == quest`). A quest
+granted by a storyteller, a giver, VFED or VEF nests if something sets the field — a
+`QuestManager.Add` postfix reaches every channel. Dismissing a parent dismisses all its
+children; ending it ends none of them. `QuestPart_QuestEndParent` ends `quest.parent` from a
+child and does not null-check it. A generator parent counts **every** successful child
+(T-209). [V] ([#196](https://github.com/cjd721/Rimworld-Archinity/issues/196))
 
 `QuestPart_SubquestGenerator` is **abstract**, with no generic XML-drivable concrete
 class — all three vanilla subclasses are C# and each is reached only from a bespoke
@@ -170,6 +210,13 @@ inside `DoSingleTick`. Under async time a subquest-generator parent is not on
 `Quest.tags` is never read by the UI. What the row gives you for free is the
 challenge-rating stars (unbounded) and, on a generator parent, a `3 / 9` progress
 readout. A custom `LetterDef` per quest is authorable in XML.
+
+**The rating comes only from XML.** `QuestGen.InitializeQuestGen` copies
+`QuestScriptDef.defaultChallengeRating` when it is above 0, before the root runs, so it works
+on C# roots. `QuestNode_SetChallengeRating` overwrites it. No vanilla C# root writes it. The
+field defaults to `-1`, and the tab draws `Mathf.Max(challengeRating, 1)`, so **an unrated
+quest shows one star**, while VEF's `Window_Contracts` shows none (T-208). No letter shows the
+rating. [V] ([#196](https://github.com/cjd721/Rimworld-Archinity/issues/196))
 
 Any per-player filtering of the quest tab must filter at draw time, never at
 list-membership time (see `docs/TRAPS.md` T-21).
@@ -211,6 +258,18 @@ Verified against RimWorld 1.6.4871 on [#134](https://github.com/cjd721/Rimworld-
 - **Lending takes whoever is aboard.** `QuestPart_LendColonistsToFaction.Enable` lends every
   `IsFreeColonist` in the shuttle's `CompTransporter`, with no filter. Any exclusion must happen at
   loading. [V]
+- **The engine knows a lent colonist by the part's type, so a subclass inherits the bookkeeping.**
+  The type test `is QuestPart_LendColonistsToFaction` appears in:
+  - `QuestUtility.IsBorrowedByAnyFaction`, which gives `WorldPawnSituation.Borrowed`
+  - `QuestUtility.TotalBorrowedColonistCount`, which `GameEnder` reads so the game does not end
+    while one is away
+  - `SocialCardUtility`, for *"Lent to X for N days"*
+  - `Pawn_HealthTracker.NotifyPlayerOfKilled`
+
+  `Enable`, `Complete` and `Notify_PawnKilled` are overridable. `ReturnDead` is private and always
+  sends the corpse by drop pod. Multiplayer transpiles `Enable` (`IsFreeColonist` →
+  `IsFreeColonistAnyPlayerFaction`). **An override of `Enable` drops that transpiler.** [V]
+  ([#192](https://github.com/cjd721/Rimworld-Archinity/issues/192); `docs/specs/POLITICS.md` §3a)
 
 ---
 
@@ -306,6 +365,16 @@ Established on [#93](https://github.com/cjd721/Rimworld-Archinity/issues/93); th
 is `docs/specs/POLITICS.md` § *Standing as a content gate*.
 - ⚠ **Multiplayer syncs `Quest.Accept`, not the gate.** `Multiplayer.Client.SyncMethods` registers `SyncMethod.Register(typeof(Quest), "Accept")` **[V]**, and `Quest.Accept` runs `PreQuestAccept` on every part and `Initiate` without consulting `CanAcceptQuest` **[V]**. The requirement is evaluated on the clicking client before the command is sent. A requirement over shared state that another player can change in the same tick (a balance) is therefore advisory in Multiplayer unless it is re-checked inside a synced call of ours.
 - **Two accept paths bypass the gate entirely:** VFE Deserters' `DeserterTabWorker_Plots.DoMainPart` and VEF's `QuestGiverManager.ActivateQuest` both call `Quest.Accept` directly. VEF's `Window_Contracts.AcceptQuestByInterface` does check `CanAcceptQuest` before reaching `ActivateQuest` **[V]**. ([#132](https://github.com/cjd721/Rimworld-Archinity/issues/132))
+- ⚠ **The Accept command runs on the accepter's map, or on none.** The registration carries no context.
+  `SyncMethod.DoSync` takes the map from what the arguments write, and the implicit `Thing` sync worker
+  sets `MpContext.map = thing.Map` for a spawned thing. So `Accept(pawn)` with a spawned accepter
+  executes in that map's `AsyncTimeComp.ExecuteCmd` (`Multiplayer.MapContext` set). `Accept(null)`, or
+  an accepter in a caravan, sends map id −1 and executes as a world command. Parts listening to
+  `Initiate` run inside that command (`SendSignal` is synchronous). A `Dialog_NodeTree` they open is
+  therefore a synced persistent map dialog in the first case and a local window in the second
+  (`CancelDialogNodeTree`) **[V]** — **T-193**. `SetContextForAccept`'s async-time `PreContext` sets
+  faction, clock and RNG, not `MapContext` **[V]**.
+  ([#191](https://github.com/cjd721/Rimworld-Archinity/issues/191); `specs/RELIGION.md` §8)
 
 ---
 

@@ -1719,3 +1719,168 @@ a losing war* › P2. `RimWorld.QuestGen.QuestNode_GetFaction.RunInt` / `TestRun
 (`Assembly-CSharp.dll` 1.6.4871). [V].*
 
 ---
+
+### T-187 — An ally-owned site reports its enemies defeated before any attacker exists
+
+`Site.CheckAllEnemiesDefeated` and `Site.Tick` both test `GenHostility.AnyHostileActiveThreatToPlayer`.
+On a site owned by a faction friendly to the player, the owner's pawns are not a hostile threat, so
+both signals fire on the first tick after map generation — before the attackers of an aid battle
+have arrived. A quest that ends on `site.AllEnemiesDefeated` succeeds at once. Nothing logs.
+Worksites Expanded prefixes `Site.CheckAllEnemiesDefeated` for exactly this.
+
+**Fix:** spawn the attackers inside `PostMapGenerate`, or gate the signal on our own condition.
+
+*[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), `docs/specs/TERRITORY.md` § 1a *The site shape*.
+`RimWorld.Planet.Site.CheckAllEnemiesDefeated` / `Site.Tick` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-188 — An ally-owned site's detection countdown raids the caravan with a substituted faction
+
+`SitePartDef.forceExitAndRemoveMapCountdownDurationDays` defaults to 4, and the site's
+`TimedDetectionRaids` raids with `RaidFaction` = the site's owner — the ally. `IncidentWorker_RaidEnemy`
+then replaces that non-hostile faction with a random hostile one (T-189), so an unnamed enemy raid
+arrives on the aid site days after the player lands. Nothing logs.
+
+**Fix:** set `disallowsAutomaticDetectionTimerStart` true on the site part, in XML.
+
+*[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), `docs/specs/TERRITORY.md` § 1a.
+`RimWorld.Planet.TimedDetectionRaids`, `SitePartDef`, `Site.PostMapGenerate` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-189 — A raid keeps its pinned faction only if that faction is hostile to the player
+
+`IncidentWorker_RaidEnemy.TryResolveRaidFaction` honours `parms.faction` only when it is hostile to the
+player. A pinned faction that is neutral or allied — a player-neutral attacker in an NPC-vs-NPC
+battle — is discarded and a random hostile faction is picked instead, with no message.
+
+**Fix:** deliver the attacker with a direct `LordJob_AssaultColony` (FT&V's `EnsureAttackerRaid` shape),
+or make it hostile first (Worksites Expanded's `MakeRealAttackerHostile`).
+
+*[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92), `docs/specs/TERRITORY.md` § 1a.
+`RimWorld.IncidentWorker_RaidEnemy.TryResolveRaidFaction` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-196 — A prisoner gifted back by caravan ends up factionless
+
+A caravan gift of a prisoner to its own faction's settlement runs through the trade code:
+`Settlement_TraderTracker.GiveSoldThingToTrader` and `Pawn.PreTraded` strip the pawn's faction and never add
+a humanlike pawn to the settlement. The only quest signal is `ChangedFactionToNonPlayer` with no faction —
+identical to a sale. The goodwill bonus from `FactionGiftUtility.GiveGift` still applies, so nothing looks wrong.
+
+**Fix:** postfix `GiveGift` to restore the pawn's faction and send our own signal.
+
+*[#192](https://github.com/cjd721/Rimworld-Archinity/issues/192), `docs/specs/POLITICS.md` § 3a.
+`RimWorld.Planet.Settlement_TraderTracker.GiveSoldThingToTrader`, `Verse.Pawn.PreTraded`,
+`RimWorld.FactionGiftUtility.GiveGift` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-197 — `Released` fires only for an on-map release
+
+`JobDriver_ReleasePrisoner` sends the `Released` signal. Releasing a prisoner from a caravan goes through
+`PawnBanishUtility.Banish` and sends `Banished`; gifting one sends only `ChangedFaction*`. A demand written in
+XML that listens for `.Released` alone silently never completes on either path.
+
+**Fix:** listen for `Released` and `Banished`, and handle the gift path (T-196).
+
+*[#192](https://github.com/cjd721/Rimworld-Archinity/issues/192), `docs/specs/POLITICS.md` § 3a.
+`RimWorld.JobDriver_ReleasePrisoner`, `RimWorld.PawnBanishUtility.Banish` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-198 — `Script_PawnLend` pays up front and counts a total loss as a win
+
+Royalty's `Script_PawnLend` fires its rewards on `SentSatisfied` — when the colonists are handed over, not when
+they return — and its `outSignalColonistsDied` ends the quest as Success. A loan demand copied from it pays
+the player whether or not anyone comes back, and a loan in which everyone dies reads as fulfilled.
+
+**Fix:** move the reward to the return signal and end on the death signal as a failure.
+
+*[#192](https://github.com/cjd721/Rimworld-Archinity/issues/192), `docs/specs/POLITICS.md` § 3a.
+`Data/Royalty/Defs/QuestScriptDefs/Script_PawnLend.xml`; `RimWorld.QuestPart_LendColonistsToFaction`. 1.6.4871. [V].*
+
+---
+
+### T-199 — Relation changes between non-player factions are silent
+
+`Faction.Notify_RelationKindChanged` sets `canSendLetter = false` whenever the other party is not the
+player. A rivalry seeded or moved between two NPC factions produces no letter and no message; it
+shows only in the Factions tab's "Enemy of" strip. A "war declared" beat needs a letter of ours.
+
+*[#193](https://github.com/cjd721/Rimworld-Archinity/issues/193), `docs/specs/POLITICS.md` § *Withholding who a
+faction hates*. `RimWorld.Faction.Notify_RelationKindChanged` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-200 — The defeat letter's relations lines have three writers
+
+Vanilla writes the settlement-defeat letter in `SettlementDefeatUtility.CheckDefeated`. Faction
+Territories' `InterceptBaseDestroyedLetterPatch` is a prefix that rebuilds the letter and skips vanilla's;
+VFE Medieval 2's `MerchantGuild` defeat prints the complement (−20 to non-hostile factions). A patch on
+vanilla's letter alone silently misses the Faction Territories path.
+
+**Fix:** patch all three, or treat the letter as a reveal rather than hiding it.
+
+*[#193](https://github.com/cjd721/Rimworld-Archinity/issues/193), `docs/specs/POLITICS.md` § *Withholding who a
+faction hates*. `RimWorld.Planet.SettlementDefeatUtility.CheckDefeated` (`Assembly-CSharp.dll` 1.6.4871);
+Faction Territories' and VFE Medieval 2's 1.6 assemblies, decompiled. [V].*
+
+---
+
+### T-206 — NPC vehicles bypass World Tech Level
+
+Vehicle Framework's raid injection builds vehicles with `ThingMaker`, not through `PawnGenerator`, and
+gates them on the faction def's raw `techLevel`. World Tech Level's filters never see them — WTL.dll
+contains no `vehicle` string in either heap encoding (the validator `research` hits both). Revived as
+shipped, an Industrial pirate faction fields tanks in a Neolithic world, silently.
+
+**Fix:** gate on the campaign era in our own injector.
+
+*[#195](https://github.com/cjd721/Rimworld-Archinity/issues/195), `docs/specs/WORLD-INFRASTRUCTURE.md` § 4d.
+Vehicle Framework and World Tech Level 1.6 assemblies; both-encoding sweep. [V].*
+
+---
+
+### T-208 — An unrated quest shows one star
+
+`MainTabWindow_Quests.DoRow` draws `Max(challengeRating, 1)` stars. A quest that declares no rating (−1)
+is drawn as one star, indistinguishable from a declared 1. VEF's `Window_Contracts` draws no rating at all,
+and no offer letter shows one. About 60 visible quest scripts in the corpus declare none.
+
+**Fix:** declare one per def (`defaultChallengeRating` / `QuestNode_SetChallengeRating`), or set a fallback
+from points at generation.
+
+*[#196](https://github.com/cjd721/Rimworld-Archinity/issues/196), `docs/specs/CHARTING.md` § *Subplots as parent
+quests*. `RimWorld.MainTabWindow_Quests.DoRow` (`Assembly-CSharp.dll` 1.6.4871); VEF `Window_Contracts`. [V].*
+
+---
+
+### T-209 — The subquest generator counts children it did not make
+
+`QuestPart_SubquestGenerator.SuccessfulSubquestCount` counts every successful child of its quest through
+`QuestUtility.GetSubquests`, whoever set `Quest.parent`. A subplot beat or survey find nested under the
+Chronicle's parent advances the Chronicle's cursor as though it were a Chronicle step.
+
+**Fix:** one parent per subplot, or count by def.
+
+*[#196](https://github.com/cjd721/Rimworld-Archinity/issues/196), `docs/specs/CHARTING.md` § 2.
+`RimWorld.QuestPart_SubquestGenerator`, `RimWorld.QuestUtility.GetSubquests` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-210 — A finished sub-quest leaves its parent in the list
+
+`MainTabWindow_Quests.ShouldListNow` / `DoQuestsList` nest a child under its parent only while both are on
+the same tab. A finished beat moves to the Historical tab and draws there flat, with no parent. Only the
+parent's detail pane still lists it. A player scanning the list cannot see which beats of a live subplot
+were taken.
+
+**Fix:** a live beat list on the parent (a quest part writing its description), or a tab patch.
+
+*[#196](https://github.com/cjd721/Rimworld-Archinity/issues/196), `docs/specs/CHARTING.md` § *Subplots as parent
+quests*. `RimWorld.MainTabWindow_Quests.ShouldListNow` / `DoQuestsList` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---

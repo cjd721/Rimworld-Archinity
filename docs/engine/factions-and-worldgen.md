@@ -177,7 +177,10 @@ UI, before any save exists.
 Verified against 1.6.4871. `azravos.factioncustomizer`'s entire Harmony surface is
 eight UI patches. `FactionManager.Remove` / `defeated` / `deactivated` appear zero
 times. It can add, rename, recolour and move settlements, and nothing else. Zero
-MP sync and `Rand`-heavy mutations, so it is **pre-landing use only**. Its
+MP sync and `Rand`-heavy mutations. It is **not** pre-landing only: its play-settings button
+stays available mid-game and opens a Factions-tab copy plus the relation editor, so it is a
+mid-game, unsynced writer of faction relations, and MP Compat has no class for it
+([#193](https://github.com/cjd721/Rimworld-Archinity/issues/193)). Its
 settings file is missing from `config/ModSettings/`.
 
 ### The 12-faction cap is a UI guard only
@@ -434,6 +437,31 @@ goes unannounced unless the defs' labels differ. Every other settlement surface 
 hands changes them all at once with no event; only `cachedMat` lags (T-12). World Tech Level adds a
 tier line to every faction tooltip (`docs/engine/research-and-tech-tiers.md` § *World Tech Level*).
 ([#187](https://github.com/cjd721/Rimworld-Archinity/issues/187))
+
+## Vanilla shows the NPC relation graph in one column, hostility only
+
+Verified against 1.6.4871 (`Assembly-CSharp.dll`, full decompile + IL). **The Factions tab's *Enemy
+of* strip is the only standing surface that shows an NPC↔NPC relation**:
+- `FactionUIUtility.DrawFactionRow` filters `AllFactionsInViewOrder` with
+  `f != faction && f.HostileTo(faction) && (!f.IsPlayer && !f.Hidden || showAll)`. That lambda is
+  `<>c__DisplayClass14_0.<DrawFactionRow>b__0(Faction)`, and its closure holds the row's faction, so
+  one postfix sees both endpoints.
+- **No vanilla surface draws an NPC alliance.** There is no ally column, and none forms anyway (T-100).
+- **NPC↔NPC changes are silent.** `Faction.Notify_RelationKindChanged` sets `canSendLetter = false`
+  whenever `other != OfPlayer`.
+- The world map, the settlement inspect pane, the Alt-hover inspector, the comms header
+  (`DrawRelatedFactionInfo`) and the faction info card (`GetReportText`) give the **player's**
+  relation only.
+
+The graph leaks through events instead:
+- `SettlementDefeatUtility.CheckDefeated`'s *"Relations with X: +20"* for each enemy of the defeated
+  faction;
+- quest prose built on `mustBeHostileToFactionOf`;
+- `SocialCardUtility.GetPawnSituationLabel`, which reads relative to the selected pawn's faction;
+- NPC factions fighting on the colony's map.
+
+Surfaces and routes: `docs/specs/POLITICS.md` § *Withholding who a faction hates*
+([#193](https://github.com/cjd721/Rimworld-Archinity/issues/193)).
 
 ---
 

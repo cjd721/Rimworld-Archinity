@@ -196,6 +196,10 @@ bespoke `QuestNode_Root_*` (~25 lines) that instantiates our part.
 `docs/engine/quests.md` establishes that `QuestPart_SubquestGenerator` has no generic
 XML-drivable root node; this is confirmed against 1.6.
 
+**`SuccessfulSubquestCount` counts every successful child, whoever parented it (T-209).** A
+subplot's beats, or a survey find, nested under this parent would advance the cursor. Subplots
+get parents of their own: see § *Subplots as parent quests* ([#196](https://github.com/cjd721/Rimworld-Archinity/issues/196)).
+
 ### 3. The survey pool
 
 `ChartingSurveyExtension : DefModExtension { IntRange band; }` on `QuestScriptDef`, with
@@ -215,6 +219,161 @@ Odyssey's `CompOrbitalScanner` does the same scan through
 `QuestUtility.GetGiverQuests(QuestGiverTag.OrbitalScanner)`, and **we cannot reuse its
 marker**: `QuestGiverTag` is a C# `enum` with no XML extension point, and `GetGiverQuests`
 short-circuits on `!ModsConfig.OdysseyActive` **[V]**.
+
+#### Membership that changes with era — a quest leaving the pool
+
+Answers [#197](https://github.com/cjd721/Rimworld-Archinity/issues/197), from
+`docs/requirements/QUESTS.md` § *The announcement test decides whether Charting is required*
+(*"announced itself" is era-relative, and widens deliberately*). Evidence class **READ**:
+decompiled 1.6 `Assembly-CSharp.dll`, World Tech Level's `WorldTechLevel.dll`, and a two-root
+sweep of both corpus roots.
+
+- **Possible?** **Yes.** Membership is a filter in our own selector, not a property of the def,
+  so it can read the era on every find. **Leaving the pool does not make a quest an ordinary
+  offer.** Root selection is a separate gate that nothing couples to the pool. Every route
+  therefore flips **both** from one era test.
+- **Multiplayer?** **Yes** for A. **With work** for B, because B depends on WTL's
+  `Filter_Quests` mod setting (**T-18**).
+
+**Three premises this corrects [V].**
+
+- **`isRootSpecial` keeps nothing out of anything.** No vanilla gameplay code reads it; only
+  `IsRootAny` does, for debug actions and `ConfigErrors`.
+- **The storyteller's gate is `IsRootRandomSelected`**, which is `rootSelectionWeight != 0 &&
+  randomlySelectable`. `NaturalRandomQuestChooser.ChooseNaturalRandomQuest` filters on it, then
+  `CanRun`, then draws by `GetNaturalRandomSelectionWeight`.
+- **A survey member cannot sit at `rootSelectionWeight` 0.** `GetNaturalRandomSelectionWeight`
+  returns 0 for any weight `<= 0` and never reads `randomlySelectable`. A weight-0 member —
+  `LongRangeMineralScannerLump` is one: `isRootSpecial`, no weight — is silently never drawn
+  (**T-212**). **A Charting-only quest is therefore `rootSelectionWeight > 0` with
+  `randomlySelectable false`.** That is Ludeon's own idiom: the Odyssey `OpportunitySite_*_Giver`
+  defs carry exactly that pair. **So one bool is the whole difference between *charted* and
+  *announced* on the storyteller channel.**
+
+**Each arrival channel has its own gate, and a quest leaving the pool meets all three [V].**
+
+| Channel | Gate | Reads `randomlySelectable`? | Calls `CanRun`? |
+|---|---|---|---|
+| Storyteller pool | `IsRootRandomSelected`, then `CanRun`, then the weight | yes | yes |
+| Giver (`Traders`, `Reading`, `Beggars`) | `givenBy` contains the tag; draw by raw `rootSelectionWeight` (`TradeUtility.ReceiveQuestFromTrader`, `BookOutcomeDoer_GiveQuest`) | **no** | **no** (T-71) |
+| Named incident | `IncidentDef.questScriptDef`, fired by the incident's own comp | no | yes (`IncidentWorker_GiveQuest.CanFireNowSub`) |
+
+**Consequence:** a pool member must **not** carry a `givenBy` tag while it is in the pool.
+Otherwise a Neolithic trader can hand it over, since that path ignores both the bool and
+`CanRun`. Nothing already carries this behaviour. `randomlySelectable` appears in **no** mod
+assembly in either root. The sweep was ASCII over `#Strings`, `obj/` and `Referenced/`
+excluded, and the same form found `rootSelectionWeight`, `IsRootRandomSelected` and
+`isRootSpecial` in six mods. The one runtime writer of a root-selection field is **Better
+Traders Guild**: `BetterTradersGuildMod.ApplyQuestWeightSettings` writes `rootSelectionWeight`
+from its mod settings at startup. That is the shipped precedent for Route A's write.
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — One era test, two readers** | Per-quest *"charted until era X, announced from X"*. The selector drops the quest and the storyteller admits it on the same boundary, by construction | vanilla `QuestScriptDef.randomlySelectable` (and `givenBy`); our selector and a `GameComponent` | C# (no Harmony) · XML per quest | **Medium** | Yes |
+| **B — Twin defs, era-gated by WTL** | Charting copy before the era, storyteller copy after it. Zero new C# beyond A's selector test | Ludeon's `_Giver` twin idiom; WTL `TechLevelConfigDef` row + `Filter_Quests` | XML | **Easy**, over the Charting build | With work (T-18) |
+| **C — An era test node in the quest's root** | Gates the storyteller through `CanRun` | our `QuestNode` + an XML insert per quest | C# · XML patch | Medium | Yes — **not recommended** |
+| **D — Harmony on the storyteller filter** | The same as A | postfix on `IsRootRandomSelected` or the chooser | C# Harmony | Medium | Yes — **not recommended** |
+
+Every route composes verified mechanisms. **That they compose into the behaviour is [I]** until
+something compiles.
+
+**Route A — what it gets us.**
+
+- **Membership reads the era live.** `ChartingSurveyExtension` gains an optional
+  *announced-from* field. It is either a `TechLevel`, read against
+  `WorldTechLevel.Current` / [`ERA.md`](ERA.md)'s `CurrentEra`, or a `ResearchProjectDef`,
+  read against `IsFinished`. The selector's `Where` adds *"and not yet announced"*. Both inputs
+  are scribed, synced state [V: ERA.md § 1; `ResearchManager.progress`]. A quest with no
+  announced-from field stays in the pool for the whole campaign. That covers the Archotech
+  returns, which *"never reach zero"*.
+- **Root selection follows from the same test.** A `GameComponent` writes
+  `def.randomlySelectable = Announced(def)` for every def carrying the field. It writes from
+  `FinalizeInit`, which runs on both `Game.InitNewGame` and `Game.LoadGame` [V], and again
+  inside `AdvanceEra()` (ERA.md § 3). The storyteller reads the bool live on every draw.
+  **One predicate feeds both readers, so no window exists where the quest is in neither
+  channel or in both.**
+- **The giver channel is the same write.** `givenBy` is a public `List<QuestGiverTag>`. Adding
+  `Traders` or `Reading` at the boundary reaches traders and books on their next draw, because
+  both call `GetGiverQuests` live [V]. It does **not** reach an orbital scanner that has already
+  drawn (**T-173**).
+- **Era is one-way**: `AdvanceEra()` refuses a downgrade [V: ERA.md § 3]. So membership only
+  ever shrinks, which matches *"Charting's share of the world shrinks as reach grows"*.
+- **Instances already generated are untouched.** A charted site found in the Medieval stays a
+  charted site. Nothing re-reads a live quest's root flags.
+
+**What it cannot do.**
+
+- **Only quests the storyteller can already run.** Leaving the pool makes a quest an ordinary
+  storyteller offer only if its root runs from a bare `points` slate. A quest that needs
+  Charting's slate (`siteDistRange`, a discovery reason) will generate differently as a
+  storyteller offer. `QuestNode_GetSiteTile` falls back to `IntRange(7, 27)` (§ 4).
+- **Not a named incident.** An incident-delivered quest cannot take this route.
+  `IncidentDef.ConfigErrors` logs *"quest is run from both incident and random quest"* for any
+  `questScriptDef` with `rootSelectionWeight != 0` [V]. The survey pool requires that weight. For
+  those quests, use B's twin.
+
+**Consequences.**
+
+- **A def field is shared, session-wide state (T-211).** Loading a save does not reload defs.
+  `SavedGameLoaderNow.LoadGameFromSaveFileNow` builds a new `Game` and nothing more [V]. So a
+  bool flipped in an Industrial save stays flipped when a Neolithic save is loaded next. The
+  `FinalizeInit` re-derive is **mandatory**, not tidiness. It is also what makes a Multiplayer
+  joiner consistent: the joiner may have played another save first, and it re-derives from the
+  synced save it loads.
+- **Two readers in the corpus see the flip.** Vanilla Memes Expanded's interrogation outcome
+  hands out a random `IsRootRandomSelected` quest whose `defName` contains `Opportunity`. It
+  reads the flag live and skips `CanRun`. VFE Classical's `SenatorQuests` reads the flag
+  **once**, in a static constructor, and caches its list for the session. So a flip after that
+  class first loads never reaches it [V, both 1.6 assemblies].
+
+**Route B — what it gets us.** Ludeon's own shape. Core's `OpportunitySite_ItemStash`
+(storyteller, weight 1.0) and Odyssey's `OpportunitySite_ItemStash_Giver` (`randomlySelectable
+false`, `givenBy`, weight 0.5) are two full `QuestScriptDef`s with one body [V].
+
+- The Charting twin carries `ChartingSurveyExtension` with its announced-from field (A's
+  selector test).
+- The storyteller twin carries a WTL `TechLevelConfigDef` row (`defType` `QuestScriptDef`, an
+  entry `defName` + `techLevel`).
+- WTL's `Patch_NaturalRandomQuestChooser` transpiler hides the storyteller twin from the
+  storyteller below that level. `Patch_QuestManager.Add_Prefix` refuses it from every other
+  source too (**T-174**), which here is the point [V].
+
+**What B cannot do.**
+
+- **The twins are strangers.** `minRefireDays`, `StoryState.RecentRandomQuests` and
+  `QuestNode_QuestUnique` all key on the def, so the two copies never suppress each other.
+- **A mod quest must be re-authored whole.** Its body is copied, not referenced. Inheriting it
+  by patching a `Name` attribute onto the source def is **[I]**.
+
+**Consequences.**
+
+- WTL's `Filter_Quests` is a single mod setting for every quest WTL rows, not only ours
+  (**T-18**, **T-174**). With the setting off, B's storyteller twin is live from day one.
+
+**Route C — not recommended.** It fails in three ways:
+
+- **`CanRun` memoises on tick and points only, never on the slate** [V, `QuestScriptDef.CanRun`].
+  A *"Charting may bypass"* slate variable can therefore hand the storyteller Charting's answer
+  if both ask in the same tick.
+- **C#-rooted quests have no `nodes` list to insert into.**
+- **Givers never call `CanRun`** (T-71), so the node does not gate them.
+
+**Route D — not recommended.** It does nothing A's field write does not.
+
+- WTL already transpiles the same `DefDatabase<QuestScriptDef>.AllDefs` call inside
+  `ChooseNaturalRandomQuest`'s `TryGetQuest`.
+- A postfix on a two-branch getter is exposed to JIT inlining **[I]**.
+
+**Recommended, not selected: A.** It is the only route where one predicate decides both the pool
+and the storyteller, so neither the orphan window nor double delivery can exist. **B is for
+named-incident quests**, and for quests whose storyteller text should differ from their charted
+text.
+
+**Open, the build map ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)):**
+
+- Whether announced-from is keyed on `TechLevel` or on a `ResearchProjectDef`. The requirement's
+  *"once the Sensory Array exists"* reads as a research project.
+- **Ledger, [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14):** each quest's era.
 
 ### 4. The reach band
 
@@ -1665,3 +1824,177 @@ The sweeps covered both roots with `obj/` excluded:
 - **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).** Whether A's orbital tier is a new building or A′'s re-skin. Whether
   the `CanUseNow` override lifts the roof ban outright or tests `Room.ExposedToSpace`. How far E1's
   six weigh against authored orbital survey content.
+
+---
+
+## Subplots as parent quests — any quest nested, taken beats kept, a rating on every quest
+
+Answers [`docs/requirements/QUESTS.md`](../requirements/QUESTS.md) § *Necessary content nests*
+(*"the main plot line **and each subplot** is presented as a parent quest"*), § *The player can
+see where they are in a plot line* and § *Difficulty is declared before commitment*. § 2 nests
+only the Chronicle, through `QuestPart_SubquestGenerator`. This section covers every other
+channel, including the Schism's purchased steps ([`CURRENCIES.md`](CURRENCIES.md) § *The Schism
+catalogue*) and ordinary offers. From [#196](https://github.com/cjd721/Rimworld-Archinity/issues/196).
+
+### Verdict
+
+- **Possible? Yes for nesting and for the rating. Partly for taken beats, unless T2 or T3 below
+  is taken.** The quest tab reads nothing but the public field `Quest.parent`, so any code may
+  nest any quest under any parent **[V]**. A finished beat stays under its parent in the
+  parent's detail pane, but in the list it moves to the Historical tab and draws flat **[V]**.
+  Every quest can carry a challenge rating from XML, C# roots included **[V]**. But about 60
+  visible root scripts in the corpus carry none, and the tab draws an unrated quest as one star.
+- **Multiplayer? Yes** for nesting and rating. The parent is a scribed field written in
+  simulation code, and Multiplayer never references quest parentage **[V]**
+  (`docs/engine/quests.md` § *Quest presentation*). The tab routes are draw-only and per-client.
+  **With work** only where a purchase is itself unsynced: VEF's `ActivateQuest` is reached from
+  `OnGUI` and already owes its sync wrapper ([`CURRENCIES.md`](CURRENCIES.md) § *The
+  purchasable quest catalogue*, defect 3).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **P — The subplot's parent quest** | A standing, auto-accepted quest per subplot, with its beats indented under it | Vanilla: a `QuestScriptDef` with `isRootSpecial`, `autoAccept`, no `expireDaysRange` and no end part, granted by `IncidentWorker_GiveQuest` naming it in `IncidentDef.questScriptDef`, or by our code | XML (C# only for a readout, T2) | Easy | Yes |
+| **N1 — Parent set where we grant** | Each grant site we own nests its step: the Schism catalogue's generation (its route A), `CurrencyQuestCurrencyInfo.Buy` for a VEF purchase, or a `QuestNode` of ours in authored beats | Ours | C# | Medium | Yes (a VEF purchase needs its existing sync wrapper) |
+| **N2 — One `QuestManager.Add` postfix, keyed on a def extension** | Nests a quest from **every** channel: storyteller, named incident, giver, VFED's plot generation, a VEF chain grant or giver purchase. Membership is a `DefModExtension` added to any mod's `QuestScriptDef` by `PatchOperationAdd` | Ours. Precedent: `VEF.VanillaExpandedFramework_QuestManager_Add_Patch` | C# + XML | Medium | Yes |
+| **N3 — VEF quest-chain badge** | An icon and a *"part of chain X"* tooltip on each member's row and detail pane. No parent, no nesting | VEF `QuestChainDef.icon` through `QuestChainExtension` | XML | Easy | Yes. **Not a route to the requirement**: it marks membership and presents no parent |
+| **T1 — Taken beats, vanilla as shipped** | Ongoing beats indent under an ongoing parent. The parent's pane lists every child, finished ones greyed as *"(finished) Has subquest: …"*, unfinished first. A generator parent shows `n / m` | Vanilla | — | Easy | Yes |
+| **T2 — A readout part on the parent** | The parent's own description lists its taken beats and their outcomes, live | Ours: a `QuestPart` overriding `DescriptionPart` (drawn in any state) or `QuestPartActivable.ExpiryInfoPart` (drawn only while the parent is `Ongoing` and the part `Enabled`) | C# | Medium (one small part) | Yes (draw-only) |
+| **T3 — The tab draws a parent's children from every state** | Finished and not-yet-accepted beats indent under their parent in the list, whichever tab the parent is on | Ours: Harmony on `MainTabWindow_Quests.SortQuestsByTab` / `DoQuestsList` | C# | Medium | Yes (per-client UI) |
+| **C1 — A rating declared per def** | A rating on any quest, vanilla or mod, before it is offered | Vanilla `QuestScriptDef.defaultChallengeRating`, or `QuestNode_SetChallengeRating` in the node tree. `PatchOperationAdd` onto mod defs | XML | Easy | Yes |
+| **C2 — A fallback rating at generation** | *Every* quest rated, whatever shipped it: where `challengeRating <= 0`, assign one from the slate's `points` | Ours: a postfix on `QuestGen.Generate`, or inside N2's postfix | C# | Medium | Yes (deterministic from points, no `Rand`) |
+| **C3 — A load-time audit** | A list, at startup or in `tools/`, of every visible root script with no declared rating. Keeps C1 complete | Ours | tooling | Easy | n/a |
+
+**Recommendation, not a selection:** P for each subplot. N2 for nesting, because it is the only
+route that reaches channels we do not own. T2 or T3 for taken beats. C1, with C2 as the
+guarantee. N1 is N2's subset for our own grant sites and needs no Harmony.
+
+#### P — the parent quest
+
+*Levers:*
+- One parent per subplot, each its own row, titled and described in XML.
+- Granted once by a named incident. `IncidentWorker_GiveQuest.TryExecuteWorker` takes
+  `def.questScriptDef` before any random choice, so an `isRootSpecial` script is reachable **[V]**.
+- Ended from its last beat by `QuestPart_QuestEndParent`, which calls `quest.parent.End(outcome)`
+  on its signal **[V]**. In vanilla only a C# root constructs it
+  (`QuestNode_Root_Gravcore_Mechhive`). No dedicated XML node was found **[V]**.
+
+*Cannot:*
+- Show progress by itself. Without a generator or T2 there is no `n / m` readout.
+- Stop the player dismissing it. **Dismissing a parent dismisses every child that exists**, and
+  a dismissed, unfinished quest moves to the Historical tab (`MainTabWindow_Quests.DoDismissButton`,
+  `ShouldListNow`) **[V]**.
+
+*Consequences:* `QuestPart_QuestEndParent` dereferences `quest.parent` unguarded. A beat that
+ends its parent must be nested before that signal fires **[V]**.
+
+#### N1 and N2 — nesting a quest the generator did not make
+
+**`Quest.parent` has exactly two vanilla writers**: `QuestPart_SubquestGenerator.TryGenerateSubquest`
+(and its debug menu), and `QuestPart_AddQuest.AddQuest`, whose own `parent` field no vanilla
+code sets **[V]**. The tab does not care which. `QuestUtility.GetSubquests` filters
+`QuestManager.questsInDisplayOrder` on `q.parent == quest`, and `MainTabWindow_Quests.DoQuestsList`
+recurses through it **[V]**. No mod in the corpus calls `GetSubquests` or `IsSubquestOf`, or
+subclasses `QuestPart_SubquestGenerator` **[V]**.
+
+*Levers (N2):*
+- Any quest, from any mod, joins a subplot by one XML patch.
+- It fires for every channel, because every channel ends in `QuestManager.Add`. VEF's giver adds
+  at purchase (`QuestGiverManager.ActivateQuest`), so an unbought offer is never nested while it
+  sits in the catalogue. VFED adds its plot steps hidden at generation, and hidden children stay
+  out of both the list and the parent's pane until shown (`ShouldListNow`, `DoDefHyperlinks`) **[V]**.
+- The parent is found by its root def among live quests, so nothing new is saved. The link is
+  `Scribe_References.Look(ref parent, "parent")` on the child **[V]**.
+
+*Cannot:*
+- Put a step under its parent before it exists as a quest. A VEF catalogue offer lives outside
+  `QuestManager` until bought, so before purchase it shows only in the catalogue window.
+
+*Consequences:*
+- **A generator parent counts every successful child as its own** (**T-209**). Nest a subplot
+  beat or a survey find under the Chronicle parent and § 2's cursor advances. So each subplot
+  gets its own parent, or § 2's override counts by beat def.
+- Nothing ties a nested beat's lifetime to its parent. `Quest.End` ends only its own quest and
+  cleans up only its own parts, so ending the parent leaves its children running **[V]**.
+
+#### T1–T3 — a taken beat, legible as taken
+
+`ShouldListNow` splits the list by state: `NotYetAccepted` on Available, `Ongoing` on Active,
+ended or dismissed on Historical. `DrawQuest` indents a child only when parent and child are
+both on the tab being drawn **[V]**. The existing gotcha in `docs/engine/quests.md` covers a new
+offer. The same rule sends every **finished** beat to Historical, drawn flat and tinted by
+outcome (**T-210**). Ended quests are never removed from `QuestManager` outside debug actions,
+and *delete* on the Historical tab only sets `hiddenInUI`, so the parent's pane keeps listing
+them **[V]**.
+
+- **T1** is legible in the parent's pane and fails in the list: no taken beat appears under its
+  parent there.
+- **T2** puts the chain in the parent's text. `DescriptionPart` is read on every frame the quest
+  is selected, so it may read quest state but must never reach `CanRun` (**T-39**).
+- **T3** is the only route that keeps the list's shape. It must compose with Multiplayer's
+  `ShouldListNow` prefix (`hideOtherPlayersQuests`) and VEF's `DoRow` postfix, and it changes
+  what is drawn, not what is listed (**T-21**). It also fixes the offer case: a Schism step
+  offered as an ordinary quest ([`CURRENCIES.md`](CURRENCIES.md) route B) otherwise draws flat on
+  Available.
+
+#### C1–C3 — a challenge rating on every quest
+
+`QuestGen.InitializeQuestGen` copies `root.defaultChallengeRating` onto the new quest when it is
+above 0, before the root node runs, so it works on C# roots too **[V]**.
+`QuestNode_SetChallengeRating` overwrites it later, and so does C# such as Worksites Expanded's
+`OutpostUtility.GetWorkSiteChallengeRating` **[V]**. `QuestScriptDef.ConfigErrors` rejects a
+rating on a def that is not `IsRootAny` **[V]**. Vanilla C# writes the rating nowhere else **[V]**.
+
+**Where it is seen, and what an unrated quest looks like** (**T-208**):
+
+| Surface | Draws | An unrated quest (`-1`) shows |
+|---|---|---|
+| Quest tab row, `MainTabWindow_Quests.DoRow` | `Mathf.Max(challengeRating, 1)` stars, unbounded | **one star**, identical to a declared 1 |
+| VEF `Window_Contracts` | `challengeRating` pips | none |
+| VFED `DeserterTabWorker_Plots` / `_Services` | `challengeRating` / `Max(…, 1)` | none / one |
+| Offer letters | nothing: vanilla uses the rating icon only in the tab | — |
+
+*"Before commitment"* is therefore the Available tab row or a shop window. An auto-accepted
+quest never sits on Available, so its rating is first seen on Active. For Charting's
+auto-accepted discoveries, commitment is the walk, and the row shows the rating before it **[I]**.
+
+**The gap, measured.** An XML parse of `Data/` and both mod roots finds **179 root scripts: 17
+hidden, 90 rated in XML (43 by default, 47 by node) and 72 visible with no XML rating**. The
+parse counted non-abstract `QuestScriptDef`s with a `<root>`, excluded `Util_*` names, and
+followed inheritance and sub-scripts. The root test is a heuristic and lets through about five
+misnamed utility scripts. Eleven of the 72 are Worksites Expanded outposts, rated in C#. The
+rest draw one star, among them Odyssey's `Gravcore_*` and `OpportunitySite_*` scripts, Royalty's
+`Mission_BanditCamp` and Vanilla Quests Expanded – Ancients' six sites. Which of them ship is
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s. C3 regenerates the list.
+
+- **C1** is the authored answer: a true rating per quest, for the ledger to fill.
+- **C2** is the guarantee that no quest reaches the player unrated. Its rating is derived, not
+  authored, so it reads points, not the danger the quest's writer intended.
+
+### Status
+
+**Evidence class: READ.** Every mechanism above is **[V]**, decompiled from 1.6.4871
+`Assembly-CSharp` (`Quest`, `QuestUtility`, `QuestManager`, `MainTabWindow_Quests`, `QuestPart`,
+`QuestPart_SubquestGenerator`, `QuestPart_AddQuest`, `QuestPart_QuestEndParent`, `QuestGen`,
+`QuestNode_SetChallengeRating`, `IncidentWorker_GiveQuest`), `2023507013/1.6/Assemblies/VEF.dll`
+(`Window_Contracts`, `QuestGiverManager.ActivateQuest`, the `QuestManager.Add` and
+`MainTabWindow_Quests` patches), `3025493377/1.6/Assemblies/VFED.dll`,
+`3687071198/Assemblies/MiningOutpost.dll` and `2606448745/1.6/AssembliesCustom/Multiplayer.dll`.
+Routes N1, N2, T2, T3 and C2 are **[I]** as compositions.
+
+The wide pass ran over both roots with `obj/` excluded:
+- ASCII `challengeRating` in `.dll`s hits only VEF (`VEF`, `KCSG`), VFED and Worksites Expanded.
+- ASCII `GetSubquests`, `IsSubquestOf` and `SubquestGenerator` hit no mod, with `Referenced/`
+  excluded. The same form found `MainTabWindow_Quests` in six mods.
+- `ShouldListNow` hits only Multiplayer, in both encodings. `DoQuestsList` hits only VEF, whose
+  hit is its own window's method.
+
+### Open questions
+
+- **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):** which nesting
+  route; T2, T3 or both; whether C2's fallback ships or C1 alone; the points-to-stars curve C2
+  would use; the parent-lookup key (root def or a stored reference); whether ending a subplot's
+  parent should end its live beats.
+- **Ledger, [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14):** a rating for each
+  unrated quest that ships.

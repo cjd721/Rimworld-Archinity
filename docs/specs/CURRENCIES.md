@@ -116,6 +116,14 @@ Answers [`RELIGION.md` § *The Schism Path*](../requirements/RELIGION.md): *"Inf
 
 **Recommendation, not a selection:** A for the plot, with favours and techprints as rows in the same catalogue. B as a complement if blows should arrive as ordinary offers. First Influence gained as the marking act, because it alone meets the requirement's banking clause by construction.
 
+**Nesting and challenge rating, per route** ([#196](https://github.com/cjd721/Rimworld-Archinity/issues/196); routes P, N1–N2, T1–T3 and C1–C3 in [`CHARTING.md`](CHARTING.md) § *Subplots as parent quests*). The Schism gets its own standing parent quest, never the Chronicle's (**T-209**). Every route can nest its steps under it, because the quest tab reads only `Quest.parent` **[V]**:
+- **A**: our generation sets the parent (N1), or the `QuestManager.Add` postfix does (N2). A step shelved hidden stays out of the list and the parent's pane until it is shown **[V]**.
+- **B**: the offer is a `NotYetAccepted` child of an `Ongoing` parent, so it draws flat on Available unless the tab is patched (T3) **[V]**. Its rating shows in the Available row.
+- **C**: an unbought offer lives outside `QuestManager`, so it nests only once bought. `CurrencyQuestCurrencyInfo.Buy` can set the parent, or N2 does at `ActivateQuest`'s `Add` **[V seams, I composition]**.
+- **D**: VFED adds each step at `GeneratePlotQuest`, which N2 catches **[I]**.
+
+A taken step draws on the Historical tab, flat, under every route unless T3 is taken (**T-210**). A step with no declared rating shows no pips in `Window_Contracts` and in VFED's plot tab, and one star in the quest tab (**T-208**). So every Schism step declares `defaultChallengeRating` (C1).
+
 ### Constraints
 
 - **The index moves only on a quest outcome, in every route.** A purchase gates a step; it never writes the index **[I — route property]**.
@@ -1206,7 +1214,7 @@ class CurrencyQuestCurrencyInfo : QuestCurrencyInfo {  // ~20 lines
 | pool membership | `QuestGiverDef.onlySpecifiedQuests`, or all `!isRootSpecial && IsRootAny` scripts |
 | pool size | `maximumAvailableQuestCount` |
 | price display | `Window_Contracts` draws `questInfo.currencyInfo.GetCurrencyInfo()` |
-| challenge rating before commitment | `Window_Contracts` draws one pip per `Quest.challengeRating` |
+| challenge rating before commitment | `Window_Contracts` draws one pip per `Quest.challengeRating`. An unrated quest (`-1`) draws none, so each entry must declare one (**T-208**, [#196](https://github.com/cjd721/Rimworld-Archinity/issues/196)) |
 | choice resolution | `Window_Contracts` calls `selected.quest_Part_choice.Choose(selected.choice)` **before** accepting |
 | add → accept → charge → remove | `QuestGiverManager.ActivateQuest(Pawn, QuestInfo)` |
 

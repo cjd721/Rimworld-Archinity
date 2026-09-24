@@ -18,7 +18,8 @@ This document owns the **world-map mobility ladder**: what road tiers mean for t
 exists at worldgen (§2), the era-driven construction process and the player's two verbs (§3, and
 § *The player's verb on a route — contribute*), and
 **vehicles** ([#69](https://github.com/cjd721/Rimworld-Archinity/issues/69), §4), which multiply
-with roads and cannot be tuned apart from them.
+with roads and cannot be tuned apart from them, including NPC factions fielding them
+([#195](https://github.com/cjd721/Rimworld-Archinity/issues/195), §4d).
 
 It does **not** own:
 
@@ -50,7 +51,7 @@ This section answers one clause of [`docs/requirements/WORLD-INFRASTRUCTURE.md`]
 
 - *Player agency over routes.* Contribute to a specific, named route, distinguishably from a gift, through a channel that fits the era.
 
-It was established by [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154) and extends §3d with its entry points. Threats to routes were cut by #174; the event shapes live in [`TERRITORY.md`](TERRITORY.md) § 1.
+It was established by [#154](https://github.com/cjd721/Rimworld-Archinity/issues/154) and extends §3d with its entry points. Threats to routes were cut by #174; the event shapes live in [`TERRITORY.md`](TERRITORY.md) § 1. Contribution itself was kept. *Higher tier*, the third thing funding can buy, is §3d § *Higher* (#194). It rides the same entry points.
 
 It does not own:
 
@@ -433,7 +434,8 @@ Every 2500 ticks, per `Building` project, in `id` order:
 
 #### 3d. Funding — the player's first verb
 
-*"Contribute resources to a planned route to complete it sooner or extend it farther."*
+*"Contribute resources to a planned route to complete it sooner or extend it farther"*, or to raise
+its tier (*Higher*, below).
 
 - **Sooner.** Contributed goods convert to `fundedWork` at a per-tier price
   (`RoadEraExtension.fundingCosts`, a `List<ThingDefCountClass>` per edge — XML). The clock drains
@@ -467,6 +469,78 @@ Every 2500 ticks, per `Building` project, in `id` order:
   The entry points are enumerated in § *The player's verb on a route — contribute* (C1–C5). The caravan
   gizmo here is C1's path-tile form. At an endpoint settlement, the float-menu form syncs for free.
 
+##### Higher — a tier the network would not have chosen
+
+*"…or reach a higher tier than the autonomous network would have chosen."* Established by
+[#194](https://github.com/cjd721/Rimworld-Archinity/issues/194). Evidence class **READ**.
+
+- **Possible?** Yes, but only once the network's default tier sits **below** the era ceiling.
+  As §3b step 1 stands, every project already lays the highest tier the era allows, so *higher
+  than the network* can only mean *above the era*. That collides with the era ceiling
+  ([`docs/requirements/ERA.md`](../requirements/ERA.md) § *Meaning*: the ceiling is on what the
+  colony may *buy*, and it is hard). H1 and H2 open a gap under the ceiling for funding to fill.
+  H3 goes above it and is blocked by the requirement, not by the engine.
+- **Multiplayer?** Yes. A tier raise is one more argument on the commits C1–C5 already sync: an
+  `int tier` on §3d's `SyncedFund`, or one float-menu option per tier, which syncs for free (T-80).
+  The raise draws no random number.
+
+| Route | What it gets the story | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **H1 — The builder's own tech caps the network; funding lifts it to the era** | *"The Ashvale clans would have trodden a dirt road. Our blocks made it stone."* A tribe in a Medieval world builds low unless paid. The roads also show each faction's tech, not only the world's era | §3b step 1 becomes `min(era tier, tier for builder.def.techLevel)`. `FactionDef.techLevel` is a live read of a fixed def field (T-11 forbids writing it) [V, `TERRITORY.md` #167]. Same `RoadEraExtension.era` field, read twice | small C# + XML | **Easy** on top of §3 | Yes |
+| **H2 — The network lags one rung; funding buys the ceiling** | Every civilization builds one rung behind the era. The era's own tier appears only where someone paid for it, so a funded route stands out on the map everywhere | `RoadEraExtension` gains a second era: `era` (the network lays it) and `fundedEra` (funding may lay it). **H2a:** repoint the five vanilla defs (the world runs a rung behind). **H2b:** add intermediate `RoadDef`s as XML clones with a `priority` between vanilla's (10/20/30/40/50) [V] | XML + small C# | **Easy** (H2a). **Medium** (H2b: every new def also needs §1's ladder value and a §4c operation) | Yes |
+| H3 — One rung above the era, bought | *"Asphalt in the Medieval age, because we paid for it."* | RimPacts' shape: `WITab_RptTrade` offers `RoadTierTo(s) + 1` at `RptTuning.RoadTierCostPerTile` = 80/150/250/400/600 silver per pending edge, with no era or tech gate [V, `3762723122/Assemblies/RimPacts.dll`] | small C# | Easy | Yes. **Blocked by the requirement:** an above-era purchase breaks `requirements/ERA.md`'s hard acquisition ceiling |
+
+**The raise itself is shared by all three** [V mechanisms, composition I]:
+
+- **Raise the project's tier in place.** `RouteProject.tier` becomes the funded tier.
+  The laid prefix counts as pending again under §3b step 6's rule (an edge below `priority` is
+  pending), and `OverlayRoad` upgrades those links over the old ones (T-43 refuses only a
+  downgrade). The price is the new tier's `fundingCosts` per pending edge. RimPacts'
+  `PayableSegments(pathTiles, tier, layer)` is the same count.
+- **Or lay a second project over the same path** at the higher tier. This is §3c's *a later era
+  supersedes* mechanism, driven by a payment instead of an advance. It also covers a route that is
+  already `Complete`.
+- **Permanence is free.** A funded edge is never downgraded, whether by a later plan, a
+  cancelled project or an era advance, because `OverlayRoad` cannot express a downgrade (T-43).
+  The next era's re-plan finds the funded edges already at or above its tier and prices them at
+  zero (§3b step 6). The cancel-and-re-plan in §3c must not cancel a funded project whose tier is
+  at or above the new plan's.
+- **The entry points are unchanged.** Every channel C1–C5 carries it: a lot per tier on the C1
+  float menu, a C2 quest whose requested count is the higher tier's price (an XML slate ref),
+  and a C3 option disabled while beacon stock is short (T-82). The era ladder for the channel
+  still comes from the entry points.
+- **A higher tier is a no-op without §1** (T-42). The texture changes (`worldRenderSteps`) but
+  the travel time does not, and for a vehicle §4c is also needed.
+
+**What the corpus carries** [V sweep]. Only two assemblies write roads at runtime. An ASCII
+`OverlayRoad` sweep over both roots (`-g '!**/obj/**' -g '!**/Referenced/**'`) hits RimPacts and VFE
+Classical and nothing else. The null-interleaved UTF-16 form, typed literally, returns zero, so
+nothing reaches the method by reflection. RimPacts is H3's donor and has no gate.
+VFE Classical lets the player choose the tier directly, and **it has no per-tier gate either**:
+
+- `WorldComponent_RoadBuilding.AddRoadGizmos` checks only
+  `VFEC_DefOf.VFEC_RoadBuilding.IsFinished`, then yields one `Command_Action` for every
+  `DefDatabase<RoadBuildingDef>.AllDefs` [V, IL of the iterator, `2787850474/1.6/Assemblies/VFEC.dll`].
+- `RoadBuildingDef` carries only `road`, `workRequired` and `iconPath` [V].
+- `VFEC_RoadBuilding` ships at `techLevel Neolithic` and unlocks `BuildStoneRoad` along with the
+  other two [V, `1.6/Defs`].
+
+So the direct-build verb already lets the player lay a tier above the era, and no XML field can
+gate one tier separately (**T-202**). Two fixes: a postfix on `AddRoadGizmos` that drops commands
+whose def's era extension exceeds the current era (C#, Easy [I]), or §3e's Build B, which can gate
+each tier natively.
+
+**Open questions.**
+
+- **Which reading of "the network would have chosen"** is wanted: capped by the builder's tech (H1),
+  or one rung behind the era everywhere (H2). This is a story call for #119. H1 needs a decision on
+  how an NPC faction's tech reads after a boundary. If factions climb by `Faction.def` swap, the cap
+  climbs with them (`TERRITORY.md` TG-2) [I].
+- **Build questions for the next map:** raise in place or lay a second project; whether a
+  raise can overtake a `Paused` project; how the price per tier is set (balance, #119).
+- No stake. The funded tier needs no record of who paid (#174). The road on the map is the
+  record.
+
 #### 3e. Direct construction — the second verb, shipped
 
 **VFE Classical carries it** [V, `2787850474/1.6/Assemblies/VFEC.dll`, re-read; the on-disk source
@@ -487,6 +561,11 @@ targeter closes on every client. The class is compiled into
 `1629973374/1.6/Referenced/Multiplayer_Compat_Referenced.dll`, and **that assembly is loaded**:
 `Multiplayer.Compat.MpCompatLoader.LoadConditional` reads it with Mono.Cecil, removes every type
 whose `MpCompatFor` mod is not running, and `AppDomain.CurrentDomain.Load`s the rest [V].
+
+**One research gate opens every tier** [V, #194]. `AddRoadGizmos` offers every `RoadBuildingDef` once
+the Neolithic `VFEC_RoadBuilding` is finished, and the def has no research or era field, so no XML
+gates a single tier. A per-tier era gate is a postfix on `AddRoadGizmos` dropping above-era commands
+(C#, Medium), or Build B (**T-202**).
 
 **It needs no integration with §3.** A player-paved edge at or above a project's tier is skipped
 at planning (§3b step 6) and refused by `OverlayRoad` at write time. Two costs of taking it as
@@ -817,6 +896,191 @@ already has.** That divergence is **T-74**, it is §4a's to fix, and the #69 fin
 > read, whoever authored it, which is also why builds B and D exist: per-vehicle-group costs
 > **cannot** be expressed as several extensions on one road def.
 
+#### 4d. NPC factions fielding vehicles — raids, caravans, defence
+
+Answers the clause *"Vehicles are era-gated like everything else: a faction fields what its era
+affords"* and the NPC half of *on-map combat platforms… in colony defence and raids*
+([`docs/requirements/WORLD-INFRASTRUCTURE.md`](../requirements/WORLD-INFRASTRUCTURE.md) § *The
+mobility ladder*). Established by [#195](https://github.com/cjd721/Rimworld-Archinity/issues/195).
+**Evidence class READ**, against `3014915404/1.6/Assemblies/Vehicles.dll` (and its 1.5 copy for
+the hook targets), `3014906877/1.6/Defs/`, `3687071198/Assemblies/MiningOutpost.dll`,
+`3414187030/1.6/Lunar/Components/WorldTechLevel.dll` and vanilla `Assembly-CSharp.dll`. Player
+vehicles are §4a–§4c; whether vehicles ship at all is
+[#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.
+
+##### Verdict
+
+- **Possible?** Partly. NPC vehicles in raids and in hostile-settlement defence: yes, by C# on a
+  shipped seam — Vehicle Framework ships the whole raid layer and **hooks none of it in 1.6**
+  (**T-205**). Parked, faction-owned vehicles at an NPC site: yes, Worksites Expanded ships one.
+  Trader caravans with a vehicle: yes, by a postfix of ours. **Only from Industrial**, because no
+  vehicle below Industrial exists anywhere in the corpus (§ *What does not exist anywhere*).
+- **Multiplayer?** With work. Generation runs on the synced tick through `Verse.Rand` [V], and NPC
+  vehicles need no `SyncMethod`. But every NPC vehicle pathfinds through the thread pool exactly
+  as a player's does (**T-74**), so **§4a is a hard prerequisite**. Once NPC vehicles exist, a raid
+  exposes both clients to T-74 even if neither player owns a vehicle.
+
+##### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **N1** — Raid and defender injection | Hostile raids, and the defenders of a hostile settlement the player attacks, arrive with crewed combat vehicles. Crew is drawn from the group's own humanlikes | VF's shipped `Patch_NpcAi` prefix/postfix pair, registered by us on `PawnGroupKindWorker_Normal.GeneratePawns`. Or our copy of it. Faction opt-in via VF's `VehicleRaiderDefModExtension` (XML) | C# + XML | Medium | With work (§4a) |
+| **N2** — Armored assault behaviour | A raid that carries vehicles fights as a vehicle raid: vehicles take `VF_RangedAggressive`, infantry `Follow` them | VF's shipped `LordJob_ArmoredAssault` → `LordToil_AssaultColonyArmored`, which nothing constructs. We supply the constructor: a `RaidStrategyDef` whose worker returns it (XML + small C#), or a `MakeLordJob` postfix | XML + C# | Medium | With work (§4a) |
+| **N3** — Trader caravan with a vehicle | A visiting Industrial trader brings a truck or wagon | Our postfix on `PawnGroupKindWorker_Trader.GeneratePawns`. A vehicle cannot go in the XML `carriers` list | C# | Medium | With work (§4a) |
+| **N4** — Parked faction vehicles at a site | An NPC vehicle depot. It is a raid target and a capturable prize, crewless | **Worksites Expanded** `MiningOutpost.Loot.GenStep_VehiclesOutpostLoot`, as shipped. For settlements generally: a GenStep of ours calling `VehicleSpawner.GenerateVehicle(def, faction)`, copying it | XML (as shipped) · C# (ours) | Easy · Medium | Unknown for Worksites (no MP Compat class). Yes for ours [I] |
+| **N5** — Vehicles below Industrial | A Neolithic or Medieval faction fields a cart, chariot or war-wagon. N1's own gate then admits it, because the def's `techLevel` is lower | Our own `Vehicles.VehicleDef`s on VF: data plus art, copying a VVE Tier 1 def. No carrier is on disk (see the survey) | XML + art | Medium | As N1 |
+| ~~N6~~ — Vehicle pawn kind in `pawnGroupMakers` | *Not recommended.* It generates, because VF's unconditional `PawnGenerator.GeneratePawn` prefix turns a vehicle kind into a `VehiclePawn` [V]. But the vehicle has no crew and never moves (`VehiclePawn.CanMoveFinal` needs `HasEnoughOperators`) [V] | VF's implied `<vehicle>_PawnKind` defs | XML | Easy | — |
+
+**N1 — raid and defender injection.**
+
+- *Gets us:*
+  - Vehicles in every hostile Combat group, and in hostile Settlement defender groups too.
+    `Combat`, `Settlement`, `Settlement_RangedOnly` and `Peaceful` all use
+    `PawnGroupKindWorker_Normal` [V]. That covers storyteller raids, quest raids, and the
+    defenders a player meets when attacking a base.
+  - Levers, all XML:
+    - which factions, by `VehicleRaiderDefModExtension` on the `FactionDef`. VF already patches
+      it onto `PirateBandBase`, `OutlanderFactionBase`, `TribeBase`, `AncientsBase`, and — in its
+      Royalty and Biotech compatibility folders — `Empire` and `Sanguophages` [V]. `pointMultiplier` scales the vehicle budget.
+    - which vehicles, by `npcProperties.raidParams` → a `VehicleRaidParamsDef` (factions list,
+      arrival modes, inventory).
+    - cost, by `combatPower`. It is **100 on every VVE vehicle**, because none declares it and
+      that is VF's default [V].
+  - The count is VF's hardcoded `VehicleCountByPointsCurve`: none below 1000 points, one at 3000,
+    two at 5000, five at 20,000 [V]. Changing the curve means our copy of the injector.
+- *Cannot:*
+  - Land vehicles only.
+  - Combat category only, because `RaidInjectionHelper.GetResolvedCategory` returns `Combat`
+    unconditionally [V]. That leaves six VVE vehicles: Bulldog, Bunsen, Highwayman, Roadkill,
+    Scytheman and Tango.
+  - Hostile factions only. The prefix returns unless `HostileTo(Faction.OfPlayer)` [V], so
+    allied reinforcements get none.
+  - Aircraft and boats need our copy.
+- *The era gate is VF's own, and it reads the raw def.* `RaidInjectionHelper.ValidRaiderVehicle`
+  refuses when `faction.def.techLevel < vehicleDef.techLevel` [V]. With every vehicle
+  `Industrial`, Neolithic and Medieval factions never field one. `TribeBase` carries the extension
+  and is still excluded, correctly. **World Tech Level never sees the vehicle** (**T-206**), so an
+  Industrial pirate faction fields tanks in a Neolithic world. The gate must read the campaign's
+  era, not the def, if the story wants "its era" to mean the world's.
+- *Consequences:*
+  - Reusing VF's private methods verbatim couples us to member names VF considers dead code.
+  - VF's second pair, on `RaidStrategyWorker.SpawnThreats`, is broken as shipped:
+    `InjectVehiclesIntoRaidPrepare` takes `__state` **by value**, so the postfix never sees the
+    list [V]. It is also redundant, because raid pawns already pass through
+    `PawnGroupKindWorker_Normal`.
+  - Our own copy costs little more and removes both problems.
+- *What the vehicle does once spawned is RUN.* Under a vanilla lord a vehicle reads vanilla
+  duties. VF's guard for that (`Patch_NpcAi.DisableVanillaJobForVehicle`) is also unhooked [V].
+  That is what N2 exists for.
+
+**N2 — armored assault behaviour.**
+
+- *Gets us:* VF's purpose-built graph. The assault toil gives each `VehiclePawn` `VF_RangedAggressive`
+  (fire turrets, drive to the nearest hostile, disembark when stuck) and every other pawn `Follow`.
+  Flee, kidnap and steal subgraphs are attached as vanilla's assault does [V].
+- *Cannot:* ram. `VF_RangedAggressive`'s *"run down targets"* nodes are empty comments in the
+  shipped def [V].
+- *Consequences:* a custom `RaidStrategyDef` falls under WTL's `Patch_RaidStrategyWorker.CanUseWith`
+  level gate like any other strategy [V]. Whether a new def carries a level without a
+  `TechLevelConfigDef` row is [I].
+
+**N3 — trader caravan with a vehicle.**
+
+- *Gets us:* the carrying-capacity rung made visible in NPC hands. A caravan arrives with a Mule
+  or a Wagon.
+- *Cannot:*
+  - use XML alone. `PawnGroupKindWorker_Trader` logs an error for any non-`packAnimal` kind in
+    `carriers` [V].
+  - carry wares. The stock stays on pawns and animals; whether it can ride in the vehicle is [I].
+- *Consequences:* behaviour under `LordJob_TradeWithColony` is RUN, as in N1.
+
+**N4 — parked faction vehicles.**
+
+- *Gets us, as shipped:* Worksites Expanded's *vehicles outpost*, a `SitePartDef` offered by
+  `OpportunitySite_VehiclesOutpost`, both `MayRequire` VVE. Its GenStep reads `VVE_*_PawnKind`
+  cells from a KCSG layout and calls `VehicleSpawner.GenerateVehicle(VehicleDef, Faction)` by
+  reflection, owned by the site's faction [V]. The layouts name Bulldog, Mule, Wisent and
+  Highwayman. They also name `VVE_Lightning` and `VVE_Louie`, which no mod on disk defines [V].
+  By the prefix they belong to VVE Tier 3 (`OskarPotocki.VanillaVehiclesExpandedTier3`, not on
+  disk) [I].
+  The owning faction is picked from pirates first, then Spacer, then Industrial factions
+  (`QuestNode_GetMiningFaction.GetRandomAllowedFaction`) [V]. It is a soft era preference, not a
+  gate.
+- *Our version:* `VehicleSpawner.SpawnVehicle(…, autoFill)` can also fill the handlers with
+  `Colonist`-kind crew of the faction [V]. A crewed defender then needs a lord, which is N2's
+  question.
+- *Cannot:* a crewless vehicle does not fight or move.
+- *Consequences:* MP Compat names Worksites Expanded in neither encoding [V]. The spawn itself is
+  map generation on `Verse.Rand` [V], but the mod's dialogs are unsynced (CAPABILITIES § Founders).
+
+**N5 — vehicles below Industrial.**
+
+- *Gets us:* the only way a pre-Industrial faction fields a vehicle. `VehicleDef` is data, and
+  VVE's 23 defs are the templates.
+- *Cannot:* be sourced. The mods that carry these vehicles are **named in the corpus but not on
+  it**. VFE Props & Decor's `LoadFolders.xml` loads chariot, covered-carriage, dog-sled, cog,
+  caravel, Motorwagen and Model A props only `IfModActive` `sarg.alphavehiclesneolithic`,
+  `sarg.alphavehiclesageofsail` or `sarg.alphavehiclesearlycars` [V]. No `About.xml` in either
+  root declares those IDs [V, sweep validated against VVE's own ID]. Whether to acquire them is
+  [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)'s.
+- *Consequences:* the line in § *What does not exist anywhere* — *"the mobility ladder below
+  Industrial is roads and feet"* — stays true of the corpus on disk. It is a sourcing fact, not an
+  engine limit.
+
+**Recommendation (not a selection).** N1 as our own copy of VF's injector, gated on the
+campaign's era, with N2 for behaviour. N4 as shipped if Worksites Expanded ships. N3 only if a
+beat needs it. Below Industrial the honest rung is vanilla's pack animals in trader caravans
+(`PawnGroupMaker.carriers`), which already ship. N5 only if the story wants Medieval wagons
+badly enough to author or source them. Selection is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+
+##### What the survey found
+
+- **VF's NPC layer is complete in data and dead in code** (**T-205**) [V]:
+  - `Vehicles.Patch_NpcAi.PatchMethods` is a single `ret` (IL code size 1), and
+    `Patch_NpcPathing.PatchMethods` is empty too.
+  - In 1.5 the same class (`Vehicles.NPCAI`) hooked `PawnGroupKindWorker_Normal.GeneratePawns`
+    and `RaidStrategyWorker.SpawnThreats`, behind `debugAllowRaiders`.
+  - `Vehicles.Config.FeatureFlags.InitDefault` enables `Raiders`, `Paratroopers` and
+    `TradeableVehicles` for the `Debug` and `Unstable` builds only. `Feature.Enabled` tests for
+    `Release`, so in the shipped build VF's `ParatrooperDrop` arrival mode (`FeatureFlag` attribute)
+    never loads, and its Outlander vehicle trader stock (`PatchOperationFeature`) never applies.
+  - `LordJob_ArmoredAssault` is registered by `VehicleHarmony.FillVehicleLordJobTypes` and
+    constructed nowhere.
+  - `VehicleIncidentSwapper.RegisterIncident` throws `NotImplementedException`.
+  - None of this logs anything.
+- **Nobody else carries it** [V, sweep]:
+  - `VehicleRaiderDefModExtension`, `VehicleRaidParamsDef`, `npcProperties`, `raidParams`,
+    `GenerateVehicle`, `VehicleGenerationRequest` and `LordJob_ArmoredAssault` hit only
+    `Vehicles.dll` (ASCII, both roots, `-g '!**/obj/**'`).
+  - `InjectVehicles` / `Patch_NpcAi` hit only `Vehicles.dll`, in both encodings.
+  - The `Vehicles.` UTF-16 literal hits VEF (turret reflection), Outposts, Worksites Expanded,
+    Vanilla Gravship Expanded and Better Architect. Only Worksites spawns an NPC vehicle.
+  - No riding or mount mod is on disk: `GiddyUp` etc. hit only MP Compat.
+- **World Tech Level** [V]:
+  - Its assembly contains no `vehicle` string in either encoding. The validator, `research`, hits
+    both.
+  - `VehicleSpawner.GenerateVehicle` builds through `ThingMaker.MakeThing`, not `PawnGenerator`,
+    so WTL's `Patch_PawnGenerator.GeneratePawn_Prefix` kind-replacement never runs on N1's path.
+  - On N6's path, VF's and WTL's prefixes share `PawnGenerator.GeneratePawn` in an order not read
+    [I].
+- **Tech levels** [V]: all 23 VVE vehicles are `techLevel Industrial` (§4b). VF's own
+  `IndustrialLandCombat` raid params name `OutlanderCivil`, `OutlanderRough` and `Pirate`.
+- **Settings surface** [V]: `VehicleDef.enabled` (`VehicleEnabled.For`, including a *raiders only*
+  value) is a `[PostToSettings]` field. `ValidRaiderVehicle` reads the raw def field, not
+  `SettingsCache`, so a player's per-vehicle toggle does not reach N1 as shipped [I on intent]. A
+  copy that did read it would widen **T-18**.
+
+##### Open questions
+
+- **Which clock the gate reads**: the NPC faction's def `techLevel`, or the campaign's world era
+  ([`ERA.md`](ERA.md)). This is a story and build decision for #119. N1 carries either.
+- **Vehicle behaviour under vanilla lords** (raid, defend-base, trade), and N2's in play. RUN: one
+  client, dev-spawn a crewed Bulldog raid, and observe whether it drives, fires, and whether
+  crew disembark.
+- **Build questions for the next map**: reuse VF's private methods or copy them; the count curve
+  and budget; whether defenders get vehicles or only raiders.
+
 ### Cost
 
 | Piece | Kind | Estimate | Lands in |
@@ -830,7 +1094,7 @@ already has.** That divergence is **T-74**, it is §4a's to fix, and the #69 fin
 | **§3** Construction clock — edge writes, narrow redraw, invalidation, supersession, completion | new C# | ~80 lines | `Archinity.Core` |
 | **§3** Funding — `Caravan.GetGizmos` postfix, amount window, `SyncedFund` / `SyncedExtend` | new C#, **1 Harmony postfix, 2 `SyncMethod`s** | ~100 lines | `Archinity.Core` |
 | **§3** Display — `Settlement.GetInspectString` postfix, era letter, completion message | new C#, **1 Harmony postfix** | ~40 lines | `Archinity.Core` |
-| Direct-construction tiers | XML, `VFEC.RoadBuildingDef` ×N + 1–3 `ResearchProjectDef` | ~60 lines | `Defs/RoadBuildingDefs.xml` |
+| Direct-construction tiers | XML, `VFEC.RoadBuildingDef` ×N, behind VFE Classical's one Neolithic gate; a per-tier gate is a postfix on `AddRoadGizmos` (T-202) | ~60 lines | `Defs/RoadBuildingDefs.xml` |
 | Direct-construction mechanism | **none** — VFE Classical ships it, MP Compat syncs it | 0 | — |
 | — *if VFE Classical is declined by [#14](https://github.com/cjd721/Rimworld-Archinity/issues/14)* | new C# | ~70 lines + 1 `SyncMethod` | `Archinity.Core` |
 | `ReachRungExtension` rows for [`CHARTING.md`](CHARTING.md) §4 | **offered, not selected** — [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s route selection | ~8 lines each if taken | `Defs/RoadBuildingDefs.xml` |
@@ -1218,8 +1482,9 @@ write targets an NPC↔NPC pair; its § *The build* §1 is where the edges are s
 
 ### VFE Classical — direct construction, shipped and synced
 
-Covered in §3e. The finding that matters is that it is **research-gated by construction**, so an
-era gate on player road-building costs one `ResearchProjectDef` and no code. Read it at
+Covered in §3e. The finding that matters is that **one research gate opens every tier at once**
+(T-202): `RoadBuildingDef` has no research field, so a per-tier era gate on player road-building
+needs a postfix on `AddRoadGizmos`, or Build B ([#194](https://github.com/cjd721/Rimworld-Archinity/issues/194)). Read it at
 `1.6/Assemblies/VFEC.dll` — the source on disk is 1.3/1.4 only (⚠ in `MOD-SNAPSHOT.md`).
 
 ### Multiplayer Compatibility — the VFE Classical road sync, loaded from a nonstandard path
@@ -1457,7 +1722,12 @@ own [I — a sweep]. Not on disk, not assessed.
   `techLevel Industrial`, the Wagon and the Wisent included [V]; that no *other* mod ships one
   is a sweep result and **[I]**. **The mobility ladder below
   Industrial is roads and feet**, which is what §1–§3 supply and what the plot asks for; there
-  is no Medieval cart rung to build on, and inventing one is not this document's.
+  is no Medieval cart rung to build on, and inventing one is not this document's. The carriers
+  that would supply one — Alpha Vehicles Neolithic, Age of Sail and Early Cars — are named by VFE
+  Props & Decor's `LoadFolders.xml` and absent from disk. The route that would author one is §4d
+  N5.
+- **Any NPC use of a vehicle that runs in the shipped build.** VF's raid layer is unhooked and
+  feature-flagged off (**T-205**); only Worksites Expanded spawns an NPC-owned vehicle (§4d).
 
 ## Verification
 

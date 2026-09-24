@@ -1089,12 +1089,148 @@ override is the only route.
 | Betrayal's permanent hostility | **New C# + one saved bit** — a `GoodwillSituationWorker` capping at −100 once betrayed (§6; #130 route A), or VFED's latch if VFED ships; selection #119. Unpriced in lines |
 | Permits-card seed (**T-35**) | **Deleted** — `Faction.OfEmpire` always exists |
 | Bestowing-quest suppressor | **Deleted** — the bestowing ceremony is the Church's title ceremony (alternative in §4: ~35 lines) |
-| The Church's ending | **XML** — Royal Ascent's own shape: a T2 refiring quest (`StorytellerComp_RefiringUniqueQuest`, [`ENCOUNTERS.md`](ENCOUNTERS.md) T2, Multiplayer "with work") gated on the top title (`QuestNode_HasRoyalTitleInCurrentFaction`) and on not-betrayed / not-revealed, closing on the betrayal bit or `faction.BecameHostileToPlayer` → `QuestNode_End`; vanilla's Royal Ascent comp stripped ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123); decision 18). Selection #119 |
+| The Church's ending | **XML** for the offer — Royal Ascent's own shape: a T2 refiring quest (`StorytellerComp_RefiringUniqueQuest`, [`ENCOUNTERS.md`](ENCOUNTERS.md) T2, Multiplayer "with work") gated on the top title (`QuestNode_HasRoyalTitleInCurrentFaction`) and on not-betrayed / not-revealed, closing on the betrayal bit or `faction.BecameHostileToPlayer` → `QuestNode_End`; vanilla's Royal Ascent comp stripped ([#123](https://github.com/cjd721/Rimworld-Archinity/issues/123); decision 18). **C#, one quest part** for the end itself — vanilla's `QuestNode_EndGame` only rolls credits (§8, [#191](https://github.com/cjd721/Rimworld-Archinity/issues/191)). Selection #119 |
 | Safe passage, political privileges | **Answered** — privileges are §5's permits; safe passage is [#136](https://github.com/cjd721/Rimworld-Archinity/issues/136) (decision 10) |
 
 **Aggregate: zero Harmony patches, one small goodwill-situation worker and one saved bit for
 betrayal (#123), no new Def type.** Decrees are XML plus the Church-faction node — §4 *Decrees* ([#137](https://github.com/cjd721/Rimworld-Archinity/issues/137)). The XML is mostly *authoring* — names, creed, catalogue — and none of it waits on
-mechanism.
+mechanism. The ending adds one `QuestPart` subclass, still no Harmony (§8).
+
+### 8. The Church's ending — accepting ends the run for both players
+
+This answers [`requirements/RELIGION.md`](../requirements/RELIGION.md) § *The Church Path*, *"The
+Church's ending … accepting ends the run"*, under Multiplayer. §7's row routes the **offer**; this
+routes what the **Accept** click does. The terminal calls, their Multiplayer behaviour and the rules
+are [`TRANSCENDENCE.md`](TRANSCENDENCE.md) § *Ending the game under Multiplayer*
+([#182](https://github.com/cjd721/Rimworld-Archinity/issues/182)); this section establishes where a
+quest acceptance runs, and so which of those endings it can reach. What accepting *takes* is
+narrative. Established on [#191](https://github.com/cjd721/Rimworld-Archinity/issues/191).
+Evidence class **READ**; the one run owed is TRANSCENDENCE's (§ *Verification*, items 5 and 6).
+
+- **Possible?** Yes. `Quest.Accept` is a synced command, and a quest part listening to the quest's
+  `Initiate` signal runs inside it on both machines. It can open any TRANSCENDENCE ending there.
+- **Multiplayer?** With work. The Accept command has **map context only when the accepting pawn is
+  spawned**. There the game-over dialog is persistent and one click exits both — the same unknown as
+  TRANSCENDENCE C, settled by the same run. Anywhere else it is a world command (rule 1). That still
+  ends the run, but each player leaves on their own click (C), or the click is synced by an MP API
+  registration of ours (B).
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| A — accept on the map | The game-over dialog opens on accept, on both machines. One *Main menu* click takes both out. Credits can layer on (TRANSCENDENCE A + C) | Vanilla `Quest.Accept`, synced by Multiplayer. `QuestNode_RequirementsToAcceptColonistWithTitle` forces a chosen accepter. Our `QuestPart` calls `GenGameEnd.EndGameDialogMessage(…, false)` | XML quest + C# (one quest part; one tiny requirement part to insist the accepter is spawned) | Medium | Unknown until TRANSCENDENCE's run; C′'s deferred exit is the fallback |
+| B — accept anywhere, a synced world dialog | As A, from any accepter, caravan or none. The dialog shows whichever map a player views | As A, plus `MP.RegisterSyncDialogNodeTree` on our opener (0MultiplayerAPI, as TRANSCENDENCE's *Multiplayer* table names it). Donors: MP's own caravan meeting and demand; MP Compat's More Faction Interaction, VFE Settlers and VFE Deserters' Imperial Patrol | C# | Medium | With work, and the same unknown as A |
+| C — accept anywhere, each player leaves | The same dialog, or credits that exit (TRANSCENDENCE B), opened on both machines. Each player's click takes only them out; the host's closes the server under the other | As A without the requirement part: rule 1's local window. `allowKeepPlaying: false` leaves one option, so the unsynced click changes no simulation | C# | Medium | Yes; the exit is per player |
+| D — accept summons, a map act ends | Accepting starts the ending; a later synced map act finishes it. The act could be a gizmo on a quest-spawned thing, or the altar's *Enter* | A `ThingComp` hosts the call, as TRANSCENDENCE does on `CompAltarThreshold`. A quest-spawned thing uses `QuestPart_SpawnThing` | XML + C# | Medium | As TRANSCENDENCE C |
+| — vanilla `QuestNode_EndGame` | Credits over a live colony; the run continues. Royal Ascent and VFE Empire's `QuestNode_Root_RoyalParade` ship it | vanilla | XML | Easy | Yes. **Not a route**: the run does not end |
+
+**A and C need no quest-side change between them.** A's requirement part decides the command's
+context; drop it and the same quest part runs as C. **Recommended, not selected**: A, because the
+top-title gate already names an accepter and the founder is usually home. B covers the caravan case
+for the price of one MP API reference. C is the no-run-owed floor. D suits a fiction where the
+Church collects the founder, the way Royal Ascent's shuttle does, rather than ending at the click.
+
+#### A — accept on the map
+
+- **Gets us:**
+  - Vanilla's game-over dialog, raised by the Accept click itself. It is a persistent map dialog on
+    both machines, and its click is synced.
+  - `QuestNode_RequirementsToAcceptColonistWithTitle` is the XML gate. Its part sets
+    `RequiresAccepter`, so the quest tab opens *Accept with <pawn>*, offering only title-holders. That
+    is the top-title gate and the accepter in one [V].
+- **Why it works** [V]:
+  - `SyncMethods` registers `SyncMethod.Register(typeof(Quest), "Accept")` with no context.
+  - `SyncMethod.DoSync` takes the command's map from what its arguments write. The implicit `Thing`
+    sync worker sets `MpContext.map = thing.Map` for a spawned thing (a pawn in a spawned holder
+    reaches it through the parent).
+  - So `Accept(founder)` with the founder on a map executes in `AsyncTimeComp.ExecuteCmd` on that map,
+    with `executingCmdMap` set.
+  - Inside it, `Quest.Accept` → `Initiate` → `SignalManager.SendSignal` is synchronous. Our part's
+    `Notify_QuestSignalReceived` runs within the command.
+  - `CancelDialogNodeTree` sees `Multiplayer.MapContext` (`tickingMap ?? executingCmdMap`) non-null.
+    It turns the `Dialog_NodeTree` into that map's `PersistentDialog`: the TRANSCENDENCE C mechanism,
+    reached from a quest.
+- **Cannot:**
+  - **Hold when the accepter is not spawned.** A founder in a caravan, or `Accept(null)` on a quest
+    with no accepter part, sends map id −1. Then it is C, silently (**T-193**). Vanilla's title part
+    does not insist on a spawned pawn [V], so a `CanPawnAccept` override of ours closes that.
+    `QuestPart_RequirementsToAccept.CanPawnAccept` is `virtual` [V].
+  - Everything TRANSCENDENCE C cannot: MP forces a close-X, which re-shows on the next map draw. The
+    dialog shows only to a player viewing the accepter's map (`ForceShowDialogs`) [V].
+- **Consequences:**
+  - The click runs `GoToMainMenu` inside MP's command on both machines. The logged exception is
+    predicted [I], as TRANSCENDENCE C.
+  - `QuestPart` is on MP's delegate allowlist (`docs/engine/determinism.md`). So a C′ deferred-exit
+    option declared on our quest part survives a reload [V seam; I composition].
+  - Rule 2 holds by ordering: do every simulation write, such as the founder record, before the call
+    in the same part.
+
+#### B — accept anywhere, a synced world dialog
+
+- **Gets us:** A's one-click exit when the Accept command has no map. The window is a plain one, so
+  it shows whichever map or the world a player is viewing.
+- **Why it works** [V]:
+  - `Sync.RegisterSyncDialogNodeTree` postfixes the registered opener with
+    `SyncUtil.DialogNodeTreePostfix`. That arms `isDialogNodeTreeOpen` when a `Dialog_NodeTree` is open.
+  - `NodeTreeDialogSync.Prefix` on `DiaOption.Activate` then routes a click through
+    `SyncDialogOptionByIndex`. That is a sync method with no map, so it runs as a world command
+    (`AsyncWorldTimeComp.ExecuteCmd`), and each machine activates its own window's option.
+  - `MP.RegisterSyncDialogNodeTree` is public in `0MultiplayerAPI.dll`.
+  - Donors: `IncidentWorker_CaravanMeeting` and `_CaravanDemand` in MP; `MoreFactionInteraction`,
+    `VanillaFactionsSettlers` (`UtilityEvent.ProtectionFee`) and `IncidentWorker_ImperialPatrol` in
+    MP Compat.
+- **Cannot:**
+  - **Survive a reload or a rejoin.** Nothing saves the window; a reconnecting player never sees it
+    [I].
+  - **Stand beside another node-tree dialog.** The flag is one global, and the synced click finds
+    its target by `WindowOfType<Dialog_NodeTree>()`, the first open one [V]. A second open node tree
+    is a mis-click risk [I].
+- **Consequences:** the same teardown inside a command as A. `AsyncWorldTimeComp.ExecuteCmd`'s
+  `finally` also reads `Multiplayer.game` [V]. Outcome [I], as A.
+
+#### C — accept anywhere, each player leaves
+
+- **Gets us:** the end of the run from any Accept, with nothing registered and nothing to run. The
+  dialog, or `GameVictoryUtility.ShowCredits(…, exitToMainMenu: true)`, opens on both machines,
+  because both execute the Accept command.
+- **Why it is safe although rule 1 applies:**
+  - Rule 1's hazard is the unsynced click. With `allowKeepPlaying: false` the dialog carries one
+    option, `GoToMainMenu`, and `closeOnCancel` is false with no close-X outside a persistent dialog
+    [V].
+  - An unsynced click therefore changes no simulation. It only takes that player out (MP's
+    `Shutdown_Quit_Patch`, [V] per TRANSCENDENCE B).
+- **Cannot:** exit both together.
+  - A client clicking leaves alone. The host keeps simulating until it clicks.
+  - The host clicking stops the server. The other player gets the *Server closed* window [V, per
+    TRANSCENDENCE B].
+- **Consequences:** no teardown inside a command, so no predicted exception. It is the floor if
+  TRANSCENDENCE's run fails and C′ is not wanted.
+
+#### D — accept summons, a map act ends
+
+- **Gets us:** a beat between the click and the end, such as the Church's shuttle, a rite or the
+  founder walking to the altar. The terminal call sits in a synced map command, exactly as
+  TRANSCENDENCE's rules require.
+- **Cannot:** end at the click. The requirement says "accepting ends the run"; D makes accepting
+  *start* the ending. That is a wording question for the narrative session.
+- **Consequences:**
+  - The finishing act must be a map command or a map tick. A quest signal fired from a map tick has
+    `tickingMap` set (`AsyncTimeComp.Tick`) [V].
+  - Royal Ascent's own finish, the shuttle's `SentWithExtraColonists` from
+    `CompShuttle.SendLaunchedSignals`, is not known to fire in map context [I]. The call from there
+    is credits only, which is context-free.
+  - Do not lean on quest ticks: they run in world context unless async time binds the quest to a map
+    (`MultiplayerAsyncQuest`, `docs/engine/quests.md` § *Under Async Time, a quest runs on one clock*)
+    [V].
+
+**Not a route: vanilla `QuestNode_EndGame`.** `QuestPart_EndGame.Notify_QuestSignalReceived` calls
+`ShipCountdown.InitiateCountdown`, credits only, then play resumes [V]. That is TRANSCENDENCE A:
+safe under MP from any context, and non-terminal. VFE Empire 1.6's `QuestNode_Root_RoyalParade`
+builds the same part [V]. The wide pass (both roots, `-g '!**/obj/**'`, `Referenced/` excluded,
+ASCII names) found no other mod building `QuestPart_EndGame` or calling `EndGameDialogMessage` beyond
+Rim War's world-context dialog, which TRANSCENDENCE already records.
+
+**Open, for #119 and the next map:** which route; whether the accepter must be a founder (§4 *Who may
+hold a Church title*); the dialog and credit text.
 
 ## The player faith's role hierarchy — what the role system holds and how a seat arrives mid-campaign
 
@@ -1802,7 +1938,7 @@ expresses a proportional revolt.
   player's primary once every senator is favoured. Label only.
 - **RimPacts**, `WorldComponent_RimPacts.ResolveMissionary` and `EnsurePuppetIdeo`: label only.
 - **Faction Customizer**, `Dialog_ModifyFaction`: Route B's loop over world pawns (map pawns missed,
-  no minor kept), in a pre-landing dialog with no sync.
+  no minor kept), in a dialog with no sync that stays open to the player mid-game (#193).
 
 Every in-game writer found is label only.
 

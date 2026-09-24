@@ -1308,3 +1308,20 @@ of a custom part is [I], because it depends on how that part schedules. Corpus s
 excluded, returned zero mods. The same form returned 3 hits on `Assembly-CSharp.dll`.*
 
 ---
+
+### T-193 — A quest's Accept takes its map context from the accepter
+
+Multiplayer's `Quest.Accept` sync registration carries no context, so the command's map comes from its
+arguments. The implicit `Thing` sync worker sets the map for a spawned pawn, so `Accept(spawnedPawn)`
+runs as a map command and `CancelDialogNodeTree` makes a dialog opened inside it persistent and synced.
+`Accept(null)`, or an accepter in a caravan, sends map id −1: the same `Dialog_NodeTree` opens as a plain
+local window on each machine, and its clicks are unsynced. No message distinguishes the two.
+
+**Fix:** override `QuestPart_RequirementsToAccept.CanPawnAccept` to require a spawned accepter, or register
+the opener with `MP.RegisterSyncDialogNodeTree`.
+
+*[#191](https://github.com/cjd721/Rimworld-Archinity/issues/191), `docs/specs/RELIGION.md` § 8. `SyncMethods`,
+`SyncMethod.DoSync`, the `SyncDictRimWorld` `Thing` worker, `Multiplayer.MapContext`, `CancelDialogNodeTree`
+(`2606448745/1.6/AssembliesCustom/Multiplayer.dll`). [V].*
+
+---

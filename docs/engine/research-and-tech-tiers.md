@@ -72,6 +72,17 @@ tiered arc. Every claim [V].
   entry, not derived state. Once a bypass has written it the only cure is to have
   prevented the write — which is why the bypass census is a load-time question
   rather than a runtime one.
+- **`FinishProject` is a notification, not the completion.** `ResearchPerformed` writes
+  `progress[currentProj]` first and calls `FinishProject` only when `IsFinished`
+  (`ProgressReal >= Cost`) is already true. A prefix that blocks it leaves the project
+  finished to every `IsFinished` reader, and it is called again every research tick. A gate
+  on completion belongs before progress reaches `Cost` (#190, `RESEARCH.md` § *Practice*).
+- **No vanilla research cost is a resource.** `baseCost` is researcher time; `techprintCount`
+  and `requiredAnalyzed` ask for items but debit nothing named by the project.
+  `JobDriver_Research` never calls `CompRefuelable.Notify_UsedThisTick`, and
+  `CanBeResearchedAt` tests only `CompPowerTrader.PowerOn`, so a fuelled research bench does
+  not tie fuel to research. `ResearchSpeedFactor` has `minValue 0.25`, applied by the
+  `StatWorker` clamp.
 
 ## TechBlock
 

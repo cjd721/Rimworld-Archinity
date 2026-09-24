@@ -150,11 +150,11 @@ quest returns to the shop*.
 
 ## Open questions
 
-- **Which mechanism carries nesting, and what it costs.** The vanilla parent/sub-quest
-  relationship is a verified available mechanism
-  ([the Charting discovery engine](https://github.com/cjd721/Rimworld-Archinity/issues/57));
-  selecting it, and writing the generator it needs, belongs to
-  [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+- **Which mechanism carries nesting, and what it costs.** Answered at route depth by
+  [quest presentation](https://github.com/cjd721/Rimworld-Archinity/issues/196): the quests tab reads
+  only `Quest.parent`, so any code can nest any quest from any channel
+  ([`CHARTING.md` § *Subplots as parent quests*](../specs/CHARTING.md#subplots-as-parent-quests--any-quest-nested-taken-beats-kept-a-rating-on-every-quest)).
+  Selecting a route belongs to [the build map](https://github.com/cjd721/Rimworld-Archinity/issues/119).
 - **Whether auto-accept is forced on beats by the presentation** rather than chosen. The
   requirement is settled — discoveries auto-accept blanket, and declining is walking away
   ([Charting](CHARTING.md)) — so this is now only a question of whether the mechanism

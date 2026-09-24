@@ -1265,6 +1265,7 @@ Every route is **[I]** as a composition. Its seams are [V].
 - **Gets us:** a faction's identity withheld until it is known, which makes SW-2 coherent.
 - **Needs a faction-level knowledge record:** SF-3's, or a pure derivation, *"known if any tile in #165's record belongs to it"* [I]. The record itself is per tile.
 - **Consequence:** it contradicts *"a faction's own specialty is public"* only if that specialty is carried in the def description (SD-9).
+- **It gates identity, not enmities.** The same row's *Enemy of* column still prints the faction's rivals, including ones the colony has never met. Withholding that column is [`POLITICS.md`](POLITICS.md) § *Withholding who a faction hates* ([#193](https://github.com/cjd721/Rimworld-Archinity/issues/193)), whose RK-2 record can share SF-3's component.
 
 **SW-4: World Tech Level's line** [V, `3414187030/1.6/Lunar/Components/WorldTechLevel.dll`]
 - **The patch:** `Patch_FactionDef.GetDescription_Postfix` is `[HarmonyPatch("Description", MethodType.Getter)]` on `FactionDef`, in `PatchGroup("Main")`. **No setting disables that group**, unlike WTL's filter groups.
@@ -3530,9 +3531,9 @@ clock, roll and sync are the same. What differs:
 | Why | the settlement underneath already generates the map, so no site map generation is involved | it holds its colonists off-map in `occupants`. If a map is ever forced on its tile it adopts it (`Encounter` fallback) and never removes it (**T-150**) |
 | Consequence | goodwill, ownership of the settlement underneath | items delivered to a home map |
 
-Because #92 never generates a site map, **it does not touch
+Because #92's Build B never generates a site map, **it does not touch
 [#88](https://github.com/cjd721/Rimworld-Archinity/issues/88)** (closed) — by design, not by
-deferral.
+deferral. §1a's site shape does generate one. That map is vanilla site generation, in lockstep under #88/#104.
 
 ### 1. The ally-aid battle — build it, against a read reference
 
@@ -3640,6 +3641,175 @@ resolution clock. The consequence is also worse than a differing scribed value:
 `RollNextInvasionTick` draws `Rand.Range(num4, num5)` off the **shared stream**, with both bounds
 derived from per-client settings [V], so a client with the setting false never takes the draw at all.
 That is a shared-stream desync.
+
+#### 1a. The site shape — the battle on an ally-owned site at a tile (E-quest→E-site)
+
+*Established by the reopening of [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92).
+Evidence class **READ**. Build B above stands; this prices the other shape the requirement allows —
+[`requirements/POLITICS.md`](../requirements/POLITICS.md) § *Aid is requested at a place* asks for
+"a tile and a short window", not the ally's settlement. Selecting between them is
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.*
+
+**Verdict.**
+- **Possible? Yes — and it is already shipped once, in Worksites Expanded.** Its `Worksite_DefendAlly`
+  quest is exactly this beat: an NPC-owned site is attacked, the player may travel and fight beside
+  the owner, and if they do not, `WorkSiteDefenseTracker.Resolve` rolls the outcome and sends a
+  letter [V]. We rebuild it on vanilla's quest and site layer, and it is **roughly half of Build B**:
+  the site route needs no `CheckDefeated` block, no deferred reward, no proxy map and no
+  `Settlement` float-menu postfix.
+- **Multiplayer? Yes [I].** Every commit is already synced — the quest is generated on the tick,
+  `Quest.Accept` is synced, and the attend order is vanilla's `CaravanArrivalAction_VisitSite`
+  option on `Site.GetFloatMenuOptions`, inside §0 P5's net [V]. The site map generates in lockstep
+  (#88, #104; our map-gen code draws only on `Verse.Rand`, **T-120**). The in-absentia roll is §0 P4.
+
+**What the site shape cannot do, stated first.** The fight is **at a tile near the ally, not at the
+ally's settlement**. The fiction is a camp, an outpost or a field army. The settlement changes hands
+only if our outcome code writes it, and that inherits **T-140**'s destroy-and-recreate question.
+**An NPC-versus-NPC fight on a site map runs only while the player is on it.**
+`Site.ShouldRemoveMapNow` releases the map once nothing blocks removal [V], so "they fight it out
+without you" is always a roll, never a simulation (AS-4 is the only exception, and it is not
+recommended).
+
+| Route | What it gets the story | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **AS-1** Auto-accepted E-quest→E-site, /roll | *"B is attacking A's camp at this tile, the attack lands in N days."* Go and it is a real three-way fight on M-site. Stay home and the outcome is rolled and reported | vanilla quest + site XML; our tile node, attacker spawner, defenders-lost watcher and roll part | XML + C# | **Medium** | Yes [I] |
+| **AS-2** AS-1 behind #91's offer window | The same, but the ally *asks* and the player can refuse by letting the offer expire. Expiry goes to the same roll, plus the refusal's stated cost | AS-1 + [`POLITICS.md`](POLITICS.md) § *The faction demand* §1 `QuestPart_DemandRefused` | XML + C# (AS-1 + #91's part) | **Medium** | Yes [I] |
+| **AS-3** Worksites Expanded as the carrier | The shipped beat, on Odyssey work sites only | `godsfathermixtape.worksitesexpanded`, `MiningOutpost.WorkSiteDefenseTracker` | patch + C# | **Hard** — it picks its own attacker, and it is not authorable | With work |
+| **AS-4** Keep the site map alive with no player | The NPCs really fight it out, unobserved | our postfix on `Site.ShouldRemoveMapNow` | C# | Hard | With work — **not recommended** |
+| *not a route* — VFE Medieval 2's raid-on-fail | — | `VFEMedieval.QuestPart_SpawnRaidOnFail` | — | — | — |
+
+**AS-1 — the parts, all on read seams.**
+- **The site is ally-owned from XML.** `QuestNode_GenerateSite.faction` is a `SlateRef<Faction>`
+  passed straight to `SiteMaker.MakeSite`, and `QuestNode_GetDefaultSitePartsParams` takes a faction
+  too [V]. Only `QuestNode_GetSitePartDefsByTagsAndFaction` hardcodes `disallowNonHostileFactions:
+  true` [V], so the part list and the ally come from the slate or a small node of ours, not from that
+  finder. `MakeSite` sets `factionMustRemainHostile` only when the faction is hostile [V].
+- **The ally's defenders come from vanilla generation.** `GenStep_Outpost` builds for
+  `map.ParentFaction` [V]. The work-site parts' `GenStep_WorkSitePawns` puts the site faction's pawns
+  under `LordJob_DefendBase` [V], and `SitePartWorker_WorkSite.FactionCanOwn` has no hostility test
+  [V]. Our `SitePartDef` must set `considerEnteringAsAttack` false and
+  `disallowsAutomaticDetectionTimerStart` true (**T-188**).
+- **Entering is vanilla.** `CaravanArrivalAction_VisitSite.DoEnter` handles a non-hostile owner: it
+  does not draft, and it calls `AffectRelationsOnAttacked` only for a part with
+  `considerEnteringAsAttack` [V].
+- **The attackers are ours, spawned with the map.** Two read donors put hostile pawns on a site map
+  at generation:
+  - [SR]Factional War's `SiteFactionWarContention.PostMapGenerate` spawns two NPC groups and gives
+    each a lord [V];
+  - Worksites Expanded fires `IncidentDefOf.RaidEnemy` onto the site map with the attacker pinned
+    (`WorkSiteDefenseTracker.TryExecuteWave`) [V].
+
+  The second binds only while the attacker is hostile to the player (**T-189**). A direct
+  `LordJob_AssaultColony` works either way, as FT&V's `EnsureAttackerRaid` does; strip its
+  `Trigger_BecameNonHostileToPlayer` transition as §1 does. Spawning inside `PostMapGenerate` also
+  closes **T-187**.
+- **The attended outcome.** The attackers being beaten is `Site`'s own `AllEnemiesDefeated` quest
+  signal [V], once T-187 is handled. Vanilla has no signal for *the ally's defenders all died*; that needs a
+  watcher (Worksites Expanded's `AnyLiveDefender` shape [V]).
+- **Walking away mid-fight** removes the map. It resolves by the same roll, as Worksites Expanded's
+  `OnAbandon` does with a harsher chance [V].
+- **The unattended outcome is XML with one part of ours.** `QuestNode_WorldObjectTimeout` with
+  `<inSignalDisable>site.MapGenerated</inSignalDisable>` is the vanilla-shaped window: it stops
+  counting once the player arrives and runs its child node on expiry. That shape is read in VFE
+  Medieval 2's `SiegeCampQuest.xml` [V], and `QuestPart_WorldObjectTimeout.DelayFinished` is read
+  too [V]. The child node holds our roll part. It rolls §0 P4 from the tile and both factions' load
+  IDs, then sends one of two in-quest signals (`Find.SignalManager.SendSignal`, as `QuestPart_Pass`
+  does [V]). XML branches on each signal:
+  - `QuestNode_ChangeFactionGoodwill` with a `<reason>`;
+  - `QuestNode_Letter`, which is the reported outcome;
+  - `QuestNode_End`.
+
+  **The P4 roll and the consequences are identical to Build B's**, so a campaign that builds both
+  writes the roll once.
+- **The tile is ours.** `QuestNode_GetSiteTile` measures from a player map, never from a settlement
+  (**T-127**, **T-49**). So "near the ally" is a small node of ours over `TileFinder`.
+- **The reward pays at once.** **T-110** binds only while a loaded map's parent is a `Settlement` of
+  a faction hostile to the player (`SettlementUtility.IsPlayerAttackingAnySettlementOf`) [V]. A
+  `Site` is neither, so the site route drops Build B's pay-on-exit deferral.
+- **What the defenders do.** `LordJob_DefendBase` moves from defending to `LordToil_AssaultColony` on
+  20% losses, on harm, on a 3% roll every 2,500 ticks, or after `delayBeforeAssault` (25,000 in
+  `GenStep_WorkSitePawns`) [V]. Assault targets are faction-relative, so against live attackers they
+  sally out at them [I]. Worksites Expanded replaces it with its own `LordJob_WorksiteGarrisonDigIn`
+  [V on existence]. Whether ours does is a build question.
+- **Rough edges any three-way fight has.** Worksites Expanded's patches are the list:
+  - friendly-fire accounting, `Patch_WorksiteDefense_FriendlyFire`;
+  - a widened target range, `Patch_AttackTargetFinder_WidenRangeDuringDefense`;
+  - theft of the ally's goods;
+  - the forced `CheckAllEnemiesDefeated` suppression.
+
+  None blocks the beat [V on existence, I on need].
+
+**AS-2 — the refusal shell.** Everything in AS-1, but the quest is offered with `expireDaysRange`
+instead of auto-accepted. The site is spawned on accept.
+- An **expired offer** reaches #91's `QuestPart_DemandRefused.Cleanup`, whose `quest.State ==
+  EndedOfferExpired` read is the discriminator ([`POLITICS.md`](POLITICS.md) § *The faction demand*
+  §1, [V] on #91). It calls the same roll.
+- The refusal's own goodwill delta rides the same part.
+
+AS-1 treats *not going* as declining. AS-2 adds *saying no*, which the requirement does not demand
+and a demand-heavy era may want. **T-70** binds only AS-2's pre-accept XML.
+
+**AS-3 — Worksites Expanded as shipped.** `WorkSiteDefenseTracker` is a complete working
+reference. In order:
+1. `DailyRolls` schedules a defense on an NPC-owned Odyssey work site.
+2. `IssueOffer` generates `Worksite_DefendAlly` and **auto-accepts it**.
+3. `ApplyTruce` zeroes negative goodwill with the owner so the player can fight beside a hostile
+   faction.
+4. The attend path is `CaravanArrivalAction_AidWorksiteDefense`.
+5. `BeginOnSiteDefense` / `FireDefenseRaid` bring the attackers on arrival.
+6. `OnDefenseSuccess` and `OnDefenseOverrun` resolve the attended fight.
+7. `Resolve(def, 0.7f)` resolves the unattended one: it destroys the site, or prolongs its
+   `QuestPart_WorldObjectTimeout` 5–7 days [V].
+
+It is not our beat as shipped:
+- **The attacker is chosen internally.** `DetermineAttacker` either picks a random real faction or
+  runs `CreateTemporaryAttackerFaction`, which generates a `Faction` at runtime — **T-15**, against
+  T-07's frozen roster [V]. *"A is attacked by B"* is not authorable.
+- **The rolls are bare `Rand` off the shared stream.** `Rand.Chance(capChance)` in `Resolve`, and
+  `Rand.Chance(0.0155f)` in `DailyRolls` [V]. These are on the synced tick, but they are not P4.
+- **The attend order is also a `Caravan.GetGizmos` postfix** (`Patch_Caravan_GetGizmos_AidWorksite`).
+  That is outside MP's net, **T-80**. Its twin `Parley.Patch_Site_GetFloatMenuOptions` option is
+  inside it [V].
+- **MP Compat carries no Worksites Expanded class** (validated sweep, *Verification*).
+
+Retargeting it means patching the scheduler, the attacker picker and both rolls. That costs more than
+AS-1 and ships a whole mod for one beat. **Value: the donor.** Worksites Expanded is **undecided** in
+`MOD-VERDICTS.md`; that is sourcing's call, not this one.
+
+**AS-4 — the unobserved fight.** A postfix returning `false` from `Site.ShouldRemoveMapNow` while the
+battle is live would keep the map ticking with no colonist on it. The NPC lords fight on their own
+[I]. **Not recommended:**
+- it runs a full map for a fight nobody sees;
+- under async time the map keeps its own clock with no player in it;
+- the requirement asks for a *reported* outcome, which the roll already gives.
+
+**VFE Medieval 2's raid-on-fail is not a carrier for this battle** [V]. `QuestNode_SpawnRaidOnFail`
+generates its raider list at quest generation from `slate["siteFaction"]` and `points × 1.5`.
+`QuestPart_SpawnRaidOnFail` delivers it onto `slate["map"]`, which is a player map. In
+`VFEM2_OpportunitySite_SiegeCamp` the site is a hostile siege camp, and the failure is a raid on the
+colony. It cannot produce an outcome between two NPC factions, and it cannot target a site map that
+does not exist yet. It fits this battle only if declining aid were punished by a raid on home. That
+is [`POLITICS.md`](POLITICS.md) § *The faction demand* §4's job, on VEF's
+`IncidentWorker_RaidEnemySpecial`. **What VFE Medieval 2 does contribute is the quest skeleton**: the
+timeout disabled on `site.MapGenerated`, and success on `site.AllEnemiesDefeated`.
+
+**Weight against Build B.**
+- **Dropped** (vanilla or not needed): `SettlementDefeatUtility.CheckDefeated` is `Settlement`-only
+  [V]; there is no reward deferral (T-110 above); M-proxy; the `Settlement.GetFloatMenuOptions`
+  postfix and a bespoke `CaravanArrivalAction`, because vanilla's visit option suffices; the world
+  object's own clock and display, because the quest timeout and Quests tab carry them.
+- **Kept:** the P4 roll and the transition surgery.
+- **Added:**
+  - the tile node;
+  - the attacker spawn;
+  - the defenders-lost watcher;
+  - two XML fields on our `SitePartDef`;
+  - handling for T-187 and T-189.
+
+**Open, and the next map's:**
+- whether the settlement itself is ever at stake (T-140);
+- which defenders' `LordJob` ships;
+- the window length, the roll weights and the goodwill swing (#119).
 
 ### 2. Outposts with real yields — the engine ships inside VEF
 
@@ -3764,8 +3934,8 @@ Founding, occupants, production, delivery, packing and every dialog are uncovere
 4. **`MP.RegisterSyncMethod` on `Outpost.AddPawn` / `RemovePawn`, the pack and stop-pack gizmo
    lambdas, the item-transfer dialogs' commit and the delivery-map setter.** Closes **B5**.
 
-**Era gating is the one thing neither mod supplies**, per the six gates above — contrast VFE
-Classical's `RoadBuildingDef`, research-gated by construction. One `DefModExtension` of ours plus a
+**Era gating is the one thing neither mod supplies**, per the six gates above — VFE Classical's
+`RoadBuildingDef` has no per-tier gate either (T-202). One `DefModExtension` of ours plus a
 filter in the same `DoOutpostDisplay` prefix, the `ReachRungExtension` shape
 [`CHARTING.md`](CHARTING.md) §4 already uses.
 
@@ -4248,10 +4418,11 @@ the bulk and §2's is harness.
   the mirrored form of the same, or `QuestUtility.IsGoodwillLockedByQuest(this, other)`. **And one
   more that is live for §1**: a **positive** `goodwillChange` is blocked when
   `IsPlayer && SettlementUtility.IsPlayerAttackingAnySettlementOf(other)` (or the mirror) [V].
-  A player attending an ally-aid battle is on a settlement map with hostiles present, so **the
-  reward write can be blocked by the very battle that earned it.** That is why the reference defers
-  it: `rewardGoodwillOnExit` is scribed on the world object and paid by `ApplyPendingExitReward` on
-  map exit [V]. **Build B must keep the deferral, not simplify it away.**
+  `IsPlayerAttackingAnySettlementOf` is true only while `other` is **hostile to the player** [V, #92],
+  so the ally being rewarded for an aid battle is not blocked by it (T-110 binds a reward to a
+  hostile faction only). The reference defers the reward anyway: `rewardGoodwillOnExit` is scribed
+  on the world object and paid by `ApplyPendingExitReward` on map exit [V]. Build B needs the
+  deferral only for a write to a faction hostile to the player while its map is loaded.
   `Faction.defeated` is a plain scribed bool and setting it is cheap [V].
 
 ---
@@ -4319,6 +4490,7 @@ the bulk and §2's is harness.
 `294100/3423264477/Assemblies/ModRimworldFactionalWar.dll`,
 `294100/3684587591/1.6/Assemblies/BetterTradersGuild.dll`,
 `294100/3762723122/Assemblies/RimPacts.dll`,
+`294100/3444347874/1.6/Assemblies/VFEMedieval.dll` (§1a),
 `294100/2606448745/1.6/AssembliesCustom/Multiplayer.dll` and all 18
 `Multiplayer_Compat*.dll` builds under `1629973374`.
 
@@ -4438,7 +4610,8 @@ standing hazard for a campaign whose roster is frozen at world creation (**T-07*
 because it confirms §1's architecture in a second assembly, and because
 `Patch_WorksiteDefense_FriendlyFire`, `Patch_AttackTargetFinder_WidenRangeDuringDefense` and
 `LordJob_WorksiteGarrisonAssault.CreateGraph`'s transition surgery are the concrete list of rough
-edges a three-way fight has under any build.
+edges a three-way fight has under any build. Its `Worksite_DefendAlly` quest is the shipped form of
+§1a's site shape. That section reads it as route AS-3.
 
 ### [SR]Factional War — read, recommended against, currently undecided
 

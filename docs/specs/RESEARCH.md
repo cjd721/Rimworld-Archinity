@@ -3,10 +3,14 @@
 ## Purpose and scope
 
 How research is *earned* in this campaign. `CONTEXT.md` settles three routes to knowledge —
-**Practice** (resource cost alone), **Instruction** (a techprint, a book, a teacher) and
-**Exemplar** (a surviving physical example that the colony studies). Practice is the vanilla
-default and needs no spec. Instruction is solved and shipped: techprints are vanilla Royalty, and
-`QuestNode_GiveTechprints` with `fixedProject` is pure XML.
+**Practice** (a resource cost paid through research), **Instruction** (a techprint, a book, a
+teacher) and **Exemplar** (a surviving physical example that the colony studies). Practice is
+**not** the vanilla default: vanilla research costs only researcher time, and no
+`ResearchProjectDef` field consumes an arbitrary resource. Its routes are in
+[*Practice — a project that consumes resources*](#practice--a-project-that-consumes-resources)
+([#190](https://github.com/cjd721/Rimworld-Archinity/issues/190)). Instruction is solved and
+shipped: techprints are vanilla Royalty, and `QuestNode_GiveTechprints` with `fixedProject` is
+pure XML.
 
 This document owns the **Exemplar gate**: what forces a research project to require that the
 colony physically studied a named item, and what happens to the item
@@ -699,6 +703,215 @@ Estimate a rebuild by counting the thing being rebuilt.
 
 **[I] on the composition.** Every mechanism above was read [V]; the claim that they compose into
 a working on-ramp is inferred until it is built and a colonist is watched failing to mine.
+
+---
+
+## Practice — a project that consumes resources
+
+### Purpose and scope
+
+Answers [`docs/requirements/GLITTERTECH.md`](../requirements/GLITTERTECH.md) § *The Glitterite
+Loop*: *"Practice: research consumes authored resources for trial and error."* `CONTEXT.md`
+defines Practice as *"a resource cost paid through research, such as cloth consumed by trial and
+error"*. Established on [#190](https://github.com/cjd721/Rimworld-Archinity/issues/190).
+
+This section owns what can make a research project cost a named resource, and which routes carry
+it. It does **not** own which projects cost what, or how much (the build map's,
+[#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)), and it does not own the Exemplar
+gate, which Route A borrows the machinery of but not the meaning.
+
+### Verdict
+
+- **Possible? Yes.** No `ResearchProjectDef` field debits a resource [V], but two vanilla gates
+  become a resource cost in XML when the thing they ask for is a **crafted item whose recipe eats
+  the authored resources** (Routes A, B). Consumption *during* research, in proportion to the
+  work, needs our code (Route E).
+- **Multiplayer? Yes** for A, B, C and E: every write is a synced bill, a synced ordered job or the
+  tick. **Unknown** for D (More Realistic Research has no MP Compat coverage; a two-client run
+  would settle it).
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **A — A crafted "trial" item, analysed and consumed** | The project cannot start until the colony has made *N* trial pieces from the named resources and a researcher has taken each apart at a bench. Letters per piece | vanilla `requiredAnalyzed` + `CompProperties_CompAnalyzableUnlockResearch` (`destroyedOnAnalyzed true`, `analysisRequiredRange`) + a `RecipeDef` | XML | **Easy** | Yes |
+| **B — A crafted techprint** | The project needs *N* "techprints" the colony makes itself from the named resources, applied at a bench; then ordinary research | vanilla `techprintCount` + a `RecipeDef` whose product is the implied `Techprint_<project>` | XML (+ the T-99 postfix `CURRENCIES.md` already needs) | **Easy** | Yes |
+| C — Resources as research points | Consuming a crafted item adds fixed points to the **current** project, whatever it is | Ushanka's Hacking Expansion `USH_HE.CompProperties_ResearchGiver` on our item | XML | Easy | Yes — **not Practice on its own**: a speed-up, never a cost |
+| D — More Realistic Research `experimental` | Research at the bench stops until the colony has studied *N* units of a named material, each study destroying one | `sae.researchmod` `ManualAnalysisDef.experimentalMaterials` | XML (+ neutralising its auto-generation) | Medium | Unknown — **not recommended**: § *More Realistic Research* declines the mod |
+| **E — The bench burns the resource while researching** | A project needs a specific bench; that bench consumes the resource per tick of research and stops the research when empty; haulers keep it stocked | vanilla `requiredResearchBuilding` + `CompRefuelable`, plus two patches of ours | XML + C# | **Medium** | Yes |
+| F — A per-project cost list, paid at start | Any project names its own cost list; starting it takes delivery of the goods | our `DefModExtension` + a `CanStartNow` postfix + a delivery job or synced command | C# | Medium–Hard — **not recommended**: A or B already gives a per-project up-front cost in XML | With work (a new synced command, or a job) |
+
+**Ruled out, a gate on `ResearchManager.FinishProject`.** It is not a gate. `ResearchPerformed`
+writes `progress` **before** it calls `FinishProject`, and `IsFinished` is `ProgressReal >= Cost`,
+so a prefix that blocks the call leaves the project finished in every reader — recipes and
+buildings unlock — while only the letter, the dialog and the clearing of `currentProj` are
+skipped, and `ResearchPerformed` calls it again every tick [V]. **T-190.** A cost check belongs
+before progress reaches `Cost` (Route E) or before the project can start (A, B, F).
+
+#### Route A — a crafted trial item, analysed and consumed
+
+**Levers:**
+- **The resource and the amount** are the trial item's recipe ingredients — any `ThingDef`s, any
+  counts, at any workstation [V that `RecipeDef` takes arbitrary ingredients; I on the composition].
+- **Repetition.** `analysisRequiredRange` (set min = max) is how many trials must be analysed;
+  `destroyedOnAnalyzed true` burns each one [V]. `progressedLetters` narrate each failure, and
+  `completedLetter` the breakthrough [V].
+- **Several resources.** `requiredAnalyzed` is a list: a cloth trial *and* a leather trial [V].
+- **No tier filter.** Works from the Neolithic, as the Exemplar gate does (§1) [V].
+- **Robust to `Profectus`**, which skips analysis-gated projects (§ *`Profectus` cannot see this
+  gate*) [V].
+
+**Cannot:**
+- Consume *during* research. The cost is paid before the project can start [V].
+- Consume a raw stackable resource directly. `CompAnalyzable.OnAnalyzed` calls
+  `parent.Destroy()`, which destroys the whole stack [V] — **T-192**. The trial item must be
+  crafted, with `stackLimit 1`.
+- Run without Biotech: `requiredAnalyzed` is nulled and the gate vanishes (T-40) [V].
+
+**Consequences:**
+- It shares `AnalysisManager` and the hand-picked `analysisID` space with the Exemplar gate; a
+  duplicate ID merges two gates silently (T-41) [V].
+- Every bypass that ignores `CanStartNow` ignores it too, so it rides the same lockout (§ *Bypasses
+  — the build*) [V by construction].
+- The research tab says "analysis required", in the Exemplar's wording [V].
+- Analysis is a player order naming a colonist, never automatic [V].
+
+#### Route B — a crafted techprint
+
+**Levers:**
+- **The resource and the amount** are the recipe's ingredients. Its product is
+  `Techprint_<projectDefName>`, which `ThingDefGenerator_Techprints.ImpliedTechprintDefs` generates
+  for every project with `techprintCount > 0`, in `DefGenerator.GenerateImpliedDefs_PreResolve`,
+  **before** the logged cross-reference pass. So an XML recipe can name it [V on the ordering; I
+  that the reference resolves].
+- **Repetition.** `techprintCount` *N* = *N* crafted prints [V]. The letter reports "*k* of *N*
+  applied" [V].
+- **Practice plus labour.** Once the prints are in, `baseCost` is still researched at a bench. A
+  print applied *after* unlock halves the remaining cost (`ApplyTechprint`) [V], so extra trials
+  speed research.
+- **Composes with Instruction.** The same project can take a crafted print or a quest-given one [I].
+
+**Cannot:**
+- Consume during research: the cost is paid before the project can start [V].
+- Hide the word "techprint", without a translation override or C# [I].
+- Run without Royalty: `techprintCount` is zeroed and the cost vanishes [V]. Royalty is in the floor
+  ([#6](https://github.com/cjd721/Rimworld-Archinity/issues/6)).
+
+**Consequences:**
+- **The print leaks onto the market.** The implied def carries `tradeTags` and `thingSetMakerTags`
+  `"Techprint"` [V], so orbital traders, map-gen loot and asker-less rewards offer it (T-99), and
+  VFE Deserters lists it as contraband. The project must go on the T-99 postfix's exclusion list
+  that `CURRENCIES.md` § *Failure and recovery* already requires [V that the postfix is specified].
+- `techprintCount` without `heldByFactionCategoryTags` logs a config error at load [V]; the project
+  needs a tag no faction carries [I].
+- Applying a print is an ordered job, not automatic; no `WorkGiverDef` issues `ApplyTechprint` [V].
+
+#### Route E — the bench burns the resource while researching
+
+The only route that consumes **during** research, in proportion to the work — "trial and error" in
+the literal sense.
+
+**Levers:**
+- **The resource** is the bench's `CompRefuelable.fuelFilter`; the rate is `fuelConsumptionRate`
+  [V]. The project names the bench with `requiredResearchBuilding` [V]. One bench type per
+  resource.
+- **Self-stocking.** Vanilla haulers refuel it; the fuel gauge, target slider and auto-refuel toggle
+  are free and synced by Multiplayer (`SyncFields` `allowAutoRefuel`, `TargetFuelLevel`;
+  `CompRefuelable.CompGetGizmosExtra` lambda 1) [V].
+- **Runs dry, stops.** An empty bench refuses research at selection and at the bench [I; one of the
+  two patches].
+
+**Cannot:**
+- Work in XML. Vanilla `JobDriver_Research` never calls `CompRefuelable.Notify_UsedThisTick`, and
+  `CanBeResearchedAt` tests only `CompPowerTrader.PowerOn`, so a refuelable research bench either
+  burns fuel on a clock (`consumeFuelOnlyWhenUsed false`) or never (`true`), and researches with an
+  empty tank either way [V] — **T-191**.
+- Make research *only* consume. `ResearchSpeedFactor` has `minValue 0.25`, and `StatWorker`
+  clamps to it [V], so no bench def can zero out labour.
+- Price per project, rather than per bench, without a project-side extension [I].
+
+**Consequences:**
+- Two patches of ours: a `ResearchProjectDef.CanBeResearchedAt` postfix requiring fuel (Medieval
+  Overhaul's `ResearchProjectDef_CanBeResearchedAt` postfix is the shipped shape [V]) and a hook
+  on the research toil that burns fuel per tick [I on where it hooks].
+- Fuel burns per tick, not per point, so a faster researcher uses less resource per point [V].
+- VEF's transpiler on `CanBeResearchedAt` (`equivalentBenches`) is active only when some def
+  declares it [V]; a postfix composes with it [I].
+
+#### Route C — resources as research points
+
+`USH_HE.JobDriver_ApplyResearchGiver.MakeNewToils` carries the whole stack to a bench and, per
+item, waits 30 ticks, calls `ResearchManager.AddProgress(GetProject(), points)` and destroys one
+[V]. The comp is one XML field (`points`) on any `ThingDef` [V]. It is already in the bypass census
+as Class C (§ *Bypasses*). It is a lever **beside** A, B or E — *"burn more cloth, learn faster"* —
+not a cost: the bench can still finish the project without it [V].
+
+#### Route D — More Realistic Research `experimental`
+
+`ManualAnalysisDef.experimentalMaterials` plus `experimentalPointsRequired` is the only shipped
+carrier worded as trial and error. `AnalysisEngine.ProcessCompletion` destroys one unit (`SplitOff(1)`)
+per completed study of the material, and `Patch_WorkGiver_Researcher` holds bench research until
+the points are in [V]. Declined for the mod as a whole (§ *More Realistic Research*). One detail
+that section did not record: a `ManualAnalysisDef` with **no** materials puts its project in
+`ExplicitlyExcludedProjects`, which auto-generation skips [V]. So auto-generation can be
+neutralised in XML, one empty def per project in the load order. It remains invisible to
+`Profectus` and has no MP Compat class [V].
+
+**Recommendation — not a selection.** A for an up-front cost: pure XML, no market leak, and it reads
+as failure after failure in its letters. B where the project should also carry ordinary research
+time and a crafted print is the right fiction. E is the only route for consumption *during*
+research. Any of them composes with C.
+
+### Available mechanisms
+
+**Vanilla, `Assembly-CSharp.dll` 1.6.4871 [V]:**
+- `ResearchProjectDef.CanStartNow` ANDs `TechprintRequirementMet`, `AnalyzedThingsRequirementsMet`,
+  `PrerequisitesCompleted` and the bench and mechanitor tests. `TechprintCount` returns 0 without
+  Royalty installed; `PostLoad` zeroes `techprintCount` without Royalty and nulls
+  `requiredAnalyzed` without Biotech.
+- `ResearchManager.ResearchPerformed` writes `progress[currentProj]`, then calls `FinishProject`
+  if `IsFinished`. `AddProgress` clamps to `Cost`. `ApplyTechprint` adds one print, or half the
+  remaining `baseCost` once unlocked.
+- `JobDriver_ApplyTechprint`: haul to a bench, wait 600 ticks, `ApplyTechprint`, destroy the print.
+  Issued only by `CompTechprint.CompFloatMenuOptions` → `TryTakeOrderedJob`.
+- `JobDriver_Research`: per tick `ResearchSpeed × bench ResearchSpeedFactor` into
+  `ResearchPerformed`; fails on `CanBeResearchedAt`. No fuel call. `WorkGiver_Researcher.HasJobOnThing`
+  tests `CanBeResearchedAt`.
+- `CompProperties_Analyzable`: `analysisRequiredRange`, `destroyedOnAnalyzed`,
+  `progressedLetters`, `completedLetter`. `CompProperties_Interactable` carries no item cost.
+
+**Multiplayer, `2606448745/1.6/AssembliesCustom/Multiplayer.dll` [V]:** registers
+`MainTabWindow_Research.DoBeginResearch` and `ResearchManager.StopProject`
+(`SetCurrentProject` and `FinishProject` debug-only), the `CompRefuelable` gizmo lambda and sync
+fields, and `Pawn_JobTracker.TryTakeOrderedJob` and `BillStack` (as § *Destructive artifact analysis*).
+
+**Wide pass.** Both roots and vanilla `Data/`, `obj/` and `Referenced/` excluded, attributed with
+`tools/corpus.py --which`.
+- `.dll` ASCII and null-interleaved UTF-16 (typed `\x00` escapes), case-insensitive:
+  `researchcost` → RimPacts only (its silver-priced spy op); `researchmaterial`, `researchconsum`,
+  `researchfuel`, `researchingredient`, `researchresource`, `researchitem` → none.
+  `CanBeResearchedAt` → Medieval Overhaul, VEF, Tribal Furniture; `WorkGiver_Researcher` → More
+  Realistic Research; `ApplyResearchGiver` → Ushanka's Hacking Expansion; `AddTechprints` → VPE;
+  `experimentalMaterials` → More Realistic Research. Validator: the UTF-16 literal
+  `ResearchMakesSense` returns More Realistic Research.
+- XML: every `<li Class>` inside a `ResearchProjectDef`, and in every patch touching one, tabulated.
+  Only Medieval Overhaul's `RequiredSchematic` (a bookcase in the bench's room, **possessed, not
+  consumed** [V]) and VGE's `GravtechResearchExtension` (Class D, gravdata) sit on projects.
+  `CompProperties_Techprint` is authored by no mod, and no recipe produces a `Techprint_` def [V].
+- Research Reinvented appears only as an MP Compat compat target; the mod is not on disk [V].
+
+`python tools/corpus.py --check`: corpus matches the snapshot, 155 mods.
+
+### Status
+
+READ. Every mechanism is [V]; each route's composition is [I] until built.
+
+### Open questions
+
+- **Build map ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)):** which route per
+  branch; the resources and counts; for A, the `analysisID` allocation and the trial item's
+  workstation; for B, the placeholder faction tag and the T-99 exclusion entry; for E, the fuel hook
+  and whether a project-side extension overrides the bench's fuel filter.
 
 ---
 

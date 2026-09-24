@@ -3,7 +3,7 @@
 ## Purpose and scope
 
 How the political consequences in [`docs/requirements/POLITICS.md`](../requirements/POLITICS.md)
-will be built. This document owns five capabilities, kept in separate parts below:
+will be built. This document owns six capabilities, kept in separate parts below:
 
 - **The political ripple** — propagating a single player act along a faction's alliances and
   rivalries, and the faction-relation graph it reads. Everything up to *Outstanding decisions*.
@@ -15,8 +15,10 @@ will be built. This document owns five capabilities, kept in separate parts belo
 - **[Settlements meet passing caravans](#settlements-meet-passing-caravans)** — a caravan near a
   settlement meets its faction: attacked if hostile, offered trade otherwise.
 - **[Ending a losing war](#ending-a-losing-war)** — the colony's routes back from defeat: peace,
-  a one-off payment, a schedule of tribute, and standing obligations to the stronger faction. The
-  final part of this document.
+  a one-off payment, a schedule of tribute, and standing obligations to the stronger faction.
+- **[Withholding who a faction hates](#withholding-who-a-faction-hates)** — keeping the NPC↔NPC
+  relation graph off every surface until the colony has earned it, and revealing it per faction.
+  The final part of this document.
 
 It does not own Reverence, which is a second per-faction axis and belongs to
 [`RELIGION.md`](RELIGION.md) — but the **gate** that reads Reverence is here, not there, and
@@ -430,9 +432,118 @@ requirement is trying to cap.
 |---|---|
 | **Silver** | Free. The deliberately boring control case. |
 | **Delivery to a named tile** | Free. `Script_TradeRequest.xml`, 100% XML [V]. |
-| **A loaned colonist for a duration** | Ships. `QuestNode_LendColonistsToFaction` is XML-reachable [V]. Two constraints: it reads the pawns out of a `Thing` with a `CompTransporter`, and `Complete()` returns them by shuttle only for `Faction.OfEmpire`, otherwise by drop pod [V]. The mechanism is sound; the fiction is wrong for a neolithic asker. |
+| **A loaned colonist for a duration** | Ships for Industrial+ askers as XML (L0). Pre-pod eras need a subclass of the vanilla part, Medium (L1/L2). See §3a. |
+| **A protected route** | **Partly, and it collides with #174.** An escort, or a threat to the asker's travellers removed, ships in XML (E1/E2). A threatened world-map route is cut by design. See §3a. |
+| **A prisoner released** | XML when the release happens on the colony map (P1). Handing the prisoner back in person by caravan needs a patch (P2, **T-196**). See §3a. |
 | **A pawn skill threshold** | New. No `QuestPart_RequirementsToAcceptSkill` exists [V]. ~35 lines copying `QuestPart_RequirementsToAcceptColonistWithTitle` exactly: `CanAccept()` sweeps `PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_Colonists`, `CanPawnAccept(p)` tests the skill, `RequiresAccepter => true` makes the accepter pawn the specialist [V on the donor, I on the composition]. Display is free — `MainTabWindow_Quests.DoAcceptanceRequirementInfo` draws the red box, and `QuestUtility.CanAcceptQuest` refuses the accept [V]. **The button is greyed, not disabled** — `DoAcceptButton` sets `GUI.color = Color.grey` plus a warning tooltip while `Widgets.ButtonText` still fires; the refusal is one layer down in `AcceptQuestByInterface`, which emits `"MessageCannotAcceptQuest"` [V]. See [*Standing as a content gate*](#standing-as-a-content-gate) §2. |
 | **An embargo on trading with a third faction** | New. Nothing hears trading; `Faction.Notify_PlayerTraded(float, Pawn)` is the sole convergence point and raises no signal [V]. One ~6-line Harmony postfix broadcasting a global signal, plus a listener part — see *The `Quest.` prefix*, below. |
+
+#### 3a. A loan without pods, a protected route, a prisoner released
+
+Resolved on [#192](https://github.com/cjd721/Rimworld-Archinity/issues/192). Evidence class
+**READ**: `Assembly-CSharp.dll` 1.6.4871 and `Multiplayer.dll`, decompiled fresh, plus the shipped
+Core, Royalty and Ideology quest XML.
+
+- **Possible?** **Partly.**
+  - The loan: **yes**, by subclassing the vanilla loan part.
+  - The prisoner: **yes, in XML**, for a release on the colony's own map.
+  - The route: **partly.** An escort, or a threat to the asker's travellers removed, ships in XML.
+    **A threatened world-map route collides with [#174](https://github.com/cjd721/Rimworld-Archinity/issues/174)'s
+    cut and has no route here** (see below).
+- **Multiplayer?** **Yes** for every XML route. **With work** for the settlement hand-over comp (L1,
+  E3, P2b): its gizmo action must be registered as a `SyncMethod`, the shape MP already registers
+  for `TradeRequestComp.Fulfill` [V].
+
+| Route | Ask | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|---|
+| **L0** | loan | Vanilla as shipped. A shuttle collects the specialist and a drop pod returns them (a shuttle only for `Faction.OfEmpire`). The asker is gated `minTechLevel Industrial` | Royalty `Script_PawnLend` → `QuestNode_LendColonistsToFaction` | XML | Easy | Yes. MP transpiles `QuestPart_LendColonistsToFaction.Enable` |
+| **L1** | loan | **Walk the specialist to them.** A caravan hands them over at the asker's settlement, and they walk back in when the term ends | a settlement `WorldObjectComp` of ours (donor `TradeRequestComp`) + a subclass of `QuestPart_LendColonistsToFaction` | C# + XML patch | Medium | With work |
+| **L2** | loan | They leave from home and walk back in. The departure is off-screen | subclass of `QuestPart_LendColonistsToFaction` | C# | Medium (smallest C#) | Yes. Loses MP's `Enable` transpiler, which matters only under multifaction |
+| **E1** | route | **Clear the threat.** Destroy a camp that is *"raiding their caravans"*, which is vanilla's own text | Core `Script_BanditCamp` | XML | Easy | Yes |
+| **E2** | route | **Guard their travellers on our ground.** Lodgers walk in, stay, and walk out alive | Royalty `QuestNode_Root_Hospitality_Refugee` | XML | Easy | Yes |
+| **E3** | route | **Escort across the map.** Their people ride in our caravan to a named settlement | lodgers (`QuestPart_ExtraFaction`) + L1's comp as the delivery gizmo | C# | Medium | With work |
+| **P1** | prisoner | Release on the colony map | the vanilla `Released` target signal | XML | Easy | Yes |
+| **P2** | prisoner | Hand back in person at their settlement, by caravan | (a) a postfix on `FactionGiftUtility.GiveGift(List<Tradeable>, Faction, GlobalTargetInfo)`, or (b) L1's comp with a *hand over* gizmo | patch / C# | Medium | Yes / With work |
+
+**Detecting fulfilment and failure.**
+
+- **L0** [V, `Script_PawnLend.xml`].
+  - **Fulfilment** is `pickupShipThing.SentSatisfied`, and **the rewards are paid at hand-over, not
+    at return**.
+  - **Failure** is `SentUnsatisfied`, `LeftBehind` or `Destroyed`.
+  - The return fires `outSignalComplete`, and the shipped XML ends **Success** when every lent
+    colonist dies (**T-198**).
+- **L1.**
+  - **Fulfilment** is the gizmo pressed at the asker's settlement. The donor is `TradeRequestComp`,
+    which carries `outSignalFulfilled` [V on the donor].
+  - **Failure** is the demand's own timeout (`QuestNode_Delay { isQuestTimeout }`) or refusal (§1).
+- **L2.** No hand-over is observed, which is the fiction's cost.
+- **E1** [V].
+  - **Fulfilment** is `site.AllEnemiesDefeated`.
+  - **Failure** is `site.Destroyed` or `QuestNode_WorldObjectTimeout`.
+- **E2** [V].
+  - **Fulfilment** is `QuestPart_RefugeeInteractions.outSignalLast_LeftMapAllHealthy`.
+  - **Failure** is its destroyed, kidnapped, arrested and banished signals, fed by `lodgers.*`
+    target signals.
+- **E3.** Delivery at the named settlement, plus the lodger failures above [I].
+- **P1** [V]. Naming `<inSignal>prisoner.X</inSignal>` in XML tags the prisoner's slate variable
+  automatically (`QuestGenUtility.HardcodedSignalWithQuestID` →
+  `QuestGen.AddSlateQuestTagToAddWhenFinished`).
+  - **Fulfilment** is `Released` (sent only by `JobDriver_ReleasePrisoner`) or `Banished`
+    (a release out of a caravan, `PawnBanishUtility.Banish`) (**T-197**).
+  - **Failure** is `Killed`, `Recruited`, `Enslaved`, `ChangedFactionToNonPlayer` (sold, or gifted,
+    **T-196**), `LeftMap` with no prior `Released` (an escape), and the timeout.
+  - **The prisoner selects the asker, not the reverse:** `QuestNode_GetPawn { mustBePlayerPrisoner }`,
+    then `QuestNode_GetFactionOf`. `GetPawn` has no faction filter, so asking after *this* faction's
+    kin is a small node of ours.
+  - Setting a prisoner to release is MP-synced (`Pawn_GuestTracker.SetExclusiveInteraction`) [V].
+
+**Levers, limits, consequences.**
+
+- **L1 and L2 subclass the vanilla part rather than replacing it, and that is the whole point.**
+  Vanilla recognises a lent colonist by `is QuestPart_LendColonistsToFaction` in:
+  - `QuestUtility.IsBorrowedByAnyFaction` → `WorldPawnSituation.Borrowed`
+  - `QuestUtility.TotalBorrowedColonistCount`, which keeps `GameEnder` from ending the game while one
+    is away
+  - the social card's *"Lent to X for N days"*
+  - `Pawn_HealthTracker.NotifyPlayerOfKilled`'s *"LentColonistDied"* line [V]
+
+  A subclass inherits all of it. `Enable`, `Complete` and `Notify_PawnKilled` are overridable [V].
+  **`ReturnDead` is private and always uses a drop pod**, so a pre-pod loan overrides
+  `Notify_PawnKilled` too, or a dead specialist's corpse falls from the sky [V].
+- **The walk-in return.** `QuestPart_PawnsArrive` defaults to `PawnsArrivalModeDefOf.EdgeWalkIn`
+  [V]. It is on MP's `MultiplayerAsyncQuest` map-binding whitelist [V], so it binds the demand's
+  clock to that map (*Persistence and multiplayer (the demand)*). Calling the arrival worker from
+  `Complete` does not bind it [I].
+- **One settlement comp serves L1, E3 and P2b.** It is a gizmo on the settlement for a visiting
+  caravan. It is added by an XML patch to the `Settlement` def, as `WorldObjectCompProperties_TradeRequest`
+  is in `WorldObjects.xml` [V on the donor, I on the composition].
+- **E1's and E2's fiction is vanilla's.** E2 is Royalty-only content (the def lives in
+  `Data/Royalty`). E1's payment arrives by drop pod [I]. Era-appropriate payment is the general
+  reward question, not this section's.
+
+**The #174 collision, reported, not resolved.** `requirements/POLITICS.md` § *Demands ask for
+specific capabilities* lists **"a protected route"** and defines nothing.
+`requirements/WORLD-INFRASTRUCTURE.md` § *No route is threatened* says **"Routes are never
+threatened, and the player holds no stake in one"** (#174, resolution item 8).
+
+- **Reading 1**, a named world-map road under threat that the colony defends, is exactly what
+  #174 cut, and it has no route here by design.
+- **Readings 2 and 3**, an escort (E2/E3) or a threat to the asker's travellers removed (E1), touch
+  no route state. The requirement's word is still *route*.
+
+The two requirements documents disagree. The wording is
+[#198](https://github.com/cjd721/Rimworld-Archinity/issues/198)'s; the capability is answered either way.
+
+**Wide pass.** Both roots, `*.dll` with `-g '!**/obj/**' -g '!**/Referenced/**'`. The sweep read
+the ASCII `#Strings` heap, then ran a null-interleaved `#US` pass that Python emitted itself. It was
+validated on `LendColonist`, which hits `Multiplayer.dll`.
+
+- **No mod carries a pre-pod loan:** `lendcol|lentcol|lentpawn|loanpawn|pawnlend|lendpawn|hireout`
+  found only MP and one MP Compat letter string [I].
+- **No mod carries a world-map escort:** `escort` found only lord-toil and vehicle names, in VFE
+  Empire, VFE Deserters, VFE Medieval 2, Vehicle Framework and NCLvsTW [I].
+- `PrisonerRelease` found only Rim War, rejected under *Prior art* [I].
 
 #### 4. The refusal raid — what fires it, not how big it is
 
@@ -468,9 +579,15 @@ on that path `forcedPointsRange` never applies, and the shipped scaling is a har
 put a magnitude constant in the section that says magnitude is `PRESSURE.md`'s.
 
 It stays recorded as the **fallback**, because it also reads `site` / `siteFaction` / `map` off
-the slate and so is the shape a *site-shaped* demand would want —
-[#92](https://github.com/cjd721/Rimworld-Archinity/issues/92)'s ally-aid battle is the obvious
-candidate. **If that fallback is ever taken, the `× 1.5` is handed to `PRESSURE.md` as an open
+the slate. That makes it the shape for a *site-shaped* demand whose failure raids home. **It is not
+the fallback for [#92](https://github.com/cjd721/Rimworld-Archinity/issues/92)'s ally-aid
+battle** [V]:
+- its raider list is fixed at quest generation;
+- it lands on `slate["map"]`, a player map;
+- so it cannot report an outcome between two NPC factions.
+
+The ally-aid battle's site shape resolves in absentia by a §0 P4 roll part instead
+([`TERRITORY.md`](TERRITORY.md) §1a). **If that fallback is ever taken, the `× 1.5` is handed to `PRESSURE.md` as an open
 parameter, not reimplemented as a literal**: it ships as a def field with no default of ours, and
 #119 sets it alongside every other magnitude. The reimplementation is ~25 lines in the same shape.
 
@@ -539,7 +656,8 @@ composition — nothing has been built on it yet.]
 | Embargo ask | **Patch** — 1 Harmony postfix (~6 lines) + listener part (~20) |
 | Refusal raid | **XML** — an `IncidentDef` on VEF's `IncidentWorker_RaidEnemySpecial` (§4). Magnitude → `PRESSURE.md` (numbers: #119). The site-shaped fallback is ~25 lines, and hands its `× 1.5` to `PRESSURE.md` as a def field |
 | Category cap on pending demands | **New C#**, ~15 lines; the number → #119. **Owned here** |
-| Loaned specialist, delivery to a tile, silver | **Free** — vanilla |
+| Loaned specialist (Industrial+, shuttle and pod), delivery to a tile, silver, released prisoner (on-map), bandit camp, hosted travellers | **Free** — vanilla (§3, §3a) |
+| Pre-pod loan, map escort, prisoner handed back by caravan | **New C#**, Medium — a loan-part subclass plus one settlement comp shared by all three (§3a); route not selected |
 | Persistence | **Free** — `QuestPart.ExposeData` |
 | Multiplayer | **Free** |
 
@@ -719,6 +837,11 @@ reason; satisfying one rival demand visibly removes the other before the player 
    dismisses for both, by design.
 4. **Which demands exist, and what each asks for.** The real cost of this capability, and design
    work over the campaign's hand-authored factions.
+5. **What "a protected route" means.** `requirements/POLITICS.md` lists it as an ask, and
+   `requirements/WORLD-INFRASTRUCTURE.md` § *No route is threatened* ([#174](https://github.com/cjd721/Rimworld-Archinity/issues/174))
+   forbids a threatened route. An escort, or a threat to the asker's travellers removed, has routes
+   (§3a E1–E3). A defended world-map route has none, by that cut. The requirement's wording is
+   [#198](https://github.com/cjd721/Rimworld-Archinity/issues/198)'s.
 
 ---
 
@@ -1756,3 +1879,252 @@ The mechanisms are [V]. Every route is [I] as a composition.
 - **Ceding a holding to the victor (H-L2 to the victor, H-T2) versus #174's random recipient:**
   requirement, #119.
 - **Whether Glitterites or Archons should ever become negotiable (route L):** design, #119.
+
+---
+
+## Withholding who a faction hates
+
+### Purpose and scope
+
+This part answers [`requirements/POLITICS.md`](../requirements/POLITICS.md) on two clauses:
+
+- § *Standing buys relationships*: *"candour about who a faction hates"*;
+- § *Relationships form through encounters*: *"a faction's identity is learned by meeting it — by trading with it, fighting it, or being told — never by reading a sheet."*
+
+Established on [#193](https://github.com/cjd721/Rimworld-Archinity/issues/193).
+
+**Owns:**
+- whether the NPC↔NPC relation graph can be withheld until it is earned and revealed per faction;
+- every surface, vanilla or modded, that shows that graph;
+- what the knowledge that unlocks it can be.
+
+**Does not own:**
+- the graph itself: seeding its edges and the ripple that reads them are *[The build](#the-build)* above (**T-100**);
+- the faction's identity at first contact: [`TERRITORY.md`](TERRITORY.md) § *A settlement's specialty* SF-3 (the met-faction record) and § *Showing what the player has learned about a settlement* SW-3 (neutral faction rows). This part is the next rung up the same ladder: *unmet* → *met* (SW-3) → *trusted with its enmities* (here);
+- the standing number and the gate that reads it: *[Standing as a content gate](#standing-as-a-content-gate)*;
+- which surfaces ship: [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119).
+
+### Verdict
+
+- **Possible? Yes.**
+  - **Vanilla shows the NPC graph on one standing surface:** the Factions tab's *Enemy of* column [V]. It shows **hostility only**. Vanilla draws no alliance anywhere, so there is nothing to withhold on that side until *The build* seeds alliances.
+  - That column's filter is **one compiler-generated predicate that sees both factions**. A postfix can hide any edge the colony has not earned, per faction.
+  - **Five more surfaces tell the graph as an event:** the settlement-defeat letter, quest prose, a visitor's social tab, NPC factions fighting on the colony's map, and this document's own ripple letters and rival demands. Each can be withheld, or counted as the *being told* that earns the reveal.
+  - **Nothing on disk carries a withheld graph.** The knowledge is ours to build. Either it is derived live from standing, with no store, or it is a latched record in the same family as SF-3's.
+- **Multiplayer? Yes.**
+  - Every display route reads synced state at draw time (**T-21**). The derived route needs nothing more.
+  - A latched record must be written from a synced context: a quest part, a goodwill change downstream of a synced act, or a comms answer under **T-82**'s conditions.
+  - One mod in the bin breaks this. Faction Customizer's editor writes relations from an unsynced window, and no MP Compat class covers it.
+
+### Routes
+
+**What "earned" is: the knowledge**
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **RK-1** Derived from standing | A faction's enmities are known while the colony's standing with it is at or above a threshold, on any `StandingAxisDef` axis. No store. **Retracts if standing falls** | ours: the axis resolver of *Standing as a content gate* §1 | C# | Easy, once the resolver exists | Yes |
+| **RK-2** Latched per faction | Known for good once earned. Written by any reveal: a standing crossing, a quest, a comms answer, a witnessed battle, the defeat letter, a ripple | ours: a `WorldComponent` list of factions, shaped like SF-3's met-faction record | C# | Medium | Yes, if every write is synced |
+| **RK-3** Latched per edge | *"We were told the Ashen Clans hate the Reach"*: one edge learned, not a faction's whole list. It fits quest prose and battles, which name one pair | ours: the same component, keyed on the pair | C# | Medium | Yes, if every write is synced |
+
+**Where the known graph shows: the display**
+
+| Route | What the player sees | Seam | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|---|
+| **RD-1** *Enemy of* column filtered | Only earned enemies appear in a faction's row; the rest are absent | postfix on `FactionUIUtility.<>c__DisplayClass14_0.<DrawFactionRow>b__0(Faction)`, the column's predicate. Its closure holds the row's faction | ours | C# | Medium | Yes |
+| **RD-2** The locked carrot | An unearned row reads *"Enemies: unknown — revealed at +40"* in the column, with a tooltip | `DrawFactionRow` postfix + `TooltipHandler.TipRegion`; the threshold text from the gate's axis def | ours | C# | Medium | Yes |
+| **RD-3** Alliances shown | An *Allied with* set beside *Enemy of*, or coloured icons in one column | `DrawFactionRow` postfix; `RelationKindWith` read per pair | ours | C# | Medium | Yes. Meaningful only once alliances are seeded (**T-100**) |
+| **RD-4** Info card line | *"Known enemies: …  Known allies: …"* in the faction's ⓘ card | `Faction.GetReportText` getter postfix | ours | C# | Medium (one postfix) | Yes |
+| **RD-5** Asked on the comms console | *"Ask who they count as enemies"*, greyed with its threshold until earned. The answer node is the candour, and its action writes RK-2 | `FactionDialogMaker.FactionDialogFor` postfix, per *Standing as a content gate* §3 | ours | C# | Medium | Yes, under **T-82** and **T-95** |
+| **RD-6** Letter at the reveal | *"The Reach have told us whom they hate"*, with the list, kept in the History archive | `LetterStack.ReceiveLetter` from the synced reveal | vanilla | C# (inside the reveal) | Easy, once RK-2 exists | Yes, if sent from the synced reveal |
+| **RD-7** A diplomatic ledger | Every known edge in a table of our own, sortable, with jump-to | `MainButtonDef` + `MainTabWindow` ([#61](https://github.com/cjd721/Rimworld-Archinity/issues/61)'s own-tab option; TERRITORY SD-8's tab) | ours; donors Rim War `RimWarFactionUtility`, `MainTabWindow_RimPacts` | C# + XML | Medium | Yes |
+| **RD-8** Column removed; candour as text only | No sheet at all. The graph is learned only from letters, quests and dialogue | the RD-1 predicate returning `false` | ours | C# | Medium (one postfix) | Yes |
+
+**Surfaces that tell the graph as an event: withhold, or make each one a reveal**
+
+| Surface | What it tells | Withhold by | Or reveal by |
+|---|---|---|---|
+| **Settlement-defeat letter** | *"Relations with X: +20"* for every faction hostile to the one defeated. The same +20 also shows as *Destroyed enemy base* in the Factions tab's goodwill tooltip. **Three writers**, see below | a transpiler on each writer | RK-2/RK-3 written beside the letter: the colony was told |
+| **Quest prose** | the enemy of the asker, by name: `Script_BanditCamp` (`mustBeHostileToFactionOf $asker`; *"[siteFaction] … have been raiding their caravans"*) and Royalty's hospitality threat texts [V]. `QuestNode_Root_ShuttleCrash_Rescue` (an enemy of the Empire) and `QuestNode_Root_Mission_AncientComplex` pick a pair by hostility [V], and their prose naming it is [I] | rewording the scripts (XML) | a `QuestPart` of ours, XML-patched into those scripts, writing RK-3 on accept |
+| **A visitor's social tab** | `SocialCardUtility.GetPawnSituationLabel(pawn, fromPOV)` labels a relative *"Hostile, <faction>"* relative to the **selected pawn's** faction, so a visiting NPC's tab prints an NPC↔NPC edge | a postfix on that public static method | none; it is narrow |
+| **NPC factions fighting on the colony's map** | vanilla hostility drives targeting, so a trader caravan caught in a raid fights the raiders. [SR] Factional War stages exactly this as an incident, with a letter naming both sides | **nothing** | the *fighting it* clause: `Faction.Notify_MemberTookDamage` with an instigator of the other faction writes RK-3 |
+| **Our own ripple and rival demands** | a ripple letter naming the ally it reached (*[The build](#the-build)*); paired rival demands, which tell the player the two sides are rivals by design | wording (*"word of it reached the Reach"*) | the ripple or the demand writes RK-3. Either is the *being told* |
+| **Faction descriptions** | def prose such as the pirates' *"hostile to everyone"* | TERRITORY SW-1 | none |
+
+Every route is **[I]** as a composition. Its seams are [V].
+
+#### RK-1 — derived from standing
+
+**Gets us** [V seam]:
+- `Standing.Of(faction, axis) >= threshold`, evaluated at draw time. The threshold is a def value.
+- Goodwill is `Faction.PlayerGoodwill`, synced as a consequence of synced acts (*Persistence and multiplayer*). Reverence, Exaltation and the currencies are reachable through the same resolver.
+
+**Levers:**
+- the candour *is* the relationship. Lose the Reach's trust and it stops confiding;
+- no store, and nothing to go wrong in a save.
+
+**Cannot:**
+- remember. A faction that told you in the Tribal era forgets telling you at −10;
+- carry any reveal but standing: no quest, no battle, no defeat letter.
+
+#### RK-2 / RK-3 — a latched record
+
+**Gets us** [V seams; I composition]:
+- a `WorldComponent` holding a list of factions (RK-2) or of pairs (RK-3), scribed with `Scribe_Collections` + `LookMode.Reference`. It is the same shape as SF-3's met-faction set, and the two can be one component.
+- **The writers, each already in a synced context:**
+  - the standing crossing: a check at the goodwill change, which is downstream of a synced act;
+  - a `QuestPart`, running in the quest's tick and signals;
+  - the comms answer (RD-5), synced by option index (**T-82**);
+  - the defeat letter's call site;
+  - the battle hook (`Notify_MemberTookDamage`);
+  - the ripple's apply point (VEF's queue, *Available mechanisms*).
+
+**Levers:**
+- *known for good*, matching the settlement record ([#174](https://github.com/cjd721/Rimworld-Archinity/issues/174));
+- every *"being told"* the story wants can write it;
+- RK-3 lets a quest reveal one enmity without the whole list.
+
+**Consequences:**
+- **stale by design.** A latched edge is a fact about the relation, not a copy of it. Display always reads the live `RelationKindWith`, and the record says only *whether the colony may see it*. A war that ends shows as ended.
+- **Never** `PlayerKnowledgeDatabase`, which is a file on each machine (**T-160**), and never a static cache filled at draw time.
+
+#### RD-1 — the column, filtered
+
+**Gets us** [V, `Assembly-CSharp.dll` 1.6]:
+- `FactionUIUtility.DrawFactionRow` builds the column as `AllFactionsInViewOrder.Where(f => f != faction && f.HostileTo(faction) && (!f.IsPlayer && !f.Hidden || showAll))`. It draws each hit with `DrawFactionIconWithTooltip` at 22 px.
+- That lambda compiles to `<>c__DisplayClass14_0.<DrawFactionRow>b__0(Faction)`, and its closure's `faction` field is the row. A postfix sees **both endpoints** and can AND in the knowledge check. The layout loop only ever sees the filtered array, so nothing leaves a gap.
+- **Alternative seam, with a shipped donor:** RimPacts' `Patch_FactionTabWarRow` stores the row's faction in a static during `DrawFactionRow` (prefix + finalizer), for a second patch to read [V, `3762723122/Assemblies/RimPacts.dll`]. With a `DrawFactionIconWithTooltip` prefix, this skips the icon but leaves its 27 px slot empty.
+
+**Levers:**
+- per faction or per edge, from RK-1, RK-2 or RK-3;
+- **public edges.** Blanket hostility from `naturalEnemy`, `permanentEnemy` or `permanentEnemyToEveryoneExcept` can stay always visible, since *"pirates hate everyone"* is common knowledge, while authored rivalries are earned.
+
+**Cannot:** show an alliance. The column is hostility only (RD-3).
+
+**Consequences:**
+- **the graph is symmetric** [V: `TryAffectGoodwillWith` writes both directions]. If the Reach is revealed as hating the Ashen Clans, the Ashen Clans' row holds the same edge. Two rules are possible:
+  - an edge shows iff its **row's** faction is known: knowledge stays per faction, and the same fact is visible in one row and hidden in the other;
+  - an edge shows iff **either** endpoint is known: learning one faction also fills other rows.
+
+  Neither is wrong, but a narrative session must pick one.
+- **Unmet factions.** An enemy the colony has never met still draws its real icon and name through `DrawFactionIconWithTooltip`. SW-3's prefix on that method neutralises it; otherwise RD-1 can hide unmet endpoints too.
+- the compiler-generated name changes when vanilla recompiles `DrawFactionRow`. Resolve it by scanning `FactionUIUtility`'s nested types for the `<DrawFactionRow>b__0` method, never by the literal `14_0` [I].
+
+#### RD-2 / RD-3 — carrot and alliances in the row
+
+**Gets us** [V]: the row's space after the natural-goodwill column is the column's own. The row is fixed at 80 px, and the icon loop wraps down by 27 px.
+
+**Consequence: the row is contested** [V]:
+- Faction Territories' `VassalageUI` prefix narrows `fillRect` by 80 px and draws a vassalage button in the freed strip;
+- VFE Classical's `SenatorUIUtility` prefixes `DrawFactionRow`;
+- RimPacts prefixes it and relabels the relation;
+- VFE Tribals and VFE Medieval 2 postfix/prefix `DoWindowContents` (a button; the Merchant Guild unhidden while drawing).
+
+None touches the enemy column, but any new drawing must fit beside FT&V's strip (#61 A1).
+
+**RD-2 is the requirement's carrot:** *"Standing shows the carrot before the player reaches it — a locked row with its threshold, not an absent one"* (§ *Player information and agency*). RD-1 alone produces an absent row. RD-2 makes it locked.
+
+#### RD-5 — asked on the comms console
+
+**Gets us:** the reveal as a conversation, and *Standing as a content gate* §3's disabled-with-reason `DiaOption`, at no new cost [V there].
+
+**Cannot:** reach a Neolithic colony, which has no console. Medieval Overhaul's messenger table reaches the comms tree before radio ([#154](https://github.com/cjd721/Rimworld-Archinity/issues/154)). Before that, the reveal is RK-1, a quest or a visitor.
+
+**MP:** the option lists must be identical on both clients (**T-82**), and the dialog must stay a vanilla `Dialog_NodeTree` (**T-95**).
+
+#### The settlement-defeat letter has three writers
+
+**Gets us** [V]:
+- **vanilla** `SettlementDefeatUtility.CheckDefeated` gives +20 (`HistoryEventDefOf.DestroyedEnemyBase`) to every non-hidden faction `HostileTo` the defeated one, and prints `"RelationsWith"` + name for each;
+- **Faction Territories**' `InterceptBaseDestroyedLetterPatch` is a *prefix* on `CheckDefeated` that rebuilds the same letter, the same lines included, and skips vanilla's (`3626725895/Assemblies/FactionTerritories.dll`);
+- **VFE Medieval 2**'s `MerchantGuild` defeat prints *"Relations with X: −20"* for every faction **not** hostile to the Guild, which is the complement (`3444347874/1.6/Assemblies/VFEMedieval.dll`).
+
+**Consequences:**
+- a withholding patch on vanilla's method misses the FT&V path whenever FT&V ships, with no error (**T-200**);
+- the goodwill itself is real. The *Destroyed enemy base +20* line in the tab's goodwill tooltip names the grateful faction, whatever the letter says.
+
+This surface is cheaper to **count as being told** (RK-2/RK-3) than to withhold.
+
+#### Mod surfaces in the bin
+
+- **Rim War** (`2222935097/v1.6/Assemblies/RimWar.dll`) [V]: `RimWarFactionUtility`, drawn by `MainTabWindow_RimWar`, lists **every** relation of every faction as *Hostile to* / *Allied to* / *Neutral to*. It is the full graph, alliances included. Already barred (*Prior art*).
+- **RimPacts** [V]: its tab, war overlays and letters show wars from its **own** `WarPair` store (`WorldComponent_RimPacts.Wars`, `WarOf`), not vanilla's relations. `Patch_FactionTabWarLabel` relabels only the player's relation. A second authority (*Prior art*).
+- **Faction Territories** [V]: `Invasions.Utility.FindEligibleAttackers` sends a faction **hostile to a settlement's owner** to invade it. The private `SendInvasionNotification` announces it with a `Messages.Message`, and the world-map badge (TERRITORY SD-5's donor) marks it. That puts NPC hostility on the world map. **If FT&V ships, both need a gate, or the invasion is the reveal.** FT&V also carries the defeat-letter writer above.
+- **Faction Customizer** (`3336572602/1.6/Assemblies/FactionCustomizer.dll`) [V]: a play-settings button, `PlaySettingPatch`, is always shown and opens `FCDialog_FactionDuringLanding`, a copy of the Factions tab with its own *Enemy of* column (`"EnemyOf"`).
+  - `Dialog_ModifyFaction` lists every relation's `baseGoodwill`.
+  - `Dialog_ModifyFactionRelation` writes `relation.kind` and `baseGoodwill` on both sides straight from a window button.
+  - It is an out-of-fiction editor. It **cannot be withheld short of patching its dialog**, and it is an unsynced relation writer: no MP Compat class names it, in ASCII or in UTF-16.
+- **[SR] Factional War** (`3423264477/Assemblies/ModRimworldFactionalWar.dll`, the 1.6 load folder) [V]: `IncidentWorkerFactionWar` picks two factions that are `HostileTo` each other and lands both on the colony's map with a letter. It reads vanilla's graph, and it is an encounter reveal, not a sheet.
+- **Touch the row but not the graph** [V]: VFE Classical, VFE Tribals, VFE Medieval 2, VEF (`Window_Contracts` shows the player's goodwill only). EdB Prepare Carefully is pre-game.
+- **Out of fiction, no route:** Dev mode's *Show all* checkbox on the Factions tab.
+
+#### Recommendation (not a selection)
+
+- **Knowledge:** RK-2, per faction, with RK-3 if quests are to reveal single enmities. RK-1 is the cheap fallback if candour should be retractable.
+- **Display:** RD-1 + RD-2. RD-2 is what the carrot clause asks for, and RD-1 alone fails it. Add RD-3 once alliances are seeded, RD-5 as the Medieval-onward way to ask, and RD-6 as the reveal's voice.
+- **Event surfaces:** count them as reveals rather than withholding them. That is the requirement's *"being told"* and *"fighting it"*, and it is cheaper.
+- **Blanket hostility public**, authored rivalries earned.
+
+### Constraints
+
+- **Draw-time filter only** (**T-21**). Hiding an edge is never done by editing `Faction.relations` or the list a tick reads. The simulation's lords and targeting read the real graph whatever the colony knows.
+- **NPC↔NPC changes are silent** [V]. `Faction.Notify_RelationKindChanged` forces `canSendLetter = false` whenever `other != OfPlayer`, so a rivalry seeded or moved between two NPCs sends no letter, and it shows only in the Factions tab column (**T-199**). Any *"war declared"* beat is a letter of ours.
+- **The graph is nearly empty** (**T-100**). Until *The build* seeds edges, the column shows only blanket hostility, and there is little to withhold.
+- **Symmetric edges** (RD-1 consequences). Per-faction knowledge on a mirrored fact needs a display rule.
+- **No `Rand` and no `ModSettings`** in a reveal or a threshold (**T-18**, **T-39**). Thresholds are def values.
+- **One colony, one knowledge.** Both players are one faction, so what one learns both see. It is the same premise as TERRITORY's per-settlement record.
+
+### Available mechanisms
+
+| Mechanism | Provides | Route | Evidence |
+|---|---|---|---|
+| `FactionUIUtility.DrawFactionRow`, its predicate `<>c__DisplayClass14_0.<DrawFactionRow>b__0`, `DrawFactionIconWithTooltip`, `"EnemyOf"` | the only standing NPC-graph surface: hostility only | RD-1, RD-2, RD-3 | [V] `Assembly-CSharp.dll`, decompile + IL |
+| `FactionUtility.HostileTo(Faction, Faction)` → `RelationWith(other).kind == Hostile` | the latched kind the column reads | RD-1 | [V] |
+| `Faction.Notify_RelationKindChanged` | no letter for NPC↔NPC | Constraints | [V] |
+| `Faction.GetReportText`, `StatsReportUtility.DrawStatsReport(Rect, Faction)` | the info card: description + royal titles, no relations | RD-4 | [V] |
+| `FactionUIUtility.DrawRelatedFactionInfo` (comms header), `Dialog_NodeTreeWithFactionInfo` | player goodwill only | RD-5 | [V] |
+| `SettlementDefeatUtility.CheckDefeated` (`RelationsWith`, `DestroyedEnemyBase`) | defeat letter naming the defeated faction's enemies | event surfaces | [V] |
+| `QuestNode_GetFaction` / `QuestNode_GetRandomFactionForSite` / `QuestNode_GetSitePartDefsByTagsAndFaction` `.mustBeHostileToFactionOf`; `Script_BanditCamp`, `QuestNode_Root_ShuttleCrash_Rescue`, `QuestNode_Root_Mission_AncientComplex` | quests naming an asker's enemy | event surfaces | [V] |
+| `SocialCardUtility.GetPawnSituationLabel` | relation relative to the selected pawn's faction | event surfaces | [V] |
+| RimPacts `Patch_FactionTabWarRow` (row context), `Patch_FactionTabWarLabel` | donor for a row-scoped patch | RD-1 alt | [V] `3762723122/Assemblies/RimPacts.dll` |
+| Rim War `RimWarFactionUtility` / `MainTabWindow_RimWar` | full relation list per faction | RD-7 donor; barred | [V] |
+| FT&V `VassalageUI`, `Invasions.Utility.FindEligibleAttackers`/`SendInvasionNotification`, `InterceptBaseDestroyedLetterPatch` | row contest; invasions by an owner's enemy; defeat-letter rewrite | RD-2, event surfaces | [V] `3626725895/Assemblies/FactionTerritories.dll` |
+| VFE Medieval 2 `MerchantGuild` defeat | the complement letter | event surfaces | [V] |
+| Faction Customizer `PlaySettingPatch`, `FCDialog_FactionDuringLanding`, `Dialog_ModifyFaction`, `Dialog_ModifyFactionRelation` | an always-on graph viewer and unsynced editor | mod surfaces | [V] |
+| [SR] Factional War `IncidentWorkerFactionWar` | two hostile factions fight on the colony's map | event surfaces | [V] |
+
+**What does not show the graph** [V]:
+- the world map, the settlement inspect pane and the Alt-hover inspector, which give the player's relation only (TERRITORY § *Showing what the player has learned*);
+- the faction info card;
+- the comms header;
+- relation-change letters between NPCs.
+
+**What does not exist:**
+- any carrier of a withheld or learned relation graph;
+- any vanilla display of an NPC alliance.
+
+### Status
+
+**Evidence class: READ**, established on [#193](https://github.com/cjd721/Rimworld-Archinity/issues/193). Mechanisms [V]; routes [I].
+- **Vanilla:** a full 1.6 decompile of `Assembly-CSharp.dll`, swept for every `RelationWith` / `RelationKindWith` / `GoodwillWith` call without the player on a side, and every faction-typed `HostileTo` in a file that draws or sends text. The IL confirmed the column predicate's closure.
+- **Mods decompiled at 1.6:** RimPacts, Rim War, FT&V, Faction Customizer, VEF, VFE Classical, VFE Tribals, VFE Medieval 2 and [SR] Factional War.
+
+**Sweeps.** Both roots, `.dll`, `-g '!**/obj/**' -g '!**/Referenced/**'`:
+
+| Sweep | Result | Validation |
+|---|---|---|
+| ASCII `FactionUIUtility`, `DrawFactionRow`, `DrawFactionIconWithTooltip`, `MainTabWindow_Factions`, `AllFactionsInViewOrder`, `RelationKindWith` | Rim War, FT&V, RimPacts, Faction Customizer, VEF, VFE Classical, VFE Tribals, VFE Medieval 2, EdB, VPE, Worksites, TakeCover, MP | — |
+| ASCII `-i` `relationmatrix\|factionrelations\|diplomacy\|relationgraph\|factionwar` | + [SR] Factional War | — |
+| UTF-16 (typed literally) `EnemyOf` | Faction Customizer; MP Compat's hit is `SwitchEnemyOffActiveOnOff` | Faction Customizer's known literal |
+| UTF-16 `HostileTo` | Rim War (the key); VPE, VFE Empire (`BecameHostileToPlayer`), Vehicles (`ForceHostileTo`), a worm-boss mod (`HostileToPlayer`) | Rim War's known key |
+| UTF-16 `RelationsWith` | FT&V, VFE Medieval 2 (both defeat letters), EdB | — |
+| `Keyed/*.xml`, `-i` *at war with / hostile to {…} / allied with {…}* | Rim War, RimPacts, VFE Security (turret text) | — |
+| MP Compat `1629973374` (all folders, `Referenced/` included), `azravos\|factioncustomizer`, ASCII `-i` and UTF-16 | **0** | ASCII on `vanillaracesexpanded.android`, an attribute argument |
+
+### Open questions
+
+- **Selection, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):** which display routes ship, and which event surfaces count as reveals; whether candour is retractable (RK-1) or kept for good (RK-2); whether blanket hostility is public; whether an edge is revealed per row or per endpoint.
+- **Balance, #119:** the thresholds.
+- **Unverified [I]:**
+  - the predicate postfix across a vanilla recompile (name drift);
+  - the RD-2 layout beside FT&V's 80 px strip;
+  - Faction Customizer's desync on two clients.

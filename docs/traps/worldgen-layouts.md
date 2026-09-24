@@ -698,3 +698,20 @@ one in.
 `RimWorld.GravshipUtility.TryGetPathFuelCost` (`Assembly-CSharp.dll`). 1.6.4871.*
 
 ---
+
+### T-202 — VFE Classical's road gizmos have one gate for every tier
+
+`WorldComponent_RoadBuilding.AddRoadGizmos` checks only `VFEC_DefOf.VFEC_RoadBuilding.IsFinished`, then
+yields one `Command_Action` per `DefDatabase<RoadBuildingDef>.AllDefs`. `RoadBuildingDef` carries only
+`road`, `workRequired` and `iconPath` — no research or era field. `VFEC_RoadBuilding` is `techLevel Neolithic`,
+so `BuildStoneRoad` is available from the first era, silently. Retiering the research moves all tiers
+together, and a def added in XML is offered at the same gate.
+
+**Fix:** a postfix on `AddRoadGizmos` dropping commands whose def's era extension is above the current
+era, or `WORLD-INFRASTRUCTURE.md` § 3e's Build B.
+
+*[#194](https://github.com/cjd721/Rimworld-Archinity/issues/194), `docs/specs/WORLD-INFRASTRUCTURE.md` § 3d.
+IL of `<AddRoadGizmos>d__9` (`2787850474/1.6/Assemblies/VFEC.dll`; ilspycmd cannot decompile the iterator),
+`1.6/Defs/Misc.xml`. [V].*
+
+---

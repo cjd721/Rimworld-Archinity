@@ -36,6 +36,11 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-99 | Declaring `techprintCount` puts the techprint into every faction-less generator — orbital trade ships, map-gen loot and asker-less rewards skip `heldByFactionCategoryTags` |
 | T-136 | `OutfitStandBase` declares no `thingClass`, so a def derived from it is a plain `Building` — no gizmo, no contents, no error |
 | T-159 | Worksites Expanded picks worksite pawns' recreation outside `JobGiver_GetJoy` — a `JoyGiver.GetChance` patch silently skips them |
+| T-190 | A prefix on `ResearchManager.FinishProject` does not stop completion — progress is already written, so the project is finished everywhere and only the letter is skipped |
+| T-191 | A `CompRefuelable` research bench researches with an empty tank — research never uses the fuel, and no bench stat can make labour worthless |
+| T-192 | `destroyedOnAnalyzed` destroys the whole stack — analysing one unit of a stackable resource burns all of it |
+| T-211 | A def field written at runtime survives loading another save in the same session — defs are never reloaded on load |
+| T-212 | A quest with `rootSelectionWeight` 0 joined to a pool drawn by `GetNaturalRandomSelectionWeight` is never drawn — `LongRangeMineralScannerLump` is one |
 
 ## World creation and factions — [`docs/traps/world-creation.md`](traps/world-creation.md)
 
@@ -76,7 +81,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-102 | `QuestGen_Rewards.GiveRewards` silently drops royal favour (Exaltation) unless the asker holds a title in its own faction |
 | T-103 | A VEF `QuestGiverDef` never refills after a purchase unless `resetEveryTick` is set — and a reset discards every unbought offer |
 | T-109 | Unlisting a faith from its last faction deletes it at the next holder's death or map exit, silently moving every world pawn that held it to its faction's primary |
-| T-110 | A positive goodwill write returns `false` with no message while any player map sits on that faction's settlement — a revolt, liberation or battle reward paid on the map never lands |
+| T-110 | A positive goodwill write returns `false` with no message while any player map sits on the settlement of a faction hostile to the player — a revolt, liberation or battle reward paid on the map never lands |
 | T-112 | A humanlike joining the player faction has its `kindDef` reset to `basicMemberKind`, and a run-wild break sets `WildMan` — a `PawnKindDef` used as a marker silently vanishes |
 | T-115 | A `StorytellerDef` carrying VEF's `storytellerThreat` replaces every faction's natural goodwill with one number (0 by default) — every `GoodwillSituationWorker` natural offset is discarded |
 | T-116 | `QuestPart_SetFactionHidden` does not scribe `hidden` — a part that hides a faction becomes one that reveals it after a save and load |
@@ -105,6 +110,18 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-179 | A settlement given a new owner by `SetFaction` while its map is loaded is "defeated" on the next interval — `CheckDefeated` counts only the new owner's pawns, finds none, ruins the settlement, credits the player and can mark the new owner defeated |
 | T-181 | Skipping `KidnappedPawnsTracker.Kidnap` leaves the pawn in no caravan, no map and no world list — `Kidnap` is what passes it to the world, and every caller has already taken it out of its caravan, map or hands |
 | T-186 | `QuestNode_GetFaction` silently swaps a pre-set faction that fails its filter for a random one — a quest aimed at a named faction lands on another, with no message |
+| T-187 | An ally-owned site signals `AllEnemiesDefeated` / `NoActiveThreats` on its first tick — the ally is not hostile, so the fight "ends" before any attacker exists |
+| T-188 | An ally-owned site's default detection countdown raids the visiting caravan days later — with a random hostile faction substituted for the ally that owns it |
+| T-189 | `IncidentWorker_RaidEnemy` keeps a pinned `parms.faction` only if it is hostile to the player — otherwise it silently raids with a random hostile faction |
+| T-196 | A prisoner "returned" to its faction as a caravan gift ends up factionless — the trade path strips its faction, and the only signal is identical to a sale |
+| T-197 | A pawn's `Released` quest signal fires only for an on-map release — a caravan release sends `Banished`, and a gift sends only `ChangedFaction*` |
+| T-198 | A demand copied from `Script_PawnLend` pays at hand-over and scores all lent colonists dying as a success |
+| T-199 | A rivalry seeded or moved between two NPC factions sends no letter — it shows only in the Factions tab's "Enemy of" strip |
+| T-200 | The settlement-defeat letter has three writers — a patch on vanilla's misses Faction Territories' replacement, which prefixes and skips it |
+| T-206 | NPC vehicles are invisible to World Tech Level — Vehicle Framework builds them with `ThingMaker`, not `PawnGenerator`, and its gate reads the raw `faction.def.techLevel` |
+| T-208 | The quest tab draws `Max(challengeRating, 1)` — an unrated quest shows one star, identical to a declared 1; VEF's contracts window shows none |
+| T-209 | `QuestPart_SubquestGenerator` counts every successful child, whoever parented it — a subplot beat nested under the Chronicle's parent advances its cursor |
+| T-210 | A finished sub-quest leaves its parent in the quest list — it drops to the Historical tab, flat; only the parent's detail pane still lists it |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -144,6 +161,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-176 | Multiplayer switches `GameEnder` off — under MP no colony ever reaches "game over", and no new-wanderers offer ever comes |
 | T-177 | Under Async Time Multiplayer binds a quest to one clock by its parts' exact types, re-binds only at generate/accept/load, and a gravship departure leaves a map-bound quest ticked by nothing until the next load |
 | T-178 | Under Async Time a custom `IIncidentMakerQuestPart` that does not derive from `QuestPart_ThreatsGenerator` is polled in every storyteller pass — world plus each map — because MP's per-map filter covers only threats generators |
+| T-193 | A quest's Accept runs on the spawned accepter's map, or as a world command — a dialog a quest part opens on accept is synced and persistent in one case, local and unsynced in the other |
 
 ## Buildings, items, rituals and titles — [`docs/traps/content-and-buildings.md`](traps/content-and-buildings.md)
 
@@ -195,6 +213,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-183 | A dead title-holder's inheritable titles pass as their full favour cost to kin in the faction, else the same-faction pawn the holder liked most, else kin in any faction — a founder's Church favour can land on any colonist or leave with an NPC relative |
 | T-184 | The first point of royal favour is a title — Freeholder's `RoyalTitleAwardWorker_Instant` awards it with no ceremony, so any Exaltation on a colonist makes it a titleholder |
 | T-185 | A zero `PsychicSensitivity` factor is not psychic deafness — gear and sight-loss offsets are added after every factor, so a "deaf" pawn in eltex or without eyes is psycast-targetable, and can cast if linked |
+| T-205 | Vehicle Framework's NPC raid layer ships as data and is dead in code — `Patch_NpcAi.PatchMethods` is a bare `ret`, and the Raiders/Paratroopers/TradeableVehicles flags are off in Release |
 
 ## Worldgen layouts — [`docs/traps/worldgen-layouts.md`](traps/worldgen-layouts.md)
 
@@ -224,6 +243,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-171 | A gravship lands on whoever holds its tile on arrival — no re-check of owner, relation or `preventGravshipLanding`; any non-player settlement landed on gets `AffectRelationsOnAttacked`, and the tile is never reserved in flight |
 | T-172 | Under VGE the landing tile is picked before the launch ritual and `ExecuteGravshipLaunch` flies to it unchecked — the commitment starts at the ritual |
 | T-180 | A gravship parked on an NPC settlement's map holds that map open for good (it is a player home), and its takeoff destroys the settlement — `AbandonMap` → `Settlement.Abandon(true)` → `Destroy` — unless a grav anchor stays behind |
+| T-202 | VFE Classical offers every `RoadBuildingDef` behind one Neolithic research — stone road is laid above-era, and no XML field can gate a single tier |
 
 ---
 
@@ -247,8 +267,10 @@ orchestrator allocates; an agent proposes the trap and leaves it unnumbered.
 A group file that passes roughly a dozen entries is a candidate for splitting
 further; this index stays one file regardless, because it is the thing that gets
 read whole. **All five are now over that line**, counted 2026-09-23 after the batch
-#181–#189 (T-175–T-186): `world-creation.md` (64), `content-and-buildings.md` (46),
-`multiplayer.md` (34), `defs-and-patching.md` (18) and `worldgen-layouts.md` (24).
+#190–#197 and #92 (T-187–T-212): `world-creation.md` (76), `content-and-buildings.md` (47),
+`multiplayer.md` (35), `defs-and-patching.md` (23) and `worldgen-layouts.md` (25). T-194,
+T-195, T-201, T-203, T-204 and T-207 were allocated to that batch and are retired unused; the
+next free ID is T-213.
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
 sharpened the case rather than changing it.** None of the five names the subject, so

@@ -1145,3 +1145,22 @@ ability and ritual offers for legibility. `docs/specs/ANDROIDS.md` § *A capture
 `RimWorld.InteractionWorker_ConvertIdeoAttempt.Interacted`. 1.6.4871.*
 
 ---
+
+### T-205 — Vehicle Framework's NPC raid layer is loaded but never hooked
+
+In 1.6, `Vehicles.Patch_NpcAi.PatchMethods` is a single `ret` (IL code size 1). In 1.5 it hooked
+`PawnGroupKindWorker_Normal.GeneratePawns` and `RaidStrategyWorker.SpawnThreats` behind `debugAllowRaiders`.
+`FeatureFlags.InitDefault` enables the Raiders, Paratroopers and TradeableVehicles flags only for
+Debug/Unstable builds, and `Feature.Enabled` tests for Release — so `ParatrooperDrop` and the vehicle trader
+stock never load, and `LordJob_ArmoredAssault` is never constructed. The faction extensions and
+`VehicleRaidParamsDef`s still load, so the layer looks live. Nothing logs.
+
+Second hazard: `InjectVehiclesIntoRaidPrepare` takes `__state` by value, so that prefix/postfix pair is
+broken even when registered.
+
+**Fix:** register, or better copy, the group-maker pair ourselves.
+
+*[#195](https://github.com/cjd721/Rimworld-Archinity/issues/195), `docs/specs/WORLD-INFRASTRUCTURE.md` § 4d.
+`Vehicles.Patch_NpcAi`, `Vehicles.FeatureFlags` (Vehicle Framework 1.6 assembly, decompiled; 1.5 for comparison). [V].*
+
+---

@@ -1146,7 +1146,7 @@ subclasses (era reach, faction standing, threat pressure) on this framework.
 **PULL.**
 
 **Faction Customizer `3336572602`** — `docs/engine/factions-and-worldgen.md` already
-records that it cannot remove factions and is pre-landing use only. Adding: its
+records that it cannot remove factions, and that it is reachable mid-game, not pre-landing only (#193). Adding: its
 `Dialog_ModifyFactionRelation.SaveChanges` sets `relation.kind` **without calling
 `Faction.Notify_RelationKindChanged`**, skipping hostility letters, lord re-evaluation
 and every downstream listener. **[V]** Its edits persist without it. **PULL as a

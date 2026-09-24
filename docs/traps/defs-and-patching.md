@@ -473,3 +473,75 @@ accept the gap and say so.
 `RimWorld.JobGiver_GetJoy`, `RimWorld.JoyGiver.GetChance` (`Assembly-CSharp.dll` 1.6). [V].*
 
 ---
+
+### T-190 — Blocking `FinishProject` does not stop a project finishing
+
+`ResearchManager.ResearchPerformed` writes `progress[currentProj]` first, then calls `FinishProject` only if
+`IsFinished` (`ProgressReal >= Cost`). A prefix that blocks `FinishProject` skips only the letter, the
+dialog and the clearing of `currentProj` — every unlock reading `IsFinished` is already live, and the
+blocked call is retried every tick. Nothing logs.
+
+**Fix:** gate before progress reaches `Cost`, or at `CanStartNow`.
+
+*[#190](https://github.com/cjd721/Rimworld-Archinity/issues/190), `docs/specs/RESEARCH.md` § *Practice*.
+`RimWorld.ResearchManager.ResearchPerformed` / `FinishProject`, `Verse.ResearchProjectDef.IsFinished`
+(`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-191 — A refuelable research bench researches with an empty tank
+
+`JobDriver_Research` never calls `CompRefuelable.Notify_UsedThisTick`, and `CanBeResearchedAt` tests only
+`CompPowerTrader.PowerOn`. With `consumeFuelOnlyWhenUsed true` the bench never burns fuel; with `false` it
+burns on a clock regardless of research. An empty bench researches normally. Separately,
+`ResearchSpeedFactor`'s `minValue` 0.25 is clamped in `StatWorker`, so no bench def can reduce research
+labour to nothing.
+
+**Fix:** our own fuel check on `CanBeResearchedAt` plus a burn on the research toil.
+
+*[#190](https://github.com/cjd721/Rimworld-Archinity/issues/190), `docs/specs/RESEARCH.md` § *Practice* › E.
+`RimWorld.JobDriver_Research`, `Building_ResearchBench.CanBeResearchedAt`, `RimWorld.StatWorker`
+(`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-192 — `destroyedOnAnalyzed` destroys the whole stack
+
+`CompAnalyzable.OnAnalyzed` calls `parent.Destroy()`. On a stackable thing, analysing one unit destroys
+the entire stack. Nothing logs.
+
+**Fix:** analyse a crafted `stackLimit 1` item made from the resource, not the resource itself.
+
+*[#190](https://github.com/cjd721/Rimworld-Archinity/issues/190), `docs/specs/RESEARCH.md` § *Practice* › A.
+`RimWorld.CompAnalyzable.OnAnalyzed` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-211 — A runtime def write outlives the save that made it
+
+`SavedGameLoaderNow.LoadGameFromSaveFileNow` builds a new `Game` and never reloads defs. Only startup, a
+language change or a debug hot-reload call `PlayDataLoader.LoadAllPlayData`. A def field our code writes
+during play — `randomlySelectable`, `rootSelectionWeight` — therefore carries into the next save loaded in
+the same session, whatever that save's era. The reverse of T-11.
+
+**Fix:** re-derive every runtime def write in `GameComponent.FinalizeInit`, which runs for new and loaded games.
+
+*[#197](https://github.com/cjd721/Rimworld-Archinity/issues/197), `docs/specs/CHARTING.md` § 3 *Membership that
+changes with era*. `Verse.SavedGameLoaderNow`, `Verse.PlayDataLoader.LoadAllPlayData` (`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-212 — A weight-0 quest in a natural-weight pool is never drawn
+
+`GetNaturalRandomSelectionWeight` returns 0 for any `rootSelectionWeight <= 0` and never reads
+`randomlySelectable`. A pool that reuses it — Charting's survey selector does — silently never draws a
+weight-0 quest joined to it, including `LongRangeMineralScannerLump`.
+
+**Fix:** give the quest weight > 0 and `randomlySelectable false`; that pair keeps it out of the storyteller
+and in our pool.
+
+*[#197](https://github.com/cjd721/Rimworld-Archinity/issues/197), `docs/specs/CHARTING.md` § 3.
+`RimWorld.NaturalRandomQuestChooser.GetNaturalRandomSelectionWeight`, `QuestScriptDef.IsRootRandomSelected`
+(`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
