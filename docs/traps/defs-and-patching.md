@@ -545,3 +545,18 @@ and in our pool.
 (`Assembly-CSharp.dll` 1.6.4871). [V].*
 
 ---
+
+### T-213 — A levelled hediff's row never shows a stage label
+
+`Verse.Hediff_Level.Label` is overridden to `def.label + " (" + "LevelNum".Translate(level) + ")"` (or
+`" x" + level` with `levelIsQuantity`). It never reads `LabelBase` or `LabelInBrackets`, so a stage
+`label`, a stage `overrideLabel`, a comp label prefix and `CompLabelInBracketsExtra` all vanish from the
+row of the psylink and every other `Hediff_Level`. Nothing logs. Only the tooltip (`Hediff.GetTooltip`:
+`overrideTooltip`, `extraTooltip`, `CompTipStringExtra`) still reads the stage.
+
+**Fix:** a `hediffClass` subclass overriding `Label`, or a postfix on `Hediff_Level.Label`. Under VPE, re-add
+`PsychicAmplifier` stages from a patch loading after VPE's `RoyaltyPatch.xml`, which removes them.
+
+*`docs/specs/PSYCHIC.md` § *Open questions* › *Psychic-rank titles*. `Verse.Hediff_Level.Label`,
+`Verse.Hediff.LabelBase`, `Verse.HediffWithComps.LabelInBrackets` (`Assembly-CSharp.dll` 1.6); VPE
+`1.6/Patches/RoyaltyPatch.xml`. [V].*

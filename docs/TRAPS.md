@@ -41,6 +41,7 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-192 | `destroyedOnAnalyzed` destroys the whole stack — analysing one unit of a stackable resource burns all of it |
 | T-211 | A def field written at runtime survives loading another save in the same session — defs are never reloaded on load |
 | T-212 | A quest with `rootSelectionWeight` 0 joined to a pool drawn by `GetNaturalRandomSelectionWeight` is never drawn — `LongRangeMineralScannerLump` is one |
+| T-213 | A levelled hediff (the psylink included) shows no stage label in its row — `Hediff_Level.Label` reads neither stage nor comp labels; only the tooltip does |
 
 ## World creation and factions — [`docs/traps/world-creation.md`](traps/world-creation.md)
 
@@ -270,7 +271,7 @@ read whole. **All five are now over that line**, counted 2026-09-23 after the ba
 #190–#197 and #92 (T-187–T-212): `world-creation.md` (76), `content-and-buildings.md` (47),
 `multiplayer.md` (35), `defs-and-patching.md` (23) and `worldgen-layouts.md` (25). T-194,
 T-195, T-201, T-203, T-204 and T-207 were allocated to that batch and are retired unused; the
-next free ID is T-213.
+next free ID is T-214.
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
 sharpened the case rather than changing it.** None of the five names the subject, so

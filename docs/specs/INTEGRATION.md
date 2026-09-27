@@ -20,7 +20,7 @@ found (#190–#197, and #92 reopened) were answered on 2026-09-23 in the specs t
 
 | Ticket | The capability in question |
 |---|---|
-| [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) Three claims the era gate rests on | Includes whether any World Tech Level filter besides the faction roster reads `TechLevelDatabase<FactionDef>.Levels`. That decides whether `ORBIT.md`'s `Empire → Undefined` exemption conflicts with `requirements/ERA.md`'s "no exempt faction". The exemption matters only while WTL's `Filter_Factions` is on, and ERA § 6b holds it off. |
+| [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) Three claims the era gate rests on | Includes whether any World Tech Level filter besides the faction roster reads `TechLevelDatabase<FactionDef>.Levels`. That decides whether `ORBIT.md`'s `Empire → Undefined` exemption conflicts with `requirements/ERA.md`'s "no exempt faction". The exemption matters only while WTL's `Filter_Factions` is on, and ERA § 6b holds it off. **Partly read** in [`ERA.md` § *The arrival band*](ERA.md#the-arrival-band): the row writes WTL's database, never `FactionDef.techLevel`, so it exempts nothing from an arrival gate; outside worldgen its one reader is `Patch_QuestNode_Root_WorkSite` [V]. The arrival band itself now has routes there. |
 
 ## Engine entries owed
 

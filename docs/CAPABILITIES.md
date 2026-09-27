@@ -40,7 +40,7 @@ below. Until one closes, write no beat that depends on it.
 | System | Possible? | Multiplayer? | Open |
 |---|---|---|---|
 | **Faith** | | | |
-| [The altar](#the-altar) | Yes; who counts as a willing giver is #119's | Yes (spec), conditional; one two-client run owed | — |
+| [The altar](#the-altar) | Yes; a willing giver is a certainty threshold, gated by one small role class | Yes (spec), conditional; one two-client run owed | — |
 | [Religion](#religion) | Yes | With work; varies by its four sub-cards | — |
 | [The psychic track](#the-psychic-track) | Partly: "rank only from the altar" needs VPE's XP loop cut or gated | Yes (spec), conditional | — |
 | [Transcendence](#transcendence) | Yes | Yes (spec), conditional | — |
@@ -56,7 +56,7 @@ below. Until one closes, write no beat that depends on it.
 | [Androids](#androids) | Yes | Yes (spec), conditional on MP Compat's entry | — |
 | [Research](#research) | Yes | Yes | — |
 | **World and space** | | | |
-| [Era](#era) | Partly: the arrival band is open ([#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)) | With work | — |
+| [Era](#era) | Yes; the arrival band holds only by a gate of ours, not by Ignorance Is Bliss alone | With work | #207 |
 | [Charting](#charting) | Yes | With work | — |
 | [World infrastructure](#world-infrastructure) | Yes; NPC vehicles only from Industrial | With work | — |
 | [Orbit](#orbit) | Partly: closing orbit rests on our switches; [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) is open | Yes (spec), conditional | — |
@@ -73,8 +73,12 @@ below. Until one closes, write no beat that depends on it.
 Requirement clauses that no spec answers yet, each on its own ticket. When a ticket closes, its
 answer lands in the named spec, and its line here and on its card is replaced by that answer.
 
-**None are open.** The last nine (#92 reopened, #190–#197) were answered on 2026-09-23, and each
-card below carries its answer. A demand's "protected route" was reworded to an escort or a threat
+- **Era** · [#207](https://github.com/cjd721/Rimworld-Archinity/issues/207) Every faction hand-authored,
+  spawn pools included: can every faction, ours or a mod's, be closed against pawn kinds, gear and
+  xenotypes we did not write? (`requirements/ERA.md`, 2026-09-26.)
+
+Nine earlier questions (#92 reopened, #190–#197) were answered on 2026-09-23, and each card below carries
+its answer. A demand's "protected route" was reworded to an escort or a threat
 cleared ([#198](https://github.com/cjd721/Rimworld-Archinity/issues/198)), since routes are never threatened.
 
 Clauses this pass found unanswered, but that turned out to be shape decisions rather than
@@ -87,7 +91,7 @@ The reasons are on [the capabilities document's ticket](https://github.com/cjd72
 
 ### The altar
 
-**Possible?** Yes. The final rite and the lottery are specced. Charge that never spoils, and "the donor dies, the recipient lives", are already built. Today the altar tells prisoner or slave from free, not believer from unbeliever; the spec's route is for its own check to read the giver's faith and certainty (#49). Who counts as willing is #119's.
+**Possible?** Yes. The final rite and the lottery are specced. Charge that never spoils, and "the donor dies, the recipient lives", are already built. Willing means believing enough: a giver is admitted only at a certainty threshold (e.g. 85 %). No ritual ships that, but one small role class gates a vanilla-style sacrifice rite on it (#49). The threshold is #119's.
 **Multiplayer?** Yes (spec, on reading), condition: every path runs on the altar's synced tick or through Multiplayer's own `PersistentDialog`. One two-client run is owed for the lottery (Verification 4). A stale caravan-dialogue flag can still split one click (T-82 by another door).
 
 The Archotech apparatus. It banks blood and life as charge and grants named genes to a living recipient. It runs an opt-in gene lottery. At the end it grants the shipped `VRE_Transcendent` gene to a founder who has claimed a title.
@@ -95,7 +99,7 @@ The Archotech apparatus. It banks blood and life as charge and grants named gene
 | Capability | Possible | MP | Routes | Spec |
 |---|---|---|---|---|
 | Charge that never spoils; the donor dies, the recipient lives | Yes, built [V] | Yes (the altar's synced tick) | **A (already built)** The charge lives in the altar and has no decay path. A prisoner or slave is fuel and dies. Anyone else is a recipient and leaves alive · `ArchinityAltar.dll` · Easy (mapped: nothing to build) | [§ Available mechanisms](specs/ALTAR.md#the-three-asserted-and-nowhere-verified-altar-behaviours-are-built-and-they-work) |
-| Willing devotion counts differently from coerced life | Yes. Today the altar sees only coerced versus not, but the giver's faith and certainty are readable pawn state | Unknown (spec silent) | **A** the altar's own `IsFuel`/`PerformRite` check also reads the giver's `Ideo` and certainty; coerced Life stays separate, and a faction can send aligned pawns (#49, carried in the spec) · our C# · weight not stated. Who counts as willing is #119's call | [§ Available mechanisms](specs/ALTAR.md#the-three-asserted-and-nowhere-verified-altar-behaviours-are-built-and-they-work) |
+| Willing devotion counts differently from coerced life: a giver is admitted only at a certainty threshold | Yes. Nothing ships it and XML alone cannot gate a role on certainty; one `RitualRoleColonist` subclass reading `Certainty` does | Yes: Multiplayer syncs the ritual dialog and roles by id | **A** a sacrifice rite where the priest kills the believer: vanilla's `Sacrifice` duty aimed at our certainty-gated role · XML + one class (~20 lines) · Easy. Vanilla records it as an executed colonist<br>**B** the believer gives their own life as the rite completes: VIE Memes' Ceremonial Suicide outcome by XML, or a copy, plus the same role class · Easy. The threshold, and whether a mid-rite drop cancels, are #119's | [§ Available mechanisms](specs/ALTAR.md#the-three-asserted-and-nowhere-verified-altar-behaviours-are-built-and-they-work) |
 | Electricity improves the apparatus but never replaces the life | Yes, built [V] | Yes | **A (already built)** Linked, powered facilities scale the charge cost, with a floor of 25 %. Their category bias and extra options have no reader until the lottery is built · our code · Easy (mapped) | [§ 7](specs/ALTAR.md#7-what-a-repeat-costs-and-what-is-remembered) |
 | A named core vector grants its gene, deterministically | Yes: the existing arm [V] | Yes | **A (already built)** The rite calls `GrantGene` and the recipient survives · our code · Easy (mapped). Which genes, and mark-locking, are #31's | [§ 9](specs/ALTAR.md#9-what-spends-the-charge--and-the-trap-it-closes) |
 | An opt-in lottery with genuinely bad outcomes, and a drawn offer the player must take | Yes (mechanism). The bad band has no teeth until tier 1 holds more genes | Yes (spec, on reading), condition: one two-client run (Verification 4) | **A (as specced)** One roll picks a tier band. Four genes, plus facility extras, are drawn by weight; the capsule's category is a weight, never a filter. The offer is a vanilla `Dialog_NodeTree` with no Close option. The recipient is held until the player chooses, and a deadline picks at random · our C#, no Harmony · Medium (mapped)<br>**B** Multiplayer's `GrowthMomentSession` shape plus a `Multiplayer.API` reference · C# · weight not stated · *fallback only if the two-client check fails*. Ruled out: a custom `ChoiceLetter` (unsynced) and VQE Ancients' window (desyncs) | [§ The build — the repeatable lottery](specs/ALTAR.md#the-build--the-repeatable-lottery) |
@@ -111,7 +115,7 @@ The Archotech apparatus. It banks blood and life as charge and grants named gene
 - Lock the final rite with a stated reason: "X has not claimed a title". Once through, the founder goes straight to the Administrator.
 
 **What it cannot do**
-- Tell a devout volunteer from an unbelieving free colonist. This spec has no route for it.
+- Gate a ritual role on certainty in XML alone. It takes one role class (~20 lines), and nothing re-checks certainty once the rite has started.
 - Give the worst lottery band teeth. Tier 1 holds one drawable gene, so the bottom band always widens into the next (#31). `Social` holds one gene, so a category is a lean, never a guarantee.
 - Skip the fuel refusal. Our own drain calls `Pawn.Kill`, which Deathless does not stop.
 - Use a null-gene vector before the lottery ships: it silently consumes the rite and reports success (**T-64**).
@@ -266,7 +270,7 @@ The founders' and disciples' psychic ladder. Psylink rank should come only from 
 | A captured or recruited caster keeps or loses rank | Yes, either | Yes | **I1** strip generated casters from the world · XML · Easy<br>**I2** clamp rank on joining the player · C# · Medium. With neither, rank is kept | [§ I1 / I2](specs/PSYCHIC.md#i1--i2--imported-rank) |
 | A psycaster path only the founders may enter | Yes, with every key; it leaks until the path is sealed | Yes (F1, F5: with work under multifaction) | **F1** a founder focus granted by the founder record · XML on A1's C# · Easy once A1 exists (spec: strongest key)<br>**F2** a gene the altar installs · Easy to open, Medium to seal · *not recommended as the key*<br>**F3** `VREA_Transcendent` as shipped · post-transcendence only<br>**F4a/F4b** leave VPE's Archotechist to the Church, or re-key it · XML · Easy<br>**F5** the gate reads the founder record · C# · Medium<br>**F6** a founder backstory category · XML · Easy, no C#. Every route also needs two sealing flags (T-167) | [§ Founder-only path](specs/PSYCHIC.md#a-psycaster-path-only-the-founders-can-take) |
 | The Church's own psychics, never at the founders' level | Yes | Unknown (spec silent) | **A (as specced)** caster pawn kinds whose initial level is fixed and independent of titles (census I-b, I-d); which kinds is #119's · XML · Easy (mapped) | [§ census](specs/PSYCHIC.md#available-mechanisms--the-census) · [`RELIGION.md` decision 20](specs/RELIGION.md#outstanding-decisions) |
-| Psychic ranks carry names or titles | Yes | Unknown (spec silent) | **A** a title ladder on a faction **other than the Church**. There is one title per pawn per faction, so a Church rung would overwrite the Church title (T-28) · C# · Medium (mapped) | [§ Open questions](specs/PSYCHIC.md#open-questions-1) |
+| Psychic ranks carry names or titles | Yes. XML alone reaches only the tooltip: the psylink row ignores stage labels (T-213) | Yes [I] (display only, or written in simulation) | **A** name-only psylink stages, the name in the health-tab tooltip · XML · Easy · *partial*: the row still reads "level N"<br>**B** relabel the psylink row: "Psylink (Adept)", read from the level so it never drifts · C# · Medium<br>**E** a title ladder on a faction **other than the Church** (a Church rung would overwrite the Church title): a real title in the Bio tab, but it leaves the inspect pane while a Church title is held, and the player can renounce it · C# + XML · Medium<br>**F** the rank as the pawn's epithet, "Aria, Adept", on Transcendence's surface; on a founder it shares the string with the claimed title · C# · Medium | [§ Open questions](specs/PSYCHIC.md#open-questions-1) |
 
 **What the story can do with it**
 - Make each rank a rite at the altar, and tell authored breakthroughs as altar rites.
@@ -299,7 +303,7 @@ The end of a founder's arc: Claim Yourself (a self-authored title), the final ri
 |---|---|---|---|---|
 | One saved record per founder that the campaign reads | Yes | Yes | **A (as specced)** a component on a founder-only hediff holding the claimed title, the claim flag, the transcended tick and whether the Administrator was seen. Under `RELIGION.md`'s A1 it is stamped at game start. Alternatives surveyed and rejected · C# + XML · Medium (mapped) | [§ 1 The store](specs/TRANSCENDENCE.md#1-the-store--compfounderrecord) |
 | Claim Yourself: the player types the founder's self-authored title, and the final rite waits on it | Yes | Yes (spec), condition: Multiplayer's automatic registration holds (one dev check) | **A (as specced)** a rename-style dialog opened from a gizmo on the founder or from the altar, with every effect inside the synced write. The altar refuses "X has not claimed a title" until then · C# · Medium (mapped). One-way or re-typeable: both trivial, #119 | [§ 2](specs/TRANSCENDENCE.md#2-the-epithet--one-synced-write-no-multiplayer-code-of-ours) · [§ 3](specs/TRANSCENDENCE.md#3-the-gate) |
-| The claimed title is seen in play | Partly: the inspect-pane header and any text built from the full label; never the colonist bar or the map label | Yes | **A (as specced)** vanilla's per-pawn title string, shown as "Name, Title" · none. For the colonist bar and map label: not available at any price without patching vanilla's label path | [§ 5](specs/TRANSCENDENCE.md#5-where-the-player-sees-it) |
+| The claimed title is seen in play | Yes. A reaches the inspect-pane header, the Bio tab and grammar; the colonist bar and map label need N or C | Yes | **A (as specced)** vanilla's per-pawn title string, shown as "Name, Title" · none<br>**N** the claim becomes the founder's nickname: on the bar and map label with no patch, but it is then their name in every letter and log · C# inside A's setter · Easy<br>**C** a display-only postfix, founders only: on the bar and map label and nowhere else; C′ draws a second line or tooltip under the portrait · C# · Medium. The bar's name slot fits ~12–14 characters; a long claim shows whole only on C′. A is vanilla's own rename-window title, already synced by Multiplayer<br>**R** a royal title awarded by the player's own faction: vanilla accepts it and it sits beside the Church title, but typed text means one def per founder relabelled on load; a Bio-tab chip, not the bar · XML + C# · Medium | [§ 5](specs/TRANSCENDENCE.md#5-where-the-player-sees-it) |
 | The Administrator, once per founder, offering Enter or Stay | Yes | Yes (spec, on reading), condition: *Enter*'s action is hosted on the altar's comp, *Stay* carries none, and both close the dialog (T-97). Run: Verification 3 | **A (as specced)** a vanilla dialogue replayed to both players. *Stay* closes it and changes nothing. A `ChoiceLetter` was ruled out (options unsynced) · C# · Medium (mapped) | [§ 4](specs/TRANSCENDENCE.md#4-the-administrator-and-the-choice) |
 | Enter the new reality: credits, or the game ends | Yes | A, B: Yes · C: Unknown until run · C′: [I] | **A** credits, then play continues · Medium<br>**B** credits, then each player exits to the menu on their own · Medium<br>**C** vanilla's game-over dialog; one click ends it for both · Medium<br>**C′** C with the exit deferred · Medium · fallback. Spec recommends A + C; A alone if the second founder's arc should stay open | [§ Ending the game under Multiplayer](specs/TRANSCENDENCE.md#ending-the-game-under-multiplayer) |
 
@@ -312,7 +316,7 @@ The end of a founder's arc: Claim Yourself (a self-authored title), the final ri
 - End the campaign with credits only, credits then the menu, or one shared game-over.
 
 **What it cannot do**
-- Show the epithet on the colonist bar or the in-world map label.
+- Show the epithet on the colonist bar or the in-world map label on route A alone. The nickname (N) or a display patch (C) puts it there; the bar's name slot holds about a dozen characters.
 - Accept more than 27 characters through the vanilla dialog without overriding its cap.
 - Re-offer the choice. The Administrator appears once, with no standing re-offer at the altar.
 - Pause the other player's colony while a founder types or while credits roll under Multiplayer (T-53).
@@ -720,7 +724,7 @@ How the colony earns knowledge: **Practice** (resources consumed by trial and er
 
 ### Era
 
-**Possible?** Partly. Everything this spec owns is Yes: the era clock, the single advance, its clock under Async Time, and above-era content on the colony's own map. The arrival band is not answered here; its enforcement is [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22), still open.
+**Possible?** Yes: the era clock, the single advance, its clock under Async Time, above-era content on the colony's own map, and the arrival band as a hard rule by a gate of ours. [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) still owes its three verifications.
 **Multiplayer?** With work.
 - WTL's in-game "Change tech level" button is "a client-local write to synchronised state" and must be shut off (§ 6a).
 - The advance must stay on the synced research-completion path, or a rite's outcome. Any other caller needs a `[SyncMethod]`.
@@ -738,7 +742,9 @@ The era is the campaign's single axis, Neolithic → Ultra. It is World Tech Lev
 | Above-era structure is removed from the colony's map: ancient dangers, the mechanitor exostrider, road wrecks | Yes | Yes (spec); AE-4 With work (T-18) | **AE-1** scenario part per genstep: home-only for dangers and the exostrider, every map for wrecks · vanilla · XML · Easy<br>**AE-2** generator list edit (Medieval Overhaul ships the shape) · XML patch · Easy<br>**AE-3** home-only prevent on `Base_Player` · XML · Easy<br>**AE-4** WTL genstep filter · settings + XML · Easy · *not recommended*: not home-scoped, and it strips encounter maps (T-165)<br>Spec recommends AE-1 for dangers and the exostrider, AE-3 (ideally as AE-7) for wrecks | [§ Above-era content: Routes](specs/ERA.md#routes) |
 | Above-era events arrive in their own era (the mechanitor crash at Industrial) | Yes | Yes (spec); AE-5(b) With work (T-18) | **AE-5(a)** `AdvanceEra()` gives the crash quest at Industrial · C# · Medium. Spec recommends this if the story wants the mechanitor<br>**AE-5(b)** an authored incident with a WTL Industrial row · XML · Easy<br>**AE-6** the transponder refuses to decrypt before Industrial; the remains still stand · C# + XML · Medium<br>**AE-9** a vault uncovered on the living map at an advance · C# · Medium–Hard · *not recommended for debris*: wrecks appearing overnight read as a bug; [I] throughout | [AE-5](specs/ERA.md#ae-5--timed-crash), [AE-6](specs/ERA.md#ae-6--gated-decrypt), [AE-9](specs/ERA.md#ae-9--late-insertion-not-recommended-for-debris) |
 | Above-era content is replaced with something that fits | Yes | Yes (spec) | **AE-7** in place: era-fitting debris or an authored structure. Defenders need a genstep class of ours · vanilla / VEF KCSG + ours · XML; C# for defenders · Easy; Medium<br>**AE-8** replaced by a journey: an Archon site on a nearby tile, or the transponder repointed to one · vanilla quest machinery · XML (C# only for a custom site part) · Easy–Medium. Spec recommends it where the replacement should be a place | [AE-7](specs/ERA.md#ae-7--replace-in-place), [AE-8](specs/ERA.md#ae-8--replace-with-a-journey) |
-| The arrival band: nothing arrives above the player's era, and no faction is exempt (the Church is the Empire in place) | Open (#22) | Unknown (#22) | None in this spec. `requirements/ERA.md` lists four known Ignorance Is Bliss gaps. INTEGRATION's open claim decides whether ORBIT's `Empire → Undefined` exemption conflicts with "no exempt faction". Per INTEGRATION, it matters only while WTL's `Filter_Factions` is on, which ERA § 6b holds off | [requirements § Open questions](requirements/ERA.md#open-questions), [INTEGRATION](specs/INTEGRATION.md#open-capability-claims-under-the-build-map) |
+| The arrival band: nothing arrives that breaks the era's flavour from above it, factions and faction-less events alike; no floor; no faction exempt (the Church is the Empire in place) | Yes, by a gate of ours. Ignorance Is Bliss alone is weighting plus a veto, never a hard rule: its pre-set-faction path leaks, and quests, caravan meetings, orbital traders and quest-placed pawns pass it | With work: the band is read from the era clock, never a cache | **AB-1** Ignorance Is Bliss configured: bands raids, visitors and caravans when the game picks the faction; the Church no longer exempt · settings · Easy · *partial*<br>**AB-2** WTL rows: a hard ceiling on every storyteller incident and quest script, per def; no faction choice, no floor · XML · Medium<br>**AB-3** our own gate on five engine seams plus a quest walk: a hard veto on every faction arrival and an authored-breach flag · C# · Medium, the quest half near Hard. AB-3 and AB-2 compose; AB-3 needs IIB off, since IIB rewrites an authored breach | [§ The arrival band](specs/ERA.md#the-arrival-band) |
+| Nothing arrives by drop pod before Industrial, when the player gets pods | Yes. Drop raids, pod crashes and orbital trade are already gated at Industrial; quest rewards, quest pawns and siege supplies are not | With work | **DP-1** one patch on the pod funnel places goods at the map edge with no pod before Industrial · patch · Medium<br>**DP-2** the same seam, but a courier or pack animal carries the goods in (VEF Outposts is the donor) · C# · Medium, Hard if the courier must survive the trip · optional<br>**DP-3** pawn rewards and wanderer joiners walk in · patch · Easy–Medium<br>**DP-4** called aid walks in (`forQuickMilitaryAid` on the walk-in mode) · XML · Easy. Switching pods off is not a route: it loses the reward silently | [§ Delivery by drop pod](specs/ERA.md#delivery-by-drop-pod) |
+| Every faction is hand-authored, spawn pools included, so no in-band faction fields a stray above-era pawn | Open (#207) | Open (#207) | None yet. WTL's pawn and gear filters clamp every generated pawn to the world level, a weak backstop, not an authored pool | [requirements § The arrival band](requirements/ERA.md#the-arrival-band) |
 
 **What the story can do with it**
 - The advance is a beat the players perform. They finish the capstone, and optionally a rite they celebrate, or a build the capstone demands, fires it. A failed or cancelled rite advances nothing.
@@ -751,6 +757,7 @@ The era is the campaign's single axis, Neolithic → Ultra. It is World Tech Lev
 
 **What it cannot do**
 - The advance is one rung, one way: no skip, no retreat. The boundary log is append-only.
+- Hold the arrival band on Ignorance Is Bliss alone. Its quest and event tables are hardcoded, and a faction a quest pins leaks past it.
 - The home map is generated once, in the Neolithic. There, "author it when it appears" means removal, unless code writes into the living map (AE-9, [I]).
 - Under Async Time no clock is "the colony's time". Route A's world clock rises while the other player plays. Under route B, a day-keyed beat fires at different moments per colony. A tick stamped on one clock and read on another is T-175.
 - Switching on WTL's `Filter_Factions` is the one setting that breaks the world irrecoverably (T-07). It is frozen off.

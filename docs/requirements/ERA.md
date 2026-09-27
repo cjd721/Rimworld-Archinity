@@ -24,14 +24,14 @@ which at a boundary ([the faction grid](https://github.com/cjd721/Rimworld-Archi
 
 ## Meaning
 
-**The era is the world's floor and the player's ceiling.** Those are two different gates on
-one number, and both must hold.
+**The era is a ceiling on the player and a ceiling on the world.** Those are two different
+gates on one number, and both must hold.
 
 - **The ceiling** is on **acquisition** — what the colony may research, craft, buy and
   field. It is hard. The player cannot research into the next era before finishing this
   one.
-- **The floor** is on **arrival** — what the world sends at the colony. It is a **band**,
-  not a ceiling: the player's era or one below, never above.
+- **The arrival band** is on **arrival** — what the world sends at the colony. Nothing arrives
+  that breaks the era's flavour: never above the player's era. It has no lower bound.
 
 **Arrival and encounter are not the same act, and only arrival is gated.** Something that
 comes to the colony — a raid, a quest, a visitor, a trade caravan, a storyteller incident —
@@ -66,13 +66,21 @@ have earned what they carry out. Above-era settlements are rare and lethal.
   they have not earned is not shipped, however well it is dressed.
 ### The arrival band
 
-**Everything that arrives at the player is the player's era or one below. Never above.**
-This covers, without exception:
+**Nothing that arrives at the player may break the flavour of the player's era. Never above
+it.** The test is era flavour, not the faction: a mechanoid cluster or a crashed ship part in
+the Medieval era breaks it; an animal infestation in the Spacer era is an act of nature and does
+not. **There is no floor as a rule.** Content well below the era is allowed; "one below" was a
+comfort preference against being flooded with far-below content, and how much of it arrives is
+tuning, not a gate (Conrad, 2026-09-26). This covers, without exception:
 
 - hostile raids and friendly raids,
 - quests and the threats inside them,
 - visitors, travelers and trade caravans,
-- storyteller incidents.
+- storyteller incidents, whether or not a faction sends them.
+
+**Every faction in the game is hand-authored, spawn pools included.** What a faction's pawns
+can carry, and what kinds it can field, is written by us, so a faction inside the band cannot
+field a stray above-era pawn (Conrad, 2026-09-26).
 
 **No faction is above the band by virtue of being special, and a mechanism that exempts one
 by default is a defect.** The band is not a difficulty setting with a list of exceptions; it
@@ -215,13 +223,16 @@ knew advancing alongside them, some falling away, others they have never met ris
 
 ## Open questions
 
-- **The arrival band's enforcement** — [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22)
-  owns it. Four known gaps against the requirement above: Ignorance Is Bliss ships
-  `numTechsAhead 1`, so the band is *one above* as well as one below; `empireIsAlwaysEligible`
-  defaults true, and the Church is the Empire in place; quests have no general gate, only one
-  hardcoded defName, with the storyteller filter likewise a hardcoded list; and its band
-  computation is gated on client-local settings ahead of a `Rand` draw, with a static player
-  tech-level cache never reset on save load.
+- **The arrival band's enforcement** — answered at route depth:
+  [`docs/specs/ERA.md`](../specs/ERA.md) § *The arrival band*. Ignorance Is Bliss is weighting
+  plus a veto, never a hard rule; a hard rule is a gate of ours, with World Tech Level's rows for
+  events and quest scripts. Of the four questions it handed back, three are settled above: the
+  test is era flavour and binds faction-less events; there is no floor, so a faction left below
+  the era by an advance is allowed; and hand-authored spawn pools close pawn-level contamination.
+  **Delivery by drop pod — settled** (Conrad, 2026-09-26): pods are Industrial, when the player
+  gets them, so nothing arrives by pod before Industrial. Before then, goods may simply appear at
+  the map edge; a courier carrying them in is welcome but not required. Routes are in the spec
+  (§ *Delivery by drop pod*).
 - **A caravan already en route when its destination changes hands** — answered:
   [`TERRITORY.md`](../specs/TERRITORY.md) § *A caravan en route when its destination changes
   hands* ([#152](https://github.com/cjd721/Rimworld-Archinity/issues/152)); the gravship case in

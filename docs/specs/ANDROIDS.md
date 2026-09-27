@@ -1301,7 +1301,8 @@ Biotech all declare some) and other mods' factions — 20 `ParentName` declarati
 files in both corpus roots plus vanilla — and the Church (Royalty's `Empire`). Left alone, it gives outlander, pirate and
 Church populations awakened androids at 2% from game start. `docs/requirements/ERA.md` § *The
 arrival band* rules that out ([#128](https://github.com/cjd721/Rimworld-Archinity/issues/128)):
-*"Everything that arrives at the player is the player's era or one below. Never above."* No
+nothing that arrives may break the era's flavour by coming from above it, and every faction's spawn
+pool is hand-authored ([#207](https://github.com/cjd721/Rimworld-Archinity/issues/207)). No
 awakened android arrives before Ultra.
 
 **One route is removal: three operations and no C#.** It also removes them at Ultra. An era-scoped

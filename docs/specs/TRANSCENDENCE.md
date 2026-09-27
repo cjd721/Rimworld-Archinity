@@ -51,7 +51,7 @@ the only new state.
 | **State** | `CompFounderRecord` — one instance per founder, living on the `Archinity_FounderRecord` hediff. Plus `Pawn_StoryTracker.title`, a vanilla per-pawn string, as the display projection of the epithet. |
 | **Persistence** | `HediffWithComps.ExposeData` → `CompExposeData()` for the comp; `Scribe_Values.Look(ref title, "title")` in `Pawn_StoryTracker.ExposeData` for the display copy. A save that predates the feature has no hediff and no `title`; both read as "nothing claimed". **No migration code.** |
 | **Change** | The `RenamableLabel` setter (claim); the altar's rite completion (grant `VRE_Transcendent`); the Administrator dialog's terminal *Enter the new reality* option. *Stay* changes nothing beyond recording that the scene was seen. |
-| **Display** | `Pawn.LabelNoCount` renders `"Name, TitleShortCap"`, so the epithet is free on the **inspect-pane header** (`InspectPaneUtility.AdjustedLabelFor` → `Thing.LabelCap` → `LabelNoCount`) and in anything built from `LabelCap` / `LabelNoCountColored` [V]. It is **not** on the colonist bar and **not** on the in-world map label — both draw `LabelShortCap`, which carries no title [V]. Letters and tooltips are per-surface **[I]**. Plus the hediff row in the Health tab, the altar's refusal text, and the credits screen. |
+| **Display** | `Pawn.LabelNoCount` renders `"Name, TitleShortCap"`, so the epithet is free on the **inspect-pane header** (`InspectPaneUtility.AdjustedLabelFor` → `Thing.LabelCap` → `LabelNoCount`) and in anything built from `LabelCap` / `LabelNoCountColored` [V]. It is **not** on the colonist bar and **not** on the in-world map label — both draw `LabelShortCap`, which carries no title [V] — unless the nickname carries it or a display patch adds it (§ 5). Letters and tooltips are per-surface **[I]**. Plus the hediff row in the Health tab, the altar's refusal text, and the credits screen. |
 | **Cost** | ~185 lines of new C# in the assembly we already ship (`ArchinityAltar.dll`), and ~65 lines of XML. No new assembly, and no third-party reference — see *Persistence and multiplayer* for the one we would need only if the recommended design fails. |
 
 ### 1. The store — `CompFounderRecord`
@@ -289,7 +289,9 @@ game-over dialog — is § *Ending the game under Multiplayer*. `GameEnder` is n
 |---|---|---|
 | `"Aria, She Who Does Not Ask"` in the **inspect-pane header** | `InspectPaneUtility.AdjustedLabelFor` → `Thing.LabelCap` → `Pawn.LabelNoCount`, which appends `story.TitleShortCap` [V] | none |
 | Anywhere else built from `LabelCap` / `LabelNoCountColored` — including our own letter and dialog text, where we choose the accessor | the same call [V] | none |
-| **Not the colonist bar, and not the in-world map label** | `GenMapUI.DrawPawnLabel` → `GetPawnLabel` → `pawn.LabelShortCap`, and `Verse.Pawn.LabelShort` is `LabelPrefix + Name.ToStringShort` — **no title**. The bar's only `TooltipHandler.TipRegion` is over the status icons, not over the name [V] | n/a — not available at any price here |
+| A *Title:* row in the **Bio tab** | `CharacterCardUtility` draws `story.title` beneath the backstories whenever it is set [V] | none |
+| `[PAWN_title]` in any rule pack or keyed string of ours | `GrammarUtility.RulesForPawn` emits `PAWN_title` from `story.Title` [V] | none |
+| **Not the colonist bar, and not the in-world map label — on this route** | `GenMapUI.DrawPawnLabel` → `GetPawnLabel` → `pawn.LabelShortCap`, and `Verse.Pawn.LabelShort` is `LabelPrefix + Name.ToStringShort` — **no title**. The bar's only `TooltipHandler.TipRegion` is over the status icons, not over the name [V] | see *The bar and the map label* below |
 | Vanilla letters and tooltips generally | **[I], per surface.** Vanilla mixes `LabelShort`, `Name.ToStringShort` and `LabelCap`; only the `LabelCap` ones carry the epithet, and which is which has not been enumerated | none |
 | Health tab row, "Transcendent" | the `Archinity_FounderRecord` hediff, `CompLabelInBracketsExtra` | ~10 lines |
 | "X has not claimed a title" when the altar refuses | `Building_Altar.CanAcceptPawn` refusal string | ~5 lines |
@@ -302,6 +304,38 @@ bio tab's own Titles section via `royalty.MainTitle()`. They occupy different
 surfaces. Stripping the Church title at Claim Yourself is also possible: VFED's
 `JoinDeserters` strips Church titles ([`RELIGION.md`](RELIGION.md) § *The Schism — revealed, taking the Church's
 ground, allied for good* › *Route C — VFE Deserters as shipped*) [V]; the vanilla call it uses is [I].
+
+**Route A is vanilla's own player-typed title.** `story.title` is the *Title* field of the rename window
+(`PawnNamingUtility.NamePawnDialog` makes Nick and Title editable), and Multiplayer already syncs its setter
+(`SyncMethod.Register(typeof(Pawn_StoryTracker), "Title")`) [V]. The claim writes the same field; no title
+system is built.
+
+**R — a royal title awarded by the player's own faction.** Possible, and nothing breaks [V]:
+`Pawn_RoyaltyTracker.SetTitle` never checks the awarding faction; the player `FactionDef` has no
+`royalTitleTags`, so its ladder is an empty list, `GetNextTitle` is null (no promotion, no bestowing quest), and
+with `favorCost` 0 rewards, heirs and inheritance skip it. It sits beside the Church title, never over it (one
+title per faction). The typed text is the cost: the label belongs to the def (`RoyalTitle.Label =>
+def.GetLabelFor(pawn)`, non-virtual), so it is one def per founder with `label` rewritten at the claim and on
+every load from A's saved string · XML + C# · Medium. It shows as a Bio-tab chip "Label (0)" with an "awarded by
+{FACTION}" tooltip and in royal grammar — not on the bar. Side effects: a Renounce button; a gained-title letter
+unless suppressed; Dignified meditation focus unless `allowDignifiedMeditationFocus` is false; and if its
+seniority outranks the Church rank it becomes `MostSeniorTitle`, silently dropping that rank's food demand and
+alerts — kept below it, it never reaches the inspect line. **What it gets over A:** the claim looks like a rank
+beside the Church's. No mod on disk ships player-faction or custom-named royal titles.
+
+#### The bar and the map label
+
+The route above never reaches them, but two other routes do. Both read the saved string, so both sit on
+top of route A's store rather than replacing it.
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **N — the claim becomes the nickname** | `NameTriple.ToStringShort` returns the nick [V], so the title is on the bar and the map label with no patch. It is also the founder's name everywhere else: letters, messages, the social tab, tales, the log; the Bio header reads `First 'Claimed' Last`, and the old nickname is gone unless the record keeps it | vanilla `NameTriple`, written inside route A's synced setter | C# | Easy on top of A | Yes |
+| **C — a display-only postfix, founders only** | The title on the bar and the map label and nowhere else. On `GenMapUI.GetPawnLabel` (private static; the single funnel for the bar, `PawnUIOverlay`, the caravan tabs and `GetPawnLabelNameWidth`) it rewrites the name string; on `ColonistBarColonistDrawer.DrawColonist` (**C′**) it draws a second line or a portrait tooltip instead. Donor for the drawer: Vehicle Framework postfixes `DrawIcons` on the same class [V] | ours, Harmony | C# | Medium | Yes (draws in `OnGUI`, writes nothing) [I] |
+
+**The bar's name slot is about 70 px at scale 1** (`(ColonistBar.BaseSize 48 + 24) × scale − 2`) and
+`GenText.Truncate` cuts the rest to "…" [V] — roughly 12–14 characters [I]. A long claim fits the name slot
+on no route; only C′'s second line or tooltip shows it whole. The map label passes 9999 and shows it all.
 
 ### Cost
 
@@ -576,8 +610,7 @@ story.TitleShortCap`. Vanilla's own `Dialog_NamePawn` writes it.
 `LabelPrefix + Name.ToStringShort` and carries no title at all, and it is what
 `GenMapUI.GetPawnLabel` — and therefore the colonist bar and the in-world map label —
 draws [V]. The epithet's storage, persistence and *inspect-pane* display are free; its
-display on the bar is not available at all, at any price, without patching vanilla's
-label path.
+display on the bar needs the nickname or a display patch (§ 5, *The bar and the map label*).
 
 That is still the single largest saving in the design: the only thing we add is the record
 that the *rite* happened.
@@ -736,8 +769,8 @@ free colonists anywhere" it posts a *Game over* letter — and Multiplayer disab
 2. **Two clients.** Player A opens the claim dialog and types an epithet; **B then selects
    the founder and B's inspect-pane header must read `"Name, epithet"`**, and
    `Multiplayer > Desync info` must report no desync. (Do **not** test this on the
-   colonist bar — the bar draws `LabelShortCap` and will never show the epithet even on a
-   correct build.)
+   colonist bar — the bar draws `LabelShortCap` and will never show the epithet on route A
+   alone, even on a correct build.)
 3. **Two clients, and a reload.** Trigger the rite; confirm the Administrator
    `Dialog_NodeTree` appears on both clients with both options. **Save while the dialog is
    open and reload** — this is the only way the delegate allowlist is exercised, and a

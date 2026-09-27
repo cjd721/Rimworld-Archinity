@@ -1039,3 +1039,121 @@ appearing overnight read as a bug, not an age.
   `OrbitalScanner` giver shut* ([#180](https://github.com/cjd721/Rimworld-Archinity/issues/180)).
 - **Capability, unread [I]:** whether a `Base_Player` child or a modded player-settlement generator bypasses
   AE-3. Vanilla's two children (`BasePlayer_SecondArchonexusCycle`, `…Third…`) inherit it [V].
+
+---
+
+## The arrival band
+
+Written in the routes form of [`README.md`](README.md). Answers [`docs/requirements/ERA.md`](../requirements/ERA.md)
+§ *The arrival band*: everything that arrives at the player — raids hostile and friendly, quests and the threats
+inside them, visitors, travelers and trade caravans, storyteller incidents with or without a faction — never
+breaks the era's flavour by coming from above it. There is no floor. No faction is exempt by default, and only an
+authored beat may breach it. "Merely unlikely" does not satisfy it.
+Per the owner, Multiplayer players share one config folder, so a settings-driven route is not a divergence risk.
+
+### Verdict
+
+- **Possible? Yes, by a gate of our own. Ignorance Is Bliss (IIB) cannot become a hard rule by configuration.**
+  Settings close two of its four known gaps; its quest and event tables are hardcoded C# dictionaries no XML
+  extends, and its pre-set-faction path leaks in four ways no setting reaches (below). Closing those takes
+  patches on the same seams our own gate uses, at which point IIB adds nothing.
+- **Multiplayer? With work.** Every seam runs on the synced tick; the band must be read from the era clock
+  (saved state), never from a static cache.
+
+### Routes
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **AB-1** IIB configured | Raids, friendly raids, visitors, travelers and trade caravans banded when the **game chooses** the faction; the Church no longer exempt (`numTechsAhead 0`, `empireIsAlwaysEligible false`; a negative `numTechsBehind` means no floor). A veto plus weighting, *not a hard rule* | IIB | settings | Easy | Yes, with the cache call below |
+| **AB-2** WTL rows | A hard **ceiling** at the world era on every storyteller-fired incident and every quest script from any source, per `IncidentDef` / `QuestScriptDef` / `SitePartDef` row. Never chooses or refuses a faction; no floor. Unrowed defs pass silently, so the rows enumerate the whole corpus; `AlwaysAllowOffworld` off (T-166) | World Tech Level | XML | Medium | Yes |
+| **AB-3** Our own gate | A hard veto or substitution on **every** faction arrival, and an explicit authored-breach flag — a Glitterite beat is exempt by construction and nothing else is | ours, in `AdvanceEra()`'s assembly | C# (Harmony) | Medium; the quest-pawn half edges toward Hard | With work |
+
+AB-3 composes with AB-2 (factions from ours, events and quest scripts from WTL's rows). AB-1 alongside AB-3 is
+harmless on the veto path but **fights a breach** on the pre-set path, so AB-3 means IIB off or its
+`CanFireNowSub` postfix unpatched. **Selected: nothing.**
+
+### Why IIB is not a hard rule [V, `IgnoranceIsBliss.dll` 1.6]
+
+- **The static cache.** `IgnoranceBase.cachedTechLevel` is recomputed only when 0, on
+  `ResearchManager.FinishProject` and on settings write. It goes stale on a second load in one session and on an
+  advance not fired by research completion (the rite route). The `PlayerTechLevel` setter is public: one call
+  from `AdvanceEra()` and one on load closes it.
+- **Pre-set factions leak.** `CanFireNowSub`'s substitution assigns only when an in-band hostile faction exists
+  (fails open); `IncidentWorker.CanFireNow` returns `lastCanRunResult` within a tick, skipping the substitution;
+  16 non-debug caller files (`QuestPart_SurpriseReinforcement`, call-for-aid, `ScenPart_CreateIncident`, ritual
+  outcomes…) call `TryExecute` without `CanFireNow`; and the substitute is always hostile, so an out-of-band
+  visitor group can arrive as hostile "visitors" (`IncidentWorker_VisitorGroup` has no hostility check).
+- **Untouched arrivals.** `IncidentWorker_CaravanMeeting.TryFindFaction`,
+  `IncidentWorker_OrbitalTraderArrival.GetFaction`, and pawns placed by `QuestPart_PawnsArrive` /
+  `QuestPart_DropPods` with no incident. Its storyteller filter reaches five comps; its quest gate names one quest.
+- **It rewrites an authored breach.** No whitelist, and `parms.forced` does not bypass `CanFireNowSub`.
+- **Not a hole: WTL's `Empire → Undefined` row.** It writes WTL's own `TechLevelDatabase<FactionDef>`, not
+  `FactionDef.techLevel`, which IIB reads and which stays `Ultra`. `Undefined` passes IIB only for a `FactionDef`
+  with no `techLevel`; a sweep of 106 concrete faction defs across the corpus found none, so it is an authoring
+  rule: every faction we write declares `techLevel`. WTL's faction database is read by the roster, the
+  world-creation page, `Window_AddFactions` and `Patch_QuestNode_Root_WorkSite` — the last is the one reader
+  outside worldgen ([INTEGRATION](INTEGRATION.md)'s #22 row).
+
+### AB-3's seams [V, `Assembly-CSharp.dll` 1.6]
+
+| Where the faction is decided | Seam |
+|---|---|
+| Chosen by the game: hostile and friendly raids, visitors, travelers, trade caravans, the tribute collector | `IncidentWorker_PawnsArrive.FactionCanBeGroupSource` (virtual; every subclass calls `base`) |
+| Pinned by a caller (quest threats, call-for-aid, scenario, rituals, `SignalAction_Incident`), and faction-less events by def | `IncidentWorker.TryExecute` — public, non-virtual, the sole entry to `TryExecuteWorker` for all 25 caller files |
+| Paths that choose their own faction | `PawnGroupMakerUtility.TryGetRandomFactionForCombatPawnGroup` (caravan ambush, demand), `IncidentWorker_CaravanMeeting.TryFindFaction`, `IncidentWorker_OrbitalTraderArrival.GetFaction` |
+| Quest-placed pawns and askers | `QuestManager.Add` (WTL's seam), walking the quest's parts [I]. `Quest.InvolvedFactions` is not a detector: `QuestPart_Incident` does not override it. A refused quest inherits T-174 |
+
+No other mod on disk carries a tech-level arrival gate: `FactionInEligibleTechRange` occurs only in IIB, and Rim War,
+Factional War, RimPacts, VRE Archon, the VFE mods, Medieval Overhaul and VEF's storyteller half touch these seams
+without reading tech level [V, decompiled; [I] for 1.6-only additions]. WTL's pawn and gear filters clamp every
+generated pawn to the world level — a weak pawn-level backstop, and a downgrade of an authored Ultra breach unless
+its faction is in `FactionsExcluded` ([#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) § 2).
+
+### Delivery by drop pod
+
+Pods belong to the Industrial era, when the player gets them, so a pod before Industrial breaks the era's flavour
+whatever it carries (Conrad, 2026-09-26). **Possible? Yes: the ungated paths close with XML and one funnel patch**
+[V, `Assembly-CSharp.dll` 1.6 and both mod roots; Anomaly not on disk]. **Multiplayer? With work.**
+
+- **The funnel.** Every non-player pod lands through `DropPodUtility.MakeDropPodAt`, directly or via
+  `DropThingsNear` / `DropThingGroupsNear`, which already has a pod-less `instaDrop` branch. The pod def is chosen
+  per call (`info.sentTransporterDef`, then `faction.def.dropPodActive`, then `ActiveDropPod`). Only the player's own
+  launches (`CompLaunchable`, `CaravanShuttleUtility`) set `sentTransporterDef`, so a patch can exempt them.
+  Royalty shuttles are a separate path, Empire only.
+- **Already gated at Industrial.** The drop arrival modes carry `minTechLevel Industrial`, tested against the
+  arriving faction's tech (`PawnsArrivalModeWorker.CanUseWith`), so under the arrival band drop raids and drop
+  visitors come only from factions the player's era admits; WTL gates the resource and refugee pod crashes at
+  Industrial; orbital-trader purchases need a comms console, which is Industrial research.
+- **Ungated — pods before Industrial.** Every quest item reward (`Reward_Items.GenerateQuestParts` →
+  `QuestPart_DropPods`, no faction); pawn rewards on the pod side of `Reward_Pawn`'s `DropPod` / `WalkIn` flip; quest
+  pawns placed by `QuestPart_PawnsArrive` with a stored drop mode or by `QuestPart_DropPods` (about a dozen quest
+  roots: wanderer joins, hospitality refugees, shuttle-crash rescue…); siege supplies (no faction); and quick
+  military aid — no def on disk sets `forQuickMilitaryAid`, so `IncidentWorker_Raid.TryResolveRaidArriveMode`
+  hard-assigns a drop mode with no check. Calling aid needs comms, so that last one is Industrial in practice;
+  a royal permit or ability is Empire-only. Vanilla's ransom payout is the precedent for a per-tech switch:
+  `ChoiceLetter_RansomDemand` walks the hostage in below Industrial and pods it above.
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **DP-1** No pod before Industrial | One prefix on `MakeDropPodAt`: every non-player delivery — rewards, quest pawns, siege supplies — is placed at the map edge or trade spot with no skyfaller, the ransom payout's shape. Acceptable to the requirement | ours, Harmony | patch | Medium | With work |
+| **DP-2** A courier carries it in | Same seam, but a pawn or pack animal walks in from the edge, drops the goods and leaves. Donor: VEF Outposts' `Outposts.LordJob_Deliver`, whose `PackOrPods` mode already picks pack or pod by `TransportPod.IsFinished`. Optional flavour over DP-1 | ours, copying VEF | C# | Medium; Hard if the carrier must be the giver's pawn and survive what it meets | With work |
+| **DP-3** Pawn joiners walk in | `Reward_Pawn` forced to `WalkIn`; `QuestNode_Root_WandererJoin.AddSpawnPawnQuestParts` is virtual and already has a walk-in variant. DP-1 also catches these | vanilla + ours | patch | Easy–Medium | Yes |
+| **DP-4** Called aid walks in | `forQuickMilitaryAid` on `EdgeWalkIn` (and on the drop modes, so industrial allies still drop); the hard-coded pod fallback never fires [I] | vanilla | XML | Easy | Yes |
+
+**Not a route: switching pods off.** `giveToCaravan` on a home-map quest loses the reward silently
+(`QuestPart_GiveToCaravan.Notify_QuestSignalReceived` returns with no caravan), and removing reward quests removes
+the quests, not the pods. No mod on disk replaces pod delivery. **Multiplayer:** patch inside the funnel and never
+swap `Reward_Items`' part for a new type, because Multiplayer binds a quest's clock to the exact type
+`QuestPart_DropPods` (T-177); copy VEF's lord job, not its per-client delivery setting (T-18); and
+`Multiplayer.Client.ThingSpawnSetForbidden` exempts only contents of the exact `ActiveDropPod` def, so goods placed
+with no pod enter per-faction forbidden bookkeeping [I on the effect; a one-line build check].
+
+### Open questions
+
+- **Requirement, settled** ([`requirements/ERA.md`](../requirements/ERA.md), 2026-09-26): the test is era
+  flavour and binds faction-less events, so AB-2's rows carry equal weight with AB-3; there is no floor, so a
+  faction an advance leaves below the era is allowed; every faction and its spawn pools is hand-authored, which
+  closes pawn-level contamination such as ANDROIDS § 6's android chance. Delivery by drop pod is routed above
+  (*Delivery by drop pod*): pods are Industrial, and goods appearing at the map edge before then is acceptable.
+- **Build — [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):** where the breach flag lives,
+  substitution or refusal per category, the part walk's type list.

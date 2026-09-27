@@ -827,11 +827,31 @@ only.
 - **A captured or recruited caster's rank.** Capability: I1 strips generated casters in XML and
   I2 clamps rank on joining, so it can be kept or lost; with neither, it is kept.
 - **Psychic-rank titles** ([#31](https://github.com/cjd721/Rimworld-Archinity/issues/31) / [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
-  The requirement's *Psychic Rank* row does not make the ranks titles. Capability: they can
-  carry titles as a `RoyalTitleDef` ladder conferred by `Pawn_RoyaltyTracker.SetTitle`
-  (**T-28**), on a faction **other than the Church** — `titles` holds one title per (pawn,
-  faction), so a rung on the Church's ladder would silently overwrite the Church title
-  (`RELIGION.md` § *Outstanding decisions* › *Exaltation* 7).
+  The requirement's *Psychic Rank* row does not make the ranks titles. Capability: a rank can
+  carry a name by four routes. **XML stage labels on the psylink never reach its row**
+  (**T-213**): `Hediff_Level.Label` is `def.label + " (Level N)"` and reads no stage or comp
+  label, with or without VPE; VPE also deletes `PsychicAmplifier/stages`
+  (`1.6/Patches/RoyaltyPatch.xml`) and builds its own invisible `Hediff_PsycastAbilities` stage in
+  code [V].
+
+  | Route | Where the name is seen | Carrier | Kind | Weight | MP |
+  |---|---|---|---|---|---|
+  | **A** name-only stages re-added to `PsychicAmplifier` after VPE's removal, the name in `extraTooltip` | The health-tab hover only; the row still reads "Psylink (level 3)". Stages carry no stat factors (VPE's `RecacheCurStage` supplies them) | vanilla `Hediff.GetTooltip` + our patch | XML | Easy | Yes |
+  | **B** relabel the row: a `Hediff_Psylink` subclass as `hediffClass`, or a postfix on `Hediff_Level.Label` | The row reads "Psylink (Adept)". Read from the current level on every draw, so no rank writer can make it drift | ours, names in XML | C# | Medium | Yes (display only) |
+  | **E** a `RoyalTitleDef` ladder on a faction **other than the Church**, set by `SetTitle` on rank change | A real title: its own Bio-tab entry, a gain letter, "*Adept of <faction>*" in the inspect pane | vanilla Royalty + ours + a second world faction | C# + XML | Medium | Yes [I] |
+  | **F** write the rank name into `Pawn_StoryTracker.title` on rank change | An epithet after the name wherever `LabelCap` is drawn ("Aria, Adept") and the Bio tab's *Title:* row — `TRANSCENDENCE.md`'s surface | vanilla `Pawn.LabelNoCount` + ours | C# | Medium | Yes [I] |
+
+  E and F store the name, so they need a trigger on rank change; under VPE the funnel is
+  `Hediff_PsycastAbilities.ChangeLevel`, route E's chokepoint above. A and B read the level and need
+  none. E's costs [V]: `Pawn_RoyaltyTracker.FindFactionTitleIndex` matches on faction alone, so a
+  Church rung would overwrite the Church title (`RELIGION.md` § *Outstanding decisions* ›
+  *Exaltation* 7); `favorCost` 0 keeps the rungs out of promotion, heirs and rewards (T-28);
+  the inspect pane shows only `MostSeniorTitle`, which also drives food, alerts, speeches and quest
+  filters, so the rungs must rank below every Church title and the name leaves the inspect pane
+  while a Church title is held; the Bio tab's renounce button lists it; `allowDignifiedMeditationFocus`
+  must be false (it opens a focus, against F1) and `maxPsylinkLevel` 0 (R9). F's cost: on a founder
+  it is the same string as the claimed title, and the rename dialog makes `Title` editable. The
+  self-authored final rung can live only on F's surface — a title def has no per-pawn text.
 - **Build, [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):**
   - whether VPE, VPE-Puppeteer, Prepare Carefully, Worksites Expanded and More Archotech
     Garbage ship;

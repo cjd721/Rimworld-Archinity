@@ -574,11 +574,36 @@ The ticket asked for these to be verified. They are not merely expressible — t
   `p.IsPrisonerOfColony || p.IsSlaveOfColony`, derived from pawn status with no gizmo [V].
   **But this is coerced-versus-not, not willing-versus-coerced.** A free colonist who
   believes nothing is treated identically to a devout volunteer, and `docs/COSMOLOGY.md`
-  § *Devotion* makes that difference load-bearing. The routes are
+  § *Devotion* makes that difference load-bearing. **Mechanically, willing means believing
+  enough:** a giver is admitted only at or above a certainty threshold (the requirement's example
+  is 85 %), and "willing" is the fiction for it. The capability is
   [#49](https://github.com/cjd721/Rimworld-Archinity/issues/49)'s resolution: a rite can require the giver's
   faith and certainty, coerced Life stays separate, and a faction can send aligned pawns
-  (`requirements/ALTAR.md` § *Conversion and certainty*). Who counts as willing, the guards,
-  cooldowns and how volunteers arrive are [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
+  (`requirements/ALTAR.md` § *Conversion and certainty*).
+
+  **Nothing ships it, and XML alone cannot gate it** [V, vanilla 1.6 and both mod roots]. Vanilla's
+  sacrifice and execution take `RitualRolePrisoner` (`p.IsPrisonerOfColony`); the gladiator duel takes
+  prisoners and slaves. No `RitualRole` field or vanilla subclass reads certainty
+  (`RitualRoleColonist.usedStat` only sorts), and no mod gates a role on it. VIE Memes and Structures'
+  Ceremonial Suicide kills a free colonist, but `RitualRole_Suicidal` admits from a defeat-precept list,
+  has no threshold and throws off-map, so it cannot be reused. **The gate is one class of ours, ~20
+  lines:** a `RitualRoleColonist` subclass overriding `AppliesToPawn(…)` to call base, then require the
+  ritual's ideoligion and `p.ideo.Certainty >= minCertainty`, the threshold an XML field. Roles are rebuilt
+  from the def on load, so it needs no saving code. (Overriding `RitualBehaviorWorker.PawnCanFillRole`
+  instead is worse: the no-candidates check before the dialog ignores it.) The kill already exists:
+
+  | Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+  |---|---|---|---|---|---|
+  | **A — the priest sacrifices the believer** | The officiant kills the devout colonist mid-rite, as vanilla's sacrifice does a prisoner | vanilla `Sacrifice` duty → `JobDriver_Sacrifice` (it never checks prisoner status), aimed at our role by `RitualStage_InteractWithRole`'s `targetId`, plus the role class | XML + one class | Easy | Yes: Multiplayer syncs the begin-ritual dialog, start, role assignment and cancel, and keys roles by id, not class [V] |
+  | **B — the believer gives their own life** | The colonist dies by their own hand as the rite completes; no executioner | VIE Memes and Structures' `RitualOutcomeEffectWorker_CeremonialSuicide` by XML (our role id `suicide`), or a ~30-line copy, plus the role class | XML + one class | Easy | Yes, as A [I]; VIE Memes is on record for an unseeded `new Random()` in another outcome worker (`ViolentConversion`, PARTS-BIN), so confirm `CeremonialSuicide` draws only vanilla's `GetOutcome` before taking B |
+
+  A's cost: vanilla records an executed colonist and the officiant is the killer, and which precepts react
+  is [I]. B's cost: it depends on VIE Memes unless copied, and a cancelled rite kills no one [I]. The dialog
+  re-checks the role every frame while paused [V]; after the rite starts nothing re-checks, and cancelling on
+  a mid-rite drop is a `RitualCancellationTrigger` subclass copied from `RitualCancellationTrigger_CannotScarify`
+  [V]. Both routes compose verified parts; that they work together is [I] until built. Banking the death as
+  Devotion apart from Life, whether a mid-rite drop cancels, and the threshold itself are
+  [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)'s.
 - **Donor dies, recipient survives.** `Finish()` branches on `draining`:
   `DrainAndKill(occupant)` → `victim.Kill(null)` and places the corpse, versus
   `PerformRite(recipient)` → `EjectRecipient` [V]. Confirmed, with the caveat in *The final
