@@ -467,6 +467,24 @@ progression grid, and not a road.
 Multiplayer, routes, what the story can do with it, what it cannot. The capability
 map's deliverable, and what a narrative session reads first.
 
+**Need**:
+Something the campaign must deliver to the player, stated in the story's terms — _the
+colony is worshipped as gods_. Needs form a **need tree** whose root is the campaign's
+founding principle; a capability is tagged to every need it serves, and a route is selected
+by weighing it against those needs. `docs/agents/need-sessions.md`
+_Avoid_: goal, pillar, requirement (a requirement is a system's rule, not the story's ask)
+
+**Owned** · **Shared**:
+A capability is **owned** when every need tagged to it falls inside one need session, which
+then selects its route. It is **shared** when its needs fall in several; each suggests a
+route, and the conflict pass selects.
+
+**Open** (capability):
+A capability with no selected route because the story that would decide it is unwritten. It
+records its surviving candidates, what is known, and the story question or act that should
+reopen it. An honest gap, not a placeholder choice; the acts close it.
+_Avoid_: provisional, tentative (no route is chosen to stand in)
+
 **Progression grid**:
 A domain charted as rows against era columns, each cell naming what is available
 at that point, its prerequisites and its acquisition route. Lives in
