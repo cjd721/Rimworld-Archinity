@@ -704,6 +704,62 @@ callers from their 1.6 assemblies. [V].*
 
 ---
 
+### T-214 — A titled quest asker's kind is drawn from the whole database, not the faction
+
+`QuestNode_GetPawn.GeneratePawn`, and its twin `QuestGen_Pawns.GeneratePawn`, handle
+`mustHaveRoyalTitleInCurrentFaction` in three steps. First they drop the faction's own `RandomPawnKind`. Then they
+take any `PawnKindDef` **in the database** whose `titleRequired` is the chosen title, and failing that any whose
+`titleSelectOne` contains it. A failed `TryRandomElement` writes null, so if both fail the node falls back to **a
+random humanlike kind from the whole database**. The pawn is then generated for the faction. Any mod's kind carrying
+a Church title, or any humanlike kind at all, can become that faction's asker, with that kind's gear and xenotypes.
+Nothing logs. A factionless request (`mustHaveNoFaction`) takes the same database-wide fallback.
+
+**Fix:** make every `PawnKindDef` that names a faction's title one of that faction's kinds, or prefix the node.
+
+*[#207](https://github.com/cjd721/Rimworld-Archinity/issues/207), `docs/specs/ERA.md` § *Hand-authored factions and
+spawn pools*. `RimWorld.QuestGen.QuestNode_GetPawn.GeneratePawn`, `RimWorld.QuestGen.QuestGen_Pawns.GeneratePawn`
+(`Assembly-CSharp.dll` 1.6.4871). [V].*
+
+---
+
+### T-215 — World Tech Level's xenotype filter ignores `FactionsExcluded`
+
+`Patch_PawnGenerator.XenotypesAvailableFor_Postfix` reads its `factionDef` parameter to find the filter level.
+Vanilla's generation caller, `PawnGenerator.GetXenotypeForGeneratedPawn`, calls
+`XenotypesAvailableFor(kind, null, request.Faction)`, so `factionDef` is null. `CurrentFilterLevel(null)` then
+returns the world level. **A faction in `FactionsExcluded` keeps its above-era kinds and gear**, because those
+filters read `request.Faction` and `pawn.Faction`, **but loses every xenotype WTL rates above the world**. Those
+pawns are drawn from what remains, down to Baseliner. An authored Ultra breach loses its xenotype, and nothing
+says so.
+
+**Fix:** do not rely on `FactionsExcluded` for a breach faction's xenotypes. Force the xenotype in the request, or
+gate the filter by faction ourselves.
+
+*[#207](https://github.com/cjd721/Rimworld-Archinity/issues/207). `Verse.PawnGenerator.GetXenotypeForGeneratedPawn`
+(`Assembly-CSharp.dll` 1.6.4871); `WorldTechLevel.Patch_PawnGenerator.XenotypesAvailableFor_Postfix` and
+`TechLevelUtility.CurrentFilterLevel(FactionDef)` (`3414187030/1.6/Lunar/Components/WorldTechLevel.dll`). [V]; which
+xenotypes WTL rates above a given era is [I].*
+
+---
+
+### T-216 — The work-site quest creates a faction from a def kept off the roster
+
+`QuestNode_Root_WorkSite.GenerateSite` (Ideology) looks for an existing usable faction first. Failing that, it takes
+`DefDatabase<FactionDef>.AllDefsListForReading.Where(FactionDefUseable).RandomElement()`, meaning any humanlike def
+with a `Settlement` group maker and the site's worker group kind. It generates a hidden, temporary faction from that
+def. `maxConfigurableAtWorldCreation 0` does not stop it, and `canGenerateQuestSites` is checked only for existing
+factions. With World Tech Level's `Filter_Factions` on, `Patch_QuestNode_Root_WorkSite` narrows the draw to defs at
+or below the world level. That is still any such def, rostered or not. A faction you removed from the world appears
+as a work-site owner.
+
+**Fix:** strip those group makers from every def kept off the roster, or make the def ours.
+
+*[#207](https://github.com/cjd721/Rimworld-Archinity/issues/207), `docs/specs/ERA.md` § *Hand-authored factions and
+spawn pools*. `RimWorld.QuestGen.QuestNode_Root_WorkSite` (`Assembly-CSharp.dll` 1.6.4871);
+`WorldTechLevel.Patch_QuestNode_Root_WorkSite`. [V].*
+
+---
+
 ## Holdings, outposts and world objects changing hands
 
 ### T-140 — Per-settlement state across an ownership change: `SetFaction` carries all of it, and destroy-and-recreate loses all of it

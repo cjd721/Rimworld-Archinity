@@ -56,7 +56,7 @@ below. Until one closes, write no beat that depends on it.
 | [Androids](#androids) | Yes | Yes (spec), conditional on MP Compat's entry | — |
 | [Research](#research) | Yes | Yes | — |
 | **World and space** | | | |
-| [Era](#era) | Yes; the arrival band holds only by a gate of ours, not by Ignorance Is Bliss alone | With work | #207 |
+| [Era](#era) | Yes; the arrival band holds only by a gate of ours, not by Ignorance Is Bliss alone | With work | — |
 | [Charting](#charting) | Yes | With work | — |
 | [World infrastructure](#world-infrastructure) | Yes; NPC vehicles only from Industrial | With work | — |
 | [Orbit](#orbit) | Partly: closing orbit rests on our switches; [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) is open | Yes (spec), conditional | — |
@@ -73,9 +73,8 @@ below. Until one closes, write no beat that depends on it.
 Requirement clauses that no spec answers yet, each on its own ticket. When a ticket closes, its
 answer lands in the named spec, and its line here and on its card is replaced by that answer.
 
-- **Era** · [#207](https://github.com/cjd721/Rimworld-Archinity/issues/207) Every faction hand-authored,
-  spawn pools included: can every faction, ours or a mod's, be closed against pawn kinds, gear and
-  xenotypes we did not write? (`requirements/ERA.md`, 2026-09-26.)
+None. The last, [#207](https://github.com/cjd721/Rimworld-Archinity/issues/207) Every faction
+hand-authored, spawn pools included, was answered on 2026-09-28 and the [Era](#era) card carries it.
 
 Nine earlier questions (#92 reopened, #190–#197) were answered on 2026-09-23, and each card below carries
 its answer. A demand's "protected route" was reworded to an escort or a threat
@@ -724,7 +723,7 @@ How the colony earns knowledge: **Practice** (resources consumed by trial and er
 
 ### Era
 
-**Possible?** Yes: the era clock, the single advance, its clock under Async Time, above-era content on the colony's own map, and the arrival band as a hard rule by a gate of ours. [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) still owes its three verifications.
+**Possible?** Yes: the era clock, the single advance, its clock under Async Time, above-era content on the colony's own map, the arrival band as a hard rule by a gate of ours, and every faction's spawn pool written by us. [#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) still owes its three verifications.
 **Multiplayer?** With work.
 - WTL's in-game "Change tech level" button is "a client-local write to synchronised state" and must be shut off (§ 6a).
 - The advance must stay on the synced research-completion path, or a rite's outcome. Any other caller needs a `[SyncMethod]`.
@@ -744,7 +743,7 @@ The era is the campaign's single axis, Neolithic → Ultra. It is World Tech Lev
 | Above-era content is replaced with something that fits | Yes | Yes (spec) | **AE-7** in place: era-fitting debris or an authored structure. Defenders need a genstep class of ours · vanilla / VEF KCSG + ours · XML; C# for defenders · Easy; Medium<br>**AE-8** replaced by a journey: an Archon site on a nearby tile, or the transponder repointed to one · vanilla quest machinery · XML (C# only for a custom site part) · Easy–Medium. Spec recommends it where the replacement should be a place | [AE-7](specs/ERA.md#ae-7--replace-in-place), [AE-8](specs/ERA.md#ae-8--replace-with-a-journey) |
 | The arrival band: nothing arrives that breaks the era's flavour from above it, factions and faction-less events alike; no floor; no faction exempt (the Church is the Empire in place) | Yes, by a gate of ours. Ignorance Is Bliss alone is weighting plus a veto, never a hard rule: its pre-set-faction path leaks, and quests, caravan meetings, orbital traders and quest-placed pawns pass it | With work: the band is read from the era clock, never a cache | **AB-1** Ignorance Is Bliss configured: bands raids, visitors and caravans when the game picks the faction; the Church no longer exempt · settings · Easy · *partial*<br>**AB-2** WTL rows: a hard ceiling on every storyteller incident and quest script, per def; no faction choice, no floor · XML · Medium<br>**AB-3** our own gate on five engine seams plus a quest walk: a hard veto on every faction arrival and an authored-breach flag · C# · Medium, the quest half near Hard. AB-3 and AB-2 compose; AB-3 needs IIB off, since IIB rewrites an authored breach | [§ The arrival band](specs/ERA.md#the-arrival-band) |
 | Nothing arrives by drop pod before Industrial, when the player gets pods | Yes. Drop raids, pod crashes and orbital trade are already gated at Industrial; quest rewards, quest pawns and siege supplies are not | With work | **DP-1** one patch on the pod funnel places goods at the map edge with no pod before Industrial · patch · Medium<br>**DP-2** the same seam, but a courier or pack animal carries the goods in (VEF Outposts is the donor) · C# · Medium, Hard if the courier must survive the trip · optional<br>**DP-3** pawn rewards and wanderer joiners walk in · patch · Easy–Medium<br>**DP-4** called aid walks in (`forQuickMilitaryAid` on the walk-in mode) · XML · Easy. Switching pods off is not a route: it loses the reward silently | [§ Delivery by drop pod](specs/ERA.md#delivery-by-drop-pod) |
-| Every faction is hand-authored, spawn pools included, so no in-band faction fields a stray above-era pawn | Open (#207) | Open (#207) | None yet. WTL's pawn and gear filters clamp every generated pawn to the world level, a weak backstop, not an authored pool | [requirements § The arrival band](requirements/ERA.md#the-arrival-band) |
+| Every faction is hand-authored, spawn pools included, so no in-band faction fields a stray above-era pawn | Yes, but not by writing `FactionDef`s alone: gear is matched by tag against the whole database, some kinds are chosen outside any faction, and a few mods add to finished pawns in C# | Yes | **HF-1** every faction def is ours: the roster, plus the defs vanilla and mods create mid-game, overwritten in place · XML · Medium<br>**HF-2** closed kinds: our kinds with a private tag vocabulary, explicit xenotypes, no stray titles · XML · Medium–Hard, by volume<br>**HF-3** the kinds C# and quests name directly, rewritten as ours · XML · Medium<br>**HF-4** one gate at `PawnGenerator.GeneratePawn`, the only route closed against C# injectors and world-pawn redress · C# · Medium<br>**HF-5** World Tech Level's clamp: a tech ceiling, not an authored pool; its xenotype filter ignores `FactionsExcluded` (T-215) · settings · Easy · backstop | [§ Hand-authored factions and spawn pools](specs/ERA.md#hand-authored-factions-and-spawn-pools) |
 
 **What the story can do with it**
 - The advance is a beat the players perform. They finish the capstone, and optionally a rite they celebrate, or a build the capstone demands, fires it. A failed or cancelled rite advances nothing.
@@ -758,6 +757,8 @@ The era is the campaign's single axis, Neolithic → Ultra. It is World Tech Lev
 **What it cannot do**
 - The advance is one rung, one way: no skip, no retreat. The boundary log is append-only.
 - Hold the arrival band on Ignorance Is Bliss alone. Its quest and event tables are hardcoded, and a faction a quest pins leaks past it.
+- Keep a faction off the world by leaving it off the roster: the work-site quest can create any usable def (T-216), and a titled quest asker's kind comes from the whole database (T-214). Factionless quest pawns are reached only by HF-4 or HF-5.
+- Spare an authored Ultra breach from World Tech Level's xenotype filter with `FactionsExcluded` (T-215).
 - The home map is generated once, in the Neolithic. There, "author it when it appears" means removal, unless code writes into the living map (AE-9, [I]).
 - Under Async Time no clock is "the colony's time". Route A's world clock rises while the other player plays. Under route B, a day-keyed beat fires at different moments per colony. A tick stamped on one clock and read on another is T-175.
 - Switching on WTL's `Filter_Factions` is the one setting that breaks the world irrecoverably (T-07). It is frozen off.
@@ -766,7 +767,7 @@ The era is the campaign's single axis, Neolithic → Ultra. It is World Tech Lev
 - The world's changes at the advance are owned elsewhere: which factions swap, shrink, vanish or appear is #34, with the mechanism in `engine/factions-and-worldgen.md`. The historian letter and changelog are authored flavour; the ERA spec does not mention them.
 - None of it is built. Every mechanism is [V]; that they compose is [I] until built and loaded twice.
 
-**Spec and tickets:** [`specs/ERA.md`](specs/ERA.md) · #109 era clock, #185 which clock under Async Time, #153 above-era home content, #113 capstone as trigger, #7 mechanism choice · open: #22 era-gate claims
+**Spec and tickets:** [`specs/ERA.md`](specs/ERA.md) · #109 era clock, #185 which clock under Async Time, #153 above-era home content, #207 hand-authored factions and pools, #113 capstone as trigger, #7 mechanism choice · open: #22 era-gate claims
 
 ---
 

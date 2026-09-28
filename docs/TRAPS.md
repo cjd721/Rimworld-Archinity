@@ -123,6 +123,9 @@ Cite `T-14`, never a line number. IDs are stable and never reused.
 | T-208 | The quest tab draws `Max(challengeRating, 1)` — an unrated quest shows one star, identical to a declared 1; VEF's contracts window shows none |
 | T-209 | `QuestPart_SubquestGenerator` counts every successful child, whoever parented it — a subplot beat nested under the Chronicle's parent advances its cursor |
 | T-210 | A finished sub-quest leaves its parent in the quest list — it drops to the Historical tab, flat; only the parent's detail pane still lists it |
+| T-214 | A titled quest asker's kind is drawn from every `PawnKindDef` in the database, falling back to any humanlike kind — not from the faction's pool |
+| T-215 | World Tech Level's xenotype filter ignores `FactionsExcluded` — vanilla passes it no faction def, so an exempt faction keeps above-era kinds and gear but loses its xenotypes |
+| T-216 | `QuestNode_Root_WorkSite` falls back to creating a faction from any usable `FactionDef` in the database — a def kept off the roster still reaches the world |
 
 ## Multiplayer and determinism — [`docs/traps/multiplayer.md`](traps/multiplayer.md)
 
@@ -271,7 +274,7 @@ read whole. **All five are now over that line**, counted 2026-09-23 after the ba
 #190–#197 and #92 (T-187–T-212): `world-creation.md` (76), `content-and-buildings.md` (47),
 `multiplayer.md` (35), `defs-and-patching.md` (23) and `worldgen-layouts.md` (25). T-194,
 T-195, T-201, T-203, T-204 and T-207 were allocated to that batch and are retired unused; the
-next free ID is T-214.
+next free ID is T-217.
 
 **The split the shape now asks for is an incidents-and-quests group, and this batch
 sharpened the case rather than changing it.** None of the five names the subject, so

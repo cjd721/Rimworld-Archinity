@@ -42,9 +42,14 @@ below.
 T-07 is about the **def roster**. It does not mean a faction instance cannot appear mid-game.
 Vanilla creates them routinely and cleans them up itself. Verified against 1.6.4871.
 
-- **Three quest roots create one each.** `QuestNode_Root_Beggars`, `QuestNode_Root_Bossgroup` and
-  `QuestNode_Root_Hospitality_Refugee` each call `FactionGenerator.NewGeneratedFactionWithRelations`,
-  set `faction.temporary = true` and call `Find.FactionManager.Add` [V].
+- **Eight quest roots create one each.** `QuestNode_Root_Beggars`, `_Bossgroup`, `_Hospitality_Refugee`,
+  `_Hack_WorshippedTerminal`, `_SanguophageMeetingHost`, `_SanguophageShip`, `_ReliquaryPilgrims` and `_WorkSite`
+  each call `FactionGenerator.NewGeneratedFactionWithRelations`, set `faction.temporary = true` and call
+  `Find.FactionManager.Add` [V]. All but `_WorkSite` use a fixed `DefOf` def. `_WorkSite` falls back to any usable
+  def in the database (`docs/TRAPS.md` **T-216**). *Corrected on
+  [#207](https://github.com/cjd721/Rimworld-Archinity/issues/207): this entry said three. Re-verified by a
+  `NewGeneratedFaction` sweep of the full 1.6.4871 decompile.* `QuestPart_InnerFactionFight` creates one too, but
+  nothing in `Assembly-CSharp.dll` or on either mod root calls it [V].
 - **Only temporary factions can be removed.** `FactionManager.Remove` logs an error for any other
   faction [V]. Removal is queued (`QueueForRemoval`) from `Notify_QuestCleanedUp`,
   `Notify_PawnKilled`, `Notify_PawnLeftMap`, `Notify_PawnLeftFaction` and
@@ -589,6 +594,19 @@ faction. The only Starjacks on the planet come from Odyssey's own Traders Guild
 
 `Archinity_ArchonianSanguophage` sets `canGenerateAsCombatant: false` and
 `factionlessGenerationWeight: 0` so it can never spawn on anyone but the player.
+
+**A faction def does not close its pawns' pool** [V, `Assembly-CSharp.dll` 1.6.4871]:
+- **Gear is matched by tag against every `ThingDef` in the database**, with no tech test for weapons
+  (`PawnWeaponGenerator.TryGenerateWeaponFor`, `PawnApparelGenerator.CanUsePair`,
+  `PawnTechHediffsGenerator.GenerateTechHediffsFor`). A kind with empty `apparelTags` takes any apparel.
+- **The free warmth, toxic and vacuum layers bypass the kind's tags.** The kind flags `apparelIgnoreSeasons` and
+  `apparelIgnorePollution` switch off the first two. Vacuum has no kind flag.
+- **Two more sources dress a pawn.** A faith's desired apparel is added after gear (`PreceptComp_Apparel_Desired`).
+  A kind with a title, in a titleless faction, takes a Church title and a psylink.
+- **World-pawn redress keeps genes and implants.**
+
+Routes and the mods that add to other factions' pools: `docs/specs/ERA.md` § *Hand-authored factions and spawn
+pools* ([#207](https://github.com/cjd721/Rimworld-Archinity/issues/207)).
 
 ---
 

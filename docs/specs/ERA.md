@@ -1108,6 +1108,9 @@ Factional War, RimPacts, VRE Archon, the VFE mods, Medieval Overhaul and VEF's s
 without reading tech level [V, decompiled; [I] for 1.6-only additions]. WTL's pawn and gear filters clamp every
 generated pawn to the world level — a weak pawn-level backstop, and a downgrade of an authored Ultra breach unless
 its faction is in `FactionsExcluded` ([#22](https://github.com/cjd721/Rimworld-Archinity/issues/22) § 2).
+*Corrected on [#207](https://github.com/cjd721/Rimworld-Archinity/issues/207):* the exemption holds for kinds and
+gear but not xenotypes, whose filter never sees the faction (**T-215**; re-verified in both assemblies, see
+*Hand-authored factions and spawn pools*).
 
 ### Delivery by drop pod
 
@@ -1148,6 +1151,126 @@ swap `Reward_Items`' part for a new type, because Multiplayer binds a quest's cl
 `Multiplayer.Client.ThingSpawnSetForbidden` exempts only contents of the exact `ActiveDropPod` def, so goods placed
 with no pod enter per-faction forbidden bookkeeping [I on the effect; a one-line build check].
 
+### Hand-authored factions and spawn pools
+
+Answers [#207](https://github.com/cjd721/Rimworld-Archinity/issues/207): every faction in the game is written by
+us, spawn pools included, so no faction, ours or a mod's, can field a pawn kind, gear or xenotype we did not write.
+**READ.** [V, `Assembly-CSharp.dll` 1.6.4871 and the 1.6 assemblies named below; both mod roots.]
+
+**Possible? Yes, for every faction the game can create, but not by writing `FactionDef`s alone.** A faction def
+owns its group makers, its member and leader kinds and its `xenotypeSet`. It does not own what those kinds carry.
+Gear is drawn by tag against every `ThingDef` in the database, some kinds are chosen outside any faction, and a few
+mods add to a finished pawn in C#. XML closes the first two if we own the tag vocabulary and every kind a faction
+can reach. Only a check at `PawnGenerator.GeneratePawn` closes the third.
+**Multiplayer? Yes.** The XML is identical on both clients, and the check runs inside generation, which already
+runs in synced context [I].
+
+| Route | What it gets us | Carrier | Kind | Weight | Multiplayer |
+|---|---|---|---|---|---|
+| **HF-1** Every faction def is ours | The worldgen roster is our defs alone (`maxConfigurableAtWorldCreation 0` on every other configurable def; mind **T-10**). Every def the engine or a mod creates mid-game is **overwritten in place**, not removed: the `DefOf` factions vanilla instantiates by name, and every def the work-site fallback can reach (**T-216**). Fixes *which kinds* a faction lists | ours | XML | Medium: 106 concrete defs, most needing a flag, the `DefOf` set a full rewrite | Yes |
+| **HF-2** Closed kinds | Every `PawnKindDef` a faction can reach is ours, with a private tag vocabulary (`weaponTags`, `apparelTags`, `techHediffsTags`), non-empty `apparelTags`, `apparelIgnoreSeasons` and `apparelIgnorePollution`, an explicit `xenotypeSet`, and no title fields unless meant. Our faiths set `disallowedPrecepts`, or are fixed, so no apparel precept dresses members. A mod item joins a pool only if it carries our tag. Fixes *what they carry* and *which xenotypes*, on the def path | ours | XML | Medium–Hard, by volume | Yes |
+| **HF-3** Kinds chosen outside the faction | The vanilla kinds C# names directly (`PawnKindDefOf.SpaceRefugee`, `Refugee`, `Slave`, `Drifter`, `Salvager_Elite`, `Sanguophage`, `Mechanitor_Basic`, `AncientSoldier`…) and the quest and incident XML `kindDef`s rewritten as HF-2 kinds; no kind outside a faction carries that faction's title (**T-214**) | ours | XML | Medium; the list of C# sites is [I] for completeness | Yes |
+| **HF-4** A gate at the funnel | One postfix on `PawnGenerator.GeneratePawn(PawnGenerationRequest)`, the one public entry for new and redressed pawns. It checks kind, xenotype, genes, apparel, equipment, inventory and implants against the faction's written list, then strips, swaps or regenerates. **The only route closed against C# injectors and world-pawn redress** | ours, Harmony | C# | Medium | Yes [I] |
+| **HF-5** World Tech Level's clamp | A tech-level ceiling at the world era on kinds, gear, implants, traits, backstories, xenotypes and ideo apparel. Not authored: it meets *"no stray above-era pawn"*, not *"written by us"*. Its xenotype filter ignores `FactionsExcluded` (**T-215**) | World Tech Level | settings | Easy | Yes, one shared config |
+
+HF-1 to HF-3 are the requirement as written. HF-4 is what makes the pool closed rather than closed by inventory.
+HF-5 is a backstop, not a substitute. **Selected: nothing** ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
+
+#### Which factions reach a world
+
+- **At worldgen, only the world-creation list,** which XML authors whole (`docs/engine/factions-and-worldgen.md` §
+  *The roster is authorable as defs*). World Tech Level strips from it (**T-54**).
+- **Mid-game, vanilla creates factions from fixed defs in eight quest roots** [V]. `Beggars` → `Beggars`;
+  `Bossgroup` → `Mechanoid`; `Hospitality_Refugee` → `OutlanderRefugee`; `Hack_WorshippedTerminal` → `TribeCivil`;
+  `SanguophageMeetingHost` and `SanguophageShip` → `Sanguophages`; `ReliquaryPilgrims` → `Pilgrims` or
+  `OutlanderCivil`; `WorkSite` → an existing faction, else **any def with the right group makers** (**T-216**).
+  These defs are `DefOf` targets and cannot be deleted, so HF-1 overwrites them.
+- **Mods create factions too:** VFE Tribals' wild men (**T-15**), WTL's add window (**T-86**), VEF's
+  `forcedFactionData` (VFE Deserters, § *The roster is authorable*), and RimPacts' puppets, mercenaries and civil-war
+  splits (`MOD-VERDICTS.md`) [V]. Faction Customizer, Worksites Expanded, VQE Ancients and Mechanoids: Total Warfare
+  reference the same creators [I, metadata]. Each instantiates a def, so a pool stays ours when the def is ours.
+  **HF-1 therefore covers every `FactionDef` in the database, not only the roster.**
+
+#### What a faction def does not own
+
+- **Gear is open by tag.** `PawnWeaponGenerator.TryGenerateWeaponFor` takes every weapon sharing one of the
+  kind's `weaponTags`, with no tech test. `PawnApparelGenerator.CanUsePair` does the same for `apparelTags`, and
+  **admits all apparel when the kind's list is empty**. `PawnTechHediffsGenerator.GenerateTechHediffsFor` does it
+  for `techHediffsTags`. On disk, at least 16 mods ship weapons carrying a vanilla kind's weapon tag, 10 ship
+  apparel carrying a vanilla apparel tag, and 1 ships implants [V, XML sweep of directly declared tags; inherited
+  tags uncounted, so a floor].
+- **Three free layers bypass the kind's tags** and draw from all apparel. **Warmth** has only a coarse
+  Neolithic-versus-Industrial test (`CorrectFactionForApparel`). **Toxic resistance** has none. `apparelIgnoreSeasons`
+  and `apparelIgnorePollution` switch those two off. **Vacuum** has no kind flag, only
+  `ThingDef.apparel.canBeGeneratedToSatisfyVacuumResistance`. It fires for any pawn generated with no tile while
+  the player's home is in vacuum (`NeedVacuumResistance`), which means once the colony is in orbit.
+- **The faith dresses its members.** `Ideo.Notify_MemberGenerated` → `PreceptComp_Apparel_Desired` adds the
+  ideo's desired apparel after gear. That item was drawn when the faith was made, from every stuffable apparel with
+  `canBeDesiredForIdeo` (`PreceptWorker_Apparel`). `request.ForceNoIdeoGear` skips it.
+- **Xenotypes have five inputs** (`XenotypesAvailableFor`, `GetXenotypeForGeneratedPawn`): the caller's
+  `ForcedXenotype` or `AllowedXenotypes`; the faction's `xenotypeSet` while the kind's `useFactionXenotypes`
+  (default true); the primary faith's memes' `xenotypeSet` (no `MemeDef` on disk sets one); the kind's `xenotypeSet`;
+  and a Baseliner remainder. `XenotypeDef.doubleXenotypeChances` then adds hybrids; only Sanguophage has any.
+- **Titles bring psylinks.** A kind with `titleRequired` or `titleSelectOne`, in a faction with no titles, takes the
+  title from `RandomRoyalFaction()`, the Church, plus a psylink at the title's level.
+- **Redress keeps the body.** `GenerateOrRedressPawnInternal` may reuse a world pawn. `RedressPawn` keeps its genes
+  and implants, bar the `removeOnRedress*` ones, and re-rolls gear. `IsValidCandidateToRedress` checks the xenotype
+  against the kind's and faction's sets but checks no implant. A `WorldPawnFactionDoesntMatter` request takes any
+  faction's pawn (`docs/engine/health-and-death.md`).
+- **Some kinds come from outside the faction.** `Faction.RandomPawnKind` reads the def's group makers, so HF-1
+  covers it. But vanilla also names a `PawnKindDefOf` kind directly at about two dozen non-debug sites. Some pass a
+  faction, such as `QuestNode_Root_OrbitalFugitive` (`Salvager_Elite`, Salvagers) and `SanguophageMeetingHost`. A
+  titled quest asker's kind is drawn from the whole database (**T-214**).
+- **Not every fielded thing is a generated pawn.** Vehicle Framework's NPC vehicles never pass `PawnGenerator`
+  (**T-206**). Mechs summoned from gear follow the gear (VFE Pirates' spidermine and wardrone).
+- **Scenario parts** add to generated pawns (`Scenario.Notify_NewPawnGenerating`, `Notify_PawnGenerated`). The
+  scenario is ours.
+
+#### Who adds to another faction's pool
+
+**By XML patch** [V; 1.6-loading patch files, both roots]:
+- **14 mods patch `FactionDef` group makers, member kinds or `xenotypeSet`:** VFE Settlers, Pirates and Empire;
+  VPE; VRE Saurid, Hussar and Android; Uncompromising Tribal Faction; Alpha Mechs; Ushanka's Glittertech; Mechanoids:
+  Total Warfare; Better Traders Guild; Biotech for Gravship; RimPacts.
+- **9 patch `PawnKindDef` gear or xenotype fields:** VAE Armour; VWE Frontier; VAE Accessories; Uncompromising
+  Tribal Faction; VFE Empire; Dwarves of the Rim; VRE Sanguophage; ETRT Tribal Apparel; Better Traders Guild.
+- **Our patches win if they load last and replace whole nodes.** A mod patch on a vanilla abstract base
+  (`OutlanderFactionBase`, `PirateBandBase`, `TribeBase`) reaches our defs only if ours inherit that base
+  (ANDROIDS § 6, **T-02**). HF-1 and HF-2 defs inherit only our own bases.
+
+**By C#** [V, decompiled 1.6 assemblies]:
+- **Keyed to a kind's mod extension, so inert once every kind is ours:**
+  - VEF's `PawnKindAbilityExtension` (`GenerateNewPawnInternal` postfix);
+  - VPE's `PawnKindAbilityExtension_Psycasts`;
+  - VQE Ancients' `PawnKindExtension_Experiment`, which draws random archite and metabolism genes from the whole
+    `GeneDef` database;
+  - VFE Pirates' warcasket completion, on a pawn already wearing one.
+- **Not keyed to a kind:**
+  - **VPE** gives a random psycaster path to any humanlike at `baseSpawnChance`, under its Basilicus storyteller
+    only.
+  - **Xenotype Spawn Control** (`GenerateGenes` prefix) forces a custom xenotype per faction or kind from its
+    settings whenever the roll came out Baseliner. That is after WTL's xenotype filter, which never sees it.
+  - **Ushanka's Glittertech** overclocks 2% of NPC weapons carrying its `CompOverclock`, which only its own weapons
+    have.
+- **Removing, not adding:** VRE Android strips android xenotypes from any set that does not name one. World Tech
+  Level is HF-5.
+- **Residual [I]:** the sweep found candidates by patch-class and target-member names in both heaps. A patch named
+  neither way, on a member the funnel reaches, is not ruled out. HF-4 does not care.
+
+#### Limits and consequences
+
+- **HF-2's closure lasts only while nobody tags an item with our vocabulary.** We decide which items carry our tags,
+  by patching them onto chosen `ThingDef`s, so a new mod item never joins silently.
+- **Stuff stays open.** Any stuff with `allowedInStuffGeneration` can be rolled. The levers are
+  `weaponStuffOverride` on a kind and `apparelStuffFilter` on a faction.
+- **Factionless pawns are outside "every faction" but inside the band.** A quest that asks for no faction draws a
+  random humanlike kind from the whole database (**T-214**). A factionless xenotype is drawn by
+  `factionlessGenerationWeight` across every `XenotypeDef`. Only HF-4 and HF-5 reach these pawns.
+- **The authored breach survives HF-4 by construction:** the Glitterites' list is Ultra. It does not survive HF-5's
+  xenotype filter (**T-215**).
+- **Build questions for #119:** where the per-faction allowlist lives; strip versus regenerate; how HF-4 orders
+  against other postfixes on `GeneratePawn` (VFE Pirates, VQE Ancients, WTL's prefix).
+
 ### Open questions
 
 - **Requirement, settled** ([`requirements/ERA.md`](../requirements/ERA.md), 2026-09-26): the test is era
@@ -1155,5 +1278,7 @@ with no pod enter per-faction forbidden bookkeeping [I on the effect; a one-line
   faction an advance leaves below the era is allowed; every faction and its spawn pools is hand-authored, which
   closes pawn-level contamination such as ANDROIDS § 6's android chance. Delivery by drop pod is routed above
   (*Delivery by drop pod*): pods are Industrial, and goods appearing at the map edge before then is acceptable.
+  Hand-authored factions and pools are routed in *Hand-authored factions and spawn pools*
+  ([#207](https://github.com/cjd721/Rimworld-Archinity/issues/207)).
 - **Build — [#119](https://github.com/cjd721/Rimworld-Archinity/issues/119):** where the breach flag lives,
   substitution or refusal per category, the part walk's type list.
