@@ -22,8 +22,9 @@ was left open — see [Handing on what is open](#handing-on-what-is-open).
   colony is worshipped as gods_. A node in the **need tree**, whose root is the campaign's
   founding principle. See `CONTEXT.md`.
 - **The working surface** — the artifact where the tree, the tags, the strikes and the
-  suggestions live. It is **working state**, never the record of a decision. Its repository
-  export is a derived snapshot.
+  suggestions live. It is **working state**, never the record of a decision. It is a local page
+  whose state is `docs/data/working-surface.json`; its data contract, and how to run it, are in
+  `docs/data/WORKING-SURFACE.md`.
 - **Owned** and **shared** — computed from the **final session partition**, below.
 - **Open** — a capability with no selection yet because the story that would decide it is
   unwritten. Not a failure; see [Leave honest gaps](#leave-honest-gaps).

@@ -1,0 +1,22 @@
+{
+  "schema": "archinity.working-surface/1",
+  "inventory_commit": "6aa9e34de2b6897a9c7badeeaba3fcc18e626fba",
+  "exported_at": "2026-09-28T00:00:00.000Z",
+  "needs": [
+    {
+      "id": "N-001",
+      "parent": null,
+      "statement": "",
+      "description": "",
+      "order": 0
+    }
+  ],
+  "sessions": [],
+  "tags": [],
+  "no_owner": [],
+  "route_global": [],
+  "route_need": [],
+  "capability_decision": [],
+  "notes": [],
+  "followups": []
+}

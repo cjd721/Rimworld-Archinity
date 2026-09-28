@@ -1,0 +1,2076 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Working Surface</title>
+<!-- The working surface (#199). Served by tools/surface_server.py; the state is docs/data/working-surface.json.
+     No external resources. The Surface module below is the pure state logic; everything after it is the page. -->
+<style>
+:root{
+  --bg:#F5F5F3; --surface:#FFFFFF; --sunk:#F0F0ED; --hover:#F7F7F5;
+  --line:#E4E4E0; --line-2:#D6D6D1;
+  --ink:#1D2126; --ink-2:#464C55; --ink-3:#6B717A; --ink-4:#9A9FA6;
+  --accent:#4F5BD5; --accent-2:#3E48B8; --accent-soft:#EEF0FC; --accent-line:#C9CEF5;
+  --ok:#1E7F55; --ok-soft:#E6F4EC; --bad:#BF3B34; --bad-soft:#FBECEA; --warn:#A8670E; --warn-soft:#FBF1E0;
+  --dig:#2C6FB7; --dig-soft:#E8F1FB;
+  --sans:"Segoe UI Variable Text","Segoe UI Variable","Segoe UI",Inter,system-ui,-apple-system,sans-serif;
+  --display:"Segoe UI Variable Display","Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif;
+  --mono:"Cascadia Code","Cascadia Mono",Consolas,ui-monospace,monospace;
+  --r:10px; --r-sm:7px;
+  --sh-1:0 1px 2px rgba(20,24,30,.05),0 1px 1px rgba(20,24,30,.03);
+  --sh-2:0 2px 6px rgba(20,24,30,.06),0 8px 24px rgba(20,24,30,.06);
+  --sh-3:0 12px 40px rgba(20,24,30,.16),0 2px 8px rgba(20,24,30,.08);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+input[type=text],input[type=search],select,textarea{border:1px solid var(--line-2);border-radius:var(--r-sm);padding:7px 10px;background:#fff;outline:none;transition:border-color .12s,box-shadow .12s}
+input[type=text]:focus,input[type=search]:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{width:100%;resize:vertical;line-height:1.5}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code,.mono{font-family:var(--mono);font-size:.88em}
+kbd{font:600 11px/1 var(--sans);border:1px solid var(--line-2);border-bottom-width:2px;border-radius:5px;padding:2px 5px;background:#fff;color:var(--ink-2)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:#fff;border-radius:var(--r-sm);padding:6px 12px;font-size:13px;font-weight:500;color:var(--ink);box-shadow:var(--sh-1);transition:background .12s,border-color .12s;white-space:nowrap}
+.btn:hover{background:var(--hover);border-color:var(--ink-4)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-2)}
+.btn.danger{color:var(--bad)}
+.btn.danger.solid{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent;box-shadow:none;color:var(--ink-2)}
+.btn.ghost:hover{background:var(--sunk)}
+.btn.sm{padding:3px 9px;font-size:12.5px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn svg{width:15px;height:15px;flex:none}
+.iconbtn{display:inline-grid;place-items:center;width:26px;height:26px;border:none;background:transparent;border-radius:6px;color:var(--ink-3);padding:0}
+.iconbtn:hover{background:var(--sunk);color:var(--ink)}
+.iconbtn svg{width:15px;height:15px}
+.link{border:none;background:none;padding:0;color:var(--accent);cursor:pointer;text-align:left}
+.link:hover{text-decoration:underline}
+
+/* app frame */
+.app{display:grid;grid-template-rows:56px minmax(0,1fr);height:100vh}
+.top{display:flex;align-items:center;gap:24px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:650;font-size:15px;letter-spacing:-.01em}
+.brand small{font-weight:500;color:var(--ink-3);font-size:13px}
+.tabs{display:flex;gap:2px;height:100%}
+.tab{position:relative;border:none;background:none;padding:0 12px;font-size:13.5px;font-weight:500;color:var(--ink-3);display:flex;align-items:center;gap:7px}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--ink)}
+.tab.on::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px;background:var(--accent)}
+.count{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:99px;background:var(--sunk);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tab.on .count{background:var(--accent-soft);color:var(--accent)}
+.topright{margin-left:auto;display:flex;align-items:center;gap:10px}
+.savepill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-3);padding:4px 10px;border-radius:99px;background:var(--sunk)}
+.savepill .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.savepill.dirty .dot,.savepill.saving .dot{background:var(--warn)}
+.savepill.bad{background:var(--bad-soft);color:var(--bad)} .savepill.bad .dot{background:var(--bad)}
+
+.body{display:grid;grid-template-columns:minmax(0,1fr);min-height:0}
+.body.with-panel{grid-template-columns:minmax(0,1fr) 540px}
+.body.with-panel.wide{grid-template-columns:minmax(0,1fr) min(1100px,70vw)}
+.main{min-height:0;overflow:auto;position:relative}
+.panel{min-height:0;overflow:auto;background:var(--surface);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(20,24,30,.04)}
+
+/* shared pieces */
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.id{font-family:var(--mono);font-size:11px;color:var(--ink-4);font-weight:400;letter-spacing:0}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;line-height:18px;padding:1px 8px;border-radius:99px;background:var(--sunk);color:var(--ink-2);white-space:nowrap;cursor:default}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.acc{background:var(--accent-soft);color:var(--accent)}
+.chip.dig{background:var(--dig-soft);color:var(--dig)}
+.chip.solid{background:var(--accent);color:#fff}
+.chip.out{background:#fff;border:1px solid var(--line-2);line-height:16px}
+.chip.click{cursor:pointer} .chip.click:hover{filter:brightness(.96)}
+.chip .sw{width:8px;height:8px;border-radius:50%;flex:none}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.muted{color:var(--ink-3)}
+.small{font-size:12.5px}
+.empty{color:var(--ink-3);font-size:13.5px;padding:16px;border:1px dashed var(--line-2);border-radius:var(--r);background:var(--hover)}
+.empty b{color:var(--ink-2)}
+
+/* ============ tree ============ */
+.treebar{position:sticky;top:0;left:0;z-index:3;display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(245,245,243,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.legend{display:flex;gap:6px;flex-wrap:wrap;margin-left:8px}
+.canvas{padding:28px 40px 120px}
+.org{width:max-content;min-width:100%}
+.org ul{display:flex;justify-content:center;margin:0;padding:24px 0 0;position:relative;list-style:none}
+.org li{position:relative;display:flex;flex-direction:column;align-items:center;padding:24px 10px 0}
+.org li::before,.org li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:24px;border-top:1.5px solid var(--line-2)}
+.org li::after{right:auto;left:50%;border-left:1.5px solid var(--line-2)}
+.org li:only-child::before,.org li:only-child::after{display:none}
+.org li:only-child{padding-top:0}
+.org li:first-child::before,.org li:last-child::after{border:0 none}
+.org li:last-child::before{border-right:1.5px solid var(--line-2);border-radius:0 8px 0 0}
+.org li:first-child::after{border-radius:8px 0 0 0}
+.org ul ul::before{content:"";position:absolute;top:0;left:50%;height:24px;border-left:1.5px solid var(--line-2)}
+.org>ul{padding-top:0}
+.grp{display:flex;flex-direction:column;align-items:stretch;width:272px}
+
+.nnode{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-1);padding:12px 12px 10px 14px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.nnode::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:4px;border-radius:var(--r) var(--r) 0 0;background:var(--c,var(--line-2))}
+.nnode:hover{box-shadow:var(--sh-2)}
+.nnode.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--sh-2)}
+.nnode.root{width:340px;align-self:center;padding:16px 16px 12px}
+.nnode.root::before{background:linear-gradient(90deg,var(--ink-2),var(--ink-4))}
+.nhead{display:flex;gap:6px;align-items:flex-start}
+.ntext{flex:1;font-weight:600;font-size:14.5px;line-height:1.35;letter-spacing:-.005em;overflow-wrap:anywhere}
+.root .ntext{font-family:var(--display);font-size:16.5px}
+.ntext.placeholder{color:var(--ink-3);font-weight:500}
+.ndesc{margin-top:4px;font-size:12.5px;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nmeta{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+.nfoot{display:flex;align-items:center;gap:6px;margin-top:9px}
+.nfoot .spacer{flex:1}
+.nnode .hov{opacity:0;transition:opacity .12s}
+.nnode:hover .hov,.nnode.sel .hov,.cnode:hover .hov,.cnode.sel .hov{opacity:1}
+.addbtn{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 9px;font-size:12px;font-weight:600}
+.addbtn:hover{background:#E3E6FA}
+.addbtn svg{width:13px;height:13px}
+.chev{flex:none;display:inline-grid;place-items:center;width:22px;height:22px;margin:-1px 0 0 -4px;border:none;background:transparent;border-radius:5px;color:var(--ink-3);padding:0}
+.chev:hover{background:var(--sunk);color:var(--ink)}
+.chev svg{width:14px;height:14px;transition:transform .15s}
+.chev.open svg{transform:rotate(90deg)}
+.chev.none{display:none}
+.nnode input.inline{width:100%;font-weight:600;padding:4px 8px}
+
+.capstack{position:relative;margin:0 0 0 14px;padding:8px 0 0 14px;display:flex;flex-direction:column;gap:8px}
+.capstack::before{content:"";position:absolute;left:0;top:0;bottom:22px;border-left:1.5px solid var(--line-2)}
+.cnode{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-1);padding:9px 10px 8px 14px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.cnode::before{content:"";position:absolute;left:-15px;top:20px;width:14px;border-top:1.5px solid var(--line-2)}
+.cnode::after{content:"";position:absolute;left:-1px;top:-1px;bottom:-1px;width:4px;border-radius:var(--r-sm) 0 0 var(--r-sm);background:var(--stripe,var(--line-2))}
+.cnode:hover{box-shadow:var(--sh-2)}
+.cnode.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--sh-2)}
+.ctext{flex:1;font-size:13px;font-weight:500;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cmeta{display:flex;align-items:center;gap:6px;margin:3px 0 0 22px;font-size:11.5px;color:var(--ink-3);min-width:0}
+.cmeta .cn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cmeta .id{white-space:nowrap}
+.cbadges{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0 0 22px}
+.cbadges .chip{font-size:11.5px;line-height:16px;padding:1px 7px;max-width:100%}
+.cbadges .chip .el{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.nmeta .chip{font-size:11.5px;line-height:16px;padding:1px 7px}
+.rlist{margin:8px 0 0 22px;display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line);padding-top:6px}
+.rnode{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:baseline;padding:4px 6px;border-radius:5px;font-size:12px;cursor:pointer}
+.rnode:hover{background:var(--hover)}
+.rnode.sel{background:var(--accent-soft)}
+.rnode .rl{font-weight:650;color:var(--ink-2);max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rnode code,.rcard code,.ptitle code,.item code,.rtable code,.ctext code,.qtitle code{background:var(--sunk);border-radius:4px;padding:0 4px;font-size:.86em}
+.rnode .rs{color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rnode .rw{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.rnode.struck .rs,.rnode.struck .rl{color:var(--ink-4);text-decoration:line-through}
+.ghostcard{width:100%;border:1.5px dashed var(--accent-line);background:rgba(238,240,252,.5);color:var(--accent);border-radius:var(--r);padding:16px;font-weight:600;font-size:13.5px}
+.ghostcard:hover{background:var(--accent-soft)}
+.newcard{background:#fff;border:1.5px solid var(--accent);border-radius:var(--r);padding:10px;box-shadow:0 0 0 3px var(--accent-soft)}
+.newcard input{width:100%}
+.newcard .small{margin-top:6px}
+@keyframes flash{0%,100%{box-shadow:var(--sh-1)}30%{box-shadow:0 0 0 5px rgba(79,91,213,.35),var(--sh-2)}}
+.flash{animation:flash 1.4s ease 2}
+
+/* ============ panel ============ */
+.ph{position:sticky;top:0;z-index:2;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:6px}
+.pb{padding:20px 24px 60px}
+.ptitle{font-family:var(--display);font-size:21px;line-height:1.3;font-weight:650;letter-spacing:-.015em;margin:6px 0 10px;overflow-wrap:anywhere}
+.ptitle.edit{cursor:text;border-radius:6px;margin-left:-6px;padding:0 6px}
+.ptitle.edit:hover{background:var(--hover)}
+.crumbs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12.5px;color:var(--ink-3)}
+.crumbs .link{color:var(--ink-2)}
+.sec{margin-top:26px}
+.sec>h3{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+.sec>h3 .spacer{flex:1}
+.sec>h3 .btn{text-transform:none;letter-spacing:0}
+.kv{display:grid;grid-template-columns:118px minmax(0,1fr);gap:8px 14px;font-size:13.5px}
+.kv>dt{color:var(--ink-3);font-size:12.5px;padding-top:1px}
+.kv>dd{margin:0}
+.prov{display:block;font-size:11.5px;color:var(--ink-3);margin-top:1px}
+.prov.unstated{color:var(--warn)}
+.box{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:12px 14px}
+.box+.box{margin-top:8px}
+.placement{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm)}
+.placement+.placement{margin-top:6px}
+.placement .sw{width:10px;height:10px;border-radius:50%;margin-top:5px;flex:none}
+.placement .grow{flex:1;min-width:0}
+details.framing{border:1px solid var(--line);border-radius:var(--r);padding:0 14px}
+details.framing>summary{cursor:pointer;padding:11px 0;font-weight:600;font-size:13.5px;list-style:none;display:flex;align-items:center;gap:8px}
+details.framing>summary::-webkit-details-marker{display:none}
+details.framing>summary svg{width:14px;height:14px;color:var(--ink-3);transition:transform .15s}
+details.framing[open]>summary svg{transform:rotate(90deg)}
+details.framing .inner{padding:0 0 14px}
+.frlist{margin:4px 0 12px;padding-left:18px;font-size:13.5px}
+.frlist li{margin:3px 0}
+.frhead{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-top:10px}
+.frhead.can{color:var(--ok)} .frhead.cannot{color:var(--bad)}
+
+/* route comparison */
+.cmpwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--sunk);margin:0 -4px}
+.cmp{display:grid;grid-auto-flow:column;grid-auto-columns:204px;grid-template-rows:auto;gap:0;padding:8px;gap:8px;width:max-content}
+.allroutes{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;display:grid;gap:4px}
+.allroutes .lab{font-size:10.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4)}
+.allroutes .prov{display:inline;margin-left:6px}
+.rcard{display:grid;grid-template-rows:subgrid;background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-1);font-size:12.5px;overflow:hidden}
+.rcard>div{padding:7px 11px;border-top:1px solid var(--line)}
+.rcard>div:first-child{border-top:none}
+.rcard .rh{display:flex;flex-direction:column;gap:5px;cursor:pointer;background:var(--hover)}
+.rcard .rh:hover{background:var(--accent-soft)}
+.rcard .rh b{font-size:13.5px}
+.rcard .lab{font-size:10.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);display:block;margin-bottom:2px}
+.rcard .acts{display:flex;gap:4px;flex-wrap:wrap;align-self:end}
+.rcard.struck{background:#FAFAF8;opacity:.8}
+.rcard.struck .rh b{text-decoration:line-through;color:var(--ink-3)}
+.rcard.struck .collapsed{color:var(--ink-3)}
+.rcard.selected{border-color:var(--ok);box-shadow:0 0 0 2px var(--ok-soft)}
+.pnrow{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm)}
+.pnrow+.pnrow{margin-top:6px}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:var(--r-sm);overflow:hidden;background:#fff}
+.seg button{border:none;background:none;padding:4px 11px;font-size:12.5px;font-weight:500;color:var(--ink-2);border-left:1px solid var(--line-2)}
+.seg button:first-child{border-left:none}
+.seg button.on{background:var(--accent);color:#fff}
+.seg button.on.w{background:var(--bad)} .seg button.on.d{background:var(--dig)}
+.seg button.on.sug{background:var(--ok)} .seg button.on.rej{background:var(--bad)} .seg button.on.opn{background:var(--warn)}
+.rtick{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border-radius:6px;font-size:13px}
+.rtick:hover{background:var(--hover)}
+.rtick input{margin-top:3px}
+
+/* markdown reader */
+.spec{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.spec+.spec{margin-top:8px}
+.spech{width:100%;display:flex;align-items:center;gap:10px;border:none;background:var(--hover);padding:10px 14px;text-align:left}
+.spech:hover{background:var(--accent-soft)}
+.spech svg{width:16px;height:16px;color:var(--accent);flex:none}
+.spech .t{flex:1;font-weight:600;font-size:13.5px}
+.spech .p{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.md{padding:6px 18px 14px;font-size:13.5px;line-height:1.6;color:var(--ink);border-top:1px solid var(--line);max-height:640px;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere}
+.md.full{max-height:none;border-top:none;padding:0}
+.md p{margin:8px 0}
+.md .mh{font-family:var(--display);font-weight:650;margin:16px 0 6px;line-height:1.3;letter-spacing:-.01em}
+.md .mh1{font-size:19px} .md .mh2{font-size:17px} .md .mh3{font-size:15px} .md .mh4,.md .mh5,.md .mh6{font-size:14px}
+.md>.mh:first-child{margin-top:10px}
+.md ul,.md ol{padding-left:22px;margin:6px 0}
+.md li{margin:3px 0}
+.md code{background:var(--sunk);border-radius:4px;padding:1px 5px;font-size:12px}
+.md pre{background:#F4F4F1;border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5}
+.md pre code{background:none;padding:0}
+.md blockquote{margin:10px 0;padding:2px 14px;border-left:3px solid var(--accent-line);color:var(--ink-2);background:var(--hover);border-radius:0 6px 6px 0}
+.md hr{border:none;border-top:1px solid var(--line);margin:14px 0}
+.md .tw{overflow-x:auto;margin:10px 0}
+.md table{border-collapse:collapse;font-size:12.5px;width:100%;table-layout:fixed}
+.md .tw{overflow:visible}
+.md th,.md td{border:1px solid var(--line);padding:5px 8px;vertical-align:top;text-align:left}
+.md th{background:var(--hover);font-weight:600}
+.md a{color:var(--accent)}
+.md .deadlink{border-bottom:1px dotted var(--ink-4)}
+.md .note{font-size:12.5px;color:var(--warn);background:var(--warn-soft);padding:6px 10px;border-radius:6px;margin-top:10px}
+
+/* ============ queue pages ============ */
+.page{max-width:920px;margin:0 auto;padding:28px 28px 100px}
+.page.wide{max-width:1180px}
+.page h1{font-family:var(--display);font-size:24px;font-weight:650;letter-spacing:-.02em;margin:0 0 4px}
+.lede{color:var(--ink-2);font-size:14px;margin:0 0 18px;max-width:72ch}
+.progress{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden;margin:6px 0 4px}
+.progress>div{height:100%;background:linear-gradient(90deg,var(--accent),#7C86E6);border-radius:99px;transition:width .3s}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh-2);overflow:hidden;margin-top:18px}
+.qcard .qb{padding:22px 26px}
+.qcard .qtitle{font-family:var(--display);font-size:22px;line-height:1.3;font-weight:650;letter-spacing:-.015em;margin:6px 0 14px}
+.qactions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:14px 26px;background:var(--hover);border-top:1px solid var(--line)}
+.qactions .spacer{flex:1}
+.rtable{width:100%;border-collapse:collapse;font-size:13px}
+.rtable th{text-align:left;font-size:11px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:6px 8px;border-bottom:1px solid var(--line)}
+.rtable td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.rtable tr:last-child td{border-bottom:none}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;box-shadow:var(--sh-1);cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.item:hover{box-shadow:var(--sh-2)}
+.item.cur{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.item .grow{flex:1;min-width:0}
+.item .t{font-weight:600;font-size:14px;line-height:1.4}
+.item .s{font-size:12.5px;color:var(--ink-3);margin-top:3px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.filters input[type=search]{flex:1;min-width:280px}
+.filters select{padding:6px 8px;font-size:13px}
+.group-h{display:flex;align-items:baseline;gap:10px;margin:26px 0 4px}
+.group-h h2{font-size:16px;font-weight:650;margin:0}
+.group-h+p{margin:0 0 10px;color:var(--ink-3);font-size:13px}
+.sides{display:grid;gap:10px;margin-top:10px}
+.side{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;background:var(--hover);font-size:13px}
+.sidetitle{font-weight:600;display:flex;align-items:center;gap:6px}
+.ksec{margin-top:36px}
+
+/* popover, modal, toasts, tooltip */
+.pop{position:fixed;z-index:40;width:440px;max-height:min(560px,80vh);display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-3);overflow:hidden}
+.pop .popb{padding:14px}
+.pop .poph{padding:12px 14px 0;font-size:12px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.pop .popsub{padding:2px 14px 0;font-size:13px;color:var(--ink-2)}
+.pop input[type=text],.pop input[type=search]{width:100%}
+.pop .res{overflow:auto;border-top:1px solid var(--line);padding:6px;flex:1;min-height:0}
+.pop.search{height:min(480px,calc(100vh - 24px))}
+.pop.search.auto{height:auto;max-height:min(480px,calc(100vh - 24px))}
+.opt{display:block;width:100%;text-align:left;border:none;background:none;border-radius:7px;padding:8px 10px}
+.opt.hi{background:var(--accent-soft)}
+.opt[disabled]{opacity:.5;cursor:default}
+.opt .t{font-size:13.5px;font-weight:500;line-height:1.35}
+.opt .s{font-size:12px;color:var(--ink-3);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.opt .s mark{background:#FFF2B8;color:inherit;border-radius:2px}
+.menuopt{display:flex;gap:12px;align-items:flex-start}
+.menuopt svg{width:18px;height:18px;color:var(--accent);margin-top:2px;flex:none}
+.popfoot{display:flex;gap:8px;justify-content:flex-end;padding:10px 14px;border-top:1px solid var(--line);background:var(--hover)}
+.modalbg{position:fixed;inset:0;background:rgba(20,24,30,.3);z-index:50;display:grid;place-items:center}
+.modal{width:760px;max-height:86vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:var(--sh-3);padding:24px 28px}
+.toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;display:flex;flex-direction:column;gap:8px;z-index:60;align-items:center}
+.toast{display:flex;align-items:center;gap:14px;background:#1F232A;color:#fff;padding:10px 14px 10px 16px;border-radius:10px;font-size:13.5px;box-shadow:var(--sh-3);max-width:640px}
+.toast.err{background:var(--bad)} .toast.warn{background:#7A4B08}
+.toast button{border:none;background:rgba(255,255,255,.14);color:#fff;border-radius:6px;padding:3px 10px;font-weight:600;font-size:12.5px}
+#tip{position:fixed;z-index:70;max-width:320px;background:#1F232A;color:#fff;font-size:12.5px;line-height:1.45;padding:7px 10px;border-radius:7px;box-shadow:var(--sh-3);pointer-events:none;opacity:0;transition:opacity .1s}
+#tip.on{opacity:1}
+/* capabilities tab */
+.capslayout{display:grid;grid-template-columns:340px minmax(0,1fr);height:100%;min-height:0}
+.rail{display:flex;flex-direction:column;min-height:0;background:var(--surface);border-right:1px solid var(--line)}
+.railtop{padding:16px 16px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.railtop input[type=search]{width:100%}
+.fchips{display:flex;flex-wrap:wrap;gap:5px}
+.fchip{border:1px solid var(--line-2);background:#fff;border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.fchip span{color:var(--ink-3);font-variant-numeric:tabular-nums;margin-left:2px}
+.fchip.on{background:var(--accent);border-color:var(--accent);color:#fff}.fchip.on span{color:rgba(255,255,255,.8)}
+.raillist{flex:1;overflow:auto;padding:6px 8px 40px}
+.rgh,.rch{display:flex;align-items:center;gap:6px;width:100%;border:none;background:none;text-align:left;padding:7px 6px;border-radius:6px}
+.rgh{font-size:11.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-top:8px}
+.rch{font-size:12.5px;font-weight:600;color:var(--ink-2);padding-left:14px}
+.rgh:hover,.rch:hover{background:var(--hover)}
+.rgh .count,.rch .count{margin-left:auto}
+.rgh svg,.rch svg{width:12px;height:12px;flex:none;transition:transform .15s}
+.rgh svg.open,.rch svg.open{transform:rotate(90deg)}
+.ritem{display:block;width:100%;text-align:left;border:1px solid transparent;background:none;border-radius:7px;padding:7px 10px 7px 32px}
+.ritem:hover{background:var(--hover)}
+.ritem.on{background:var(--accent-soft);border-color:var(--accent-line)}
+.ritem .t{display:block;font-size:13px;font-weight:500;line-height:1.35}
+.ritem .m{display:flex;align-items:center;gap:5px;margin-top:3px}
+.ritem .sw{width:8px;height:8px;border-radius:50%}
+.ritem .nochip{font-size:11px;color:var(--ink-3)}
+.cpage{overflow:auto;min-height:0}
+.cpinner{max-width:1240px;padding:26px 32px 120px}
+.cptitle{font-family:var(--display);font-size:26px;line-height:1.25;font-weight:650;letter-spacing:-.02em;margin:8px 0 8px}
+.qactions.sticky{position:sticky;top:0;z-index:2;margin:18px -32px 0;padding:10px 32px;border-radius:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(247,247,245,.96);backdrop-filter:blur(6px)}
+.gsum{font-size:14.5px;color:var(--ink-2);line-height:1.55;margin:4px 0 8px;max-width:80ch}
+.gsum.big{font-size:16px}
+.gsum.unclear{color:#7A4B08;background:var(--warn-soft);border-left:3px solid #E9B85C;padding:6px 10px;border-radius:0 6px 6px 0}
+.gsum .unc{font-size:11px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;color:var(--warn)}
+.orig{font-size:12.5px;color:var(--ink-3);line-height:1.45;margin-top:2px}
+.orig.c{margin:4px 0 0 22px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px}
+.orig.big{font-size:13.5px;margin-top:8px}
+.orig .lab{display:block;font-size:10.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4)}
+.cgridwrap{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff}
+.cgrid{width:100%;border-collapse:collapse;font-size:13px}
+.cgrid th{text-align:left;font-size:10.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:9px 10px;background:var(--hover);border-bottom:1px solid var(--line);white-space:nowrap}
+.cgrid td{padding:10px;vertical-align:top;border-bottom:1px solid var(--line);line-height:1.45}
+.cgrid tr.rrow{cursor:pointer}
+.cgrid tr.rrow:hover td{background:var(--hover)}
+.cgrid tr.rrow.open td{background:var(--accent-soft);border-bottom-color:transparent}
+.cgrid tr.rrow.struck td{color:var(--ink-4)}
+.cgrid tr.rrow.struck .ftext,.cgrid tr.rrow.struck .plain{text-decoration:line-through}
+.cgrid tr.gx td{background:#FBFBFA;padding:4px 14px 14px}
+.cgrid .rl{font-weight:650;white-space:nowrap;display:flex;gap:4px;align-items:flex-start}
+.cgrid .rl svg{width:12px;height:12px;margin-top:3px;flex:none;color:var(--ink-3);transition:transform .15s}
+.cgrid tr.open .rl svg{transform:rotate(90deg)}
+.cgrid .grp{font-size:11.5px;color:var(--ink-3);font-weight:500;margin:2px 0 0 16px;white-space:normal}
+.cgrid .plain{font-weight:500;color:var(--ink);display:block;min-width:230px}
+.cgrid .ftext{color:var(--ink-3);font-size:12.5px;min-width:200px}
+.cgrid .acts{white-space:nowrap}
+.cgrid code{background:var(--sunk);border-radius:4px;padding:0 4px;font-size:.86em}
+.cgrid .prov{display:block}
+.nocaps{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 20px 0;padding:10px 14px;background:var(--surface);border:1px dashed var(--line-2);border-radius:var(--r);font-size:13px;width:max-content;max-width:calc(100% - 40px)}
+.example{border:2px dashed #E9B85C;border-radius:14px;padding:6px 22px 22px;background:rgba(251,241,224,.35);margin-top:14px}
+.exlabel{display:inline-flex;align-items:center;gap:8px;margin:14px 0 4px;padding:4px 12px;border-radius:99px;background:var(--warn);color:#fff;font-weight:650;font-size:13px}
+.banner{border:1px solid #EFD9AE;background:var(--warn-soft);color:#6A430A;padding:10px 14px;border-radius:var(--r);font-size:13px;margin:16px 20px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">Archinity <small>Working surface</small></div>
+    <nav class="tabs" id="tabs"></nav>
+    <div class="topright" id="topright"></div>
+  </header>
+  <div class="body" id="body">
+    <main class="main" id="main"><div class="page"><p class="muted">Loading the inventory and the state file…</p></div></main>
+    <aside class="panel" id="panel" hidden></aside>
+  </div>
+</div>
+<div id="pop"></div>
+<div id="modal"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+/* ================= Surface: the pure state module (no DOM, no I/O). ================= */
+const Surface = (() => {
+  const SCHEMA = "archinity.working-surface/1";
+  const SECTIONS = ["needs", "sessions", "tags", "no_owner", "route_global", "route_need", "capability_decision", "notes"];
+  const clone = (x) => JSON.parse(JSON.stringify(x));
+  const uniq = (a) => [...new Set(a)];
+  const TICKET = /^#\d+$/;
+  const cut = (t, n) => { t = String(t || ""); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
+
+  function indexInventory(inv) {
+    const routesByCap = new Map();
+    for (const r of inv.routes) { if (!routesByCap.has(r.capability)) routesByCap.set(r.capability, []); routesByCap.get(r.capability).push(r); }
+    return { inv, cards: new Map(inv.cards.map(c => [c.id, c])), caps: new Map(inv.capabilities.map(c => [c.id, c])),
+             routes: new Map(inv.routes.map(r => [r.id, r])), routesByCap };
+  }
+  function empty(ix) {
+    return { schema: SCHEMA, inventory_commit: ix.inv.source_commit, needs: [], sessions: [], tags: [], no_owner: [],
+             route_global: [], route_need: [], capability_decision: [], notes: [], followups: [] };
+  }
+
+  /* ---- tree ---- */
+  const need = (s, id) => s.needs.find(n => n.id === id) || null;
+  const root = (s) => s.needs.find(n => n.parent === null) || null;
+  const children = (s, id) => s.needs.filter(n => n.parent === id).sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+  function ancestors(s, id) {
+    const out = []; let n = need(s, id); const seen = new Set([id]);
+    while (n && n.parent !== null && !seen.has(n.parent)) { seen.add(n.parent); out.push(n.parent); n = need(s, n.parent); }
+    return out;
+  }
+  function subtree(s, id) { const out = [id]; for (let i = 0; i < out.length; i++) for (const c of children(s, out[i])) out.push(c.id); return out; }
+  function sessionOf(s, id) { for (const x of [id, ...ancestors(s, id)]) if (s.sessions.includes(x)) return x; return null; }
+
+  /* ---- capability reads ---- */
+  const tagsOf = (s, cap) => s.tags.filter(t => t.capability === cap && need(s, t.need));
+  const tagsAt = (s, needId) => s.tags.filter(t => t.need === needId);
+  const noOwner = (s, cap) => s.no_owner.find(x => x.capability === cap) || null;
+  const globalOf = (s, rid) => s.route_global.find(x => x.route === rid) || null;
+  const isStruck = (s, rid) => (globalOf(s, rid) || {}).state === "struck";
+  const decisionOf = (s, cap) => s.capability_decision.find(d => d.capability === cap) || null;
+  const routeNeedOf = (s, rid, nid) => s.route_need.find(x => x.route === rid && x.need === nid) || null;
+  const noteOf = (s, target) => (s.notes.find(n => n.target === target) || {}).text || "";
+  const surviving = (s, ix, cap) => (ix.routesByCap.get(cap) || []).filter(r => !isStruck(s, r.id));
+  const followupsOf = (s, type, target) => (s.followups || []).filter(f => f.target_type === type && f.target === target);
+
+  /** Owned / shared, read off the session partition — never off raw tags. */
+  function ownership(s, cap) {
+    const tags = tagsOf(s, cap);
+    if (!tags.length) return { status: noOwner(s, cap) ? "no_owner" : "untagged", sessions: [], unpartitioned: [] };
+    const sessions = [], unpartitioned = [];
+    for (const t of tags) {
+      const ss = sessionOf(s, t.need);
+      if (ss === null) { if (!unpartitioned.includes(t.need)) unpartitioned.push(t.need); }
+      else if (!sessions.includes(ss)) sessions.push(ss);
+    }
+    const status = sessions.length > 1 ? "shared" : sessions.length === 1 ? "owned" : "unpartitioned";
+    return { status, sessions, unpartitioned };
+  }
+
+  /** Two routes compose if the card says so (composes_with, either direction), or they sit in different groups of one row. */
+  function composes(ix, a, b) {
+    if (a === b) return true;
+    const ra = ix.routes.get(a), rb = ix.routes.get(b);
+    if (!ra || !rb) return false;
+    if ((ra.composes_with || []).includes(b) || (rb.composes_with || []).includes(a)) return true;
+    return ra.capability === rb.capability && !!ra.group && !!rb.group && ra.group !== rb.group;
+  }
+  function allCompose(ix, ids) { for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) if (!composes(ix, ids[i], ids[j])) return false; return true; }
+
+  function sessionView(s, ix, cap) {
+    const own = ownership(s, cap);
+    const rids = new Set((ix.routesByCap.get(cap) || []).map(r => r.id));
+    const keys = [...own.sessions, ...(own.unpartitioned.length ? [null] : [])];
+    return keys.map(k => {
+      const needs = uniq(tagsOf(s, cap).map(t => t.need).filter(n => sessionOf(s, n) === k));
+      const entries = s.route_need.filter(x => needs.includes(x.need) && rids.has(x.route));
+      const by = (st) => uniq(entries.filter(e => e.state === st).map(e => e.route));
+      return { session: k, needs, entries, suggested: by("suggested"), rejected: by("rejected"), open: by("open") };
+    });
+  }
+
+  function conflicts(s, ix) {
+    const out = [];
+    for (const c of ix.inv.capabilities) {
+      const own = ownership(s, c.id);
+      if (own.status !== "shared") continue;
+      const sv = sessionView(s, ix, c.id).filter(x => x.session !== null);
+      const withSug = sv.filter(x => x.suggested.length);
+      const dec = decisionOf(s, c.id);
+      const allSug = uniq(withSug.flatMap(x => x.suggested));
+      const crossRejected = allSug.filter(r => sv.some(x => x.rejected.includes(r)));
+      let kind;
+      if (dec && dec.state === "selected") kind = "decided";
+      else if (crossRejected.length) kind = "conflict";
+      else if (withSug.length < 2) kind = "waiting";
+      else {
+        const sets = withSug.map(x => [...x.suggested].sort().join("|"));
+        kind = sets.every(x => x === sets[0]) ? "agree" : allCompose(ix, allSug) ? "compose" : "conflict";
+      }
+      out.push({ capability: c.id, kind, sessions: sv, crossRejected, struckSuggestions: allSug.filter(r => isStruck(s, r)) });
+    }
+    return out;
+  }
+
+  function orphans(s, ix) {
+    const tagged = new Set(s.tags.filter(t => need(s, t.need)).map(t => t.capability));
+    const caps = ix.inv.capabilities.filter(c => !tagged.has(c.id) && !noOwner(s, c.id)).map(c => c.id);
+    const noOwnerCaps = s.no_owner.map(x => x.capability);
+    const needs = s.needs.filter(n => n.parent !== null && !subtree(s, n.id).some(id => tagsAt(s, id).length)).map(n => n.id);
+    return { caps, noOwnerCaps, needs };
+  }
+
+  /* ---- writes: apply(state, ix, action) -> {state, changed[], error?, message?, warning?} ---- */
+  const fail = (error) => ({ error });
+  function nextNeedId(s) { const m = s.needs.reduce((a, n) => Math.max(a, parseInt(String(n.id).replace(/\D/g, ""), 10) || 0), 0); return "N-" + String(m + 1).padStart(3, "0"); }
+  function nextFollowupId(s) { const m = (s.followups || []).reduce((a, f) => Math.max(a, parseInt(String(f.id).replace(/\D/g, ""), 10) || 0), 0); return "F-" + String(m + 1).padStart(3, "0"); }
+  function renumber(s, parent) { children(s, parent).forEach((n, i) => { n.order = i; }); }
+  function setNote(list, target, text) { const i = list.findIndex(n => n.target === target); if (!text) { if (i >= 0) list.splice(i, 1); } else if (i >= 0) list[i].text = text; else list.push({ target, text }); }
+
+  function apply(s0, ix, a) {
+    const s = clone(s0); if (!s.followups) s.followups = [];
+    const changed = new Set(); let message = null, warning = null;
+    const need_ = (id) => need(s, id);
+    const nq = (id) => `“${cut((need_(id) || {}).statement || id, 48)}”`;
+    const cq = (id) => `“${cut((ix.caps.get(id) || {}).text || id, 48)}”`;
+    const rq = (id) => { const r = ix.routes.get(id); return r ? `route ${r.label || id}` : id; };
+    switch (a.type) {
+      case "createRoot": {
+        if (s.needs.length) return fail("The tree already has a root.");
+        s.needs.push({ id: "N-001", parent: null, statement: a.statement || "", description: "", order: 0 });
+        changed.add("needs"); break;
+      }
+      case "addNeed": {
+        if (!need_(a.parent)) return fail("Pick a parent need first.");
+        const st = (a.statement || "").trim(); if (!st) return fail("Write the need before adding it.");
+        const id = nextNeedId(s);
+        s.needs.push({ id, parent: a.parent, statement: st, description: (a.description || "").trim(), order: children(s, a.parent).length });
+        changed.add("needs"); message = `Added ${nq(id)}.`; break;
+      }
+      case "renameNeed": {
+        const n = need_(a.id); if (!n) return fail("That need no longer exists.");
+        const st = (a.statement || "").trim(); if (!st) return fail("A need cannot be blank.");
+        n.statement = st; changed.add("needs"); break;
+      }
+      case "setNeedDescription": { const n = need_(a.id); if (!n) return fail("That need no longer exists."); n.description = (a.description || "").trim(); changed.add("needs"); message = "Description saved."; break; }
+      case "moveNeed": {
+        const n = need_(a.id); if (!n) return fail("That need no longer exists.");
+        if (n.parent === null) return fail("The root is the founding principle; it cannot move.");
+        if (!need_(a.parent)) return fail("Pick a parent to move it under.");
+        if (subtree(s, a.id).includes(a.parent)) return fail("A need cannot move under itself or its own children.");
+        const old = n.parent; n.parent = a.parent; n.order = children(s, a.parent).length + 1;
+        renumber(s, old); renumber(s, a.parent);
+        const before = s.sessions.length;
+        if (ancestors(s, a.id).some(p => s.sessions.includes(p))) s.sessions = s.sessions.filter(x => !subtree(s, a.id).includes(x));
+        if (s.sessions.length !== before) { changed.add("sessions"); warning = "It moved inside another session, so the sessions it carried were unmarked: sessions never nest."; }
+        changed.add("needs"); message = `Moved ${nq(a.id)} under ${nq(a.parent)}.`; break;
+      }
+      case "reorderNeed": {
+        const n = need_(a.id); if (!n || n.parent === null) return fail("The root has no siblings.");
+        const sibs = children(s, n.parent); const i = sibs.findIndex(x => x.id === a.id); const j = i + a.dir;
+        if (j < 0 || j >= sibs.length) return fail("Already at the end.");
+        [sibs[i], sibs[j]] = [sibs[j], sibs[i]]; sibs.forEach((x, k) => { x.order = k; }); changed.add("needs"); break;
+      }
+      case "deleteNeed": {
+        const n = need_(a.id); if (!n) return fail("That need no longer exists.");
+        if (n.parent === null) return fail("The root is the founding principle; rename it instead.");
+        const label = nq(a.id);
+        for (const c of children(s, a.id)) { c.parent = n.parent; c.order = 1e6 + c.order; }
+        s.needs = s.needs.filter(x => x.id !== a.id); renumber(s, n.parent);
+        const t0 = s.tags.length, r0 = s.route_need.length;
+        s.tags = s.tags.filter(t => t.need !== a.id); s.route_need = s.route_need.filter(x => x.need !== a.id);
+        s.sessions = s.sessions.filter(x => x !== a.id);
+        s.notes = s.notes.filter(x => x.target !== a.id);
+        s.followups = s.followups.filter(f => !(f.target_type === "need" && f.target === a.id));
+        ["needs", "tags", "route_need", "sessions", "notes", "followups"].forEach(k => changed.add(k));
+        message = `Deleted ${label}. ${t0 - s.tags.length} link(s) went with it.`;
+        break;
+      }
+      case "toggleSession": {
+        const n = need_(a.id); if (!n) return fail("That need no longer exists.");
+        if (s.sessions.includes(a.id)) { s.sessions = s.sessions.filter(x => x !== a.id); message = `${nq(a.id)} is no longer a session.`; }
+        else {
+          const clash = s.sessions.filter(x => ancestors(s, a.id).includes(x) || subtree(s, a.id).includes(x));
+          s.sessions = s.sessions.filter(x => !clash.includes(x)); s.sessions.push(a.id);
+          message = `${nq(a.id)} is a session.` + (clash.length ? ` ${clash.length} session(s) above or below it were unmarked: sessions never nest.` : "");
+        }
+        changed.add("sessions"); break;
+      }
+      case "tag": {
+        if (!ix.caps.has(a.capability)) return fail("Unknown capability.");
+        if (!need_(a.need)) return fail("Pick a need to link it to.");
+        if (s.tags.some(t => t.capability === a.capability && t.need === a.need)) return fail("Already linked there.");
+        s.tags.push({ capability: a.capability, need: a.need, note: a.note || "" }); changed.add("tags");
+        if (noOwner(s, a.capability)) { s.no_owner = s.no_owner.filter(x => x.capability !== a.capability); changed.add("no_owner"); warning = "The “no narrative owner” mark was removed: it now has a need."; }
+        message = `Linked ${cq(a.capability)} under ${nq(a.need)}.`; break;
+      }
+      case "untag": {
+        const before = s.tags.length;
+        s.tags = s.tags.filter(t => !(t.capability === a.capability && t.need === a.need));
+        if (s.tags.length === before) return fail("Not linked there.");
+        const rids = new Set((ix.routesByCap.get(a.capability) || []).map(r => r.id));
+        const r0 = s.route_need.length; s.route_need = s.route_need.filter(x => !(x.need === a.need && rids.has(x.route)));
+        if (r0 !== s.route_need.length) changed.add("route_need");
+        if ((a.reason || "").trim()) { const prev = noteOf(s, a.capability); setNote(s.notes, a.capability, (prev ? prev + "\n" : "") + `Untagged from ${a.need}: ${a.reason.trim()}`); changed.add("notes"); }
+        changed.add("tags"); message = `Unlinked ${cq(a.capability)} from ${nq(a.need)}.`; break;
+      }
+      case "setNoOwner": {
+        if (tagsOf(s, a.capability).length) return fail("It is linked to a need. Unlink it first.");
+        const x = noOwner(s, a.capability); if (x) x.note = a.note || ""; else s.no_owner.push({ capability: a.capability, note: a.note || "" });
+        changed.add("no_owner"); message = `Marked ${cq(a.capability)}: no narrative owner.`; break;
+      }
+      case "clearNoOwner": { s.no_owner = s.no_owner.filter(x => x.capability !== a.capability); changed.add("no_owner"); message = "The “no narrative owner” mark was removed."; break; }
+      case "strike": {
+        const r = ix.routes.get(a.route); if (!r) return fail("Unknown route.");
+        if (!(a.reason || "").trim()) return fail("A strike needs a reason.");
+        const d = decisionOf(s, r.capability);
+        if (d && d.state === "selected" && d.routes.includes(a.route)) return fail("This route is selected. Clear the decision before striking it.");
+        const g = globalOf(s, a.route); if (g) { g.state = "struck"; g.reason = a.reason.trim(); } else s.route_global.push({ route: a.route, state: "struck", reason: a.reason.trim() });
+        changed.add("route_global");
+        const hits = s.route_need.filter(x => x.route === a.route && x.state === "suggested").length + (d && d.state === "open" && d.candidates.includes(a.route) ? 1 : 0);
+        message = `Struck ${rq(a.route)} for every need.`; if (hits) warning = `${hits} suggestion or candidate still names it; they are flagged.`;
+        break;
+      }
+      case "unstrike": { s.route_global = s.route_global.filter(x => x.route !== a.route); changed.add("route_global"); message = `${rq(a.route)} is standing again.`; break; }
+      case "setRouteNeed": {
+        const r = ix.routes.get(a.route); if (!r) return fail("Unknown route.");
+        if (!s.tags.some(t => t.capability === r.capability && t.need === a.need)) return fail("Link the capability to this need first.");
+        if (!["suggested", "rejected", "open"].includes(a.state)) return fail("Choose suggest, reject or open.");
+        if (a.state === "suggested" && isStruck(s, a.route)) return fail("This route is struck for every need.");
+        const reason = (a.reason || "").trim(), reopen = (a.reopen || "").trim();
+        if (a.state !== "open" && !reason) return fail(`Say why: a ${a.state === "suggested" ? "suggestion" : "rejection"} needs a reason.`);
+        if (a.state === "open" && !reopen) return fail("Say what should reopen it, or that its use is not visible yet.");
+        const x = routeNeedOf(s, a.route, a.need);
+        const body = { route: a.route, need: a.need, state: a.state, reason: a.state === "open" ? "" : reason, reopen: a.state === "open" ? reopen : "" };
+        if (x) Object.assign(x, body); else s.route_need.push(body);
+        changed.add("route_need"); message = "Saved for this need."; break;
+      }
+      case "clearRouteNeed": { s.route_need = s.route_need.filter(x => !(x.route === a.route && x.need === a.need)); changed.add("route_need"); break; }
+      case "select": {
+        if (!ix.caps.has(a.capability)) return fail("Unknown capability.");
+        const routes = uniq(a.routes || []);
+        if (!routes.length) return fail("Tick at least one route to select.");
+        if (routes.some(r => (ix.routes.get(r) || {}).capability !== a.capability)) return fail("A selected route belongs to another capability.");
+        if (routes.some(r => isStruck(s, r))) return fail("A struck route cannot be selected.");
+        const by = (a.decided_by || "").trim(); if (!TICKET.test(by)) return fail("Name the ticket that decided it, like #212.");
+        if (routes.length > 1 && !allCompose(ix, routes)) warning = "The card does not say these routes compose. Selected anyway; check it.";
+        const body = { capability: a.capability, state: "selected", routes, decided_by: by, candidates: [], known: a.known || "", reopen: "" };
+        const i = s.capability_decision.findIndex(d => d.capability === a.capability);
+        if (i >= 0) s.capability_decision[i] = body; else s.capability_decision.push(body);
+        changed.add("capability_decision"); message = `Selected ${routes.map(rq).join(" + ")} (${by}).`; break;
+      }
+      case "setOpen": {
+        if (!ix.caps.has(a.capability)) return fail("Unknown capability.");
+        const cands = uniq(a.candidates || []);
+        if (cands.some(r => (ix.routes.get(r) || {}).capability !== a.capability)) return fail("A candidate belongs to another capability.");
+        if (cands.some(r => isStruck(s, r))) return fail("A struck route cannot be a candidate.");
+        if (!(a.reopen || "").trim()) return fail("Name the story question or act that should reopen it, or say its use is not visible yet.");
+        const body = { capability: a.capability, state: "open", routes: [], decided_by: "", candidates: cands, known: a.known || "", reopen: a.reopen.trim() };
+        const i = s.capability_decision.findIndex(d => d.capability === a.capability);
+        if (i >= 0) s.capability_decision[i] = body; else s.capability_decision.push(body);
+        changed.add("capability_decision"); message = "Recorded as open."; break;
+      }
+      case "clearDecision": { s.capability_decision = s.capability_decision.filter(d => d.capability !== a.capability); changed.add("capability_decision"); message = "Decision cleared."; break; }
+      case "setNote": { setNote(s.notes, a.target, (a.text || "").trim()); changed.add("notes"); message = "Note saved."; break; }
+      case "addFollowup": {
+        if (!["need", "capability", "route"].includes(a.target_type)) return fail("Unknown follow-up target.");
+        if (!["wrong", "dig"].includes(a.kind)) return fail("Choose “this is wrong” or “dig into this”.");
+        const id = nextFollowupId(s);
+        s.followups.push({ id, target_type: a.target_type, target: a.target, kind: a.kind, note: (a.note || "").trim(), status: "open", created: a.created || new Date().toISOString() });
+        changed.add("followups"); message = a.kind === "wrong" ? "Flagged “this is wrong”. It is on the Follow-ups queue." : "Flagged “dig into this”. It is on the Follow-ups queue."; break;
+      }
+      case "setFollowup": {
+        const f = s.followups.find(x => x.id === a.id); if (!f) return fail("That follow-up no longer exists.");
+        if (a.status) { if (!["open", "done"].includes(a.status)) return fail("Status is open or done."); f.status = a.status; }
+        if (a.note !== undefined) f.note = (a.note || "").trim();
+        changed.add("followups"); break;
+      }
+      case "deleteFollowup": { s.followups = s.followups.filter(x => x.id !== a.id); changed.add("followups"); message = "Follow-up deleted."; break; }
+      default: return fail("Unknown action " + a.type);
+    }
+    return { state: s, changed: [...changed], message, warning };
+  }
+
+  /* ---- export / import ---- */
+  const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, o[k]]));
+  const SHAPES = {
+    needs: ["id", "parent", "statement", "description", "order"], tags: ["capability", "need", "note"], no_owner: ["capability", "note"],
+    route_global: ["route", "state", "reason"], route_need: ["route", "need", "state", "reason", "reopen"],
+    capability_decision: ["capability", "state", "routes", "decided_by", "candidates", "known", "reopen"], notes: ["target", "text"],
+    followups: ["id", "target_type", "target", "kind", "note", "status", "created"],
+  };
+  const DEFAULTS = { note: "", reason: "", reopen: "", known: "", decided_by: "", routes: [], candidates: [], text: "", order: 0, description: "", status: "open", created: "", statement: "" };
+  const TOP = ["schema", "inventory_commit", "exported_at", "needs", "sessions", "tags", "no_owner", "route_global", "route_need", "capability_decision", "notes", "followups"];
+  function exportObject(s, exportedAt) {
+    const o = { schema: SCHEMA, inventory_commit: s.inventory_commit, exported_at: exportedAt, sessions: [...s.sessions] };
+    for (const k of Object.keys(SHAPES)) o[k] = (s[k] || []).map(x => pick(x, SHAPES[k]));
+    return pick(o, TOP);
+  }
+  function importObject(ix, obj) {
+    const errors = [], warnings = [];
+    if (!obj || typeof obj !== "object") return { errors: ["Not a JSON object."], warnings };
+    if (obj.schema !== SCHEMA) errors.push(`schema must be "${SCHEMA}".`);
+    for (const k of SECTIONS) if (!Array.isArray(obj[k])) errors.push(`${k} must be an array.`);
+    if (obj.followups !== undefined && !Array.isArray(obj.followups)) errors.push("followups must be an array.");
+    if (errors.length) return { errors, warnings };
+    const src = { ...obj, followups: obj.followups || [] };
+    // v2: a need's old `note` folds into its description
+    src.needs = obj.needs.map(x => { if (!x || x.note === undefined) return x; const { note, ...rest } = x; if (note) { rest.description = [rest.description, note].filter(Boolean).join("\n\n"); warnings.push(`A need's note was moved into its description: “${String(x.statement).slice(0, 40)}”.`); } return rest; });
+    const s = { schema: SCHEMA, inventory_commit: obj.inventory_commit || ix.inv.source_commit, sessions: obj.sessions.map(String) };
+    for (const k of Object.keys(SHAPES)) s[k] = src[k].map((x, i) => {
+      const extra = Object.keys(x || {}).filter(f => !SHAPES[k].includes(f)); if (extra.length) warnings.push(`${k}[${i}]: dropped unknown field(s) ${extra.join(", ")}.`);
+      const y = {}; for (const f of SHAPES[k]) y[f] = x[f] === undefined ? clone(DEFAULTS[f] ?? null) : x[f]; return y;
+    });
+    if (s.inventory_commit !== ix.inv.source_commit) warnings.push(`Built against inventory ${String(s.inventory_commit).slice(0, 7)}; this page carries ${ix.inv.source_commit.slice(0, 7)}.`);
+    const ids = new Set(s.needs.map(n => n.id));
+    if (ids.size !== s.needs.length) errors.push("Need IDs repeat.");
+    const roots = s.needs.filter(n => n.parent === null); if (s.needs.length && roots.length !== 1) errors.push(`The tree needs exactly one root; found ${roots.length}.`);
+    for (const n of s.needs) { if (n.parent !== null && !ids.has(n.parent)) errors.push(`${n.id}'s parent ${n.parent} does not exist.`); if (ancestors(s, n.id).includes(n.id)) errors.push(`${n.id} sits in a cycle.`); }
+    for (const x of s.sessions) if (!ids.has(x)) warnings.push(`Session ${x} is not a need.`);
+    for (const x of s.sessions) if (ancestors(s, x).some(p => s.sessions.includes(p))) warnings.push(`Session ${x} is nested inside another session.`);
+    const capRef = (c, where) => { if (!ix.caps.has(c)) warnings.push(`${where}: capability ${c} is not in this inventory (kept).`); };
+    const routeRef = (r, where) => { if (!ix.routes.has(r)) warnings.push(`${where}: route ${r} is not in this inventory (kept).`); };
+    s.tags.forEach((t, i) => { capRef(t.capability, `tags[${i}]`); if (!ids.has(t.need)) warnings.push(`tags[${i}]: need ${t.need} does not exist.`); });
+    s.no_owner.forEach((t, i) => capRef(t.capability, `no_owner[${i}]`));
+    s.route_global.forEach((t, i) => routeRef(t.route, `route_global[${i}]`));
+    s.route_need.forEach((t, i) => { routeRef(t.route, `route_need[${i}]`); if (!ids.has(t.need)) warnings.push(`route_need[${i}]: need ${t.need} does not exist.`); });
+    s.capability_decision.forEach((d, i) => { capRef(d.capability, `capability_decision[${i}]`); if (d.state === "selected" && !TICKET.test(d.decided_by || "")) warnings.push(`capability_decision[${i}]: selected without a decided_by ticket.`); });
+    s.followups.forEach((f, i) => { if (f.target_type === "capability") capRef(f.target, `followups[${i}]`); else if (f.target_type === "route") routeRef(f.target, `followups[${i}]`); else if (f.target_type === "need" && !ids.has(f.target)) warnings.push(`followups[${i}]: need ${f.target} does not exist.`); });
+    return { state: errors.length ? null : s, errors, warnings };
+  }
+
+  return { SCHEMA, indexInventory, empty, need, root, children, ancestors, subtree, sessionOf, tagsOf, tagsAt, noOwner,
+           globalOf, isStruck, decisionOf, routeNeedOf, noteOf, surviving, followupsOf, ownership, composes, allCompose, sessionView, conflicts,
+           orphans, apply, exportObject, importObject };
+})();
+</script>
+<script>
+/* ================= Page ================= */
+let IX = null, S = null, LOAD = "loading";
+let ETAG = null, SAVE = "saved", saving = false, again = false, saveTimer = null;
+let PATHS = { inventory: "", state: "" }, LOAD_WARNINGS = [];
+const UNDO = [];
+const SPEC = new Map();   // "path#anchor" -> {loading} | {data} | {error}
+const UI = {
+  tab: "tree", open: new Set(), sel: null, back: [], pop: null, modal: null, adding: null, renaming: null,
+  flashKey: null, fuIdx: 0, fuFilter: "open", specOpen: new Set(),
+  capSel: null, railIdx: 0, rail: { q: "", f: "all" }, railClosed: new Set(), gridOpen: new Set(),
+  importText: "", importMsg: null, decMode: null, rnDraft: {}, confirmDelete: false,
+};
+const LS = { get(k) { try { return JSON.parse(localStorage.getItem("ws2." + k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem("ws2." + k, JSON.stringify(v)); } catch (e) {} } };
+{ const t = LS.get("tab"); if (t) UI.tab = (t === "unplaced" || t === "browse") ? "caps" : t; UI.capSel = LS.get("capSel"); UI.wide = !!LS.get("wide"); const o = LS.get("open"); if (Array.isArray(o)) UI.open = new Set(o); }
+
+const $ = (id) => document.getElementById(id);
+const esc = (x) => String(x ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const cut = (t, n) => { t = String(t ?? ""); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
+const arr = (x) => Array.isArray(x) ? x : x == null || x === "" ? [] : [x];
+const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + "s")}`;
+const tip = (t) => `data-tip="${esc(String(t).replace(/`/g, ""))}"`;
+const routeText = (r) => String(r.text || r.summary || "").replace(/\s*\uFFFD\s*/g, " · ");
+const code = (t) => esc(t || "").replace(/`([^`]+)`/g, "<code>$1</code>");
+
+const ICON = {
+  chev: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg>',
+  plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
+  flag: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 14V2.5M3.5 2.5h8l-1.6 3 1.6 3h-8"/></svg>',
+  link: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.5 9.5l3-3M7 4.5l1.2-1.2a2.8 2.8 0 0 1 4 4L11 8.5M9 11.5l-1.2 1.2a2.8 2.8 0 0 1-4-4L5 7.5"/></svg>',
+  need: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="5" rx="1.5"/><path d="M8 7.5v3M4.5 13.5h7"/></svg>',
+  back: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8 10 12.5"/></svg>',
+  x: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+  doc: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 1.8h5.5L12.5 5v9.2H4z"/><path d="M9.3 1.8V5h3.2M6 8h4.5M6 10.5h4.5"/></svg>',
+  target: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="1.8"/></svg>',
+  up: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10 8 5.5l4.5 4.5"/></svg>',
+  down: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6 8 10.5 12.5 6"/></svg>',
+  trash: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M6 4.5V2.8h4v1.7M4 4.5l.7 9h6.6l.7-9"/></svg>',
+  move: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9.5 4.5 13 8l-3.5 3.5"/></svg>',
+};
+
+const BRANCH = ["#5B6CF0", "#0E9F8E", "#E07A1F", "#D6457A", "#8A5CF6", "#2A93D5", "#6B9E1F", "#B8860B", "#C2410C", "#0F766E"];
+
+function toast(msg, kind, undo) {
+  const el = document.createElement("div"); el.className = "toast " + (kind || "");
+  el.innerHTML = `<span>${esc(msg)}</span>${undo ? `<button data-act="undo">Undo</button>` : ""}`;
+  $("toasts").appendChild(el);
+  while ($("toasts").children.length > 3) $("toasts").firstChild.remove();
+  setTimeout(() => el.remove(), kind === "err" ? 8000 : 4500);
+}
+
+/* ---------- persistence: the repo file is the state; every edit PUTs the whole of it ---------- */
+const stateText = () => JSON.stringify(Surface.exportObject(S, new Date().toISOString()), null, 2) + "\n";
+function scheduleSave() { SAVE = "dirty"; renderTop(); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 250); }
+async function saveNow() {
+  if (!S) return;
+  if (saving) { again = true; return; }
+  saving = true; SAVE = "saving"; renderTop();
+  try {
+    const r = await fetch("/api/state", { method: "PUT", headers: { "Content-Type": "application/json", ...(ETAG ? { "If-Match": ETAG } : {}) }, body: stateText() });
+    if (r.status === 409) { SAVE = "conflict"; again = false; toast("The state file changed on disk after this page loaded it. Nothing was saved. Reload to pick up the file.", "err"); }
+    else if (!r.ok) { SAVE = "error"; toast("Save failed: " + await r.text(), "err"); }
+    else { ETAG = r.headers.get("ETag"); SAVE = again ? "dirty" : "saved"; }
+  } catch (e) { SAVE = "error"; toast("Save failed: the server is not answering. Is surface_server.py running?", "err"); }
+  finally { saving = false; renderTop(); if (again && SAVE !== "conflict") { again = false; saveNow(); } }
+}
+window.addEventListener("beforeunload", (e) => { if (SAVE === "dirty" || SAVE === "saving" || SAVE === "error") { e.preventDefault(); e.returnValue = ""; } });
+
+function dispatch(action, quiet) {
+  const r = Surface.apply(S || Surface.empty(IX), IX, action);
+  if (r.error) { toast(r.error, "err"); return false; }
+  if (S) { UNDO.push(S); if (UNDO.length > 80) UNDO.shift(); }
+  S = r.state;
+  if (r.message && !quiet) toast(r.message, "", true);
+  if (r.warning) toast(r.warning, "warn");
+  scheduleSave(); render();
+  return true;
+}
+function undo() {
+  if (!UNDO.length) { toast("Nothing to undo."); return; }
+  S = UNDO.pop(); closePop(); scheduleSave(); render(); toast("Undone.");
+}
+
+async function load() {
+  try {
+    const ri = await fetch("/api/inventory"); if (!ri.ok) throw new Error("inventory: HTTP " + ri.status);
+    PATHS.inventory = ri.headers.get("X-Inventory-Path") || "";
+    IX = Surface.indexInventory(await ri.json());
+    try { const rg = await fetch("/api/glosses"); if (rg.ok) { const g = await rg.json(); GL = { capabilities: g.capabilities || {}, routes: g.routes || {} }; } } catch (e) {}
+    const rs = await fetch("/api/state"); PATHS.state = rs.headers.get("X-State-Path") || "";
+    if (rs.status === 404) { S = null; }
+    else if (!rs.ok) throw new Error("state: HTTP " + rs.status);
+    else {
+      ETAG = rs.headers.get("ETag");
+      const r = Surface.importObject(IX, await rs.json());
+      if (r.errors.length) { LOAD = "failed"; $("main").innerHTML = `<div class="page"><h1>The state file does not load</h1><ul>${r.errors.map(e => `<li>${esc(e)}</li>`).join("")}</ul><p class="lede">Nothing was changed. Fix the file, then reload.</p></div>`; renderTop(); return; }
+      S = r.state; LOAD_WARNINGS = r.warnings;
+    }
+    LOAD = "ready"; UI._railReveal = true;
+    if (!S || !S.needs.length) { S = Surface.apply(S || Surface.empty(IX), IX, { type: "createRoot", statement: "" }).state; scheduleSave(); }
+    const rt = Surface.root(S);
+    if (!LS.get("open")) { UI.open.add("n|" + rt.id); S.needs.forEach(n => UI.open.add("n|" + n.id)); }
+    UI.open.add("n|" + rt.id);
+    render();
+  } catch (e) {
+    LOAD = "failed"; renderTop();
+    $("main").innerHTML = `<div class="page"><h1>Cannot reach the surface server</h1><p class="lede">Start it from the repo root with <code>python tools/surface_server.py</code> (or double-click <code>tools/surface.cmd</code>), then reload. (${esc(e.message)})</p></div>`;
+  }
+}
+
+/* ---------- derived reads (cached per render) ---------- */
+let C = null;
+function cache() {
+  if (C) return C;
+  const rt = Surface.root(S);
+  const top = rt ? Surface.children(S, rt.id) : [];
+  const branchIdx = new Map(top.map((n, i) => [n.id, i]));
+  const branchOf = new Map();
+  for (const n of S.needs) {
+    if (n.parent === null) { branchOf.set(n.id, null); continue; }
+    const chain = [n.id, ...Surface.ancestors(S, n.id)];
+    branchOf.set(n.id, chain.find(x => branchIdx.has(x)) || null);
+  }
+  C = { rt, top, branchIdx, branchOf, stats: new Map() };
+  return C;
+}
+const colorOfBranch = (b) => b == null ? "#9A9FA6" : BRANCH[cache().branchIdx.get(b) % BRANCH.length];
+const colorOfNeed = (id) => colorOfBranch(cache().branchOf.get(id));
+const placementsOf = (cap) => Surface.tagsOf(S, cap).map(t => t.need);
+function capColors(cap) { return [...new Set(placementsOf(cap).map(colorOfNeed))]; }
+function stripe(colors) {
+  if (!colors.length) return "var(--line-2)";
+  if (colors.length === 1) return colors[0];
+  const step = 100 / colors.length;
+  return `linear-gradient(to bottom, ${colors.map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`).join(", ")})`;
+}
+function needStats(id) {
+  const c = cache(); if (c.stats.has(id)) return c.stats.get(id);
+  const sub = Surface.subtree(S, id);
+  const caps = [...new Set(S.tags.filter(t => sub.includes(t.need) && IX.caps.has(t.capability)).map(t => t.capability))];
+  let standing = 0, total = 0, decided = 0;
+  for (const cap of caps) { const all = IX.routesByCap.get(cap) || []; total += all.length; standing += all.filter(r => !Surface.isStruck(S, r.id)).length; if (Surface.decisionOf(S, cap)) decided++; }
+  const out = { caps: caps.length, standing, total, decided };
+  c.stats.set(id, out); return out;
+}
+const needText = (id) => { const n = Surface.need(S, id); return n ? (n.statement || (n.parent === null ? "The founding principle (not written yet)" : "(blank)")) : `(missing need ${id})`; };
+/* plain-language glosses (docs/data/capability-glosses.json, served at /api/glosses); absent = original wording */
+let GL = { capabilities: {}, routes: {} };
+const gl = (id) => (GL.capabilities || {})[id] || null;
+const capWording = (id) => (IX.caps.get(id) || {}).text || `(capability ${id} is not in this inventory)`;
+const capText = (id) => (gl(id) && gl(id).title) || capWording(id);
+const routePlain = (r) => ((GL.routes || {})[r.id] || {}).plain || "";
+function origLine(id, cls) { return gl(id) && gl(id).title ? `<div class="orig ${cls || ""}" ${tip("The card's own wording.")}>${code(capWording(id))}</div>` : ""; }
+function glossSummary(id, cls) {
+  const s = gl(id) && gl(id).summary; if (!s) return "";
+  const un = /^UNCLEAR:\s*/.test(s);
+  return `<div class="gsum ${un ? "unclear" : ""} ${cls || ""}" ${un ? tip("Whoever wrote this plain summary wasn't sure what the card means. Worth a follow-up.") : ""}>${un ? `<span class="unc">Unclear</span> ` : ""}${code(s.replace(/^UNCLEAR:\s*/, ""))}</div>`;
+}
+const cardOf = (capId) => IX.cards.get((IX.caps.get(capId) || {}).card) || null;
+const routeLabel = (r) => r.label || r.id;
+function needPath(id) { return [...Surface.ancestors(S, id)].reverse().concat(id); }
+const openFollowups = (type, id) => Surface.followupsOf(S, type, id).filter(f => f.status === "open");
+
+/* plain-English chips */
+function stateChip(cap) {
+  const d = Surface.decisionOf(S, cap);
+  if (!d) return `<span class="chip out" ${tip("Undecided: no route selected yet, and it hasn't been recorded as open.")}>Undecided</span>`;
+  if (d.state === "selected") return `<span class="chip ok" ${tip(`Selected: ${d.routes.map(r => routeLabel(IX.routes.get(r) || { id: r })).join(" + ")}, decided in ${d.decided_by}.`)}>Selected</span>`;
+  return `<span class="chip warn" ${tip("Open: deliberately left undecided because the story that would decide it isn't written yet. " + (d.reopen ? "Reopen when: " + d.reopen : ""))}>Open</span>`;
+}
+function routesChip(cap) {
+  const all = (IX.routesByCap.get(cap) || []).length, st = Surface.surviving(S, IX, cap).length;
+  return `<span class="chip" ${tip(`${st} of its ${plural(all, "route")} still standing${all - st ? `; ${all - st} struck` : ""}. A route is one way of building it.`)}>${st} of ${plural(all, "route")} standing</span>`;
+}
+function ownChip(cap, clickable) {
+  const o = Surface.ownership(S, cap);
+  const nm = (id) => cut(needText(id), 40);
+  if (o.status === "shared") return `<span class="chip acc" ${tip(`Shared: the needs it sits under fall in ${o.sessions.length} different sessions (${o.sessions.map(nm).join("; ")}). Each session only suggests a route; the conflict pass decides.`)}>Shared by ${o.sessions.length} sessions</span>`;
+  if (o.status === "owned") return `<span class="chip acc" ${tip(`Owned: every need it sits under falls inside one session (${nm(o.sessions[0])}). That session decides it.`)}>Owned by one session</span>`;
+  if (o.status === "unpartitioned") return `<span class="chip" ${tip("Placed, but none of its needs is inside a session yet. Mark a need as a session in its panel.")}>No session yet</span>`;
+  if (o.status === "no_owner") return `<span class="chip" ${tip("Marked as having no narrative owner: no need in the story calls for it.")}>No narrative owner</span>`;
+  return `<span class="chip warn" ${tip("Unplaced: not under any need yet, and not marked as having no owner. It waits on the Capabilities tab.")}>Unplaced</span>`;
+}
+function fuChip(type, id) {
+  const n = openFollowups(type, id).length;
+  return n ? `<span class="chip dig" ${tip(`${plural(n, "open follow-up")} on this. See the Follow-ups tab.`)}>${ICON.flag.replace("<svg", '<svg style="width:11px;height:11px"')} ${n}</span>` : "";
+}
+function weightWord(r) { return r.weight_text || (r.weight ? r.weight[0].toUpperCase() + r.weight.slice(1) : null); }
+const PROV = { explicit: "stated on the route", inherited: "inherited from the capability row", unstated: "not stated on the card" };
+function flagChips(r, noGroup) {
+  const out = [];
+  if (/already built/i.test(r.label || "")) out.push(`<span class="chip ok" ${tip("Already built: this route exists in the mod today.")}>Already built</span>`);
+  if (r.as_specced) out.push(`<span class="chip acc" ${tip("As specced: this is the route the current spec describes.")}>As specced</span>`);
+  if (r.not_recommended) out.push(`<span class="chip bad" ${tip("The card recommends against this route" + (r.marks.length ? ": " + r.marks.join("; ") : "."))}>Not recommended</span>`);
+  if (r.fallback_only) out.push(`<span class="chip warn" ${tip("Fallback only: the card keeps this route in case the preferred one fails.")}>Fallback only</span>`);
+  for (const m of arr(r.marks)) if (!/not recommended|fallback/i.test(m)) out.push(`<span class="chip" ${tip("The card's own qualifier on this route.")}>${esc(m)}</span>`);
+  if (r.group && !noGroup) out.push(`<span class="chip out" ${tip(`Part of the “${r.group}” group. Routes in different groups of one capability combine rather than compete.`)}>${esc(r.group)}</span>`);
+  return out.join(" ");
+}
+
+/* ---------- render ---------- */
+function render() {
+  C = null;
+  renderTop();
+  if (LOAD !== "ready") return;
+  renderMain(); renderPanel();
+  if (UI.flashKey) {
+    const key = UI.flashKey; UI.flashKey = null;
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-key="${CSS.escape(key)}"]`);
+      if (el) { el.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" }); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+    });
+  }
+}
+
+function renderTop() {
+  if (!IX || !S) { $("tabs").innerHTML = ""; $("topright").innerHTML = ""; return; }
+  const o = Surface.orphans(S, IX);
+  const conf = Surface.conflicts(S, IX).filter(c => c.kind === "conflict").length;
+  const fu = (S.followups || []).filter(f => f.status === "open").length;
+  const tabs = [["tree", "Tree", null, "The need tree: needs you write, capabilities linked under them, and their routes."],
+    ["caps", "Capabilities", o.caps.length, "Every capability, one full page at a time. The number is how many are still unplaced."],
+    ["conflicts", "Conflicts", conf, "Capabilities shared by more than one session, with each session's suggestion side by side."],
+    ["followups", "Follow-ups", fu, "Things you flagged as wrong or worth digging into, for an agent to work later."]];
+  $("tabs").innerHTML = tabs.map(([k, t, n, h]) => `<button class="tab ${UI.tab === k ? "on" : ""}" data-act="tab" data-v="${k}" ${tip(h)}>${t}${n != null ? `<span class="count">${n}</span>` : ""}</button>`).join("");
+  const lab = { saved: ["", "Saved", `Every edit is written straight to ${PATHS.state}.`], dirty: ["dirty", "Saving…", "Writing your last edit."], saving: ["saving", "Saving…", "Writing your last edit."],
+    error: ["bad", "Not saved", "The last save failed; see the message."], conflict: ["bad", "Not saved — reload", "The state file changed on disk after this page loaded it, so nothing was overwritten. Reload the page to pick up the file."] }[SAVE];
+  $("topright").innerHTML = `<span class="savepill ${lab[0]}" id="saveState" data-state="${SAVE}" ${tip(lab[2])}><span class="dot"></span>${lab[1]}</span>
+    <button class="btn ghost sm" data-act="undo" ${tip("Undo the last edit (Ctrl+Z).")}>Undo</button>
+    <button class="btn sm" data-act="backup" ${tip("Download the state as a file, or restore it from one.")}>Backup</button>`;
+}
+
+function renderMain() {
+  const m = $("main");
+  const keep = UI._lastTab === UI.tab ? { top: m.scrollTop, left: m.scrollLeft } : null;
+  const rl = m.querySelector(".raillist"), cp = $("cpage");
+  const keepCaps = UI._lastTab === UI.tab && rl ? { rail: rl.scrollTop, page: cp ? cp.scrollTop : 0 } : null;
+  const warn = LOAD_WARNINGS.length ? `<div class="banner"><b>${plural(LOAD_WARNINGS.length, "warning")} loading the state file.</b> ${LOAD_WARNINGS.slice(0, 4).map(esc).join(" · ")} <button class="link" data-act="dismissWarn">Dismiss</button></div>` : "";
+  m.innerHTML = warn + ({ tree: viewTree, caps: viewCaps, conflicts: viewConflicts, followups: viewFollowups }[UI.tab] || viewTree)();
+  if (keep) { m.scrollTop = keep.top; m.scrollLeft = keep.left; }
+  if (UI.tab === "caps") {
+    const rl2 = m.querySelector(".raillist"), cp2 = $("cpage");
+    if (keepCaps && rl2) rl2.scrollTop = keepCaps.rail;
+    if (keepCaps && cp2 && !UI._cpReset) cp2.scrollTop = keepCaps.page;
+    if (UI._railReveal) { const it = m.querySelector(".ritem.on"); if (it) it.scrollIntoView({ block: "nearest" }); }
+    UI._cpReset = false; UI._railReveal = false;
+  }
+  else if (UI.tab === "tree") { const r = m.querySelector(".nnode.root"); if (r) m.scrollLeft = Math.max(0, r.offsetLeft + r.offsetWidth / 2 - m.clientWidth / 2); }
+  UI._lastTab = UI.tab;
+  const f = UI.focus; UI.focus = null;
+  if (f) { const el = document.getElementById(f); if (el) { el.focus(); if (el.select && el.value) el.select(); } }
+}
+
+/* ================= Tree ================= */
+const isOpen = (k) => UI.open.has(k);
+function setOpen(k, v) { if (v) UI.open.add(k); else UI.open.delete(k); LS.set("open", [...UI.open]); }
+const selIs = (type, id, need) => UI.sel && UI.sel.type === type && UI.sel.id === id && (need === undefined || UI.sel.need === need);
+
+function viewTree() {
+  const c = cache(); const rt = c.rt;
+  const legend = c.top.map(n => `<span class="chip click" data-act="jumpNeed" data-id="${esc(n.id)}" ${tip("Top-level branch. Its colour carries down to everything under it.")}><span class="sw" style="background:${colorOfNeed(n.id)}"></span>${esc(cut(n.statement, 34))}</span>`).join("");
+  const placed = IX.inv.capabilities.length - Surface.orphans(S, IX).caps.length;
+  return `<div class="treebar">
+      <button class="btn sm" data-act="expandAll" ${tip("Open every need and capability in the tree.")}>Expand all</button>
+      <button class="btn sm" data-act="collapseAll" ${tip("Close everything down to the top-level branches.")}>Collapse all</button>
+      <div class="legend">${legend}</div>
+      <span class="small muted" style="margin-left:auto;white-space:nowrap">${plural(S.needs.length - 1, "need")} · ${placed} of ${IX.inv.capabilities.length} capabilities placed</span>
+    </div>
+    ${noCapsCallout()}
+    <div class="canvas"><div class="org"><ul>${needLi(rt)}</ul></div></div>`;
+}
+function noCapsCallout() {
+  const ids = Surface.orphans(S, IX).needs;
+  if (!ids.length) return "";
+  return `<div class="nocaps"><b>${plural(ids.length, "need")} with no capabilities yet:</b>${ids.map(id => `<span class="chip click" data-act="jumpNeed" data-id="${esc(id)}" ${tip("Find it in the tree.")}><span class="sw" style="background:${colorOfNeed(id)}"></span>${esc(cut(needText(id), 40))}</span>`).join("")}</div>`;
+}
+
+function needLi(n) {
+  const key = "n|" + n.id, isRoot = n.parent === null;
+  const kids = Surface.children(S, n.id);
+  const caps = Surface.tagsAt(S, n.id).filter(t => IX.caps.has(t.capability));
+  const adding = UI.adding === n.id;
+  const open = isOpen(key) || adding;
+  const hasKids = kids.length || caps.length;
+  const capsHtml = open && caps.length ? `<div class="capstack">${caps.map(t => capNode(t.capability, n.id)).join("")}</div>` : "";
+  let childUl = "";
+  if (open && (kids.length || adding)) childUl = `<ul>${kids.map(needLi).join("")}${adding ? `<li><div class="grp">${newNeedCard(n)}</div></li>` : ""}</ul>`;
+  else if (isRoot && !kids.length && n.statement) childUl = `<ul><li><div class="grp"><button class="ghostcard" data-act="startAdd" data-id="${esc(n.id)}">+ Add the first need under the root</button></div></li></ul>`;
+  return `<li><div class="grp">${needCard(n, open, hasKids)}${capsHtml}</div>${childUl}</li>`;
+}
+
+function needCard(n, open, hasKids) {
+  const isRoot = n.parent === null, key = "n|" + n.id;
+  const st = needStats(n.id);
+  const sess = S.sessions.includes(n.id);
+  let text;
+  if (UI.renaming === n.id || (isRoot && !n.statement)) {
+    text = `<input type="text" class="inline" id="rename-${esc(n.id)}" data-rename="${esc(n.id)}" value="${esc(n.statement)}" placeholder="${isRoot ? "Write the founding principle" : "The need, in the story's terms"}">`;
+  } else text = `<div class="ntext" data-dbl="rename" data-id="${esc(n.id)}" ${tip("Double-click to rename.")}>${esc(n.statement)}</div>`;
+  const badges = st.caps ? `
+      <span class="chip" ${tip(`${plural(st.caps, "capability", "capabilities")} linked here or anywhere below.`)}>${plural(st.caps, "capability", "capabilities")}</span>
+      <span class="chip" ${tip(`${st.standing} of the ${st.total} routes under these capabilities are still standing; ${st.total - st.standing} struck.`)}>${st.standing}/${st.total} routes</span>
+      <span class="chip ${st.decided === st.caps ? "ok" : ""}" ${tip(`${st.decided} of ${st.caps} capabilities have a decision (a selected route, or recorded as open).`)}>${st.decided}/${st.caps} decided</span>`
+    : (isRoot ? "" : `<span class="chip out" ${tip("No capability linked here or below yet. Use + Add → Link capability.")}>No capabilities yet</span>`);
+  const sessPill = sess ? `<span class="chip solid" ${tip("A session: one sitting with an agent covering this branch.")}>Session</span>` : "";
+  const desc = n.description ? `<div class="ndesc">${esc(n.description)}</div>` : "";
+  return `<div class="nnode ${isRoot ? "root" : ""} ${selIs("need", n.id) ? "sel" : ""}" data-key="${esc(key)}" data-act="selNeed" data-id="${esc(n.id)}" style="--c:${colorOfNeed(n.id)}">
+      ${isRoot ? `<div class="eyebrow" style="margin-bottom:4px">Founding principle</div>` : ""}
+      <div class="nhead"><button class="chev ${open ? "open" : ""} ${hasKids ? "" : "none"}" data-act="toggle" data-key="${esc(key)}" ${tip(open ? "Collapse" : "Expand")}>${ICON.chev}</button>${text}</div>
+      ${desc}
+      ${badges || sessPill ? `<div class="nmeta">${sessPill}${badges}${fuChip("need", n.id)}</div>` : ""}
+      <div class="nfoot">${isRoot && !n.statement ? `<span class="small muted">Press <kbd>Enter</kbd> to save. Every need hangs from this line.</span>` : ""}<span class="spacer"></span>
+        <button class="iconbtn hov" data-act="flag" data-tt="need" data-id="${esc(n.id)}" ${tip("Flag: “this is wrong” or “dig into this”.")}>${ICON.flag}</button>
+        ${n.statement ? `<button class="addbtn" data-act="addMenu" data-id="${esc(n.id)}" ${tip("Add a child need, or link a capability here.")}>${ICON.plus}Add</button>` : ""}</div>
+    </div>`;
+}
+
+function newNeedCard(parent) {
+  return `<div class="newcard"><input type="text" id="newNeed" data-parent="${esc(parent.id)}" placeholder="A new need under “${esc(cut(parent.statement, 30))}”">
+    <div class="small muted"><kbd>Enter</kbd> adds it and keeps this open for the next · <kbd>Esc</kbd> closes</div></div>`;
+}
+
+function capNode(cap, needId) {
+  const key = `c|${needId}|${cap}`, open = isOpen(key);
+  const card = cardOf(cap);
+  const others = placementsOf(cap).filter(x => x !== needId);
+  const also = others.length ? `<span class="chip out click" data-act="alsoUnder" data-cap="${esc(cap)}" data-need="${esc(others[0])}" ${tip("Also under: " + others.map(x => "“" + needText(x) + "”").join(", ") + ". Click to jump there.")}>${others.slice(0, 3).map(x => `<span class="sw" style="background:${colorOfNeed(x)}"></span>`).join("")}<span class="el">also under ${esc(needText(others[0]))}</span>${others.length > 1 ? ` +${others.length - 1}` : ""}</span>` : "";
+  let routes = "";
+  if (open) {
+    routes = `<div class="rlist">${(IX.routesByCap.get(cap) || []).map(r => {
+      const struck = Surface.isStruck(S, r.id);
+      return `<div class="rnode ${struck ? "struck" : ""} ${selIs("route", r.id) ? "sel" : ""}" data-key="r|${esc(needId)}|${esc(r.id)}" data-act="selRoute" data-id="${esc(r.id)}" data-need="${esc(needId)}" ${tip(struck ? "Struck: " + (Surface.globalOf(S, r.id) || {}).reason : (r.summary || ""))}>
+        <span class="rl">${esc(routeLabel(r).replace(/\s*\(.*\)\s*$/, "") || routeLabel(r))}</span><span class="rs">${r.group ? `<b>${esc(r.group)}:</b> ` : ""}${code(routePlain(r) || r.summary)}</span><span class="rw">${esc(r.weight || "")}</span></div>`;
+    }).join("")}</div>`;
+  }
+  return `<div class="cnode ${selIs("cap", cap, needId) ? "sel" : ""}" data-key="${esc(key)}" data-act="selCap" data-id="${esc(cap)}" data-need="${esc(needId)}" style="--stripe:${stripe(capColors(cap))}">
+      <div class="nhead"><button class="chev ${open ? "open" : ""}" data-act="toggle" data-key="${esc(key)}" ${tip(open ? "Hide routes" : "Show routes")}>${ICON.chev}</button><div class="ctext">${code(capText(cap))}</div></div>${origLine(cap, "c")}
+      <div class="cmeta"><span class="cn">${esc(card ? card.title : "")}</span><span class="id">${esc(cap)}</span><span style="flex:1"></span>
+        <button class="iconbtn hov" style="width:22px;height:22px" data-act="flag" data-tt="capability" data-id="${esc(cap)}" ${tip("Flag: “this is wrong” or “dig into this”.")}>${ICON.flag}</button></div>
+      <div class="cbadges">${routesChip(cap)}${stateChip(cap)}${fuChip("capability", cap)}${also}</div>
+      ${routes}
+    </div>`;
+}
+
+/* reveal a need / a capability placement / a route in the tree */
+function revealNeed(id) { for (const a of Surface.ancestors(S, id)) setOpen("n|" + a, true); }
+function jumpToNeed(id) { UI.tab = "tree"; LS.set("tab", "tree"); revealNeed(id); setOpen("n|" + id, true); openPanel({ type: "need", id }); UI.flashKey = "n|" + id; render(); }
+function jumpToCap(cap, need) {
+  need = need || placementsOf(cap)[0];
+  if (!need) { openFullPage(cap); return; }
+  UI.tab = "tree"; LS.set("tab", "tree"); revealNeed(need); setOpen("n|" + need, true);
+  openPanel({ type: "cap", id: cap, need }); UI.flashKey = `c|${need}|${cap}`; render();
+}
+function jumpToRoute(rid) {
+  const r = IX.routes.get(rid); if (!r) return;
+  const need = placementsOf(r.capability)[0];
+  if (!need) { openPanel({ type: "route", id: rid }); render(); return; }
+  UI.tab = "tree"; LS.set("tab", "tree"); revealNeed(need); setOpen("n|" + need, true); setOpen(`c|${need}|${r.capability}`, true);
+  openPanel({ type: "route", id: rid, need }); UI.flashKey = `r|${need}|${rid}`; render();
+}
+function jumpTo(type, id) { if (type === "need") jumpToNeed(id); else if (type === "capability") jumpToCap(id); else jumpToRoute(id); }
+
+/* ================= Detail panel ================= */
+function openPanel(p) {
+  if (UI.sel && !(UI.sel.type === p.type && UI.sel.id === p.id)) { UI.back.push(UI.sel); if (UI.back.length > 40) UI.back.shift(); }
+  UI.sel = p; UI.decMode = null; UI.confirmDelete = false; UI._panelScrollReset = true;
+}
+function renderPanel() {
+  const p = $("panel"), body = $("body");
+  const valid = UI.sel && (UI.sel.type === "need" ? Surface.need(S, UI.sel.id) : UI.sel.type === "cap" ? IX.caps.has(UI.sel.id) : UI.sel.type === "route" ? IX.routes.has(UI.sel.id) : UI.sel.type === "doc");
+  if (!valid) { UI.sel = null; p.hidden = true; body.classList.remove("with-panel"); return; }
+  p.hidden = false; body.classList.add("with-panel"); body.classList.toggle("wide", !!UI.wide);
+  const top = UI._panelScrollReset ? 0 : p.scrollTop; UI._panelScrollReset = false;
+  const typeName = { need: "Need", cap: "Capability", route: "Route", doc: "Document" }[UI.sel.type];
+  const head = `<div class="ph">${UI.back.length ? `<button class="btn ghost sm" data-act="back" ${tip("Back to what you were looking at before.")}>${ICON.back}Back</button>` : ""}
+      <span class="eyebrow" style="margin-left:4px">${typeName}</span><span style="flex:1"></span>
+      <button class="btn ghost sm" data-act="widen" ${tip(UI.wide ? "Back to a narrow panel." : "Widen the panel to compare more routes side by side.")}>${UI.wide ? "Narrow" : "Widen"}</button>
+      ${UI.sel.type !== "doc" ? `<button class="btn ghost sm" data-act="showInTree" ${tip("Find this in the tree.")}>${ICON.target}Show in tree</button>` : ""}
+      <button class="iconbtn" data-act="closePanel" ${tip("Close (Esc)")}>${ICON.x}</button></div>`;
+  p.innerHTML = head + `<div class="pb">${({ need: panelNeed, cap: panelCap, route: panelRoute, doc: panelDoc }[UI.sel.type])()}</div>`;
+  p.scrollTop = top;
+}
+
+function crumbs(id, includeSelf) {
+  const path = needPath(id).slice(1); if (!includeSelf) path.pop();
+  if (!path.length) return "";
+  return `<div class="crumbs">${path.map((x, i) => `${i ? "<span>›</span>" : ""}<button class="link" data-act="openNeed" data-id="${esc(x)}">${esc(cut(needText(x), 38))}</button>`).join("")}</div>`;
+}
+function followupSection(type, id) {
+  const list = Surface.followupsOf(S, type, id);
+  return `<div class="sec"><h3>Follow-ups<span class="spacer"></span><button class="btn sm" data-act="flag" data-tt="${type}" data-id="${esc(id)}">${ICON.flag}Flag this</button></h3>
+    ${list.length ? `<div class="list">${list.map(fuRow).join("")}</div>` : `<div class="small muted">Nothing flagged. Use “Flag this” to queue “this is wrong” or “dig into this” for an agent.</div>`}</div>`;
+}
+function fuRow(f) {
+  return `<div class="box" style="display:flex;gap:10px;align-items:flex-start;${f.status === "done" ? "opacity:.6" : ""}">
+    ${f.kind === "wrong" ? `<span class="chip bad">This is wrong</span>` : `<span class="chip dig">Dig into this</span>`}
+    <div style="flex:1;font-size:13.5px">${esc(f.note) || `<span class="muted">No note.</span>`}<div class="small muted">${esc(f.created.slice(0, 10))} · ${f.status === "done" ? "done" : "open"}</div></div>
+    <button class="btn sm" data-act="fuToggle" data-id="${esc(f.id)}">${f.status === "done" ? "Reopen" : "Mark done"}</button></div>`;
+}
+
+/* ---- need ---- */
+function panelNeed() {
+  const n = Surface.need(S, UI.sel.id), isRoot = n.parent === null;
+  const sess = S.sessions.includes(n.id), inS = Surface.sessionOf(S, n.id);
+  const direct = Surface.tagsAt(S, n.id).filter(t => IX.caps.has(t.capability));
+  const kids = Surface.children(S, n.id);
+  const st = needStats(n.id);
+  const title = UI.renaming === "panel:" + n.id
+    ? `<input type="text" id="panelRename" data-rename="${esc(n.id)}" value="${esc(n.statement)}" style="width:100%;font-size:18px;font-weight:600;margin:6px 0 10px">`
+    : `<div class="ptitle edit" data-act="panelRename" ${tip("Click to rename.")}>${esc(n.statement) || `<span class="muted">Write the founding principle</span>`}</div>`;
+  const sessLine = sess ? `This need is a <b>session</b>: one sitting with an agent will cover it and everything below it.`
+    : inS ? `Inside the session <button class="link" data-act="openNeed" data-id="${esc(inS)}">“${esc(cut(needText(inS), 50))}”</button>.`
+    : `Not inside any session yet. Its capabilities count as “no session yet” until a session covers it.`;
+  const del = UI.confirmDelete ? `<div class="box" style="border-color:#EBC3BE;background:var(--bad-soft);margin-top:10px;font-size:13.5px">
+      Delete this need? ${kids.length ? `Its ${plural(kids.length, "child need")} move up to its parent. ` : ""}${direct.length ? `${plural(direct.length, "capability link")} ${direct.length === 1 ? "is" : "are"} removed (the capabilities stay in the inventory). ` : ""}You can undo.
+      <div class="row" style="margin-top:8px"><button class="btn danger solid sm" data-act="deleteNeed">Delete it</button><button class="btn sm" data-act="cancelDelete">Keep it</button></div></div>` : "";
+  return `<div class="row">${sess ? `<span class="chip solid">Session</span>` : ""}${fuChip("need", n.id)}</div>
+    ${title}
+    ${isRoot ? `<div class="small muted">The founding principle: the root every need hangs from.</div>` : crumbs(n.id, false)}
+    <div class="row" style="margin-top:14px">
+      <button class="btn sm" data-act="startAdd" data-id="${esc(n.id)}">${ICON.need}New child need</button>
+      <button class="btn sm" data-act="linkCap" data-id="${esc(n.id)}">${ICON.link}Link capability</button>
+      ${isRoot ? "" : `<button class="btn sm" data-act="moveNeed" data-id="${esc(n.id)}">${ICON.move}Move under…</button>
+      <button class="iconbtn" data-act="reorder" data-dir="-1" ${tip("Move left among its siblings")}>${ICON.up}</button><button class="iconbtn" data-act="reorder" data-dir="1" ${tip("Move right among its siblings")}>${ICON.down}</button>
+      <button class="iconbtn" data-act="askDelete" ${tip("Delete this need")}>${ICON.trash}</button>`}
+    </div>${del}
+    <div class="sec"><h3>Description</h3>
+      <textarea id="needDesc" rows="3" placeholder="What this need means as it plays: who feels it, when, and why it matters. Saved when you click away.">${esc(n.description || "")}</textarea></div>
+    ${isRoot ? "" : `<div class="sec"><h3>Session</h3><div class="small" style="margin-bottom:8px">${sessLine}</div>
+      <button class="btn sm" data-act="toggleSession" ${tip("A session is one sitting with an agent covering one branch. Sessions never nest: marking this unmarks any session above or below it.")}>${sess ? "Stop being a session" : "Make this a session"}</button></div>`}
+    <div class="sec"><h3>Capabilities linked here <span class="count">${direct.length}</span>${st.caps > direct.length ? `<span class="small muted" style="text-transform:none;letter-spacing:0;font-weight:500">${st.caps} including needs below</span>` : ""}</h3>
+      ${direct.length ? `<div class="list">${direct.map(t => capItem(t.capability, n.id)).join("")}</div>` : `<div class="empty">No capability is linked directly to this need. <b>Link capability</b> above searches all ${IX.inv.capabilities.length}.</div>`}</div>
+    ${kids.length ? `<div class="sec"><h3>Child needs <span class="count">${kids.length}</span></h3><div class="list">${kids.map(k => { const s2 = needStats(k.id); return `<div class="item" data-act="openNeed" data-id="${esc(k.id)}"><span class="chip" style="padding:0;width:10px;height:10px;background:${colorOfNeed(k.id)}"></span><div class="grow"><div class="t">${esc(k.statement)}</div><div class="s">${plural(s2.caps, "capability", "capabilities")} · ${s2.standing}/${s2.total} routes standing</div></div></div>`; }).join("")}</div></div>` : ""}
+    ${followupSection("need", n.id)}`;
+}
+function capItem(cap, needId) {
+  const card = cardOf(cap);
+  return `<div class="item" data-act="openCap" data-id="${esc(cap)}" data-need="${esc(needId || "")}">
+    <div class="grow"><div class="t">${code(capText(cap))}</div><div class="s">${esc(card ? card.title : "")} <span class="id">${esc(cap)}</span></div>
+    <div class="row" style="margin-top:6px;gap:4px">${routesChip(cap)}${stateChip(cap)}${fuChip("capability", cap)}</div></div></div>`;
+}
+
+/* ---- capability ---- */
+function whereItSits(id) {
+  const tags = Surface.tagsOf(S, id), own = Surface.ownership(S, id), noo = Surface.noOwner(S, id);
+  const place = tags.length ? tags.map(t => `<div class="placement"><span class="sw" style="background:${colorOfNeed(t.need)}"></span>
+      <div class="grow"><button class="link" style="font-weight:600;color:var(--ink)" data-act="openNeed" data-id="${esc(t.need)}">${esc(needText(t.need))}</button>
+      ${Surface.need(S, t.need).parent !== null ? crumbs(t.need, false) : ""}
+      ${Surface.sessionOf(S, t.need) ? `<div class="small muted">Session: ${esc(cut(needText(Surface.sessionOf(S, t.need)), 50))}</div>` : ""}</div>
+      <button class="btn ghost sm" data-act="alsoUnder" data-cap="${esc(id)}" data-need="${esc(t.need)}" ${tip("Show this placement in the tree.")}>${ICON.target}</button>
+      <button class="btn sm" data-act="unlink" data-cap="${esc(id)}" data-need="${esc(t.need)}" ${tip("Take it off this need, with a one-line reason.")}>Unlink…</button></div>`).join("")
+    : noo ? `<div class="box row" style="justify-content:space-between"><span><span class="chip">No narrative owner</span> <span class="small">${esc(noo.note) || ""}</span></span><button class="btn sm" data-act="clearNoOwner" data-cap="${esc(id)}">Remove the mark</button></div>`
+    : `<div class="empty">Not placed yet. <b>Link it to a need</b>, or mark it as having <b>no narrative owner</b>.</div>`;
+  const ownLine = own.status === "shared" ? `<div class="small" style="margin-top:10px">Shared between sessions ${own.sessions.map(s2 => `<button class="link" data-act="openNeed" data-id="${esc(s2)}">“${esc(cut(needText(s2), 40))}”</button>`).join(" and ")}. Each suggests a route; the conflict pass decides.</div>`
+    : own.status === "owned" ? `<div class="small" style="margin-top:10px">Owned by the session <button class="link" data-act="openNeed" data-id="${esc(own.sessions[0])}">“${esc(cut(needText(own.sessions[0]), 50))}”</button>, which decides it.</div>`
+    : own.status === "unpartitioned" ? `<div class="small muted" style="margin-top:10px">None of its needs is inside a session yet, so it is neither owned nor shared.</div>` : "";
+  return place + ownLine;
+}
+function cardFraming(id) {
+  const card = cardOf(id);
+  const framing = card ? `<details class="framing" ${UI.framingOpen ? "open" : ""} data-framing><summary>${ICON.chev}What the card “${esc(card.title)}” says<span class="small muted" style="font-weight:500">· the story can ${arr(card.story_can).length} things, cannot ${arr(card.story_cannot).length}</span></summary><div class="inner">
+      <dl class="kv"><dt>Possible</dt><dd>${esc(card.possible)}</dd><dt>Multiplayer</dt><dd>${esc(card.multiplayer)}</dd></dl>
+      ${arr(card.story_can).length ? `<div class="frhead can">The story can</div><ul class="frlist">${card.story_can.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      ${arr(card.story_cannot).length ? `<div class="frhead cannot">The story cannot</div><ul class="frlist">${card.story_cannot.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    </div></details>` : "";
+  return framing;
+}
+
+function panelCap() {
+  const id = UI.sel.id, c = IX.caps.get(id), card = cardOf(id);
+  const routes = IX.routesByCap.get(id) || [];
+  const tags = Surface.tagsOf(S, id);
+  const own = Surface.ownership(S, id);
+  const noo = Surface.noOwner(S, id);
+  const note = Surface.noteOf(S, id);
+  const standing = routes.filter(r => !Surface.isStruck(S, r.id));
+
+  const place = whereItSits(id), ownLine = "", framing = cardFraming(id);
+
+  return `<div class="row"><span class="small muted">${esc(card ? card.title : c.card)}</span><span class="id">${esc(id)}</span><span style="flex:1"></span><button class="btn sm" data-act="openFullPage" data-id="${esc(id)}" ${tip("Open this capability as a full page on the Capabilities tab.")}>Open full page</button></div>
+    <div class="ptitle">${code(capText(id))}</div>${glossSummary(id)}${origLine(id)}
+    <div class="row" style="gap:6px">${ownChip(id)}${stateChip(id)}${routesChip(id)}${fuChip("capability", id)}</div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn sm primary" data-act="linkNeed" data-cap="${esc(id)}">${ICON.link}Link to a need</button>
+      ${tags.length || noo ? "" : `<button class="btn sm" data-act="noOwner" data-cap="${esc(id)}" ${tip("No need in the story calls for this capability.")}>No narrative owner</button>`}
+      <button class="btn sm" data-act="flag" data-tt="capability" data-id="${esc(id)}">${ICON.flag}Flag</button>
+    </div>
+    <div class="sec"><h3>Where it sits</h3>${place}${ownLine}</div>
+    <div class="sec"><h3>What the card says about this row</h3>
+      <dl class="kv"><dt>Possible</dt><dd>${esc(c.possible)}</dd><dt>Multiplayer</dt><dd>${esc(c.multiplayer)}</dd>
+      ${arr(c.notes).length ? `<dt>Card note</dt><dd>${arr(c.notes).map(esc).join("<br>")}</dd>` : ""}</dl>
+      <div style="margin-top:12px">${framing}</div></div>
+    <div class="sec"><h3>Read the spec</h3>${arr(c.spec_link).length ? arr(c.spec_link).map(l => specBlock(l)).join("") : `<div class="small muted">The card links no spec section for this row.</div>`}</div>
+    <div class="sec"><h3>Routes, side by side <span class="count">${standing.length}/${routes.length} standing</span></h3>
+      <div class="small muted" style="margin:-4px 0 10px">Each column is one way to build it. Click a route's heading for everything about it. Struck routes are greyed and folded, with their reason.</div>
+      ${routeCompare(id, routes)}</div>
+    ${decisionSection(id, routes, tags, own)}
+    <div class="sec"><h3>Your note</h3><textarea id="capNote" rows="2" placeholder="Anything you want to remember about this capability. Saved when you click away.">${esc(note)}</textarea></div>
+    ${followupSection("capability", id)}`;
+}
+
+/** When the standing routes that combine at all all combine with each other, one sentence says so; otherwise null. */
+function combineSummary(routes) {
+  const st = routes.filter(r => !Surface.isStruck(S, r.id));
+  const any = (r) => st.some(o => o !== r && Surface.composes(IX, r.id, o.id));
+  const yes = st.filter(any), no = st.filter(r => !any(r));
+  if (yes.length < 2 || !Surface.allCompose(IX, yes.map(r => r.id))) return null;
+  return no.length ? `All routes combine except ${no.map(r => esc(routeLabel(r))).join(", ")}, which combine${no.length === 1 ? "s" : ""} with none` : "All routes combine";
+}
+function routeCompare(cap, routes) {
+  const dec = Surface.decisionOf(S, cap);
+  const order = [...routes.filter(r => !Surface.isStruck(S, r.id)), ...routes.filter(r => Surface.isStruck(S, r.id))];
+  const kindOf = (r) => arr(r.kind).length ? arr(r.kind).map(k => ({ xml: "XML defs", patch: "Harmony patch", cs: "C# code" }[k] || k)).join(" + ") : r.kind_text;
+  const combos = (r) => arr(r.composes_with).map(x => { const rr = IX.routes.get(x); return rr ? `<button class="link" data-act="openRoute" data-id="${esc(x)}">${esc(rr.capability === cap ? routeLabel(rr) : cut(capText(rr.capability), 30) + " · " + routeLabel(rr))}</button>` : esc(x); }).join(", ");
+  const ATTR = [["weight", "Weight", weightWord], ["multiplayer", "Multiplayer", (r) => r.multiplayer], ["kind", "Kind", kindOf], ["carrier", "Carrier", (r) => r.carrier], ["composes", "Combines with", (r) => arr(r.composes_with).join(",") || null]];
+  const shown = (r, f, get) => {
+    const v = get(r); const pv = (r.provenance || {})[f];
+    if (f === "composes") return v ? combos(r) : `<span class="muted">The card names none</span>`;
+    if (!v) return `<span class="muted">${pv === "unstated" ? "Not stated on the card" : "Not stated"}</span>`;
+    return `${esc(v)}${pv && pv !== "explicit" ? `<span class="prov ${pv}">${esc(PROV[pv])}</span>` : ""}`;
+  };
+  // hoist what every route shares; the columns keep only what differs
+  const unstated = [], common = [], differ = [];
+  const allComb = combineSummary(routes);
+  if (allComb) common.push(`<div><b>Combines with:</b> ${allComb}</div>`);
+  for (const a of ATTR) {
+    if (allComb && a[0] === "composes") continue;
+    const vals = routes.map(r => a[2](r) || "");
+    if (routes.length > 1 && vals.every(v => !v)) { if (a[0] === "composes") common.push(`<div><b>Combines with:</b> <span class="muted">the card names none</span></div>`); else unstated.push(a[1]); }
+    else if (routes.length > 1 && vals.every(v => v === vals[0])) common.push(`<div><b>${a[1]}:</b> ${shown(routes[0], a[0], a[2])}</div>`);
+    else differ.push(a);
+  }
+  if (unstated.length) common.push(`<div><b>${unstated.length > 1 ? unstated.slice(0, -1).join(", ") + " and " + unstated[unstated.length - 1].toLowerCase() : unstated[0]}:</b> <span class="muted">not stated on the card</span></div>`);
+  const allLine = common.length ? `<div class="allroutes"><span class="lab">All routes</span>${common.join("")}</div>` : "";
+  const span = 3 + differ.length;
+  const cols = order.map(r => {
+    const struck = Surface.isStruck(S, r.id);
+    const selected = dec && dec.state === "selected" && dec.routes.includes(r.id);
+    const head = `<div class="rh" data-act="openRoute" data-id="${esc(r.id)}" ${tip("Open everything about this route.")}><b>${esc(routeLabel(r))}</b>${selected ? `<span class="chip ok">Selected</span>` : ""}<div class="row" style="gap:4px">${flagChips(r, true)}</div></div>`;
+    if (struck) {
+      const g = Surface.globalOf(S, r.id);
+      return `<div class="rcard struck" style="grid-row:span ${span}">${head}<div class="collapsed" style="grid-row:span ${span - 2}"><span class="lab">Struck because</span>${esc(g.reason)}<div class="small muted" style="margin-top:6px">${code(cut(routeText(r), 110))}</div></div>
+        <div class="acts"><button class="btn sm" data-act="unstrike" data-r="${esc(r.id)}">Unstrike</button></div></div>`;
+    }
+    return `<div class="rcard ${selected ? "selected" : ""}" style="grid-row:span ${span}">${head}
+      <div><span class="lab">${r.group ? esc(r.group) : "What it gets us"}</span>${code(routeText(r))}</div>
+      ${differ.map(a => `<div><span class="lab">${a[1]}</span>${shown(r, a[0], a[2])}</div>`).join("")}
+      <div class="acts"><button class="btn sm" data-act="strike" data-r="${esc(r.id)}" ${tip("Strike it for every need, with a one-line reason.")}>Strike…</button><button class="iconbtn" data-act="flag" data-tt="route" data-id="${esc(r.id)}" ${tip("Flag this route")}>${ICON.flag}</button></div></div>`;
+  }).join("");
+  return `${allLine}<div class="cmpwrap"><div class="cmp">${cols}</div></div>`;
+}
+
+function decisionSection(id, routes, tags, own) {
+  const dec = Surface.decisionOf(S, id);
+  const surv = routes.filter(r => !Surface.isStruck(S, r.id));
+  const mode = UI.decMode || (dec ? dec.state : null);
+  const lbl = (rid) => esc(routeLabel(IX.routes.get(rid) || { id: rid }));
+  const now = dec ? (dec.state === "selected"
+      ? `<div class="box"><span class="chip ok">Selected</span> <b>${dec.routes.map(lbl).join(" + ")}</b> · decided in <b>${esc(dec.decided_by)}</b>${dec.routes.length > 1 && !Surface.allCompose(IX, dec.routes) ? ` <span class="chip warn">the card does not say these combine</span>` : ""}${dec.known ? `<div class="small" style="margin-top:6px">${esc(dec.known)}</div>` : ""}</div>`
+      : `<div class="box"><span class="chip warn">Open</span> candidates: <b>${dec.candidates.map(lbl).join(", ") || "none"}</b>${dec.candidates.some(r => Surface.isStruck(S, r)) ? ` <span class="chip bad">a candidate is now struck</span>` : ""}<div class="small" style="margin-top:6px">What is known: ${esc(dec.known || "—")}</div><div class="small">Reopen when: ${esc(dec.reopen)}</div></div>`)
+    : `<div class="small muted">No decision yet. Decisions happen in sessions: select the route(s) the story gives a reason for, or record it as honestly open.</div>`;
+  const ticks = (name, sel) => surv.map(r => `<label class="rtick"><input type="checkbox" name="${name}" value="${esc(r.id)}" ${sel.includes(r.id) ? "checked" : ""}><span><b>${esc(routeLabel(r))}</b> ${esc(cut(r.summary || "", 90))}</span></label>`).join("");
+  let form = "";
+  if (mode === "selected") form = `<div class="box" style="margin-top:8px"><div class="small muted">Tick one route, or several that the card says combine.</div>${ticks("selR", dec && dec.state === "selected" ? dec.routes : [])}
+      <dl class="kv" style="margin-top:10px"><dt>Decided in</dt><dd><input type="text" id="decBy" placeholder="#212" value="${esc(dec && dec.state === "selected" ? dec.decided_by : "")}"></dd>
+      <dt>Reason</dt><dd><input type="text" id="decKnown" style="width:100%" value="${esc(dec && dec.state === "selected" ? dec.known : "")}"></dd></dl>
+      <div class="row" style="margin-top:10px"><button class="btn primary sm" data-act="select" data-cap="${esc(id)}">Record selection</button><button class="btn sm" data-act="decMode" data-cap="${esc(id)}" data-v="">Cancel</button></div></div>`;
+  else if (mode === "open") form = `<div class="box" style="margin-top:8px"><div class="small muted">Tick the routes still in the running.</div>${ticks("candR", dec && dec.state === "open" ? dec.candidates : surv.map(r => r.id))}
+      <dl class="kv" style="margin-top:10px"><dt>What is known</dt><dd><input type="text" id="openKnown" style="width:100%" value="${esc(dec && dec.state === "open" ? dec.known : "")}"></dd>
+      <dt>Reopen when</dt><dd><input type="text" id="openReopen" style="width:100%" placeholder="The story question or act; or “not visible yet”" value="${esc(dec && dec.state === "open" ? dec.reopen : "")}"></dd></dl>
+      <div class="row" style="margin-top:10px"><button class="btn primary sm" data-act="setOpen" data-cap="${esc(id)}">Record as open</button><button class="btn sm" data-act="decMode" data-cap="${esc(id)}" data-v="">Cancel</button></div></div>`;
+  // layer 2 summary: which needs suggest / reject / leave open which route
+  const marks = S.route_need.filter(x => routes.some(r => r.id === x.route) && tags.some(t => t.need === x.need));
+  const l2 = tags.length ? (marks.length ? `<table class="rtable" style="margin-top:6px"><tr><th>Need</th><th>Route</th><th>Mark</th><th>Why</th></tr>${marks.map(x => `<tr><td>${esc(cut(needText(x.need), 34))}</td><td><button class="link" data-act="openRoute" data-id="${esc(x.route)}">${lbl(x.route)}</button></td><td>${x.state === "suggested" ? `<span class="chip ok">Suggested</span>` : x.state === "rejected" ? `<span class="chip bad">Rejected</span>` : `<span class="chip warn">Open here</span>`}</td><td class="small">${esc(x.state === "open" ? "Reopen when: " + x.reopen : x.reason)}</td></tr>`).join("")}</table>`
+      : `<div class="small muted">No need has suggested or rejected a route yet. Open a route to mark it for a need.</div>`) : "";
+  return `<div class="sec"><h3>Decision<span class="spacer"></span>
+      <button class="btn sm" data-act="decMode" data-cap="${esc(id)}" data-v="selected" ${tip("Select the route(s) this capability will be built with, naming the ticket that decided it.")}>Select route(s)…</button>
+      <button class="btn sm" data-act="decMode" data-cap="${esc(id)}" data-v="open" ${tip("Record it as open: the story that would decide it is not written yet.")}>Leave open…</button>
+      ${dec ? `<button class="btn ghost sm" data-act="clearDec" data-cap="${esc(id)}">Clear</button>` : ""}</h3>
+      ${own.status === "shared" ? `<div class="small" style="margin-bottom:8px;color:var(--warn)">Shared: by the method, a session only suggests; the conflict pass selects.</div>` : ""}
+      ${now}${form}
+      ${tags.length ? `<div class="frhead" style="margin-top:16px">Per-need marks</div>${l2}` : ""}</div>`;
+}
+
+/* ---- route ---- */
+function panelRoute() {
+  const r = IX.routes.get(UI.sel.id), cap = r.capability, card = cardOf(cap);
+  const g = Surface.globalOf(S, r.id), struck = g && g.state === "struck";
+  const tags = Surface.tagsOf(S, cap);
+  const sibs = (IX.routesByCap.get(cap) || []).filter(x => x.id !== r.id);
+  const comp = arr(r.composes_with);
+  const pv = r.provenance || {};
+  const field = (label, f, value) => `<dt>${label}</dt><dd>${value ? `${esc(value)}<span class="prov ${pv[f] || ""}">${esc(PROV[pv[f]] || "")}</span>` : `<span class="muted">${pv[f] === "unstated" ? "Not stated on the card" : "Not stated"}</span>`}</dd>`;
+  const kind = arr(r.kind).length ? arr(r.kind).map(k => ({ xml: "XML defs", patch: "Harmony patch", cs: "C# code" }[k] || k)).join(" + ") : r.kind_text;
+  const status = struck
+    ? `<div class="box" style="background:var(--bad-soft);border-color:#EBC3BE"><div class="row" style="justify-content:space-between"><b style="color:var(--bad)">Struck for every need</b><button class="btn sm" data-act="unstrike" data-r="${esc(r.id)}">Unstrike</button></div><div style="margin-top:4px">${esc(g.reason)}</div></div>`
+    : `<div class="box row" style="justify-content:space-between"><span><span class="chip ok">Standing</span> <span class="small muted">still a live option for every need</span></span><button class="btn sm danger" data-act="strike" data-r="${esc(r.id)}">Strike…</button></div>`;
+  const pn = tags.map(t => {
+    const x = Surface.routeNeedOf(S, r.id, t.need), key = `${r.id}|${t.need}`;
+    const draft = UI.rnDraft[key] || { state: x ? x.state : "", text: x ? (x.state === "open" ? x.reopen : x.reason) : "" };
+    UI.rnDraft[key] = draft;
+    const ph = { suggested: "Why this need would pick it, for your future self", rejected: "Why this need would not", open: "What should reopen it, or “not visible yet”", "": "Pick suggest, reject or open first" }[draft.state];
+    return `<div class="pnrow"><div class="row" style="justify-content:space-between"><span style="font-weight:600;font-size:13.5px"><span class="chip" style="padding:0;width:9px;height:9px;background:${colorOfNeed(t.need)}"></span> ${esc(cut(needText(t.need), 46))}</span>
+      <span class="seg">${[["suggested", "Suggest", "sug"], ["rejected", "Reject", "rej"], ["open", "Open here", "opn"]].map(([v, l, c]) => `<button class="${c} ${draft.state === v ? "on" : ""}" data-act="rnState" data-key="${esc(key)}" data-v="${v}" ${struck && v === "suggested" ? "disabled" : ""}>${l}</button>`).join("")}</span></div>
+      <div class="row"><input type="text" style="flex:1" data-rnkey="${esc(key)}" value="${esc(draft.text)}" placeholder="${esc(ph)}" ${draft.state ? "" : "disabled"}>
+      <button class="btn sm primary" data-act="rnSave" data-r="${esc(r.id)}" data-need="${esc(t.need)}" ${draft.state ? "" : "disabled"}>Save</button>${x ? `<button class="btn ghost sm" data-act="rnClear" data-r="${esc(r.id)}" data-need="${esc(t.need)}">Clear</button>` : ""}</div>
+      ${x ? `<div class="small muted">Saved: ${x.state === "suggested" ? "suggested" : x.state === "rejected" ? "rejected" : "open for this need"} — ${esc(x.state === "open" ? x.reopen : x.reason)}</div>` : ""}</div>`;
+  }).join("");
+  return `<div class="crumbs"><button class="link" data-act="openCap" data-id="${esc(cap)}">${esc(cut(capText(cap), 70))}</button></div>
+    <div class="row" style="margin-top:6px"><span class="chip out" style="font-weight:650">Route ${esc(routeLabel(r))}</span><span class="id">${esc(r.id)}</span>${fuChip("route", r.id)}</div>
+    ${r.group ? `<div class="eyebrow" style="margin-top:12px">${esc(r.group)}</div>` : ""}
+    <div class="ptitle" style="font-size:17px;font-weight:600;margin-top:4px">${code(routeText(r))}</div>
+    <div class="row" style="gap:5px">${flagChips(r)}</div>
+    <div class="sec"><h3>Status</h3>${status}</div>
+    <div class="sec"><h3>What it takes</h3><dl class="kv">
+      ${field("Weight", "weight", weightWord(r))}${field("Multiplayer", "multiplayer", r.multiplayer)}${field("Kind", "kind", kind)}${field("Carrier", "carrier", r.carrier)}
+      ${r.group ? `<dt>Group</dt><dd>${esc(r.group)}<span class="prov">routes in different groups combine rather than compete</span></dd>` : ""}</dl></div>
+    <div class="sec"><h3>Source in the spec</h3>${arr(r.source).length ? arr(r.source).map(l => specBlock(l, true)).join("") : `<div class="small muted">The card cites no spec section for this route.</div>`}</div>
+    ${tags.length ? `<div class="sec"><h3>For each need it sits under</h3><div class="small muted" style="margin:-4px 0 10px">Suggest: this need would pick it. Reject: it would not. Open here: this need can't tell yet. Used in sessions.</div>${pn}</div>` : ""}
+    <div class="sec"><h3>Combines with</h3>${comp.length ? `<div class="list">${comp.map(x => { const rr = IX.routes.get(x); return rr ? routeItem(rr, true) : `<div class="small muted">${esc(x)} (not in this inventory)</div>`; }).join("")}</div>` : `<div class="small muted">The card does not say this route combines with any other.</div>`}</div>
+    <div class="sec"><h3>The other routes for this capability <span class="count">${sibs.length}</span></h3>${sibs.length ? `<div class="list">${sibs.map(x => routeItem(x, false)).join("")}</div>` : `<div class="small muted">This is the only route the card gives.</div>`}</div>
+    ${followupSection("route", r.id)}`;
+}
+function routeItem(r, showCap) {
+  const struck = Surface.isStruck(S, r.id);
+  return `<div class="item" data-act="openRoute" data-id="${esc(r.id)}" style="${struck ? "opacity:.6" : ""}"><span class="chip out" style="font-weight:650">${esc(routeLabel(r))}</span>
+    <div class="grow"><div class="t" style="font-weight:500;font-size:13.5px;${struck ? "text-decoration:line-through" : ""}">${code(r.summary)}</div>
+    <div class="s">${showCap ? esc(cut(capText(r.capability), 60)) + " · " : ""}${esc(weightWord(r) || "weight not stated")}${struck ? " · struck" : ""}</div></div></div>`;
+}
+
+/* ---- spec reader ---- */
+function specKey(link) { return link; }
+function specBlock(link, openDefault) {
+  const [path, anchor] = link.split("#");
+  const k = specKey(link);
+  if (openDefault && !UI.specOpen.has("closed:" + k)) UI.specOpen.add(k);
+  const open = UI.specOpen.has(k);
+  const got = SPEC.get(k);
+  if (!got) fetchSpec(path, anchor || "");
+  const title = got && got.data ? got.data.title : (anchor ? anchor.replace(/-+/g, " ").replace(/^\d+ /, "").replace(/^./, c => c.toUpperCase()) : path.split("/").pop());
+  let body = "";
+  if (open) {
+    if (!got || got.loading) body = `<div class="md"><p class="muted">Loading…</p></div>`;
+    else if (got.error) body = `<div class="md"><p class="muted">Could not load: ${esc(got.error)}</p></div>`;
+    else body = `<div class="md">${mdRender(got.data.markdown, path)}${got.data.found || !anchor ? "" : `<div class="note">The section “${esc(anchor)}” was not found, so the whole document is shown.</div>`}
+      <div class="row" style="margin-top:10px"><button class="btn sm ghost" data-act="openDoc" data-path="${esc(path)}" data-anchor="${esc(anchor || "")}">Open in the panel on its own</button><button class="btn sm ghost" data-act="openDoc" data-path="${esc(path)}" data-anchor="">Whole document</button></div></div>`;
+  }
+  return `<div class="spec"><button class="spech" data-act="toggleSpec" data-k="${esc(k)}" ${tip(open ? "Fold the spec section away." : "Read this section of the spec here.")}>${ICON.doc}<span class="t">${esc(title)}</span><span class="p">${esc(path.replace(/^docs\//, ""))}</span>${ICON.chev.replace("<svg", `<svg style="width:14px;height:14px;color:var(--ink-3);transform:rotate(${open ? 90 : 0}deg)"`)}</button>${body}</div>`;
+}
+async function fetchSpec(path, anchor) {
+  const k = path + (anchor ? "#" + anchor : "");
+  if (SPEC.has(k)) return;
+  SPEC.set(k, { loading: true });
+  try {
+    const r = await fetch(`/api/doc?path=${encodeURIComponent(path)}&anchor=${encodeURIComponent(anchor)}`);
+    if (!r.ok) throw new Error(await r.text());
+    SPEC.set(k, { data: await r.json() });
+  } catch (e) { SPEC.set(k, { error: e.message }); }
+  renderPanel(); if (UI.tab === "caps") renderMain();
+}
+function panelDoc() {
+  const { path, anchor } = UI.sel; const k = path + (anchor ? "#" + anchor : "");
+  const got = SPEC.get(k); if (!got) fetchSpec(path, anchor);
+  if (!got || got.loading) return `<p class="muted">Loading ${esc(path)}…</p>`;
+  if (got.error) return `<p>Could not load ${esc(path)}: ${esc(got.error)}</p>`;
+  return `<div class="row"><span class="id">${esc(path)}${anchor ? "#" + esc(anchor) : ""}</span></div>
+    ${anchor ? `<div class="row" style="margin:8px 0"><button class="btn sm" data-act="openDoc" data-path="${esc(path)}" data-anchor="">Read the whole document</button></div>` : ""}
+    ${got.data.found || !anchor ? "" : `<div class="md"><div class="note">The section “${esc(anchor)}” was not found, so the whole document is shown.</div></div>`}
+    <div class="md full">${mdRender(got.data.markdown, path)}</div>`;
+}
+
+/* ---- a small markdown renderer (headings, lists, tables, code, quotes, links) ---- */
+function joinPath(base, rel) {
+  const out = base.split("/").slice(0, -1);
+  for (const seg of rel.split("/")) { if (seg === "..") out.pop(); else if (seg && seg !== ".") out.push(seg); }
+  return out.join("/");
+}
+function mdLink(txt, url, base) {
+  const u = url.replace(/&amp;/g, "&");
+  if (/^https?:/i.test(u)) return `<a href="${esc(u)}" target="_blank" rel="noopener">${txt}</a>`;
+  const [p, a] = u.split("#");
+  const path = p ? joinPath(base, p) : base;
+  if (/\.md$/i.test(path) && path.startsWith("docs/")) return `<a href="#" data-act="openDoc" data-path="${esc(path)}" data-anchor="${esc(a || "")}">${txt}</a>`;
+  return `<span class="deadlink" ${tip("Not viewable here: " + path)}>${txt}</span>`;
+}
+function mdInline(t, base) {
+  const codes = [];
+  t = t.replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return `\u0001${codes.length - 1}\u0001`; });
+  t = esc(t);
+  t = t.replace(/!?\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g, (_, txt, url) => mdLink(txt, url, base));
+  t = t.replace(/\*\*(\S(?:.*?\S)?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^\w])__([^_]+)__(?!\w)/g, "$1<strong>$2</strong>");
+  t = t.replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, "$1<em>$2</em>").replace(/(^|[^_\w])_([^_\s][^_]*?)_(?!\w)/g, "$1<em>$2</em>");
+  return t.replace(/\u0001(\d+)\u0001/g, (_, k) => `<code>${esc(codes[k])}</code>`);
+}
+function mdRender(src, base) {
+  const lines = String(src).replace(/\r/g, "").split("\n");
+  const out = []; let i = 0;
+  const isFence = (l) => /^\s*(```|~~~)/.test(l);
+  const isList = (l) => /^\s*([-*+]|\d+[.)])\s+/.test(l);
+  const isQuote = (l) => /^\s*>/.test(l);
+  const isHr = (l) => /^\s*([-*_])(\s*\1){2,}\s*$/.test(l);
+  const isTable = (k) => /^\s*\|/.test(lines[k]) && k + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[k + 1]);
+  const cells = (r) => { const s = r.trim().replace(/^\|/, "").replace(/\|$/, ""); const o = []; let cur = "", code = false;
+    for (let k = 0; k < s.length; k++) { const ch = s[k]; if (ch === "`") code = !code; if (ch === "\\" && s[k + 1] === "|") { cur += "|"; k++; continue; } if (ch === "|" && !code) { o.push(cur.trim()); cur = ""; } else cur += ch; }
+    o.push(cur.trim()); return o; };
+  const list = (items) => { let h = ""; const st = [];
+    for (const it of items) {
+      while (st.length && it.ind < st[st.length - 1].ind) h += `</li></${st.pop().tag}>`;
+      if (!st.length || it.ind > st[st.length - 1].ind) { const tag = it.ord ? "ol" : "ul"; st.push({ ind: it.ind, tag }); h += `<${tag}><li>`; }
+      else h += "</li><li>";
+      h += mdInline(it.text, base);
+    }
+    while (st.length) h += `</li></${st.pop().tag}>`; return h; };
+  while (i < lines.length) {
+    const l = lines[i];
+    if (!l.trim()) { i++; continue; }
+    if (isFence(l)) { const f = l.trim().slice(0, 3); const buf = []; i++; while (i < lines.length && !lines[i].trim().startsWith(f)) buf.push(lines[i++]); i++; out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`); continue; }
+    const h = l.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
+    if (h) { out.push(`<div class="mh mh${h[1].length}">${mdInline(h[2], base)}</div>`); i++; continue; }
+    if (isHr(l)) { out.push("<hr>"); i++; continue; }
+    if (isTable(i)) { const rows = []; while (i < lines.length && /^\s*\|/.test(lines[i])) rows.push(lines[i++]);
+      const hd = cells(rows[0]); out.push(`<div class="tw"><table><thead><tr>${hd.map(c => `<th>${mdInline(c, base)}</th>`).join("")}</tr></thead><tbody>${rows.slice(2).map(r => `<tr>${cells(r).map(c => `<td>${mdInline(c, base)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`); continue; }
+    if (isQuote(l)) { const buf = []; while (i < lines.length && isQuote(lines[i])) buf.push(lines[i++].replace(/^\s*>\s?/, "")); out.push(`<blockquote>${mdRender(buf.join("\n"), base)}</blockquote>`); continue; }
+    if (isList(l)) {
+      const items = [];
+      while (i < lines.length) {
+        const x = lines[i];
+        if (isList(x)) { const m = x.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/); items.push({ ind: m[1].length, ord: /\d/.test(m[2]), text: m[3] }); i++; }
+        else if (x.trim() && /^\s+\S/.test(x) && !isFence(x)) { items[items.length - 1].text += " " + x.trim(); i++; }
+        else if (!x.trim() && i + 1 < lines.length && (isList(lines[i + 1]) || /^\s{2,}\S/.test(lines[i + 1]))) i++;
+        else break;
+      }
+      out.push(list(items)); continue;
+    }
+    const buf = [];
+    while (i < lines.length && lines[i].trim() && !isFence(lines[i]) && !/^#{1,6}\s/.test(lines[i]) && !isList(lines[i]) && !isQuote(lines[i]) && !isTable(i)) buf.push(lines[i++].trim());
+    if (!buf.length) { out.push(`<p>${mdInline(lines[i].trim(), base)}</p>`); i++; continue; }
+    out.push(`<p>${mdInline(buf.join(" "), base)}</p>`);
+  }
+  return out.join("\n");
+}
+
+/* ================= Capabilities ================= */
+const RAIL_F = [["all", "All"], ["unplaced", "Unplaced"], ["placed", "Placed"], ["noowner", "No owner"], ["flagged", "Flagged"]];
+const isPlaced = (id) => Surface.tagsOf(S, id).length > 0;
+const capFlagged = (id) => openFollowups("capability", id).length > 0 || (IX.routesByCap.get(id) || []).some(r => openFollowups("route", r.id).length > 0);
+function railMatch(id, f) {
+  if (f === "unplaced") return !isPlaced(id) && !Surface.noOwner(S, id);
+  if (f === "placed") return isPlaced(id);
+  if (f === "noowner") return !!Surface.noOwner(S, id);
+  if (f === "flagged") return capFlagged(id);
+  return true;
+}
+function railGroups() {
+  const q = UI.rail.q.trim();
+  const list = (q ? matchCaps(q) : IX.inv.capabilities).filter(c => railMatch(c.id, UI.rail.f));
+  const groups = new Map();
+  for (const c of list) {
+    const card = IX.cards.get(c.card) || { id: c.card, title: c.card, group: "Other" };
+    const g = card.group || "Other";
+    if (!groups.has(g)) groups.set(g, new Map());
+    const cm = groups.get(g); if (!cm.has(card.id)) cm.set(card.id, { card, caps: [] });
+    cm.get(card.id).caps.push(c);
+  }
+  const flat = []; for (const cm of groups.values()) for (const x of cm.values()) flat.push(...x.caps.map(c => c.id));
+  return { groups, flat };
+}
+function selectCap(id) {
+  UI.capSel = id; LS.set("capSel", id); UI._cpReset = true; UI._railReveal = true; UI.decMode = null;
+  const c = IX.caps.get(id); const card = c && IX.cards.get(c.card);
+  if (card) { UI.railClosed.delete("g|" + (card.group || "Other")); UI.railClosed.delete("c|" + card.id); }
+}
+function openFullPage(id) { UI.tab = "caps"; LS.set("tab", "caps"); UI.rail.f = "all"; UI.rail.q = ""; UI.sel = null; UI.back = []; closePop(); selectCap(id); render(); }
+function stepCap(dir) {
+  const { flat } = railGroups(); if (!flat.length) return;
+  const i = flat.indexOf(UI.capSel);
+  const j = i < 0 ? 0 : Math.max(0, Math.min(flat.length - 1, i + dir));
+  if (flat[j] !== UI.capSel) { selectCap(flat[j]); renderMain(); }
+}
+function viewCaps() {
+  const { groups, flat } = railGroups();
+  const o = Surface.orphans(S, IX), total = IX.inv.capabilities.length, placed = total - o.caps.length;
+  if (!UI.capSel || !IX.caps.has(UI.capSel) || (!flat.includes(UI.capSel) && flat.length)) {
+    // the selection left the filtered list (placed, marked, filtered out): take whatever now sits at its place
+    const next = flat[Math.min(UI.railIdx || 0, flat.length - 1)];
+    if (next && next !== UI.capSel) { UI.capSel = next; LS.set("capSel", next); UI._cpReset = true; UI._railReveal = true; UI.decMode = null; }
+  }
+  UI.railIdx = Math.max(0, flat.indexOf(UI.capSel));
+  const counts = Object.fromEntries(RAIL_F.map(([k]) => [k, IX.inv.capabilities.filter(c => railMatch(c.id, k)).length]));
+  const searching = !!UI.rail.q.trim();
+  const chev = (open) => ICON.chev.replace("<svg", `<svg class="${open ? "open" : ""}"`);
+  const item = (c) => `<button class="ritem ${c.id === UI.capSel ? "on" : ""}" data-act="railPick" data-id="${esc(c.id)}"><span class="t">${code(capText(c.id))}</span>
+      <span class="m"><span class="id">${esc(c.id)}</span>${capColors(c.id).map(col => `<span class="sw" style="background:${col}" ${tip("Sits under a need in this branch.")}></span>`).join("")}${Surface.noOwner(S, c.id) ? `<span class="nochip">no narrative owner</span>` : ""}${capFlagged(c.id) ? `<span class="nochip" style="color:var(--dig)">flagged</span>` : ""}</span></button>`;
+  let list = "";
+  for (const [g, cm] of groups) {
+    const n = [...cm.values()].reduce((a, x) => a + x.caps.length, 0);
+    const gk = "g|" + g, gOpen = searching || !UI.railClosed.has(gk);
+    list += `<button class="rgh" data-act="railFold" data-k="${esc(gk)}">${chev(gOpen)}<span>${esc(g)}</span><span class="count">${n}</span></button>`;
+    if (!gOpen) continue;
+    for (const { card, caps } of cm.values()) {
+      const ck = "c|" + card.id, cOpen = searching || !UI.railClosed.has(ck);
+      list += `<button class="rch" data-act="railFold" data-k="${esc(ck)}">${chev(cOpen)}<span>${esc(card.title)}</span><span class="count">${caps.length}</span></button>`;
+      if (cOpen) list += caps.map(item).join("");
+    }
+  }
+  return `<div class="capslayout"><aside class="rail">
+      <div class="railtop">
+        <div><div class="row" style="justify-content:space-between"><b>${placed} of ${total} placed</b><span class="small muted">${o.noOwnerCaps.length} no owner</span></div>
+        <div class="progress"><div style="width:${(placed / total * 100).toFixed(1)}%"></div></div></div>
+        <input type="search" id="railQ" placeholder="Search capabilities, cards, routes…" value="${esc(UI.rail.q)}" autocomplete="off">
+        <div class="fchips">${RAIL_F.map(([k, l]) => `<button class="fchip ${UI.rail.f === k ? "on" : ""}" data-act="railFilter" data-v="${k}">${l}<span>${counts[k]}</span></button>`).join("")}</div>
+        <div class="small muted"><kbd>J</kbd> <kbd>K</kbd> move · <kbd>L</kbd> link · <kbd>N</kbd> no owner · <kbd>F</kbd> flag</div>
+      </div>
+      <div class="raillist">${list || `<div class="empty" style="margin:12px">${UI.rail.f === "unplaced" && !searching ? "<b>Nothing left unplaced.</b> Every capability sits under a need or is marked as having no narrative owner." : "Nothing matches. Try another filter or a shorter search."}</div>`}</div>
+    </aside>
+    <section class="cpage" id="cpage">${UI.capSel && IX.caps.has(UI.capSel) ? capPage(UI.capSel) : `<div class="cpinner"><div class="empty">Pick a capability on the left.</div></div>`}</section></div>`;
+}
+
+function capPage(id) {
+  const c = IX.caps.get(id), card = cardOf(id), routes = IX.routesByCap.get(id) || [];
+  const tags = Surface.tagsOf(S, id), own = Surface.ownership(S, id), noo = Surface.noOwner(S, id);
+  const g = gl(id);
+  return `<div class="cpinner">
+    <div class="row"><span class="eyebrow">${esc(card ? card.title : c.card)}</span><span class="id">${esc(id)}</span><span style="flex:1"></span>${ownChip(id)}${stateChip(id)}${routesChip(id)}${fuChip("capability", id)}</div>
+    <h1 class="cptitle">${code(capText(id))}</h1>
+    ${glossSummary(id, "big")}
+    ${g && g.title ? `<div class="orig big"><span class="lab">The card's wording</span>${code(c.text)}</div>` : ""}
+    <div class="qactions sticky">
+      <button class="btn primary" id="uLink" data-act="linkNeed" data-cap="${esc(id)}">${ICON.link}Link to a need <kbd>L</kbd></button>
+      ${tags.length ? "" : noo ? `<button class="btn" data-act="clearNoOwner" data-cap="${esc(id)}">Remove “no narrative owner”</button>` : `<button class="btn" id="uNo" data-act="noOwner" data-cap="${esc(id)}">No narrative owner <kbd>N</kbd></button>`}
+      <button class="btn" id="uFlag" data-act="flag" data-tt="capability" data-id="${esc(id)}">${ICON.flag}Flag <kbd>F</kbd></button>
+      ${tags.length ? `<button class="btn" data-act="unlinkAny" data-cap="${esc(id)}" ${tip("Take it off one of the needs it sits under, with a reason.")}>Unlink…</button>` : ""}
+      <span class="spacer"></span>
+      ${tags.length ? `<button class="btn ghost" data-act="alsoUnder" data-cap="${esc(id)}" data-need="${esc(tags[0].need)}">${ICON.target}Show in tree</button>` : ""}
+      <button class="btn ghost" data-act="capsStep" data-v="-1" ${tip("Previous in the list (K)")}><kbd>K</kbd></button><button class="btn ghost" data-act="capsStep" data-v="1" ${tip("Next in the list (J)")}><kbd>J</kbd></button>
+    </div>
+    <div class="sec"><h3>Where it sits</h3>${whereItSits(id)}</div>
+    <div class="sec"><h3>What the card says</h3>
+      <dl class="kv"><dt>Possible</dt><dd>${esc(c.possible)}</dd><dt>Multiplayer</dt><dd>${esc(c.multiplayer)}</dd>
+      ${arr(c.notes).length ? `<dt>Card note</dt><dd>${arr(c.notes).map(esc).join("<br>")}</dd>` : ""}</dl>
+      <div style="margin-top:12px">${cardFraming(id)}</div></div>
+    <div class="sec"><h3>Routes <span class="count">${Surface.surviving(S, IX, id).length} of ${routes.length} standing</span></h3>
+      <div class="small muted" style="margin:-4px 0 10px">One row per way of building it. Click a row to read its source in the spec. Struck routes are greyed and sorted last.</div>
+      ${routeGrid(id, routes)}</div>
+    <div class="sec"><h3>Read the spec</h3>${arr(c.spec_link).length ? arr(c.spec_link).map(l => specBlock(l)).join("") : `<div class="small muted">The card links no spec section for this row.</div>`}</div>
+    ${decisionSection(id, routes, tags, own)}
+    ${followupSection("capability", id)}
+  </div>`;
+}
+
+function routeGrid(cap, routes) {
+  if (!routes.length) return `<div class="small muted">The card gives no routes for this capability.</div>`;
+  const tags = Surface.tagsOf(S, cap);
+  const order = [...routes.filter(r => !Surface.isStruck(S, r.id)), ...routes.filter(r => Surface.isStruck(S, r.id))];
+  const kindOf = (r) => arr(r.kind).length ? arr(r.kind).map(k => ({ xml: "XML defs", patch: "Harmony patch", cs: "C# code" }[k] || k)).join(" + ") : (r.kind_text || "");
+  const prov = (r, f, v) => v ? `${code(v)}${(r.provenance || {})[f] && r.provenance[f] !== "explicit" ? `<span class="prov ${r.provenance[f]}">${esc(PROV[r.provenance[f]])}</span>` : ""}` : `<span class="muted" data-tip="Not stated on the card">—</span>`;
+  const markOf = (r, nid) => { const x = Surface.routeNeedOf(S, r.id, nid); return x ? x.state : ""; };
+  // [key, header, equality key, cell html, what an all-empty column means]
+  const COLS = [
+    ["plain", "Plain line", (r) => routePlain(r), (r) => routePlain(r) ? `<span class="plain">${code(routePlain(r))}</span>` : `<span class="muted">No plain line yet</span>`, "no plain lines written yet"],
+    ["weight", "Weight", (r) => weightWord(r) || "", (r) => prov(r, "weight", weightWord(r)), "unstated"],
+    ["kind", "Kind", kindOf, (r) => prov(r, "kind", kindOf(r)), "unstated"],
+    ["carrier", "Carrier", (r) => r.carrier || "", (r) => prov(r, "carrier", r.carrier), "unstated"],
+    ["multiplayer", "Multiplayer", (r) => r.multiplayer || "", (r) => prov(r, "multiplayer", r.multiplayer), "unstated"],
+    ["flags", "Flags", (r) => [r.as_specced, r.not_recommended, r.fallback_only, arr(r.marks).join("|"), /already built/i.test(r.label || "")].join(",") === "false,false,false,,false" ? "" : [r.as_specced, r.not_recommended, r.fallback_only, arr(r.marks).join("|")].join(","), (r) => flagChips(r, true) || `<span class="muted">—</span>`, "none"],
+    ["composes", "Combines with", (r) => arr(r.composes_with).join(","), (r) => arr(r.composes_with).map(x => { const rr = IX.routes.get(x); return rr ? `<button class="link" data-act="openRoute" data-id="${esc(x)}">${esc(rr.capability === cap ? routeLabel(rr) : cut(capText(rr.capability), 28) + " · " + routeLabel(rr))}</button>` : esc(x); }).join(", ") || `<span class="muted">—</span>`, "the card names none"],
+    ["state", "State", (r) => Surface.isStruck(S, r.id) ? "struck" : "standing", (r) => { const g = Surface.globalOf(S, r.id); return g && g.state === "struck" ? `<span class="chip bad">Struck</span><div class="small" style="margin-top:4px">${esc(g.reason)}</div>` : `<span class="chip ok">Standing</span>`; }, ""],
+    ["marks", "Per-need marks", (r) => tags.some(t => markOf(r, t.need)) ? tags.map(t => markOf(r, t.need)).join(",") : "", (r) => tags.map(t => { const s = markOf(r, t.need); return s ? `<div><span class="chip ${s === "suggested" ? "ok" : s === "rejected" ? "bad" : "warn"}" ${tip(needText(t.need))}><span class="sw" style="background:${colorOfNeed(t.need)}"></span>${s === "suggested" ? "Suggested" : s === "rejected" ? "Rejected" : "Open here"}</span></div>` : ""; }).join("") || `<span class="muted">—</span>`, tags.length ? "no need has marked a route yet" : "not under any need yet"],
+  ];
+  const common = [], unstated = [], shown = [];
+  const allComb = combineSummary(routes);
+  if (allComb) common.push(`<div><b>Combines with:</b> ${allComb}</div>`);
+  for (const col of COLS) {
+    if (allComb && col[0] === "composes") continue;
+    const keys = routes.map(col[2]);
+    const same = routes.length > 1 && keys.every(k => k === keys[0]);
+    if (!same) { shown.push(col); continue; }
+    if (!keys[0]) { if (col[4] === "unstated") unstated.push(col[1]); else if (col[4]) common.push(`<div><b>${col[1]}:</b> <span class="muted">${esc(col[4])}</span></div>`); }
+    else if (col[0] === "state") common.push(`<div><b>State:</b> ${keys[0] === "standing" ? "every route is standing" : "every route is struck"}</div>`);
+    else common.push(`<div><b>${col[1]}:</b> ${col[3](routes[0])}</div>`);
+  }
+  if (unstated.length) common.push(`<div><b>${unstated.length > 1 ? unstated.slice(0, -1).join(", ") + " and " + unstated[unstated.length - 1].toLowerCase() : unstated[0]}:</b> <span class="muted">not stated on the card</span></div>`);
+  const plainCol = shown.find(c => c[0] === "plain");
+  const rest = shown.filter(c => c[0] !== "plain");
+  const ncols = 3 + (plainCol ? 1 : 0) + rest.length;
+  const rows = order.map(r => {
+    const struck = Surface.isStruck(S, r.id), open = UI.gridOpen.has(r.id);
+    const row = `<tr class="rrow ${struck ? "struck" : ""} ${open ? "open" : ""}" data-act="gridRow" data-id="${esc(r.id)}" ${tip(open ? "Fold the spec section away." : "Show this route's source section from the spec.")}>
+      <td><div class="rl">${ICON.chev}${esc(routeLabel(r))}</div>${r.group ? `<div class="grp">${esc(r.group)}</div>` : ""}</td>
+      ${plainCol ? `<td>${plainCol[3](r)}</td>` : ""}
+      <td class="ftext">${code(routeText(r))}</td>
+      ${rest.map(c => `<td>${c[3](r)}</td>`).join("")}
+      <td class="acts">${struck ? `<button class="btn sm" data-act="unstrike" data-r="${esc(r.id)}">Unstrike</button>` : `<button class="btn sm" data-act="strike" data-r="${esc(r.id)}" ${tip("Strike it for every need, with a one-line reason.")}>Strike…</button>`}
+        <button class="iconbtn" data-act="flag" data-tt="route" data-id="${esc(r.id)}" ${tip("Flag this route")}>${ICON.flag}</button>
+        <button class="iconbtn" data-act="openRoute" data-id="${esc(r.id)}" ${tip("Everything about this route, in the side panel (marks for each need live there).")}>${ICON.chev}</button></td></tr>`;
+    const x = open ? `<tr class="gx"><td colspan="${ncols}">${arr(r.source).length ? arr(r.source).map(l => specBlock(l, true)).join("") : `<div class="small muted" style="padding:10px 0">The card cites no spec section for this route.</div>`}</td></tr>` : "";
+    return row + x;
+  }).join("");
+  return `${common.length ? `<div class="allroutes"><span class="lab">All routes</span>${common.join("")}</div>` : ""}
+    <div class="cgridwrap"><table class="cgrid"><thead><tr><th>Route</th>${plainCol ? "<th>Plain line</th>" : ""}<th>As the card puts it</th>${rest.map(c => `<th>${c[1]}</th>`).join("")}<th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+/* ================= Conflicts ================= */
+function conflictSides(sides) {
+  return `<div class="sides" style="grid-template-columns:repeat(${Math.max(1, sides.length)},minmax(0,1fr))">${sides.map(sd => `<div class="side"><div class="sidetitle"><span class="chip" style="padding:0;width:9px;height:9px;background:${sd.color}"></span>${esc(sd.name)}</div>
+    ${sd.entries.length ? sd.entries.map(e => { const r = IX.routes.get(e.route) || { id: e.route }; return `<div style="margin-top:6px">${e.state === "suggested" ? `<span class="chip ok">Suggests</span>` : e.state === "rejected" ? `<span class="chip bad">Rejects</span>` : `<span class="chip warn">Open</span>`} <b>${esc(routeLabel(r))}</b> <span class="small">${code(cut(routePlain(r) || r.summary || "", 90))}</span>${Surface.isStruck(S, e.route) ? ` <span class="chip bad">struck</span>` : ""}<div class="small muted">${e.state === "open" ? "Reopen when: " : "Why: "}${esc(e.why)}</div></div>`; }).join("") : `<div class="small muted" style="margin-top:6px">Nothing suggested yet.</div>`}</div>`).join("")}</div>`;
+}
+function conflictItem(capId, sides, clickable) {
+  return `<div class="item" style="display:block;${clickable ? "" : "cursor:default"}" ${clickable ? `data-act="jumpCap" data-id="${esc(capId)}"` : ""}>
+    <div class="row"><div class="t" style="flex:1">${code(capText(capId))}</div>${clickable ? stateChip(capId) : ""}</div>
+    ${origLine(capId)}
+    <div class="s">${esc((cardOf(capId) || {}).title || "")} <span class="id">${esc(capId)}</span></div>
+    ${conflictSides(sides)}</div>`;
+}
+const CONFLICT_KINDS = [["conflict", "Conflicting", "bad", "The sessions' suggestions are incompatible: they differ and the card does not say they combine, or one session rejects what another suggests."],
+  ["compose", "Combine", "acc", "The suggestions differ, but the card says the routes combine. Confirm the combination."],
+  ["agree", "Agree", "ok", "Every suggesting session names the same routes. The conflict pass confirms without debate."],
+  ["waiting", "Waiting on a session", "", "Shared, but fewer than two sessions have suggested a route yet."],
+  ["decided", "Decided", "ok", "Shared and already selected."]];
+function conflictExample() {
+  // Built from real inventory rows and two made-up branches. Rendered only; never written to the state file.
+  const A = { name: "Example branch: “The colony is worshipped as gods”", color: BRANCH[0] }, B = { name: "Example branch: “The world pushes back”", color: BRANCH[1] };
+  const caps = IX.inv.capabilities.map(c => ({ c, rs: IX.routesByCap.get(c.id) || [] })).filter(x => x.rs.length >= 2);
+  const agree = caps[0];
+  let compose = null, pair = null;
+  for (const x of caps) { for (let i = 0; i < x.rs.length && !pair; i++) for (let j = i + 1; j < x.rs.length && !pair; j++) if (Surface.composes(IX, x.rs[i].id, x.rs[j].id)) pair = [x.rs[i], x.rs[j]]; if (pair) { compose = x; break; } }
+  const conflict = caps.find(x => x !== agree && x !== compose && !Surface.composes(IX, x.rs[0].id, x.rs[1].id));
+  const ex = [];
+  if (agree) ex.push(["agree", agree.c.id, [{ ...A, entries: [{ state: "suggested", route: agree.rs[0].id, why: "(made up) it plays best for this branch" }] }, { ...B, entries: [{ state: "suggested", route: agree.rs[0].id, why: "(made up) same pick, different reason" }] }]]);
+  if (compose) ex.push(["compose", compose.c.id, [{ ...A, entries: [{ state: "suggested", route: pair[0].id, why: "(made up) this branch needs this half" }] }, { ...B, entries: [{ state: "suggested", route: pair[1].id, why: "(made up) this branch needs the other half" }] }]]);
+  if (conflict) ex.push(["conflict", conflict.c.id, [{ ...A, entries: [{ state: "suggested", route: conflict.rs[0].id, why: "(made up) the story wants this one" }] }, { ...B, entries: [{ state: "suggested", route: conflict.rs[1].id, why: "(made up) this branch wants a different one" }, { state: "rejected", route: conflict.rs[0].id, why: "(made up) it would undercut this branch" }] }]]);
+  const order = ["conflict", "compose", "agree"];
+  ex.sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
+  return `<div class="example"><div class="exlabel">Example, not your data</div>
+    <p class="lede" style="margin:6px 0 0">This is what the tab will show once capabilities are shared between sessions. The capabilities and routes are real rows from the inventory; the two branches and every reason are made up. Nothing here is saved.</p>
+    ${ex.map(([k, id, sides]) => { const kd = CONFLICT_KINDS.find(x => x[0] === k); return `<div class="group-h"><h2>${kd[1]}</h2><span class="chip ${kd[2]}">example</span></div><p>${kd[3]}</p>${conflictItem(id, sides, false)}`; }).join("")}</div>`;
+}
+function viewConflicts() {
+  const all = Surface.conflicts(S, IX);
+  const real = (c) => conflictItem(c.capability, c.sessions.map(sv => ({ name: needText(sv.session), color: colorOfNeed(sv.session), entries: sv.entries.map(e => ({ state: e.state, route: e.route, why: e.state === "open" ? e.reopen : e.reason })) })), true);
+  const html = CONFLICT_KINDS.map(([k, t, cls, help]) => { const items = all.filter(c => c.kind === k); return `<div class="group-h"><h2>${t}</h2><span class="chip ${cls}">${items.length}</span></div><p>${help}</p>${items.length ? `<div class="list">${items.map(real).join("")}</div>` : `<div class="small muted">None.</div>`}`; }).join("");
+  return `<div class="page wide"><h1>Conflicts</h1>
+    <p class="lede">Capabilities shared between sessions, with what each session suggests side by side. Click one to open it in the tree.</p>
+    ${all.length ? html : `<div class="empty"><b>Nothing is shared yet.</b> A capability becomes shared when it sits under needs in two different sessions. Mark a top-level need as a session in its panel (“Make this a session”), then link the same capability under two sessions.</div>${conflictExample()}`}</div>`;
+}
+
+/* ================= Search ================= */
+function capHay(c) {
+  if (!c._hay) {
+    const card = IX.cards.get(c.card), g = gl(c.id) || {};
+    const routes = IX.routesByCap.get(c.id) || [];
+    c._hay = [g.title || "", g.summary || "", c.text, card ? card.title : "", c.id, routes.map(r => r.summary + " " + routePlain(r) + " " + (r.carrier || "")).join(" "), c.possible, c.multiplayer].join(" \n ").toLowerCase();
+  }
+  return c._hay;
+}
+function matchCaps(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const out = [];
+  for (const c of IX.inv.capabilities) {
+    const hay = capHay(c); if (!words.every(w => hay.includes(w))) continue;
+    const g = gl(c.id) || {};
+    const t = (c.text + " " + (g.title || "") + " " + ((IX.cards.get(c.card) || {}).title || "")).toLowerCase();
+    out.push({ c, score: words.reduce((a, w) => a + (t.includes(w) ? 3 : 1), 0) });
+  }
+  return out.sort((a, b) => b.score - a.score).map(x => x.c);
+}
+
+/* ================= Follow-ups ================= */
+function fuTarget(f) {
+  if (f.target_type === "need") return { kind: "Need", text: needText(f.target), sub: "" };
+  if (f.target_type === "capability") return { kind: "Capability", text: capText(f.target), sub: ((cardOf(f.target) || {}).title || "") };
+  const r = IX.routes.get(f.target);
+  return { kind: "Route", text: r ? `Route ${routeLabel(r)}: ${r.summary}` : f.target, sub: r ? cut(capText(r.capability), 70) : "" };
+}
+function fuList() { const all = S.followups || []; return UI.fuFilter === "all" ? all : all.filter(f => f.status === UI.fuFilter); }
+function viewFollowups() {
+  const list = fuList();
+  if (UI.fuIdx >= list.length) UI.fuIdx = Math.max(0, list.length - 1);
+  const all = S.followups || [];
+  const tabs = [["open", "Open", all.filter(f => f.status === "open").length], ["done", "Done", all.filter(f => f.status === "done").length], ["all", "All", all.length]];
+  return `<div class="page"><h1>Follow-ups</h1>
+    <p class="lede">What you flagged as “this is wrong” or “dig into this”. An agent works this queue later; the page never starts one. Click one to jump to it.</p>
+    <div class="row" style="justify-content:space-between;margin-bottom:12px"><span class="seg">${tabs.map(([k, l, n]) => `<button class="${UI.fuFilter === k ? "on" : ""}" data-act="fuFilter" data-v="${k}">${l} · ${n}</button>`).join("")}</span>
+      <span class="small muted"><kbd>J</kbd> <kbd>K</kbd> move · <kbd>Enter</kbd> open · <kbd>D</kbd> done / reopen</span></div>
+    ${list.length ? `<div class="list">${list.map((f, i) => { const t = fuTarget(f); return `<div class="item ${i === UI.fuIdx ? "cur" : ""}" data-act="fuOpen" data-i="${i}" style="${f.status === "done" ? "opacity:.65" : ""}">
+        ${f.kind === "wrong" ? `<span class="chip bad" ${tip("You think something here is wrong.")}>This is wrong</span>` : `<span class="chip dig" ${tip("You want an agent to look deeper.")}>Dig into this</span>`}
+        <div class="grow"><div class="t">${esc(f.note) || `<span class="muted">No note</span>`}</div>
+        <div class="s"><b>${t.kind}:</b> ${esc(cut(t.text, 110))}${t.sub ? ` · ${esc(t.sub)}` : ""}</div>
+        <div class="s">${esc(f.created.slice(0, 10))} <span class="id">${esc(f.id)}</span></div></div>
+        <button class="btn sm" data-act="fuToggle" data-id="${esc(f.id)}">${f.status === "done" ? "Reopen" : "Mark done"}</button>
+        <button class="iconbtn" data-act="fuDelete" data-id="${esc(f.id)}" ${tip("Delete this follow-up")}>${ICON.trash}</button></div>`; }).join("")}</div>`
+      : `<div class="empty">${UI.fuFilter === "open" ? "<b>No open follow-ups.</b> Flag any need, capability or route with the flag button (or <kbd>F</kbd> on the Unplaced tab) and it lands here." : "Nothing here."}</div>`}</div>`;
+}
+
+/* ================= Popovers ================= */
+function openPop(kind, anchorEl, data) {
+  const r = anchorEl ? anchorEl.getBoundingClientRect() : { left: innerWidth / 2 - 220, bottom: innerHeight / 3, top: innerHeight / 3 };
+  UI.pop = { kind, x: r.left, y: r.bottom + 6, top: r.top, hi: 0, q: "", ...data };
+  renderPop();
+}
+function closePop() { UI.pop = null; $("pop").innerHTML = ""; }
+function placePop() {
+  const el = $("pop").firstElementChild; if (!el || !UI.pop) return;
+  const w = el.offsetWidth, h = el.offsetHeight;
+  if (el.classList.contains("search")) { el.style.left = Math.round((innerWidth - w) / 2) + "px"; el.style.top = "84px"; return; }
+  let x = Math.min(UI.pop.x, innerWidth - w - 12), y = UI.pop.y;
+  if (y + h > innerHeight - 12) y = Math.max(12, UI.pop.top - h - 6);
+  el.style.left = Math.max(12, x) + "px"; el.style.top = y + "px";
+}
+function renderPop() {
+  const p = UI.pop; if (!p) { $("pop").innerHTML = ""; return; }
+  let html = "";
+  if (p.kind === "addMenu") html = `<div class="pop" style="width:320px"><div class="poph">Add under “${esc(cut(needText(p.need), 30))}”</div><div class="res" style="border:none">
+      <button class="opt ${p.hi === 0 ? "hi" : ""}" data-act="popPick" data-v="need"><div class="menuopt">${ICON.need}<div><div class="t">New need</div><div class="s">A child need, typed right in the tree.</div></div></div></button>
+      <button class="opt ${p.hi === 1 ? "hi" : ""}" data-act="popPick" data-v="cap"><div class="menuopt">${ICON.link}<div><div class="t">Link capability</div><div class="s">Search all ${IX.inv.capabilities.length} capabilities and link one here.</div></div></div></button></div></div>`;
+  else if (p.kind === "linkCap") html = `<div class="pop search" style="width:520px"><div class="poph">Link a capability under “${esc(cut(needText(p.need), 40))}”</div>
+      <div class="popb"><input type="search" id="popQ" placeholder="Search wording, card, routes…" value="${esc(p.q)}" autocomplete="off"></div><div class="res" id="popRes">${linkCapResults()}</div>
+      <div class="popfoot" style="justify-content:space-between"><span class="small muted"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> link · <kbd>Esc</kbd> close</span></div></div>`;
+  else if (p.kind === "linkNeed" || p.kind === "moveNeed" || p.kind === "unlinkPick") html = `<div class="pop search auto"><div class="poph">${p.kind === "unlinkPick" ? `Unlink “${esc(cut(capText(p.cap), 40))}” from…` : p.kind === "moveNeed" ? `Move “${esc(cut(needText(p.id), 34))}” under…` : `Link “${esc(cut(capText(p.cap), 40))}” under…`}</div>
+      <div class="popb"><input type="search" id="popQ" placeholder="Search your needs…" value="${esc(p.q)}" autocomplete="off"></div><div class="res" id="popRes">${needResults()}</div>
+      <div class="popfoot" style="justify-content:space-between"><span class="small muted"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> pick · <kbd>Esc</kbd> close</span></div></div>`;
+  else if (p.kind === "flag") {
+    const what = p.tt === "need" ? needText(p.id) : p.tt === "capability" ? capText(p.id) : "Route " + routeLabel(IX.routes.get(p.id)) + ": " + IX.routes.get(p.id).summary;
+    html = `<div class="pop"><div class="poph">Flag for a follow-up</div><div class="popsub">${esc(cut(what, 90))}</div>
+      <div class="popb"><div class="seg" style="margin-bottom:10px"><button class="w ${p.fk === "wrong" ? "on" : ""}" data-act="flagKind" data-v="wrong">This is wrong</button><button class="d ${p.fk === "dig" ? "on" : ""}" data-act="flagKind" data-v="dig">Dig into this</button></div>
+      <input type="text" id="popNote" placeholder="${p.fk === "wrong" ? "What looks wrong?" : "What should an agent dig into?"}" value="${esc(p.q)}"></div>
+      <div class="popfoot"><span class="small muted" style="margin-right:auto"><kbd>Tab</kbd> switches kind · <kbd>Enter</kbd> saves</span><button class="btn sm" data-act="closePop">Cancel</button><button class="btn sm primary" data-act="flagSave">Add follow-up</button></div></div>`;
+  }
+  else if (p.kind === "reason") html = `<div class="pop"><div class="poph">${esc(p.title)}</div><div class="popsub">${esc(cut(p.sub, 100))}</div>
+      <div class="popb"><input type="text" id="popNote" placeholder="${esc(p.ph)}" value="${esc(p.q)}"></div>
+      <div class="popfoot"><span class="small muted" style="margin-right:auto">${p.optional ? "Optional · " : ""}<kbd>Enter</kbd> saves</span><button class="btn sm" data-act="closePop">Cancel</button><button class="btn sm ${p.danger ? "danger solid" : "primary"}" data-act="reasonSave">${esc(p.ok)}</button></div></div>`;
+  $("pop").innerHTML = html; placePop();
+  const f = $("popQ") || $("popNote"); if (f) { f.focus(); const v = f.value; f.value = ""; f.value = v; }
+}
+function linkCapResults() {
+  const p = UI.pop; const q = p.q.trim();
+  const list = (q ? matchCaps(q) : IX.inv.capabilities.filter(c => !Surface.tagsOf(S, c.id).length && !Surface.noOwner(S, c.id))).slice(0, 40);
+  p.items = list.map(c => c.id);
+  if (p.hi >= list.length) p.hi = Math.max(0, list.length - 1);
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const mark = (t) => { let h = esc(t); for (const w of words) h = h.replace(new RegExp("(" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/&/g, "&amp;").replace(/</g, "&lt;") + ")", "ig"), "<mark>$1</mark>"); return h; };
+  if (!list.length) return `<div class="small muted" style="padding:10px">Nothing matches “${esc(q)}”.</div>`;
+  return (q ? "" : `<div class="small muted" style="padding:4px 10px 6px">Unplaced capabilities first. Type to search all of them.</div>`) + list.map((c, i) => {
+    const here = Surface.tagsOf(S, c.id).some(t => t.need === p.need);
+    const routes = IX.routesByCap.get(c.id) || [];
+    const hitR = words.length ? routes.find(r => words.some(w => (r.summary || "").toLowerCase().includes(w)) && !words.every(w => c.text.toLowerCase().includes(w))) : null;
+    const preview = hitR ? `Route ${routeLabel(hitR)}: ${routePlain(hitR) || hitR.summary}` : (routes[0] ? `${routes.length} route${routes.length > 1 ? "s" : ""}, e.g. ${routePlain(routes[0]) || routes[0].summary}` : c.possible);
+    const under = Surface.tagsOf(S, c.id).map(t => cut(needText(t.need), 24));
+    return `<button class="opt ${i === p.hi ? "hi" : ""}" data-act="popPick" data-i="${i}" ${here ? "disabled" : ""}>
+      <div class="t">${mark(capText(c.id))}</div>
+      ${gl(c.id) && gl(c.id).title ? `<div class="s" style="-webkit-line-clamp:1">${mark(c.text.replace(/`/g, ""))}</div>` : ""}
+      <div class="s"><b>${esc((IX.cards.get(c.card) || {}).title || c.card)}</b> · ${here ? "already linked here" : under.length ? "also under " + esc(under.join(", ")) + " · " : ""}${mark(cut(preview.replace(/`/g, ""), 160))}</div></button>`;
+  }).join("");
+}
+function needResults() {
+  const p = UI.pop; const words = p.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const bad = p.kind === "moveNeed" ? new Set(Surface.subtree(S, p.id)) : new Set();
+  const only = p.kind === "unlinkPick" ? new Set(placementsOf(p.cap)) : null;
+  const flat = []; const walk = (n, d) => { if (!bad.has(n.id) && (n.statement || n.parent === null)) flat.push({ n, d }); Surface.children(S, n.id).forEach(k => walk(k, d + 1)); };
+  walk(Surface.root(S), 0);
+  const list = flat.filter(({ n }) => !only || only.has(n.id)).filter(({ n }) => !words.length || words.every(w => (n.statement + " " + (n.description || "")).toLowerCase().includes(w)));
+  p.items = list.map(x => x.n.id);
+  if (p.hi >= list.length) p.hi = Math.max(0, list.length - 1);
+  if (flat.length <= 1 && p.kind === "linkNeed") return `<div class="small muted" style="padding:10px">No needs yet. Add needs on the Tree tab first.</div>`;
+  if (!list.length) return `<div class="small muted" style="padding:10px">No need matches “${esc(p.q)}”.</div>`;
+  return list.map(({ n, d }, i) => {
+    const here = p.kind === "linkNeed" && Surface.tagsOf(S, p.cap).some(t => t.need === n.id);
+    return `<button class="opt ${i === p.hi ? "hi" : ""}" data-act="popPick" data-i="${i}" ${here ? "disabled" : ""} style="padding-left:${10 + (words.length ? 0 : d * 14)}px">
+      <div class="t"><span class="chip" style="padding:0;width:8px;height:8px;background:${colorOfNeed(n.id)};margin-right:6px"></span>${esc(n.statement || "The founding principle")}</div>
+      ${words.length && n.parent ? `<div class="s">${esc(needPath(n.id).slice(1, -1).map(x => cut(needText(x), 24)).join(" › "))}</div>` : here ? `<div class="s">already linked here</div>` : ""}</button>`;
+  }).join("");
+}
+function refreshPopResults() {
+  const p = UI.pop; const res = $("popRes"); if (!res) return;
+  res.innerHTML = p.kind === "linkCap" ? linkCapResults() : needResults();
+  const hi = res.querySelector(".opt.hi"); if (hi) hi.scrollIntoView({ block: "nearest" });
+}
+function popPick(i) {
+  const p = UI.pop; if (!p) return;
+  if (p.kind === "addMenu") { const v = i === 0 ? "need" : "cap"; closePop(); if (v === "need") startAdd(p.need); else openPop("linkCap", p.anchor, { need: p.need, anchor: p.anchor }); return; }
+  const id = (p.items || [])[i]; if (!id) return;
+  if (p.kind === "linkCap") {
+    if (Surface.tagsOf(S, id).some(t => t.need === p.need)) return;
+    closePop(); setOpen("n|" + p.need, true); revealNeed(p.need); UI.flashKey = `c|${p.need}|${id}`;
+    dispatch({ type: "tag", capability: id, need: p.need });
+  } else if (p.kind === "linkNeed") {
+    closePop();
+    if (UI.tab === "tree") { setOpen("n|" + id, true); revealNeed(id); UI.flashKey = `c|${id}|${p.cap}`; }
+    dispatch({ type: "tag", capability: p.cap, need: id });
+  } else if (p.kind === "unlinkPick") {
+    const anchor = document.querySelector('[data-act="unlinkAny"]'); closePop(); unlinkPop(anchor, p.cap, id);
+  } else if (p.kind === "moveNeed") { closePop(); revealNeed(id); setOpen("n|" + id, true); UI.flashKey = "n|" + p.id; dispatch({ type: "moveNeed", id: p.id, parent: id }); }
+}
+function startAdd(needId) { UI.tab = "tree"; LS.set("tab", "tree"); UI.adding = needId; revealNeed(needId); setOpen("n|" + needId, true); UI.focus = "newNeed"; render(); }
+
+function reasonPop(anchor, o) { openPop("reason", anchor, o); }
+function unlinkPop(anchor, cap, need) { reasonPop(anchor, { title: `Unlink from “${cut(needText(need), 40)}”`, sub: capText(cap), ph: "Why it does not serve this need", ok: "Unlink", danger: true, optional: true, run: (t) => ({ type: "untag", capability: cap, need, reason: t }) }); }
+
+/* ================= Backup modal ================= */
+function renderModal() {
+  if (!UI.modal) { $("modal").innerHTML = ""; return; }
+  const msg = UI.importMsg;
+  $("modal").innerHTML = `<div class="modalbg" data-act="modalBg"><div class="modal">
+    <div class="row"><h2 style="margin:0;font-size:20px;flex:1">Backup</h2><button class="iconbtn" data-act="closeModal">${ICON.x}</button></div>
+    <p class="lede" style="margin-top:6px">Every edit is already saved to <code>${esc(PATHS.state)}</code>. This is the backup path: download the state as a file, or replace the whole surface from one.</p>
+    <div class="small muted">Inventory: <code>${esc(PATHS.inventory)}</code> · commit ${esc(IX.inv.source_commit.slice(0, 7))} · ${IX.inv.capabilities.length} capabilities · ${IX.inv.routes.length} routes</div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" data-act="download">Download working-surface.json</button><button class="btn" data-act="copy">Copy JSON</button></div>
+    <h3 style="margin-top:26px;font-size:15px">Restore from a file</h3>
+    <div class="row"><input type="file" id="importFile" accept=".json,application/json"><span class="small muted">or paste below</span></div>
+    <textarea id="importText" rows="8" class="mono" style="margin-top:8px" placeholder='{"schema": "${Surface.SCHEMA}", ...}'>${esc(UI.importText)}</textarea>
+    <div class="row" style="margin-top:8px"><button class="btn" data-act="checkImport">Check it</button>${UI.modal === "confirm" ? `<span class="small" style="color:var(--bad)">This replaces every need, link, mark and decision, and saves over the state file.</span><button class="btn danger solid" data-act="doImport">Replace the surface</button><button class="btn" data-act="cancelImport">Cancel</button>` : `<button class="btn danger" data-act="askImport">Replace the surface with this</button>`}</div>
+    ${msg ? `<div class="box" style="margin-top:10px;${msg.errors.length ? "background:var(--bad-soft)" : ""}">${msg.errors.length ? "<b>Cannot import:</b><ul>" + msg.errors.map(e => `<li>${esc(e)}</li>`).join("") + "</ul>" : "<b>Valid.</b>"}${msg.warnings.length ? "<div>Warnings:</div><ul>" + msg.warnings.map(e => `<li>${esc(e)}</li>`).join("") + "</ul>" : ""}</div>` : ""}
+  </div></div>`;
+}
+
+/* ================= Events ================= */
+function switchTab(v) { UI.tab = v; LS.set("tab", v); closePop(); render(); $("main").scrollTop = 0; }
+
+document.addEventListener("click", async (e) => {
+  if (UI.pop && !e.target.closest(".pop") && !e.target.closest("[data-act=addMenu],[data-act=flag],[data-act=linkNeed],[data-act=linkCap],[data-act=noOwner],[data-act=strike],[data-act=unlink],[data-act=unlinkAny],[data-act=moveNeed]")) closePop();
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  if (el.disabled) return;
+  const act = el.dataset.act, d = el.dataset;
+  if (el.tagName === "A") e.preventDefault();
+  switch (act) {
+    case "tab": switchTab(d.v); break;
+    case "undo": undo(); break;
+    case "dismissWarn": LOAD_WARNINGS = []; render(); break;
+    case "backup": UI.modal = "open"; renderModal(); break;
+    case "closeModal": UI.modal = null; renderModal(); break;
+    case "modalBg": if (e.target === el) { UI.modal = null; renderModal(); } break;
+    /* tree */
+    case "toggle": e.stopPropagation(); setOpen(d.key, !isOpen(d.key)); render(); break;
+    case "expandAll": S.needs.forEach(n => setOpen("n|" + n.id, true)); S.tags.forEach(t => setOpen(`c|${t.need}|${t.capability}`, true)); render(); break;
+    case "collapseAll": { UI.open = new Set(["n|" + Surface.root(S).id]); LS.set("open", [...UI.open]); render(); break; }
+    case "selNeed": {
+      if (e.target.closest("input")) break;
+      const k = "n|" + d.id, was = selIs("need", d.id);
+      if (was && isOpen(k)) setOpen(k, false); else setOpen(k, true);
+      openPanel({ type: "need", id: d.id }); render(); break; }
+    case "selCap": {
+      openPanel({ type: "cap", id: d.id, need: d.need }); render(); break; }
+    case "selRoute": e.stopPropagation(); openPanel({ type: "route", id: d.id, need: d.need }); render(); break;
+    case "alsoUnder": e.stopPropagation(); jumpToCap(d.cap, d.need); break;
+    case "startAdd": startAdd(d.id); break;
+    case "addMenu": e.stopPropagation(); openPop("addMenu", el, { need: d.id, anchor: el }); break;
+    case "linkCap": openPop("linkCap", el, { need: d.id, anchor: el }); break;
+    case "linkNeed": e.stopPropagation(); openPop("linkNeed", el, { cap: d.cap }); break;
+    case "moveNeed": openPop("moveNeed", el, { id: d.id }); break;
+    case "flag": e.stopPropagation(); openPop("flag", el, { tt: d.tt, id: d.id, fk: "dig" }); break;
+    case "flagKind": UI.pop.fk = d.v; UI.pop.q = $("popNote").value; renderPop(); break;
+    case "flagSave": { const p = UI.pop; const note = $("popNote").value; closePop(); dispatch({ type: "addFollowup", target_type: p.tt, target: p.id, kind: p.fk, note }); break; }
+    case "popPick": popPick(d.v === "need" ? 0 : d.v === "cap" ? 1 : +d.i); break;
+    case "closePop": closePop(); break;
+    case "noOwner": e.stopPropagation(); reasonPop(el, { title: "No narrative owner", sub: capText(d.cap), ph: "Why no need in the story calls for it", ok: "Mark it", optional: true, run: (t) => ({ type: "setNoOwner", capability: d.cap, note: t }) }); break;
+    case "unlink": e.stopPropagation(); unlinkPop(el, d.cap, d.need); break;
+    case "unlinkAny": e.stopPropagation(); { const ns = placementsOf(d.cap); if (ns.length === 1) unlinkPop(el, d.cap, ns[0]); else openPop("unlinkPick", el, { cap: d.cap }); } break;
+    case "openFullPage": openFullPage(d.id); break;
+    case "railPick": selectCap(d.id); UI._railReveal = false; renderMain(); break;
+    case "railFilter": UI.rail.f = d.v; UI._railReveal = true; renderMain(); break;
+    case "railFold": if (UI.railClosed.has(d.k)) UI.railClosed.delete(d.k); else UI.railClosed.add(d.k); renderMain(); break;
+    case "capsStep": stepCap(+d.v); break;
+    case "gridRow": { if (e.target.closest("a,input")) break; if (UI.gridOpen.has(d.id)) UI.gridOpen.delete(d.id); else UI.gridOpen.add(d.id); renderMain(); break; }
+    case "strike": e.stopPropagation(); { const r = IX.routes.get(d.r); reasonPop(el, { title: `Strike route ${routeLabel(r)} for every need`, sub: r.summary, ph: "One line: why it is out", ok: "Strike it", danger: true, run: (t) => ({ type: "strike", route: d.r, reason: t }) }); } break;
+    case "reasonSave": { const p = UI.pop; const t = $("popNote").value.trim(); if (!p.optional && !t) { $("popNote").focus(); toast("Give a one-line reason.", "err"); break; } const a = p.run(t); closePop(); dispatch(a); if (p.after) p.after(); break; }
+    case "unstrike": dispatch({ type: "unstrike", route: d.r }); break;
+    case "clearNoOwner": dispatch({ type: "clearNoOwner", capability: d.cap || UI.sel.id }); break;
+    /* panel */
+    case "back": { const prev = UI.back.pop(); if (prev) { UI.sel = prev; UI._panelScrollReset = true; UI.decMode = null; render(); } break; }
+    case "widen": UI.wide = !UI.wide; LS.set("wide", UI.wide); render(); break;
+    case "closePanel": UI.sel = null; UI.back = []; render(); break;
+    case "showInTree": { const s = UI.sel; if (s.type === "need") jumpToNeed(s.id); else if (s.type === "cap") jumpToCap(s.id, s.need); else jumpToRoute(s.id); break; }
+    case "openNeed": openPanel({ type: "need", id: d.id }); render(); break;
+    case "openCap": openPanel({ type: "cap", id: d.id, need: d.need || undefined }); render(); break;
+    case "openRoute": e.stopPropagation(); openPanel({ type: "route", id: d.id }); render(); break;
+    case "openDoc": openPanel({ type: "doc", id: d.path + "#" + d.anchor, path: d.path, anchor: d.anchor }); render(); break;
+    case "jumpNeed": jumpToNeed(d.id); break;
+    case "jumpCap": jumpToCap(d.id); break;
+    case "panelRename": UI.renaming = "panel:" + UI.sel.id; renderPanel(); { const f = $("panelRename"); f.focus(); f.select(); } break;
+    case "toggleSession": dispatch({ type: "toggleSession", id: UI.sel.id }); break;
+    case "reorder": dispatch({ type: "reorderNeed", id: UI.sel.id, dir: +d.dir }, true); break;
+    case "askDelete": UI.confirmDelete = true; renderPanel(); break;
+    case "cancelDelete": UI.confirmDelete = false; renderPanel(); break;
+    case "deleteNeed": { const n = Surface.need(S, UI.sel.id); UI.confirmDelete = false; if (dispatch({ type: "deleteNeed", id: n.id })) { UI.sel = { type: "need", id: n.parent }; render(); } break; }
+    case "toggleSpec": { const k = d.k; if (UI.specOpen.has(k)) { UI.specOpen.delete(k); UI.specOpen.add("closed:" + k); } else { UI.specOpen.add(k); UI.specOpen.delete("closed:" + k); } renderPanel(); if (UI.tab === "caps") renderMain(); break; }
+    case "decMode": UI.decMode = d.v || null; render(); break;
+    case "select": dispatch({ type: "select", capability: d.cap || UI.sel.id, routes: [...document.querySelectorAll('input[name="selR"]:checked')].map(x => x.value), decided_by: $("decBy").value, known: $("decKnown").value.trim() }) && (UI.decMode = null, render()); break;
+    case "setOpen": dispatch({ type: "setOpen", capability: d.cap || UI.sel.id, candidates: [...document.querySelectorAll('input[name="candR"]:checked')].map(x => x.value), known: $("openKnown").value.trim(), reopen: $("openReopen").value }) && (UI.decMode = null, render()); break;
+    case "clearDec": UI.decMode = null; dispatch({ type: "clearDecision", capability: d.cap || UI.sel.id }); break;
+    case "rnState": { const dr = UI.rnDraft[d.key]; dr.state = d.v; const inp = document.querySelector(`[data-rnkey="${CSS.escape(d.key)}"]`); if (inp) dr.text = inp.value; renderPanel(); const f = document.querySelector(`[data-rnkey="${CSS.escape(d.key)}"]`); if (f) f.focus(); break; }
+    case "rnSave": { const key = `${d.r}|${d.need}`, dr = UI.rnDraft[key]; if (dispatch({ type: "setRouteNeed", route: d.r, need: d.need, state: dr.state, reason: dr.state === "open" ? "" : dr.text, reopen: dr.state === "open" ? dr.text : "" })) delete UI.rnDraft[key]; break; }
+    case "rnClear": delete UI.rnDraft[`${d.r}|${d.need}`]; dispatch({ type: "clearRouteNeed", route: d.r, need: d.need }); break;
+    /* unplaced */
+    /* browse */
+    /* follow-ups */
+    case "fuFilter": UI.fuFilter = d.v; UI.fuIdx = 0; renderMain(); break;
+    case "fuOpen": { if (e.target.closest("button")) break; UI.fuIdx = +d.i; const f = fuList()[+d.i]; if (f) jumpTo(f.target_type, f.target); break; }
+    case "fuToggle": e.stopPropagation(); { const f = S.followups.find(x => x.id === d.id); dispatch({ type: "setFollowup", id: d.id, status: f.status === "done" ? "open" : "done" }, true); } break;
+    case "fuDelete": e.stopPropagation(); dispatch({ type: "deleteFollowup", id: d.id }); break;
+    /* backup */
+    case "download": {
+      const url = URL.createObjectURL(new Blob([stateText()], { type: "application/json" }));
+      const a = document.createElement("a"); a.href = url; a.download = "working-surface.json"; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000); break; }
+    case "copy": try { await navigator.clipboard.writeText(stateText()); toast("Copied."); } catch (x) { toast("The browser blocked the clipboard; use Download instead.", "warn"); } break;
+    case "checkImport": case "askImport": {
+      UI.importText = $("importText").value; let obj;
+      try { obj = JSON.parse(UI.importText); } catch (x) { UI.importMsg = { errors: ["Not valid JSON: " + x.message], warnings: [] }; UI.modal = "open"; renderModal(); break; }
+      const r = Surface.importObject(IX, obj); UI.importMsg = { errors: r.errors, warnings: r.warnings };
+      UI.modal = act === "askImport" && !r.errors.length ? "confirm" : "open"; renderModal(); break; }
+    case "cancelImport": UI.modal = "open"; renderModal(); break;
+    case "doImport": {
+      let obj; try { obj = JSON.parse(UI.importText); } catch (x) { break; }
+      const r = Surface.importObject(IX, obj); if (r.errors.length) { UI.importMsg = r; UI.modal = "open"; renderModal(); break; }
+      if (S) UNDO.push(S);
+      S = r.state; UI.sel = null; UI.back = []; UI.modal = null; UI.importMsg = null; LOAD_WARNINGS = [];
+      renderModal(); render(); await saveNow(); toast(`Imported ${plural(r.state.needs.length, "need")} and ${plural(r.state.tags.length, "link")}.`, "", true); break; }
+  }
+});
+
+document.addEventListener("dblclick", (e) => {
+  const el = e.target.closest("[data-dbl=rename]"); if (!el) return;
+  UI.renaming = el.dataset.id; renderMain(); const f = $("rename-" + el.dataset.id); if (f) { f.focus(); f.select(); }
+});
+
+function commitRename(inp, save) {
+  const id = inp.dataset.rename; const v = inp.value.trim(); const n = Surface.need(S, id);
+  UI.renaming = null;
+  if (save && n && v && v !== n.statement) dispatch({ type: "renameNeed", id, statement: v }, true);
+  else render();
+}
+
+document.addEventListener("keydown", (e) => {
+  const t = e.target;
+  /* inline inputs */
+  if (t.id === "newNeed") {
+    if (e.key === "Enter") { e.preventDefault(); const v = t.value.trim(); if (!v) { UI.adding = null; render(); return; } UI.focus = "newNeed"; dispatch({ type: "addNeed", parent: t.dataset.parent, statement: v }, true); }
+    else if (e.key === "Escape") { UI.adding = null; render(); }
+    return;
+  }
+  if (t.dataset && t.dataset.rename) {
+    if (e.key === "Enter") { e.preventDefault(); commitRename(t, true); }
+    else if (e.key === "Escape") { commitRename(t, false); }
+    return;
+  }
+  /* popovers */
+  if (UI.pop) {
+    const p = UI.pop;
+    if (e.key === "Escape") { e.preventDefault(); closePop(); return; }
+    if (p.kind === "addMenu") {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); p.hi = 1 - p.hi; renderPop(); }
+      else if (e.key === "Enter") { e.preventDefault(); popPick(p.hi); }
+      else if (e.key.toLowerCase() === "n") { e.preventDefault(); popPick(0); }
+      else if (e.key.toLowerCase() === "l") { e.preventDefault(); popPick(1); }
+      return;
+    }
+    if (p.kind === "linkCap" || p.kind === "linkNeed" || p.kind === "moveNeed" || p.kind === "unlinkPick") {
+      const n = (p.items || []).length;
+      if (e.key === "ArrowDown") { e.preventDefault(); p.hi = Math.min(n - 1, p.hi + 1); refreshPopResults(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); p.hi = Math.max(0, p.hi - 1); refreshPopResults(); }
+      else if (e.key === "Enter") { e.preventDefault(); popPick(p.hi); }
+      return;
+    }
+    if (p.kind === "flag") {
+      if (e.key === "Tab") { e.preventDefault(); p.fk = p.fk === "dig" ? "wrong" : "dig"; p.q = $("popNote").value; renderPop(); }
+      else if (e.key === "Enter") { e.preventDefault(); document.querySelector("[data-act=flagSave]").click(); }
+      return;
+    }
+    if (p.kind === "reason" && e.key === "Enter") { e.preventDefault(); document.querySelector("[data-act=reasonSave]").click(); }
+    return;
+  }
+  if (UI.modal) { if (e.key === "Escape") { UI.modal = null; renderModal(); } return; }
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !typing) { e.preventDefault(); undo(); return; }
+  if (typing) { if (e.key === "Escape") t.blur(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === "Escape" && UI.sel) { UI.sel = null; UI.back = []; render(); return; }
+  const k = e.key.toLowerCase();
+  if (UI.tab === "caps") {
+    if (k === "j") stepCap(1);
+    else if (k === "k") stepCap(-1);
+    else if (k === "l" && $("uLink") && !$("uLink").disabled) { e.preventDefault(); $("uLink").click(); }
+    else if (k === "n" && $("uNo")) { e.preventDefault(); $("uNo").click(); }
+    else if (k === "f" && $("uFlag")) { e.preventDefault(); $("uFlag").click(); }
+  } else if (UI.tab === "followups") {
+    const list = fuList();
+    if (k === "j") { UI.fuIdx = Math.min(list.length - 1, UI.fuIdx + 1); renderMain(); }
+    else if (k === "k") { UI.fuIdx = Math.max(0, UI.fuIdx - 1); renderMain(); }
+    else if (e.key === "Enter" && list[UI.fuIdx]) { const f = list[UI.fuIdx]; jumpTo(f.target_type, f.target); }
+    else if (k === "d" && list[UI.fuIdx]) { const f = list[UI.fuIdx]; dispatch({ type: "setFollowup", id: f.id, status: f.status === "done" ? "open" : "done" }, true); }
+  }
+});
+
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.id === "popQ" && UI.pop) { UI.pop.q = t.value; UI.pop.hi = 0; refreshPopResults(); }
+  else if (t.id === "railQ") { UI.rail.q = t.value; const pos = t.selectionStart; renderMain(); const f = $("railQ"); f.focus(); f.setSelectionRange(pos, pos); }
+  else if (t.dataset.rnkey) { UI.rnDraft[t.dataset.rnkey].text = t.value; }
+});
+document.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.id === "needDesc" && UI.sel) { const n = Surface.need(S, UI.sel.id); if (n && (n.description || "") !== t.value.trim()) dispatch({ type: "setNeedDescription", id: n.id, description: t.value }, true); }
+  else if (t.id === "capNote" && UI.sel) { if (Surface.noteOf(S, UI.sel.id) !== t.value.trim()) dispatch({ type: "setNote", target: UI.sel.id, text: t.value }, true); }
+  else if (t.id === "importFile" && t.files[0]) { const fr = new FileReader(); fr.onload = () => { UI.importText = String(fr.result); UI.importMsg = null; UI.modal = "open"; renderModal(); }; fr.readAsText(t.files[0]); }
+});
+document.addEventListener("focusout", (e) => {
+  const t = e.target;
+  if (t.dataset && t.dataset.rename && document.contains(t)) { const n = Surface.need(S, t.dataset.rename); if (n && n.parent === null && !n.statement && !t.value.trim()) return; commitRename(t, true); }
+  if (t.id === "newNeed" && !t.value.trim()) setTimeout(() => { if (UI.adding && document.activeElement && document.activeElement.id !== "newNeed") { UI.adding = null; render(); } }, 150);
+});
+document.addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches("details[data-framing]")) UI.framingOpen = e.target.open; }, true);
+
+/* tooltips */
+let tipTimer = null;
+document.addEventListener("mouseover", (e) => {
+  const el = e.target.closest("[data-tip]"); const tipEl = $("tip");
+  clearTimeout(tipTimer);
+  if (!el) { tipEl.classList.remove("on"); return; }
+  tipTimer = setTimeout(() => {
+    tipEl.textContent = el.dataset.tip; const r = el.getBoundingClientRect();
+    tipEl.style.left = "0px"; tipEl.style.top = "0px"; tipEl.classList.add("on");
+    const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    let x = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8), y = r.bottom + 8;
+    if (y + h > innerHeight - 8) y = r.top - h - 8;
+    tipEl.style.left = x + "px"; tipEl.style.top = y + "px";
+  }, 350);
+});
+document.addEventListener("scroll", (e) => { $("tip").classList.remove("on"); if (UI.pop && !(e.target.closest && e.target.closest(".pop"))) closePop(); }, true);
+
+render();
+load();
+</script>
+</body>
+</html>

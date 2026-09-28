@@ -1,0 +1,2817 @@
+{
+  "schema": "archinity.capability-glosses/1",
+  "note": "Plain-language glosses for the working surface, agent-written from CAPABILITIES.md and the linked specs. The card and spec win where they disagree; flag a wrong gloss on the surface.",
+  "inventory_commit": "6aa9e34de2b6897a9c7badeeaba3fcc18e626fba",
+  "capabilities": {
+    "ALTAR-01": {
+      "title": "Banked life charge: sacrifices die, recipients live",
+      "summary": "The altar stores sacrificed blood and life as charge that never decays, so a sacrifice can be banked and spent eras later. A prisoner or slave put in is fuel and dies; anyone else is a recipient and walks out alive."
+    },
+    "ALTAR-02": {
+      "title": "Willing believers can give their own lives",
+      "summary": "A colonist can offer their own life at the altar, counted differently from a coerced prisoner, but only if their faith certainty is high enough (e.g. 85%). Nothing re-checks certainty once the rite has started."
+    },
+    "ALTAR-03": {
+      "title": "Powered facilities make altar rites cheaper",
+      "summary": "Linking powered facilities to the altar cuts each rite's charge cost, but never below a quarter: technology improves the apparatus, it never replaces the life. For the lottery they will also lean the draw and widen the offer."
+    },
+    "ALTAR-04": {
+      "title": "A named gene capsule grants that gene",
+      "summary": "Load a capsule (vector) naming a specific gene and run the rite: the recipient survives with exactly that gene, no gamble. This is how named altar rites keep their promise."
+    },
+    "ALTAR-05": {
+      "title": "The altar's gene lottery",
+      "summary": "An opt-in gamble: a roll picks a quality tier, four genes are drawn and offered, and the player must take one. Walking away is no exit; a deadline picks at random. The bad tier lacks teeth until it holds more genes."
+    },
+    "ALTAR-06": {
+      "title": "Lottery shows its category, hides its odds",
+      "summary": "Before gambling, the player sees the capsule's gene category and, once drawn, all four genes on offer, but not the probabilities behind them. The alternative publishes odds per option."
+    },
+    "ALTAR-07": {
+      "title": "The final rite makes a founder transcendent",
+      "summary": "Once a founder has claimed a self-authored title, the altar's final rite grants the Transcendent gene and leads straight to the Administrator. A transcended founder can never be burned as fuel."
+    },
+    "REVERENCE-01": {
+      "title": "Reverence: how far your faith has spread",
+      "summary": "Each NPC faction has a Reverence number measuring how deeply the player faith has reached its people. It rises when converted visitors or released believer-prisoners go home, and when deeds are credited to the founders."
+    },
+    "REVERENCE-02": {
+      "title": "Reverence fades when neglected, announces its bands",
+      "summary": "Left alone, a faction's Reverence slowly decays; institutions there slow the decay. Crossing a named band threshold, up or down, sends the player a letter."
+    },
+    "REVERENCE-03": {
+      "title": "Seeing Reverence and what it will unlock",
+      "summary": "Reverence is displayed alongside Goodwill, and diplomatic options it will open appear greyed out with their threshold (\"requires N Reverence, currently M\"), so the player sees the carrot before reaching it."
+    },
+    "REVERENCE-04": {
+      "title": "Reverence changes how governments take goodwill",
+      "summary": "A government with low Goodwill but high Reverence is wary: goodwill gains shrink and losses deepen. At top Reverence it is won over: gains accelerate sharply, losses soften. Factions that cannot hold Reverence, like the Church, are exempt."
+    },
+    "REVERENCE-05": {
+      "title": "Churches planted inside friendly factions",
+      "summary": "With enough Reverence, the player spends Goodwill to found a church or monastery in a friendly faction. It holds Reverence up against decay, is suppressed with a letter if the faction turns hostile, and returns on peace."
+    },
+    "CHURCH-01": {
+      "title": "The Empire becomes the Church",
+      "summary": "Royalty's Empire is reskinned in place as a Catholic-like Church: Church quests pay Exaltation (royal favour), and each new title arrives by a ceremony. Nothing is renamed underneath, or everything relying on the Empire breaks."
+    },
+    "CHURCH-02": {
+      "title": "Church titles unlock privileges and trade",
+      "summary": "Titles unlock permits, presented as Church privileges, and access to Church traders: Knight to trade, Baron for orbital trade. Trade closes while the Church is hostile."
+    },
+    "CHURCH-03": {
+      "title": "Choosing who gets credit for a deed",
+      "summary": "When accepting a public deed, the player picks who is credited: the Church (Exaltation), the founders (Reverence), the Schism once allied (Influence), or a mix, each with its own consequences. Options are fixed when the quest appears."
+    },
+    "CHURCH-04": {
+      "title": "Church decrees with real costs for failure",
+      "summary": "Titled colonists receive decrees; failing one costs mood, Exaltation or Goodwill with the Church, set per decree. No decrees arrive while the Church is hostile, and running ones end when it turns hostile."
+    },
+    "CHURCH-05": {
+      "title": "Who may hold Church titles",
+      "summary": "Decides whether any colonist can earn Church favour and titles, only the founders, or some other group. One point of favour already makes a title, and a dead holder's favour passes to an heir, so founders-only takes code."
+    },
+    "CHURCH-06": {
+      "title": "Betraying the Church is permanent",
+      "summary": "An authored act of betrayal makes the Church hostile forever; gifts and peace talks cannot undo it. Decrees and perks end, titles stay. What triggers the betrayal mission is handled outside this card."
+    },
+    "CHURCH-07": {
+      "title": "The Church's ending: sanctioned apotheosis",
+      "summary": "While a founder holds the top Church title, the Church keeps offering apotheosis; accepting ends the campaign for both players. The offer closes for good at betrayal or at the orbital reveal."
+    },
+    "FOUNDERS-01": {
+      "title": "Faith roles that unlock over the campaign",
+      "summary": "The player faith has seats (founders, preachers, crafting and other specialists) that become available as the campaign reaches milestones, rather than all at once."
+    },
+    "FOUNDERS-02": {
+      "title": "The faith's fixed core beliefs",
+      "summary": "The campaign lays a base under the player's faith: some precepts are forced, and some have a minimum the player can make stricter but never looser, e.g. tolerance of other faiths. The player authors everything else."
+    },
+    "FOUNDERS-03": {
+      "title": "Founders: recognised, required, never given away",
+      "summary": "The game knows which two pawns are the founders from day one, lets a beat require them before the player accepts, and refuses every way a founder could be lent, sold, banished to die or kidnapped."
+    },
+    "SCHISM-01": {
+      "title": "NPC factions changing their faith",
+      "summary": "An NPC faction's faith can change mid-campaign: about 40% of factions take the Church's faith at Medieval, the Schism turns, or a revolt converts a people. The choice is whether the people themselves convert."
+    },
+    "SCHISM-02": {
+      "title": "Revolts that overthrow hostile governments",
+      "summary": "Where a people reveres the player faith but its government is hostile, the player can help them revolt. It can be offered or started, fought or bought, and end anywhere from a faith change to an ally; never a new faction."
+    },
+    "SCHISM-03": {
+      "title": "The Schism replaces the Church",
+      "summary": "A hidden rival faction, the Schism, is revealed when the players commit to it, takes Church settlements one plot beat at a time, and becomes a permanent ally. Whatever does not convert stays behind as a hostile Church remnant."
+    },
+    "PSYCHIC-01": {
+      "title": "Psylink ranks come from altar rites",
+      "summary": "Psychic rank is granted by a rite at the altar, one level at a time, with the first psylink arriving in the Medieval era. The rite can require the giver's faith and certainty."
+    },
+    "PSYCHIC-02": {
+      "title": "Meditation does not raise psychic rank",
+      "summary": "Under Vanilla Psycasts Expanded, meditation and every psyfocus gain earn XP that raises psylink rank, bypassing the altar. This closes or limits that loop so rank stays the altar's gift."
+    },
+    "PSYCHIC-03": {
+      "title": "Closing every other source of psylinks",
+      "summary": "Neuroformers, anima trees, the blinding ritual, title ceremonies and some XP abilities all hand out psylink levels. Each is shut so rank comes only from the altar."
+    },
+    "PSYCHIC-04": {
+      "title": "Captured casters keep or lose their powers",
+      "summary": "Decides whether an enemy psycaster the player captures or recruits keeps their psylink rank. With nothing built, they keep it."
+    },
+    "PSYCHIC-05": {
+      "title": "Psycaster paths only founders may enter",
+      "summary": "Some Vanilla Psycasts Expanded paths are open only to the two founders, keeping them above their disciples. Any key works, but psytrainers and psyrings slip past it until the path is sealed."
+    },
+    "PSYCHIC-06": {
+      "title": "Church psychics capped below the founders",
+      "summary": "The Church fields its own psycasters, but their levels are fixed at generation and never climb to the founders' level, whatever titles they hold."
+    },
+    "PSYCHIC-07": {
+      "title": "Named psychic ranks",
+      "summary": "Psylink levels carry names such as \"Adept\" instead of just numbers. Plain data can only put the name in a tooltip; showing it on the psylink row or beside the pawn's name takes code."
+    },
+    "TRANSCENDENCE-01": {
+      "title": "Each founder's saved transcendence record",
+      "summary": "Each founder carries one hidden saved record that every transcendence beat reads: the claimed title, whether it is claimed, when they transcended, and whether they have met the Administrator."
+    },
+    "TRANSCENDENCE-02": {
+      "title": "Claim Yourself: the founder's self-written title",
+      "summary": "The player types a self-authored title for a founder. Until they do, the altar refuses the final rite with \"X has not claimed a title\"."
+    },
+    "TRANSCENDENCE-03": {
+      "title": "The claimed title shown in play",
+      "summary": "The founder's self-chosen title appears in the game, by default in the inspect pane, Bio tab and generated text as \"Name, Title\". Showing it on the colonist bar and map label needs extra work."
+    },
+    "TRANSCENDENCE-04": {
+      "title": "Meeting the Administrator: Enter or Stay",
+      "summary": "After the final rite each founder meets the Administrator once and chooses to Enter the new reality or Stay. Stay changes nothing; the founder remains transcendent and in play."
+    },
+    "TRANSCENDENCE-05": {
+      "title": "Entering the new reality: credits or game over",
+      "summary": "Choosing Enter rolls credits, ends the game, or both. Credits alone leave the second founder's arc open; ending the game closes the playthrough for both players."
+    },
+    "POLITICS-01": {
+      "title": "Wronging one faction angers its allies too",
+      "summary": "Kidnapping, harming, killing or stripping a faction's people, or fouling ground near its settlement, also costs goodwill with that faction's allies, each announced by letter. Works only on alliances the campaign seeds at game start; NPC factions start with none."
+    },
+    "POLITICS-02": {
+      "title": "Faction demands with a deadline and stated consequence",
+      "summary": "A faction asks for something specific, with a countdown, and the letter states what happens either way before the player answers. Serving it can cost goodwill with its rival, named in a message."
+    },
+    "POLITICS-03": {
+      "title": "What demands can ask the colony for",
+      "summary": "Demands aim at what the colony can actually do: silver, goods to a tile, a colonist on loan, a skilled specialist, an embargo on a rival, a bandit camp cleared, refugees hosted, an escort, a prisoner freed. Each detects success and failure."
+    },
+    "POLITICS-04": {
+      "title": "Refusing a demand has a real price",
+      "summary": "The player refuses by letting the offer expire. The consequence the letter promised then fires, such as lost goodwill or a retaliation raid, and refusing can win standing with the refused faction's enemies."
+    },
+    "POLITICS-05": {
+      "title": "Rival factions' opposing demands in one letter",
+      "summary": "Two rivals want opposite things in a single quest. The player sees both branches with their prices, e.g. 'serve the Reach: +Reach, −Clans', and picking one fails the other."
+    },
+    "POLITICS-06": {
+      "title": "A cap on simultaneous diplomatic demands",
+      "summary": "Keeps the number of live demands manageable so the players aren't buried in letters: new demand offers stop once a set number are pending."
+    },
+    "POLITICS-07": {
+      "title": "Locked rewards that show the standing needed",
+      "summary": "Standing with a faction unlocks things, and locked ones are visible early with their price: 'need 60 Reverence with the Reach (now 42)'. The gate can read Goodwill, Reverence or Exaltation."
+    },
+    "POLITICS-08": {
+      "title": "Who hates whom stays secret until earned",
+      "summary": "Vanilla shows every faction's enemies on the Factions tab. Here that is withheld until standing, a quest, a comms question or a battle reveals it, faction by faction, and a locked row says what earns it. Alliances can be shown too."
+    },
+    "POLITICS-09": {
+      "title": "Caravans meet the settlements they pass",
+      "summary": "A caravan travelling near a settlement meets its faction: a hostile one ambushes or demands a toll, a friendly one offers trade. Makes world-map travel political."
+    },
+    "POLITICS-10": {
+      "title": "Ways out of a losing war",
+      "summary": "A war the colony is losing can end: gifts and peace talks, terms the colony proposes, a one-off reparation, or becoming a tributary with scheduled payments and obligations. Works against any faction whose goodwill can change."
+    },
+    "POLITICS-11": {
+      "title": "Easing a war with the Glitterites or Archons",
+      "summary": "The Glitterites and Archons are permanent enemies by design, outside diplomacy. A war with them can be eased, fewer raids for a price, but not ended unless the campaign deliberately lifts their permanent-enemy status."
+    },
+    "TERRITORY-01": {
+      "title": "Joining an ally's battle, or hearing who won",
+      "summary": "An ally under attack calls for help at a tile with a short window. Go and it's a real three-way fight; stay home and it resolves without the colony, with the outcome reported by letter."
+    },
+    "TERRITORY-02": {
+      "title": "What an outpost costs and pays back",
+      "summary": "Founding an outpost costs materials, silver and the colonists sent to run it, and its yield must make that worthwhile. Built on Vanilla Expanded's outposts, which as shipped cost nothing to found."
+    },
+    "TERRITORY-03": {
+      "title": "Colonists sent to an outpost are gone",
+      "summary": "The pawns committed to an outpost leave the colony for good, and the outpost runs itself with nothing to manage. A build can require or forbid a kind of pawn, such as needing one free colonist."
+    },
+    "TERRITORY-04": {
+      "title": "Outposts get attacked; fallen ones become ruins",
+      "summary": "Outposts cost attention through events, not management screens. The required event is an attack: defend it or it's destroyed into a ruin whose goods can be looted and which can be rebuilt for a price."
+    },
+    "TERRITORY-05": {
+      "title": "Conquering a settlement is a real siege",
+      "summary": "Taking an NPC settlement means real walls, turrets or siege engines and real defenders, harder at higher tech tiers. Vanilla bases are soft, and have no turrets or mortars before the Industrial era."
+    },
+    "TERRITORY-06": {
+      "title": "Conquered settlements become tribute-paying holdings",
+      "summary": "A settlement the colony takes becomes its holding: it owes the colony goods but is never a map the player runs. The engine has no vassal relation, so this must be built."
+    },
+    "TERRITORY-07": {
+      "title": "What a holding pays, and how it arrives",
+      "summary": "A new holding first owes a rebuild debt. After that it pays what it's known for, e.g. slaves from a slaver tribe or arms from an armourer, on a schedule, delivered wherever home is, even the gravship."
+    },
+    "TERRITORY-08": {
+      "title": "Learning what a settlement is known for",
+      "summary": "Each faction has a public specialty and each settlement its own, made plausible by its tile. A settlement's specialty is learned only by going there: visiting, trading, passing nearby or scouting."
+    },
+    "TERRITORY-09": {
+      "title": "Showing what's learned, hiding what vanilla leaks",
+      "summary": "A learned specialty shows on hover, in a tab, in world search and in the attack menu. Before that, vanilla's leaks are closed: the sellable-items window, tier hints in faction names and art, and the Empire's trade-permit line."
+    },
+    "TERRITORY-10": {
+      "title": "Paying to advance a holding one era",
+      "summary": "A holding stays at the era it was taken until the colony pays to advance it one era, never beyond the colony's own. The era advance itself never upgrades holdings for free."
+    },
+    "TERRITORY-11": {
+      "title": "How a holding is lost or given up",
+      "summary": "A holding ends by release, retaking, destruction or revolt, always as a moment the player can act on, never a hidden roll. The place passes to a randomly drawn faction, and whatever it still owed is cancelled."
+    },
+    "TERRITORY-12": {
+      "title": "Settlements never change hands under the players",
+      "summary": "When a settlement changes owner, at the era advance, the Schism or a conquest, it never happens while players are on its map, and caravans heading there are dealt with. A parked gravship is the one unsolved case."
+    },
+    "TERRITORY-13": {
+      "title": "Sworn factions provide services, asked or offered",
+      "summary": "A faction sworn to the colony owes help, not goods: troops, lent specialists, traders, a shuttle. The player can ask for services as well as receive them on the faction's own schedule; higher Reverence opens more."
+    },
+    "PRESSURE-01": {
+      "title": "How strong raids get, and from what",
+      "summary": "Raid strength comes from capped inputs: time spent in the current era, military strength, Reverence and enemy count, with wealth only a minor share."
+    },
+    "PRESSURE-02": {
+      "title": "How often threats come, set apart from size",
+      "summary": "Threat frequency follows campaign state, enemy count and time in the era, independently of raid size, so threats can become more frequent without each one getting bigger, or the reverse."
+    },
+    "PRESSURE-03": {
+      "title": "Fewer, tougher enemies instead of hordes",
+      "summary": "Late threats stay dangerous through quality, not just numbers: 'four juggernauts, not forty men'. Stronger raids can also unlock an era's signature raid rather than more bodies."
+    },
+    "PRESSURE-04": {
+      "title": "More enemy factions mean more pressure",
+      "summary": "Each hostile faction adds to threat size and frequency, and alliances count too, so diplomacy changes how hard the colony is pressed."
+    },
+    "PRESSURE-05": {
+      "title": "Authored raids with a fixed faction and size",
+      "summary": "A story beat, a refused demand or the Glitterite pursuit can send a raid with a set faction, strength and tactic, instead of whatever the storyteller would roll."
+    },
+    "PRESSURE-06": {
+      "title": "Reverence also brings friendly arrivals",
+      "summary": "As Reverence rises, the colony draws welcome arrivals alongside bigger threats: pilgrims, offerings, volunteers. The positive half of the storyteller."
+    },
+    "PRESSURE-07": {
+      "title": "Story beats protected from random chance",
+      "summary": "The campaign's ordered story beats fire reliably and aren't pre-empted or swamped by random storyteller events. Four vanilla levers, all data only."
+    },
+    "PRESSURE-08": {
+      "title": "Raids that come for something specific",
+      "summary": "A raid can declare its aim, people, livestock or stores, named in its letter ('Slave raid: the Ashen Clans'), and leaves once it has it. The player reads the aim before the group arrives."
+    },
+    "PRESSURE-09": {
+      "title": "Hated factions come harder and more often",
+      "summary": "A faction that truly hates the colony raids more often, in greater strength, and with nastier tactics than one that merely dislikes it. Goodwill bottoms out at −100, so hatred is built on top of it."
+    },
+    "PRESSURE-10": {
+      "title": "Players can see what's raising pressure",
+      "summary": "A readout tells the players broadly what is driving threats up, so pressure feels explicable rather than arbitrary."
+    },
+    "ENCOUNTERS-01": {
+      "title": "A told encounter arrives on its own timer",
+      "summary": "An optional told encounter, such as the anima-teaching visit, is offered on its own schedule: a fixed day, a day drawn from a range, 'maybe' after a day, or again after it lapses."
+    },
+    "ENCOUNTERS-02": {
+      "title": "Offered by a randomly drawn friendly faction",
+      "summary": "The encounter comes from a faction drawn at random among those not hostile to the colony, so who tells the story varies from game to game."
+    },
+    "ENCOUNTERS-03": {
+      "title": "Encounter held at a site the colony visits",
+      "summary": "The colony caravans to the giver's site, such as a village by an anima tree, and receives the teaching there, with a passage on arrival."
+    },
+    "ENCOUNTERS-04": {
+      "title": "Visitors come to venerate the colony's anima tree",
+      "summary": "Instead of the colony travelling, the giver's people come to it, walk to its anima tree, venerate it and leave. Harming the tree or the visitors ends the rite."
+    },
+    "ENCOUNTERS-05": {
+      "title": "The encounter teaches without granting power",
+      "summary": "What the encounter delivers is knowledge, not power: a passage, a memory, a mark, a techprint for research reachable anyway, or a fact later content can check."
+    },
+    "ENCOUNTERS-06": {
+      "title": "Ignoring the encounter costs nothing",
+      "summary": "The encounter is always optional: ignoring it has no penalty, an unvisited site cleans itself up, and it never grants a psylink."
+    },
+    "TRACE-01": {
+      "title": "How much the Glitterites know about you",
+      "summary": "A single 0–100 Trace score split into low, rising and high bands. Entering a band switches its effects on, such as blocked incidents or more Glitterite raids, so the threat escalates with the founders' exposure."
+    },
+    "TRACE-02": {
+      "title": "What raises and lowers Trace",
+      "summary": "Deep hacks (more if detected), missions against the Glitterites and analysing their artifacts raise Trace; a basic local hack like a door costs nothing. Glitterite quests can lower it, and it fades a little each day."
+    },
+    "TRACE-03": {
+      "title": "Trace brings more Glitterite raids, not bigger",
+      "summary": "Higher bands make the Glitterites a likelier raider and switch certain incidents on or off. Ordinary raids never grow with Trace, so it cannot stack with Reverence's pressure; only pursuit raids scale."
+    },
+    "TRACE-04": {
+      "title": "The hidden hunt and its countdown",
+      "summary": "A separate search runs unseen, faster at higher Trace. Past a reveal point a countdown appears in the quest tab, and it shortens or lengthens the instant Trace changes."
+    },
+    "TRACE-05": {
+      "title": "Found: a huge raid, then raids until escape",
+      "summary": "When the search completes, a large detection raid hits, scaled by difficulty and Trace. Raids then repeat on an authored on/off cycle until the colony escapes; staying to fight forever is allowed."
+    },
+    "TRACE-06": {
+      "title": "Moving far enough shakes off the hunt",
+      "summary": "Relocating the colony a long way (gravship, or caravan out, found a new base, abandon the old) resets the search to zero. Trace itself stays. A short hop resets nothing, so it buys no fresh safe window."
+    },
+    "TRACE-07": {
+      "title": "Leaving the planet always escapes",
+      "summary": "A jump between the surface and orbit, either direction, always counts as a full escape. A move between two places in orbit is judged against its own escape distance, since orbit tiles differ from planet tiles."
+    },
+    "TRACE-08": {
+      "title": "The hunt when there are two colonies",
+      "summary": "With two colonies, the pursuit can hunt each separately, only one (the other a permanent haven), or the founders' people wherever they are. Every version must name which settlement counts as a colony."
+    },
+    "TRACE-09": {
+      "title": "Showing Trace to the player",
+      "summary": "The player sees the current band and its effects, what a mission does to Trace before accepting, a letter when the band changes, the pursuit countdown once revealed, and a Trace number always on screen."
+    },
+    "CURRENCIES-01": {
+      "title": "Influence and Intel as banked currencies",
+      "summary": "Two saved balances, Influence and Intel, always visible on screen. Missions, artifact analysis and site lore pay into them; they are spent on the Schism, favours, bought missions and Instruction items."
+    },
+    "CURRENCIES-02": {
+      "title": "Is Intel a number or an item?",
+      "summary": "Intel can be an abstract balance or a physical stockpiled item. A number can be earned by reading lore but needs its own display; an item shows in the resource list for free but can never come from lore."
+    },
+    "CURRENCIES-03": {
+      "title": "Missions that pay Influence or Intel",
+      "summary": "A mission can list Influence or Intel as a reward, visible before accepting, and can offer different currencies as alternative rewards or per approach, so the player chooses what the deed earns."
+    },
+    "CURRENCIES-04": {
+      "title": "Earning Intel from artifacts and site lore",
+      "summary": "Intel also comes from slowly dismantling Glitterite artifacts and, optionally, from investigating lore at sites, so curiosity is rewarded with something useful rather than loot."
+    },
+    "CURRENCIES-05": {
+      "title": "Trading Intel for techprints",
+      "summary": "The player spends Intel to buy Instruction: techprints or authored items that unlock research. Besides the quest shop, it is the only thing that spends Intel."
+    },
+    "CURRENCIES-06": {
+      "title": "Buying missions with currency",
+      "summary": "A shop where the player spends Influence or Intel to buy a specific mission, which then starts. This is how the campaign's purchasable missions reach the player."
+    },
+    "CURRENCIES-07": {
+      "title": "What the shop sells, and when",
+      "summary": "Each shop entry is a mission or an item, with its own unlock condition (research, era, a balance or a political flag) and its own clock for leaving the shelf or restocking."
+    },
+    "CURRENCIES-08": {
+      "title": "A failed bought mission comes back",
+      "summary": "If a paid-for mission fails, it can return to the shop free, at its price, refunded, after a delay or capped, set per entry. It always returns as a fresh roll, never the same mission."
+    },
+    "CURRENCIES-09": {
+      "title": "Spending Influence to advance the Schism",
+      "summary": "The Schism plot is an ordered chain of paid blows: spend Influence to launch the next; success moves on, failure re-offers it. A marking act commits the founders and turns the Church permanently hostile."
+    },
+    "CURRENCIES-10": {
+      "title": "Currencies that decay or expire",
+      "summary": "Influence or Intel could shrink over time, which decides whether hoarding pays. It is possible either way and not yet chosen; decay below a Schism step's price could stall the plot."
+    },
+    "HACKING-01": {
+      "title": "Tougher security guards better targets",
+      "summary": "Hackable targets carry security (ICE) tiered by value, with two new top tiers for Glitterite and Archon systems. A valuable target always gets its hardest tier rather than a random one."
+    },
+    "HACKING-02": {
+      "title": "Research opens new kinds of hack target",
+      "summary": "Research unlocks what can be hacked, in order: defences, then reactors, then weaker mechs, then strong mechs. A locked target refuses the hack and says why."
+    },
+    "HACKING-03": {
+      "title": "Glitterite trophies unlock advanced hacking",
+      "summary": "Top-tier hacking research requires having studied specific Glitterite objects the colony brought home and, where authored, an Instruction item bought with Intel."
+    },
+    "HACKING-04": {
+      "title": "A steady supply of new hacking abilities",
+      "summary": "Hacking keeps gaining verbs over the campaign, from bypassing a door to seizing mechs and turning defences. Abilities are learned from data taken in hacks, never bought."
+    },
+    "HACKING-05": {
+      "title": "Hijack turrets and mechs, trigger remote effects",
+      "summary": "A hack can flip an enemy turret onto its owners or disable and then hijack a mech, so a mission need not kill every defender. A hack at one console can also cause an effect elsewhere."
+    },
+    "HACKING-06": {
+      "title": "Hacking remotely through a field agent",
+      "summary": "A skilled hacker stays home sealed in a Cyberpod while a colonist at an away site carries a relay; the hack uses the home hacker's skill. The field colonist must still stand at the target."
+    },
+    "HACKING-07": {
+      "title": "Every hack's depth and detection are recorded",
+      "summary": "Each intrusion records how deep it went, from a local device up to command systems, and whether the hacker was noticed. That record is what raises Trace, so bigger, noisier hacks draw more Glitterite attention."
+    },
+    "HACKING-08": {
+      "title": "What the player sees about hacking",
+      "summary": "The player can read a hack's progress, the target's security tier, why a hack is refused, what the remote relay can reach, and a history of past intrusions."
+    },
+    "ANDROIDS-01": {
+      "title": "Building androids as full colonists",
+      "summary": "At Ultra the colony can manufacture androids that join at once as full colonists able to hold a faith. The ending's argument relies on building them carrying no penalty."
+    },
+    "ANDROIDS-02": {
+      "title": "Android-building unlocked by studying Glitterites",
+      "summary": "The research that allows building androids requires having studied a captured Glitterite exemplar, optionally plus an Intel-bought techprint. Intel is never charged per android."
+    },
+    "ANDROIDS-03": {
+      "title": "Can androids have psychic powers?",
+      "summary": "As shipped, no android can hold a psylink. This decides whether they can: all of them, chosen ones, awakened ones, on a story condition, or none."
+    },
+    "ANDROIDS-04": {
+      "title": "Psychic rules per kind of android",
+      "summary": "Psylink rules can differ for factory-built, arrived, awakened, jailbroken and Glitterite androids. Glitterites stay deaf in every version; out of the box only awakened androids are told apart from the rest."
+    },
+    "ANDROIDS-05": {
+      "title": "Captured Glitterites stay prisoners only",
+      "summary": "A captured Glitterite holds no faith and can only be held or sold; it is never recruited, enslaved or converted. The prisoner tab reads 'Non-recruitable'."
+    },
+    "ANDROIDS-06": {
+      "title": "Jailbreaking a Glitterite into a colonist",
+      "summary": "The one exception: an operation on a captured Glitterite gives back its persona and free will, and it becomes an ordinary android colonist. Its price is a persona subcore."
+    },
+    "ANDROIDS-07": {
+      "title": "No awakened androids before the Ultra era",
+      "summary": "VRE – Android lets outlanders, pirates and the Church field awakened androids 2% of the time from game start. The campaign stops any arriving before Ultra, so nothing shows up above its era."
+    },
+    "RESEARCH-01": {
+      "title": "Research unlocked by studying a trophy",
+      "summary": "A project can require a specific object, like a Glitterite heart or a marauder's sword, brought home and studied at a bench on the player's order. The object survives and can gate several projects."
+    },
+    "RESEARCH-02": {
+      "title": "Research unlocked by techprints and instruction",
+      "summary": "Some projects need Instruction: a techprint or authored item, from a quest or bought with Intel. The largest late projects need Instruction the colony got by trading Intel."
+    },
+    "RESEARCH-03": {
+      "title": "Research that uses up materials",
+      "summary": "Practice: a project costs resources like cloth or leather, spent in trials the player orders, each with its own failure letter. Most routes take the cost before research starts."
+    },
+    "RESEARCH-04": {
+      "title": "Dismantling Glitterite artifacts for Intel",
+      "summary": "The player can order a Glitterite artifact slowly taken apart. Over many sessions it pays Intel and raises Trace, then is destroyed. Unlike studying a surviving exemplar, it never adds research progress."
+    },
+    "RESEARCH-05": {
+      "title": "No shortcuts past eras or study gates",
+      "summary": "Mod features and items that grant research free (a psycast, the schematic book, senator favours, spy thefts) are shut off, so nothing jumps an era or skips a study requirement. It must be in before world creation."
+    },
+    "RESEARCH-06": {
+      "title": "Research unlocks basic jobs like mining",
+      "summary": "In the Neolithic, work such as mining, farming or hunting starts greyed out, naming its project, and goes live the moment it is researched, making 'we learned to mine' a story beat."
+    },
+    "ERA-01": {
+      "title": "Advancing the world to the next era",
+      "summary": "Finishing an era's capstone moves the whole world up one tech era in one step, never automatically and never halfway. The world's tech level and the colony's move together, so the players own the campaign's pacing."
+    },
+    "ERA-02": {
+      "title": "Only the capstone can change the era",
+      "summary": "No mod button, setting or event shifts the era sideways. World Tech Level's in-game 'change tech level' button is removed, so the advance stays the players' act and both players' games agree."
+    },
+    "ERA-03": {
+      "title": "A permanent record of when each era began",
+      "summary": "The game remembers the day every era started, past eras included, so beats can fire e.g. '180 days after the Medieval gate'. It must work when each player's colony runs its own clock (Async Time)."
+    },
+    "ERA-04": {
+      "title": "Seeing the current era and its start",
+      "summary": "The planet tab shows which era the world is in, the day it began, and a log of every boundary crossed, so players can read where the campaign stands."
+    },
+    "ERA-05": {
+      "title": "Clearing high-tech ruins from the home map",
+      "summary": "A Neolithic colony should not start beside ancient Ultra-tech dangers, a crashed mechanitor walker, or ancient car wrecks. These are kept off the colony's own map when it is generated."
+    },
+    "ERA-06": {
+      "title": "High-tech events wait for their era",
+      "summary": "Events that belong to a later era, chiefly the crashed mechanitor ship that opens Biotech's mech line, happen in their own era (Industrial) instead of from day one."
+    },
+    "ERA-07": {
+      "title": "Swapping out-of-era ruins for era-fitting ones",
+      "summary": "Instead of just deleting above-era content, put something era-appropriate in its place: a fixture in the yard, or a site a short journey away that becomes part of the campaign's quest line."
+    },
+    "ERA-08": {
+      "title": "Nothing arrives from above the current era",
+      "summary": "Raids, visitors, traders, quests and faction-less events never bring anything from a higher era. Lower-tech arrivals are fine. No faction is exempt, the Empire/Church included; only a deliberately authored beat may break the rule."
+    },
+    "ERA-09": {
+      "title": "No drop pods before the Industrial era",
+      "summary": "Pods belong to Industrial, when the player gets them. Before then, quest rewards, joiners, called aid and siege supplies must arrive some other way than falling from the sky."
+    },
+    "ERA-10": {
+      "title": "Every faction's pawns and gear written by us",
+      "summary": "Every faction, including ones quests and mods create mid-game, fields only the pawn types, gear and xenotypes we wrote, so no in-era faction turns up with a stray high-tech pawn from some mod's additions."
+    },
+    "CHARTING-01": {
+      "title": "Finding sites by working an observatory",
+      "summary": "A colonist works a star-reading apparatus to discover sites; nothing is found without that work. It feeds an everyday-sites pool and a story pool, each with a guaranteed eventual find. Skill finds more, not better; idle time is not banked."
+    },
+    "CHARTING-02": {
+      "title": "Main-story discoveries arrive in order",
+      "summary": "The Archon storyline's discoveries (the spine) come strictly one after another: the next appears only once the current one is completed. Losing a site keeps that beat's place, and a beat already in play is not handed out twice."
+    },
+    "CHARTING-03": {
+      "title": "Everyday optional sites found by surveying",
+      "summary": "Alongside the story, the apparatus turns up ordinary optional sites at about vanilla's rate. Any vanilla or mod quest can be added to this pool."
+    },
+    "CHARTING-04": {
+      "title": "Quests announce themselves in later eras",
+      "summary": "Some quests must be charted in early eras but, as the eras advance, show up as ordinary storyteller offers instead. One era test both takes a quest out of the survey pool and lets the storyteller offer it."
+    },
+    "CHARTING-05": {
+      "title": "Only finding places you can reach",
+      "summary": "Each era offers search-distance bands and each apparatus accepts a range, so discoveries land only where the colony can actually travel. Better mobility opens farther bands. Within a band, placement is uniform, not biased toward near."
+    },
+    "CHARTING-06": {
+      "title": "Star Table, Observatory, Sensory Array tiers",
+      "summary": "The discovery apparatus climbs a ladder of buildings across the eras, each reaching farther, with room for more tiers. A plain 'mundane table' that finds only everyday sites is the same shape."
+    },
+    "CHARTING-07": {
+      "title": "Showing discovery progress without spoiling it",
+      "summary": "Players see progress for both searches but no time estimate. The Waystone hints that something is out there the instrument cannot resolve, and each find's letter says why it arrived."
+    },
+    "CHARTING-08": {
+      "title": "Caravans and outposts stumble on sites",
+      "summary": "Travelling caravans and scout outposts occasionally turn up ordinary sites next to themselves, with a timer so re-crossing a tile doesn't re-roll. These are everyday finds, never story beats."
+    },
+    "CHARTING-09": {
+      "title": "Readable lore found inside sites",
+      "summary": "Sites can hold murals or records a colonist reads if the players care to. Reading pays Intel once, leaves a 'read' version of the object, and the text stays re-readable from History by both players."
+    },
+    "CHARTING-10": {
+      "title": "Does orbit use the same discovery apparatus?",
+      "summary": "Odyssey ships an orbital scanner that finds space sites on its own. The choice is whether Charting's apparatus also covers orbit, the scanner delivers Charting's content, or the two share or stay separate."
+    },
+    "INFRA-01": {
+      "title": "An unpaved world where road tiers matter",
+      "summary": "The world starts with only dirt paths and tracks, no ancient highways. Each road tier gives a distinct travel speed, so better roads are worth building."
+    },
+    "INFRA-02": {
+      "title": "Vehicles fast on roads, crawling off them",
+      "summary": "Ground vehicles should race along paved roads and be near-useless cross-country, so roads and vehicles reinforce each other. As shipped, many vehicles move at the same speed on any road tier."
+    },
+    "INFRA-03": {
+      "title": "Factions build roads to their neighbours",
+      "summary": "After each era advance, every civilization gradually paves routes to its own and allied settlements, visibly growing on the map. A broken alliance pauses a road; capturing an endpoint completes it for the new owner."
+    },
+    "INFRA-04": {
+      "title": "Paying for a specific road",
+      "summary": "The player funds a named road to be built sooner, farther or at a better tier, recognisably different from a gift, through a channel that fits the era: caravan, messenger, radio or pods."
+    },
+    "INFRA-05": {
+      "title": "Paying for a better road than planned",
+      "summary": "Funding can lift a route above the tier its builder would have laid, e.g. stone instead of dirt, but never above the current era's best."
+    },
+    "INFRA-06": {
+      "title": "Colonists pave roads themselves",
+      "summary": "Besides funding others' roads, the colony can send its own workers out to build roads directly."
+    },
+    "INFRA-07": {
+      "title": "Cars, trucks and aircraft from Industrial",
+      "summary": "At Industrial, vehicles arrive: faster world travel, more carrying capacity and combat platforms, with aircraft as a later, separate step. The reachable world expands sharply."
+    },
+    "INFRA-08": {
+      "title": "Enemy and trader factions with vehicles",
+      "summary": "Partly: NPC factions use the vehicles their era allows, in armoured raids, base defence or trade caravans. Only from Industrial on, since no earlier vehicles exist anywhere."
+    },
+    "INFRA-09": {
+      "title": "Better travel lets discovery reach farther",
+      "summary": "As roads and vehicles improve, Charting's search can reach farther bands, since the colony can now get there. Mobility offers the reach; the apparatus tier still caps it."
+    },
+    "ORBIT-01": {
+      "title": "Orbit stays hidden until the reveal",
+      "summary": "Partly: before the story reveals space, players can't view orbit, fly there or find sites in it. Odyssey fills orbit at world creation and leaves it open from day one, so we must close it."
+    },
+    "ORBIT-02": {
+      "title": "No space quests before the reveal",
+      "summary": "Nothing hands out orbital quests early: the orbital scanner, ancient uplinks hacked on the surface, Vanilla Gravship Expanded's scanner cluster and GravTech's core all stay shut until the reveal."
+    },
+    "ORBIT-03": {
+      "title": "Orbit stays silent until you can reach it",
+      "summary": "Orbital traders don't call and hidden Salvagers don't raid until the colony can talk to or reach space. Contact follows capability."
+    },
+    "ORBIT-04": {
+      "title": "The one-time moment space opens",
+      "summary": "The reveal is earned in the story, happens once for the whole world, and stays open even if whatever earned it (a scanner, a key item) is later lost."
+    },
+    "ORBIT-05": {
+      "title": "Orbit fills with factions at the reveal",
+      "summary": "At the reveal the whole orbital board appears at once: spacer powers, surface factions that went up with the players (names and history intact), and the Glitterite settlements."
+    },
+    "ORBIT-06": {
+      "title": "Keeping orbital factions from being deleted",
+      "summary": "World Tech Level can silently delete the too-high-tech orbital factions at world creation, so they must be exempted to exist for the reveal. Whether exempting the Empire breaks the no-exempt-faction rule is still open."
+    },
+    "ORBIT-07": {
+      "title": "Space stations that change every visit",
+      "summary": "Orbital strongholds generate as floored, heated, pressurised stations with a different layout each visit, with per-type options such as breach chance, derelict or intact, and hackable doors."
+    },
+    "ORBIT-08": {
+      "title": "Quest strongholds with guaranteed objectives",
+      "summary": "A station a quest spawns reliably holds the quest's objective, is defended, and the objective can actually be reached. Supports heists: a named vault item, a boss in the objective room, a raid countdown once inside."
+    },
+    "ORBIT-09": {
+      "title": "Leaving, returning to and failing strongholds",
+      "summary": "What happens when players leave a stronghold unfinished or fail it: whether the site vanishes, can be revisited with the objective still there, or comes back later as a fresh attempt."
+    },
+    "GRAVSHIP-01": {
+      "title": "Living permanently aboard the gravship",
+      "summary": "In the Spacer act the ship becomes the colony's home, and the planetside base can be retired. Deck space, air, heat, food, power and shields all have to work for a whole crew."
+    },
+    "GRAVSHIP-02": {
+      "title": "Founders breathe vacuum; others need suits",
+      "summary": "The two founders survive vacuum unprotected, while everyone else must wear vacsuits outside the hull."
+    },
+    "GRAVSHIP-03": {
+      "title": "Space disasters and threats in orbit",
+      "summary": "Orbit blocks most events by default, so an orbital home would go quiet. Events, conditions and threats that make sense in space are allowed back, so life aboard stays eventful."
+    },
+    "GRAVSHIP-04": {
+      "title": "Recruits and quests reaching the orbital ship",
+      "summary": "Partly: new people can arrive and join, and quests can be offered, while the colony lives in orbit, but only by pod or shuttle; nobody can ever walk in."
+    },
+    "GRAVSHIP-05": {
+      "title": "Visitors and trade while living in orbit",
+      "summary": "Partly: visitors and traders can come to the ship, and the crew can trade at stations, but walking caravans can never cross an orbital map edge."
+    },
+    "GRAVSHIP-06": {
+      "title": "Ship's destination changes owner mid-flight",
+      "summary": "If the tile a gravship is flying to changes hands in flight, for example an ally takes it, the ship shouldn't blindly land and attack the new owner. The player's choice at launch is respected."
+    },
+    "GRAVSHIP-07": {
+      "title": "Ship defenses that climb the eras",
+      "summary": "The hull mounts a defense ladder across the eras: burst shields, turrets, point defense that shoots down pods, then Ultra-tech guns."
+    },
+    "COLONY-01": {
+      "title": "Add-bill menu shows current-era recipes first",
+      "summary": "When you open a bench's add-bill list, this era's recipes come first and older ones recede. It only reorganises the list; it never removes or locks a recipe, and each player may see their own menu."
+    },
+    "COLONY-02": {
+      "title": "Pawns relax at what they're passionate about",
+      "summary": "A pawn looking for recreation leans toward activities that train a skill it has a passion for, major passions most. It changes what they do for fun, not how often, and boredom still wins over preference."
+    },
+    "COLONY-03": {
+      "title": "Recreation for skills no game trains",
+      "summary": "Seven of the twelve skills (medicine, for one) have no recreation that trains them, so passion-led fun can't reach them. Reading the matching textbook, or new recreation we add, fills the gap."
+    },
+    "DEFAULTS-01": {
+      "title": "Ready-made role gear sets from day one",
+      "summary": "Kits such as a Smith or Miner outfit are authored by us and already exist in a fresh colony, so the player assigns a role's gear rather than building each set by hand."
+    },
+    "DEFAULTS-02": {
+      "title": "Gear sets include the weapon",
+      "summary": "A kit covers everything the pawn carries, weapon included, not just its clothes and armour. Vanilla outfit policies can't hold a weapon, which is what makes this hard."
+    },
+    "DEFAULTS-03": {
+      "title": "Assign a kit once; the pawn dresses itself",
+      "summary": "One click hands a pawn its kit, and from then on it keeps itself equipped to that kit, re-gearing on its own after losses or upgrades. Only a custom system gets both halves."
+    },
+    "DEFAULTS-04": {
+      "title": "Force a re-gear or strip a pawn",
+      "summary": "The player can order a pawn to re-equip its kit now, and to drop what it carries. Vanilla has no 'drop everything' order and won't strip a healthy colonist."
+    },
+    "DEFAULTS-05": {
+      "title": "Kits can name gear not yet invented",
+      "summary": "A kit may list gear from a later era, such as plate armour in the Neolithic. That's intended: the pawn wears the best it can currently get, and nothing breaks or complains."
+    },
+    "DEFAULTS-06": {
+      "title": "New bills open with sensible settings",
+      "summary": "A new crafting bill starts pre-set per recipe, e.g. 'do until you have 5, Good quality or better, minimum durability'. It's applied once at creation and never overrides later edits. Reclaim, smelting and butchering bills can't use it."
+    },
+    "DEFAULTS-07": {
+      "title": "Copy one bill's settings onto another",
+      "summary": "Set up the chest-armour bill once, then paste its count, quality and other settings onto the gloves, helmet and boots bills. The recipe and chosen material are never copied."
+    },
+    "ITEMS-01": {
+      "title": "Break down old gear into its material",
+      "summary": "Obsolete apparel, armour and weapons can be reclaimed at a bench for the material they were made from (leather back as leather, steel plate as steel), with no intermediate scrap resource."
+    },
+    "ITEMS-02": {
+      "title": "Reclaiming returns half the material",
+      "summary": "Reclaiming gives back 50% of what the item was made of. The engine only allows quarter steps, so 25/50/75/100% are the only possible yields."
+    },
+    "ITEMS-03": {
+      "title": "Yield ignores condition and quality",
+      "summary": "A tattered or awful item returns the same share as a pristine one. The player picks which items to feed using the bill's usual durability and quality sliders."
+    },
+    "ITEMS-04": {
+      "title": "Reclaiming available from the Neolithic on",
+      "summary": "Reclaiming works in whatever era the colony is in, starting at the tribal crafting spot on day one, optionally with its own dedicated bench."
+    },
+    "ITEMS-05": {
+      "title": "Relics and advanced parts are never reclaimed",
+      "summary": "Sanctified relics can't be broken down, and reclaiming never hands back components, chemfuel, subcores or mech resources. Vanilla already enforces both."
+    },
+    "ITEMS-06": {
+      "title": "Player can see the reclaim yield",
+      "summary": "Before feeding an item in, the player can learn what fraction comes back. It can only be shown as text in the recipe description, not as a number on the info card."
+    },
+    "ITEMS-07": {
+      "title": "Reclaim bills support 'do until you have X'",
+      "summary": "A reclaim bill can run until the stockpile holds a target amount of the material, rather than only Forever or Repeat N. Vanilla can't count these products, so it needs a small piece of code."
+    },
+    "SPECIALISATION-01": {
+      "title": "Skilled pawns choose a specialty within a skill",
+      "summary": "As a pawn's skill climbs, the player periodically picks a specialisation inside it (a smith toward weapons, a cook toward gourmet). No new skills or XP; it rides the existing skill."
+    },
+    "SPECIALISATION-02": {
+      "title": "Only major passions can specialise",
+      "summary": "A pawn may only specialise in a skill it has a major (double-flame) passion for. Passion can still shift mid-game via genes or growth moments, opening or closing the door."
+    },
+    "SPECIALISATION-03": {
+      "title": "Specialisations are small stat bonuses only",
+      "summary": "Each advance is a modest number, typically a 1–5% boost to one stat, and never unlocks new recipes, buildings or other content."
+    },
+    "SPECIALISATION-04": {
+      "title": "Smiths split into weaponsmith or armoursmith",
+      "summary": "A smith can lean toward weapons or armour. Vanilla can't tell the two apart (both use the same work-speed stat), so this needs new stats on the recipes or custom code."
+    },
+    "SPECIALISATION-05": {
+      "title": "Recruits and captives arrive already specialised",
+      "summary": "Generated pawns such as captives, arrivals and quest pawns come with specialisations fitting their skills, making them prizes or disappointments. The player's starting colonists begin with none."
+    },
+    "SPECIALISATION-06": {
+      "title": "Fallback: named specialist posts, one holder each",
+      "summary": "If full specialisation proves too costly, a small fixed set of Ideology-style specialist roles (e.g. weaponsmith) each held by one pawn at a time. Tied to the player faith; not a progression."
+    },
+    "SPECIALISATION-07": {
+      "title": "Specialisations are visible and costly to change",
+      "summary": "A pawn's specialty shows plainly (a role, or a 'trained as weaponsmith' health entry) and changing an earned one has a cost, such as a ritual or surgery. Only stated for the post and trained-condition routes."
+    },
+    "QUESTS-01": {
+      "title": "Main story is one permanent parent quest",
+      "summary": "The Chronicle shows as a single always-accepted quest that never expires, with each required story beat nested under it in order and a progress count like 3 / 9."
+    },
+    "QUESTS-02": {
+      "title": "Each subplot gets its own parent quest",
+      "summary": "Every subplot appears as its own standing quest with its steps nested beneath, no matter how a step arrived: bought in a shop, offered normally or found by Charting."
+    },
+    "QUESTS-03": {
+      "title": "Missed story beats come back, never soft-lock",
+      "summary": "Declining, failing or losing a beat (say, its site expires) never breaks the plot line. Only success advances it, so the same beat simply comes round again."
+    },
+    "QUESTS-04": {
+      "title": "Plot progress and completed beats stay visible",
+      "summary": "The player can see how far along a plot line is, and finished beats remain readable under their parent. Vanilla drops finished beats flat into the Historical tab, so full legibility needs a small build."
+    },
+    "QUESTS-05": {
+      "title": "Every quest shows a difficulty rating",
+      "summary": "Each quest displays its challenge stars before the player commits. About 60 quests across installed mods declare none, and an unrated quest wrongly shows as one star."
+    },
+    "QUESTS-06": {
+      "title": "Quest letters say why it's happening",
+      "summary": "Every quest's arrival letter explains its cause in plain words, e.g. 'the Sensory Array caught…', or names the faction leader who is asking."
+    },
+    "QUESTS-07": {
+      "title": "Unannounced quests are found through Charting",
+      "summary": "Quests nothing would naturally announce must be discovered by Charting work instead of arriving by letter. As eras advance, some charted quests switch to announcing themselves."
+    },
+    "QUESTS-08": {
+      "title": "Required story content never left to chance",
+      "summary": "Anything the campaign needs arrives on a fixed order or guaranteed timer, never on a random roll. Spending elsewhere may slow the Schism plot but can never strand it."
+    },
+    "QUESTS-09": {
+      "title": "Quests from storyteller, world map or scheduled events",
+      "summary": "Three ways content reaches the player: the storyteller's random quest pool, something on the world map (the Charting apparatus, caravan finds), or a named event fired on a set day or condition."
+    },
+    "QUESTS-10": {
+      "title": "Quests handed over by traders, books or scans",
+      "summary": "Content can be given by a person or thing: a trader, a book being read, an orbital scan, or (only via beggars) a visitor. Givers can be random friendly factions or a named leader."
+    },
+    "QUESTS-11": {
+      "title": "Church decrees the colony must fulfil",
+      "summary": "Once the founders hold standing in an institution like the Church, it imposes obligations. Failing one costs mood, Exaltation or goodwill, and decrees stop once the Church turns hostile."
+    },
+    "QUESTS-12": {
+      "title": "Quest shops paid in Influence or Intel",
+      "summary": "Missions can be bought in a shop: the Schism's, paid in Influence, or the Glitterite exchange, paid in Intel."
+    },
+    "QUESTS-13": {
+      "title": "Shop stock with its own conditions and expiry",
+      "summary": "Each shop entry is a mission or an item (such as a techprint) from an authored list. Each appears when its conditions are met, stays for its own shelf life, and can leave when it no longer qualifies."
+    },
+    "QUESTS-14": {
+      "title": "A failed bought mission can return",
+      "summary": "Failing a purchased mission never stalls its plot line. It can come back to the shop free or at full price, or the payment can be refunded, set per entry."
+    },
+    "QUESTS-15": {
+      "title": "Both players share one quest board",
+      "summary": "In Multiplayer, both players see and act on the same quest list, as vanilla already works. No build needed, though nothing arbitrates if they disagree."
+    }
+  },
+  "routes": {
+    "ALTAR-01.A": {
+      "plain": "Already built into the altar; nothing to do. Charge never decays, and the prisoner-or-slave rule decides who dies."
+    },
+    "ALTAR-02.A": {
+      "plain": "A sacrifice rite where the priest kills the qualifying believer. Small build; the game records the death as an executed colonist."
+    },
+    "ALTAR-02.B": {
+      "plain": "The believer takes their own life as the rite completes, reusing VIE Memes' ceremonial suicide outcome or a copy. Equally small build."
+    },
+    "ALTAR-03.A": {
+      "plain": "Already built: facilities scale the cost with a 25% floor. Their lottery effects (category lean, extra options) do nothing until the lottery exists."
+    },
+    "ALTAR-04.A": {
+      "plain": "Already built: the rite grants the named gene and the recipient lives. Which genes exist, and mark-locking them, are still open."
+    },
+    "ALTAR-05.A": {
+      "plain": "Our own offer window with no close button, holding the recipient until the player picks. Needs one two-player test to confirm it syncs."
+    },
+    "ALTAR-05.B": {
+      "plain": "Fallback only if that test fails: rebuild the offer on Multiplayer's own choice-window pattern, adding a dependency on its API."
+    },
+    "ALTAR-06.A": {
+      "plain": "Category printed on the capsule and altar, all four options shown, odds kept hidden. Near-trivial build."
+    },
+    "ALTAR-06.B": {
+      "plain": "Also print each option's odds, borrowing another mod's calculation. A little more code; trades mystery for legibility."
+    },
+    "ALTAR-07.A": {
+      "plain": "The capsule-less rite grants the gene, records transcendence and opens the Administrator. Fuel refusal checks the founder record, since archons carry the gene."
+    },
+    "REVERENCE-01.A": {
+      "plain": "Catch converts and freed believers as they leave the map; quests pay Reverence as a chosen reward. Hard: new saved state and several patches."
+    },
+    "REVERENCE-01.C": {
+      "plain": "Optional extra: a data table of which game events move Reverence, and by how much. Pilgrims still need an authored quest."
+    },
+    "REVERENCE-02.A": {
+      "plain": "Decay in small capped steps on a neglect timer, like natural goodwill drift; bands defined as data, with a letter per crossing."
+    },
+    "REVERENCE-03.D1": {
+      "plain": "A Reverence strip on each row of the vanilla Factions tab. Familiar place, but three mods contest that row; recheck every update."
+    },
+    "REVERENCE-03.Own-political-tab": {
+      "plain": "A new tab of our own for Reverence and politics. No conflicts or update upkeep, but a whole screen to design."
+    },
+    "REVERENCE-03.D2": {
+      "plain": "Greyed comms-console options that state the Reverence required and the current value."
+    },
+    "REVERENCE-04.A": {
+      "plain": "Scale every goodwill change at the single point all pass through; data picks which reasons count. Covers every source, but some previews show unscaled numbers."
+    },
+    "REVERENCE-04.A2": {
+      "plain": "As A, plus the difference shows as its own named line (\"the government fears your faith\"). Explains itself; two messages per change."
+    },
+    "REVERENCE-04.B": {
+      "plain": "Scale vanilla's own adjustment step. Previews stay accurate for free, but it cannot tell reasons apart, so every change counts."
+    },
+    "REVERENCE-04.C": {
+      "plain": "Scale only chosen sources, one by one. Previews match payouts exactly, but anything unlisted is untouched, and breadth makes it heavy."
+    },
+    "REVERENCE-04.D": {
+      "plain": "Reverence shifts the faction's natural goodwill baseline. Only nudges drift; cannot shrink a gain or accelerate one sharply."
+    },
+    "REVERENCE-04.E": {
+      "plain": "Cap goodwill while the faction fears the faith, instead of damping gains. A different fiction: no reduction, no acceleration."
+    },
+    "REVERENCE-05.A": {
+      "plain": "Institutions live as records on the faction's Reverence entry, founded from a comms option. No world-map presence."
+    },
+    "REVERENCE-05.B": {
+      "plain": "Institutions as visible, selectable, caravan-reachable things on settlements. Not recommended: duplicates the number and breaks as settlements come and go."
+    },
+    "REVERENCE-05.A+display-adapter": {
+      "plain": "A's record plus a light settlement marker pointing at it, for a world-map presence. Only if a visible marker is wanted."
+    },
+    "CHURCH-01.A": {
+      "plain": "Change names, text, creed and look only; keep every internal identifier. Cheap data work, required whatever ceremony is chosen."
+    },
+    "CHURCH-01.Ceremony-A": {
+      "plain": "Vanilla's bestowing ceremony reskinned: a Church bestower and honour guard arrive, title psylinks switched off. Free and already a ritual."
+    },
+    "CHURCH-01.B": {
+      "plain": "The founders hold their own title ritual and no bestower comes. More work; chosen on fiction alone, e.g. no shuttle for a Medieval Church."
+    },
+    "CHURCH-02.A": {
+      "plain": "Relabel vanilla permits and add new ones as data. Title-gated trade already works natively."
+    },
+    "CHURCH-03.A": {
+      "plain": "Our own credit choice written into each authored deed: any reward mix, consequences per option. Reaches only quests we write."
+    },
+    "CHURCH-03.B": {
+      "plain": "Patch the random reward generator so founder and Schism credit appears on every random-reward quest, other mods' included. Options stay random."
+    },
+    "CHURCH-03.C": {
+      "plain": "Vanilla as shipped: Church quests randomly offer Exaltation or other rewards. No founder or Schism credit, so it misses the requirement."
+    },
+    "CHURCH-04.A": {
+      "plain": "Write each Church decree's failure cost into its own quest. Easy data work, plus one tiny helper if VFE Deserters is absent."
+    },
+    "CHURCH-04.B": {
+      "plain": "One patch: no new decrees while the Church is hostile, and running ones end when it turns."
+    },
+    "CHURCH-04.C": {
+      "plain": "A single code hook costing any decree. Not recommended: no other mod issues decrees, so there is nothing to generalise over."
+    },
+    "CHURCH-04.D": {
+      "plain": "The Church itself issues decrees on a schedule, not only through a titled colonist's mental break."
+    },
+    "CHURCH-05.A": {
+      "plain": "Anyone, as vanilla ships. No work; every titled colonist then gets decrees, permits and trade access."
+    },
+    "CHURCH-05.B": {
+      "plain": "Block favour and titles where they are written, refusing or redirecting to a founder. Watertight, but menus still offer everyone."
+    },
+    "CHURCH-05.C": {
+      "plain": "Adjust each place the game offers a pawn: accept menu, choose-pawn letter, inheritance, tribute collector. Honest UI, but only those surfaces."
+    },
+    "CHURCH-05.D": {
+      "plain": "Restrict by some other test (role, trait, xenotype, seniority) using B's or C's hooks."
+    },
+    "CHURCH-05.E": {
+      "plain": "Authored Church deeds name the founder who receives the favour. Covers only quests we write."
+    },
+    "CHURCH-06.A": {
+      "plain": "One saved flag capping Church goodwill at -100, so it turns hostile with vanilla's letter and stays hostile. Small code."
+    },
+    "CHURCH-06.B": {
+      "plain": "Use VFE Deserters' own permanent-hostility switch, if that mod ships. Nothing to build."
+    },
+    "CHURCH-07.U1": {
+      "plain": "The offer itself: a repeating quest shaped like Royal Ascent, gated on the top title; vanilla's Royal Ascent removed. Easy data."
+    },
+    "CHURCH-07.A": {
+      "plain": "Accept with a titled founder on a map; a game-over dialog then ends it for both in one click. Needs a two-player test."
+    },
+    "CHURCH-07.B": {
+      "plain": "Accept from anywhere, caravans included, with the dialog synced through Multiplayer's API. A rejoining player never sees it."
+    },
+    "CHURCH-07.C": {
+      "plain": "Accept from anywhere; each player leaves on their own click. Multiplayer-safe, but the host leaving closes the other's session."
+    },
+    "CHURCH-07.D": {
+      "plain": "Accepting starts the ending, and a later act on the map (a shuttle, a rite) finishes it. Changes the requirement's wording."
+    },
+    "FOUNDERS-01.A": {
+      "plain": "All seats visible from day one, locked with a stated reason until their milestone. Shows the future; spec recommends."
+    },
+    "FOUNDERS-01.B": {
+      "plain": "A seat appears only when its milestone arrives, as a revelation. No hint beforehand and no announcement by default."
+    },
+    "FOUNDERS-01.C": {
+      "plain": "The milestone makes a seat available at the next ideology reform; the player decides when or whether. Needs a fluid ideology."
+    },
+    "FOUNDERS-02.A": {
+      "plain": "A campaign meme that forces precepts and limits each issue to an allowed set. Easy, survives reforms, fully visible to the player."
+    },
+    "FOUNDERS-02.B": {
+      "plain": "A campaign player faction that hides disallowed precepts at creation. Nearly free, but reform, Classic and loading all silently bypass it."
+    },
+    "FOUNDERS-02.C": {
+      "plain": "A named campaign faith preset on the ideology page. Carries memes only; everything else is rolled."
+    },
+    "FOUNDERS-02.D": {
+      "plain": "Skip the preset page, seed the base, then open the editor for the player to finish, as VFE Tribals does. Delivers it end to end."
+    },
+    "FOUNDERS-02.E": {
+      "plain": "Re-apply the base every time the player leaves the ideology page, however the faith was made. A later reform can still undo it."
+    },
+    "FOUNDERS-02.F": {
+      "plain": "Gate every precept add at the one check the editor, reform and generator share. Closes B's holes; the floor can move later."
+    },
+    "FOUNDERS-02.G": {
+      "plain": "The player hand-installs a campaign ideology file. Not recommended: a mod cannot ship it, and it bypasses every rule."
+    },
+    "FOUNDERS-03.A1": {
+      "plain": "Stamp a permanent founder marker on the two starting founders. Survives gene changes, conversion and faction changes; the recommended identity."
+    },
+    "FOUNDERS-03.A2": {
+      "plain": "Founders as a special pawn type, usable to pick one in quest data. Breaks when they join the faction or go wild; selector only."
+    },
+    "FOUNDERS-03.A3": {
+      "plain": "Identify founders by their genes. Not recommended: converts share them and an implant strips them."
+    },
+    "FOUNDERS-03.B1": {
+      "plain": "The quest's accept gate names a founder who must be at the colony; can demand both."
+    },
+    "FOUNDERS-03.B2": {
+      "plain": "The player picks which founder accepts the quest, and it is recorded. One founder only; attendance not enforced."
+    },
+    "FOUNDERS-03.B3": {
+      "plain": "The quest shuttle lists founders as required and will not leave without them. Easy, but shuttles exist only in later eras."
+    },
+    "FOUNDERS-03.B4": {
+      "plain": "The quest checks a founder is present when the caravan reaches the site. Works before shuttles; sees only the first arrival."
+    },
+    "FOUNDERS-03.C1": {
+      "plain": "Our own flows, such as revolt contributions, never list a founder. Easy once founders are identified."
+    },
+    "FOUNDERS-03.C2": {
+      "plain": "Quest shuttles refuse to load a founder unless required, which also closes vanilla colonist lending."
+    },
+    "FOUNDERS-03.C3": {
+      "plain": "An arrested or enslaved founder cannot be sold or gifted."
+    },
+    "FOUNDERS-03.D1+D2": {
+      "plain": "Refuse banishing founders outright, or allow banishment but remove the 80% chance a downed founder is left to die for good."
+    },
+    "FOUNDERS-03.R1": {
+      "plain": "A founder whose faction has flipped cannot be released as a prisoner to that faction."
+    },
+    "FOUNDERS-03.K1..K5": {
+      "plain": "Raiders never choose founders, demands never name them, a kidnapped founder stays the player's with a way home, or raids kidnap nobody."
+    },
+    "FOUNDERS-03.C4": {
+      "plain": "Block the faction change at the end of a sale. Not recommended: it fires after the trade, so it fails silently."
+    },
+    "FOUNDERS-03.K6": {
+      "plain": "Block the final kidnap step. Not recommended: the founder ends up nowhere, lost without an error."
+    },
+    "SCHISM-01.A": {
+      "plain": "Only the faction's official faith changes; existing members keep theirs and newcomers mostly follow. Lightest."
+    },
+    "SCHISM-01.B": {
+      "plain": "The official faith and every existing member convert at once."
+    },
+    "SCHISM-01.C": {
+      "plain": "A chosen share converts and both faiths coexist. The only route that expresses a partial conversion."
+    },
+    "SCHISM-01.D": {
+      "plain": "Rewrite the faction's faith in place. Not recommended: yields a copy, not the Church's own faith, and rewrites every other holder."
+    },
+    "SCHISM-02.A": {
+      "plain": "Start: offered as a quest naming a settlement; accept, travel, fight or deliver. Expiry built in."
+    },
+    "SCHISM-02.B": {
+      "plain": "Start: a Reverence-gated option in the comms console. Easy once the gated-option display exists."
+    },
+    "SCHISM-02.C": {
+      "plain": "Start: in the field, a caravan at the government's settlement triggers it."
+    },
+    "SCHISM-02.D": {
+      "plain": "Decider: a friendly faction's forces assault the government beside the player; they cannot be commanded."
+    },
+    "SCHISM-02.E": {
+      "plain": "Decider: rebels join the player for the quest, can be drafted, then leave. Gives both players pawns to command."
+    },
+    "SCHISM-02.F": {
+      "plain": "Decider: part of the settlement's own garrison switches sides when the player arrives."
+    },
+    "SCHISM-02.G": {
+      "plain": "Decider: delivering goods, Influence or pawns; the amount drives success. Can resolve off-map."
+    },
+    "SCHISM-02.O1": {
+      "plain": "Outcome: only the faction's faith changes, to the player faith."
+    },
+    "SCHISM-02.O2": {
+      "plain": "Outcome: the government is replaced by a new leader and hostility resets; the faction stays independent."
+    },
+    "SCHISM-02.O3": {
+      "plain": "Outcome: the faction becomes an ally, temporarily or locked for good."
+    },
+    "SCHISM-02.O4": {
+      "plain": "Outcome: some or all of its settlements pass to another existing faction."
+    },
+    "SCHISM-02.O5": {
+      "plain": "Outcome: the won settlement becomes the player's, as a home or outpost."
+    },
+    "SCHISM-02.O6": {
+      "plain": "Outcome: the faction becomes the player's vassal."
+    },
+    "SCHISM-02.O7": {
+      "plain": "Outcome: the rebels split off as a new faction. Forbidden by the requirement."
+    },
+    "SCHISM-03.A": {
+      "plain": "A separate Schism faction takes over, and the old Church stays as the hostile remnant. Smaller build; spec recommends."
+    },
+    "SCHISM-03.B": {
+      "plain": "The Church faction itself becomes the allied Schism, keeping all Church machinery; a third faction becomes the remnant. Hard."
+    },
+    "SCHISM-03.C": {
+      "plain": "VFE Deserters as shipped. Not recommended: never reveals the Schism or moves ground, and its finale ends the game."
+    },
+    "SCHISM-03.H1": {
+      "plain": "Vanilla ally stickiness: drift will not break it, attacks will. Free, but fails against faiths with hostile memes."
+    },
+    "SCHISM-03.H2": {
+      "plain": "A goodwill modifier keeping the Schism's drift baseline positive whatever the faith differences. Attacks still break it."
+    },
+    "SCHISM-03.H3": {
+      "plain": "A stored flag forcing ally status whatever goodwill does. Letting attacks break it needs extra work."
+    },
+    "PSYCHIC-01.A": {
+      "plain": "Put vanilla's anima-tree linking ritual on the altar. Needs a meditation focus the recipient can use. Easy data."
+    },
+    "PSYCHIC-02.A": {
+      "plain": "Do not ship Vanilla Psycasts Expanded. No XP loop, but the talent tree and founder paths go with it."
+    },
+    "PSYCHIC-02.B": {
+      "plain": "Set VPE's XP setting to zero. Easy, but misses three abilities and any player can change it."
+    },
+    "PSYCHIC-02.D1": {
+      "plain": "A code gate zeroing all psycast XP; talent points then come only from altar ranks."
+    },
+    "PSYCHIC-02.D2": {
+      "plain": "XP still levels a pawn, but only up to a ceiling the altar sets. Keeps meditation as cultivation; spec recommends."
+    },
+    "PSYCHIC-02.D3": {
+      "plain": "XP buys psycasts and upgrades, never rank. Changes VPE's economy the most."
+    },
+    "PSYCHIC-03.C": {
+      "plain": "Shut each source where it is defined: inert neuroformers, no anima-tree linking, and so on. Mostly data; three need code."
+    },
+    "PSYCHIC-03.E": {
+      "plain": "One code gate refusing any rank change not made by the altar. Catches unknown sources but fails silently; backstop only."
+    },
+    "PSYCHIC-04.I1": {
+      "plain": "Remove generated psycasters from the world entirely. Easy data; archons still carry innate psylinks."
+    },
+    "PSYCHIC-04.I2": {
+      "plain": "Reset rank when a caster joins the player. Enemies keep their powers; captured ones lose them."
+    },
+    "PSYCHIC-05.F1": {
+      "plain": "Founders get a special meditation focus from their founder marker, and the path requires it. Strongest key; every leak closes in data."
+    },
+    "PSYCHIC-05.F2": {
+      "plain": "The path requires a gene the altar installs. Opens at a story beat, but genes copy and leak; not recommended."
+    },
+    "PSYCHIC-05.F3": {
+      "plain": "Use the shipped Transcendent path, keyed on the final rite's gene. Postgame tier only."
+    },
+    "PSYCHIC-05.F4a+F4b": {
+      "plain": "Leave VPE's Archotechist path to Church-born pawns, or re-key it for the founders, taking the Church's only native path."
+    },
+    "PSYCHIC-05.F5": {
+      "plain": "The path checks the founder marker directly, with no proxy focus in the UI. Medium code."
+    },
+    "PSYCHIC-05.F6": {
+      "plain": "Founders get an authored backstory the path requires. No code, but founders' backstories become fixed, and character editors can leak it."
+    },
+    "PSYCHIC-06.A": {
+      "plain": "Church caster pawn types with fixed starting levels, independent of titles. Easy data; which types is undecided."
+    },
+    "PSYCHIC-07.A": {
+      "plain": "The name appears in the health-tab tooltip only; the row still reads \"level N\". Easy, partial."
+    },
+    "PSYCHIC-07.B": {
+      "plain": "The psylink row itself reads \"Psylink (Adept)\", always matching the current level."
+    },
+    "PSYCHIC-07.E": {
+      "plain": "A real title ladder on a non-Church faction, shown in the Bio tab. Hidden while a Church title is held; the player can renounce it."
+    },
+    "PSYCHIC-07.F": {
+      "plain": "The rank as an epithet after the name (\"Aria, Adept\"). On a founder it shares that slot with the claimed title."
+    },
+    "TRANSCENDENCE-01.A": {
+      "plain": "A hidden founder-only health condition holds the record, stamped at game start. Medium code."
+    },
+    "TRANSCENDENCE-02.A": {
+      "plain": "A rename-style dialog opened from the founder or the altar. Whether a claim can be retyped is undecided."
+    },
+    "TRANSCENDENCE-03.A": {
+      "plain": "Vanilla's per-pawn title field: inspect pane, Bio tab and generated text. No work; absent from the colonist bar."
+    },
+    "TRANSCENDENCE-03.N": {
+      "plain": "The claim becomes the founder's nickname: shows on bar and map, but replaces their name in every letter and log."
+    },
+    "TRANSCENDENCE-03.C": {
+      "plain": "A display-only tweak putting the claim on the bar and map label, founders only. Long titles get cut off."
+    },
+    "TRANSCENDENCE-03.Cprime": {
+      "plain": "Draws a second line or tooltip under the portrait, so a long title shows whole."
+    },
+    "TRANSCENDENCE-03.R": {
+      "plain": "A royal title awarded by the player's own faction, beside the Church title. Bio tab only; each founder needs their own title definition."
+    },
+    "TRANSCENDENCE-04.A": {
+      "plain": "A vanilla-style dialogue shown to both players; Stay closes it with no effect. Medium code."
+    },
+    "TRANSCENDENCE-05.A": {
+      "plain": "Credits roll, then play continues. Leaves the second founder's arc open."
+    },
+    "TRANSCENDENCE-05.B": {
+      "plain": "Credits, then each player exits separately. The host skipping first cuts off the other's credits."
+    },
+    "TRANSCENDENCE-05.C": {
+      "plain": "Vanilla's game-over dialog; one click ends it for both. Needs a two-player test."
+    },
+    "TRANSCENDENCE-05.Cprime": {
+      "plain": "As C, but the exit is delayed a moment for multiplayer safety. Fallback if C's test fails."
+    },
+    "POLITICS-01.A": {
+      "plain": "Seed designed alliances and rivalries once at game start, then hook the offending acts; a Vanilla Expanded letter names each knock-on. Seeded ties never drift."
+    },
+    "POLITICS-02.A": {
+      "plain": "Copy vanilla's trade-request quest, which already has the countdown and alert; vanilla's goodwill step moves the rival too. Nothing to code."
+    },
+    "POLITICS-03.A": {
+      "plain": "The free asks: silver, a delivery to a named tile, or a lent colonist, all from existing vanilla quest pieces."
+    },
+    "POLITICS-03.B": {
+      "plain": "Accepting needs a colonist with a given skill, e.g. Medicine 10; the quest shows the requirement until someone qualifies. New code."
+    },
+    "POLITICS-03.C": {
+      "plain": "The colony must stop trading with a rival. Needs a small hook to notice trades, since vanilla reports none."
+    },
+    "POLITICS-03.L0": {
+      "plain": "Vanilla's colonist loan: shuttle collects, drop pod returns. Only Industrial-or-later askers; pays at hand-over and scores all-dead as success."
+    },
+    "POLITICS-03.L1": {
+      "plain": "Pre-pod loan: a caravan walks the specialist to the asker's settlement and hands them over; they walk home when the term ends."
+    },
+    "POLITICS-03.L2": {
+      "plain": "Pre-pod loan with no hand-over: the specialist leaves home off-screen and walks back in later. Least code, thinner fiction."
+    },
+    "POLITICS-03.E1": {
+      "plain": "Destroy a bandit camp raiding the asker's caravans, using vanilla's own quest and text."
+    },
+    "POLITICS-03.E2": {
+      "plain": "Host the asker's refugees on the colony map until they walk out alive; vanilla Royalty quest."
+    },
+    "POLITICS-03.E3": {
+      "plain": "The asker's people ride in the colony's caravan to a named settlement. Needs new code for the delivery."
+    },
+    "POLITICS-03.P1": {
+      "plain": "Release the prisoner on the colony map; vanilla's own signals detect it. Nothing to code."
+    },
+    "POLITICS-03.P2": {
+      "plain": "Hand the prisoner back in person at their settlement by caravan; needs a patch so they don't arrive factionless."
+    },
+    "POLITICS-04.A": {
+      "plain": "Our own refusal step fires on expiry: goodwill changes to any factions, plus an optional follow-up retaliation quest."
+    },
+    "POLITICS-04.Consequence-raid": {
+      "plain": "The retaliation raid itself: a fixed-faction raid whose size comes from the campaign's pressure system, not the demand."
+    },
+    "POLITICS-04.B": {
+      "plain": "Vanilla Factions Expanded Medieval 2's raid-on-fail step. Not recommended as primary: its raid size escapes the pressure system."
+    },
+    "POLITICS-05.A": {
+      "plain": "One quest with two branches on vanilla's choice mechanism, built by a small node of ours. A branch without a reward may come up empty."
+    },
+    "POLITICS-06.A": {
+      "plain": "A cap counting pending demand offers, with the number set in data. Doesn't restrain demands issued through Vanilla Expanded quest chains."
+    },
+    "POLITICS-07.A": {
+      "plain": "A quest offer arrives locked, its requirement box reading 'need N, currently M'; it can't be accepted until met."
+    },
+    "POLITICS-07.B": {
+      "plain": "A greyed option on the comms console naming the threshold and current value. Needs a console, so not in early eras."
+    },
+    "POLITICS-07.C": {
+      "plain": "A ritual button greyed, with the reason shown, until the standing is reached."
+    },
+    "POLITICS-07.D": {
+      "plain": "A building greyed in the Architect menu until the standing is reached; needs a patch to the build menu."
+    },
+    "RK-1": {
+      "plain": "Known only while standing stays above a threshold. Nothing stored, so a faction that stops trusting the colony stops confiding. Only standing reveals."
+    },
+    "RK-2": {
+      "plain": "Once a faction's feuds are revealed, by standing, quest, comms, battle or letter, they stay known for good."
+    },
+    "RK-3": {
+      "plain": "Records single pairs, so a quest or battle can reveal one feud ('the Clans hate the Reach') without the whole list."
+    },
+    "RD-1": {
+      "plain": "The Factions tab's 'Enemy of' strip shows only earned enemies; unearned ones are simply absent."
+    },
+    "RD-2": {
+      "plain": "An unearned row reads 'Enemies: unknown — revealed at +40', showing the carrot before it's reached."
+    },
+    "RD-3": {
+      "plain": "Alliances shown beside enemies on the Factions tab, which vanilla never does. Meaningful only once alliances are seeded."
+    },
+    "RD-4": {
+      "plain": "Known enemies and allies listed as a line in the faction's info card."
+    },
+    "RD-5": {
+      "plain": "Ask a faction on the comms console who its enemies are; greyed until earned. Unavailable before a console exists."
+    },
+    "RD-7": {
+      "plain": "A diplomatic ledger tab of our own listing every known relationship, sortable, with jump-to."
+    },
+    "RD-8": {
+      "plain": "Remove the enemy strip entirely; feuds are learned only from letters, quests and dialogue."
+    },
+    "RD-6": {
+      "plain": "A letter at the moment of reveal ('the Reach have told us whom they hate'), kept in the history archive."
+    },
+    "POLITICS-09.A": {
+      "plain": "A guaranteed meeting whenever a caravan comes into range, with a per-settlement cooldown. Misses parked caravans; vehicle caravans need an extra patch."
+    },
+    "POLITICS-09.B": {
+      "plain": "The storyteller rolls encounters near settlements, frequency set per biome. Catches parked and vehicle caravans; quiet caravans slip past more; no guarantee."
+    },
+    "POLITICS-09.C": {
+      "plain": "The Faction Territories mod as shipped. Not recommended: declined as a dependency, and it breaks in multiplayer."
+    },
+    "POLITICS-10.P1": {
+      "plain": "Vanilla's gifts and peace talks as they ship. The player can't choose who offers talks, and partial payment shows no visible easing."
+    },
+    "POLITICS-10.P2": {
+      "plain": "The colony asks a named faction for peace terms; success restores goodwill and ends the declared war."
+    },
+    "POLITICS-10.O1": {
+      "plain": "Reparations as a demand: silver, goods, a prisoner, colonists, or a ceded holding; paying it writes the peace."
+    },
+    "POLITICS-10.S1": {
+      "plain": "Tribute on a schedule; one missed installment reopens the war the same day. The one substantial build here."
+    },
+    "POLITICS-10.B1": {
+      "plain": "A tributary's standing obligations: the overlord asks for levies, a loaned specialist, an embargo, or attendance at its battles."
+    },
+    "POLITICS-10.R": {
+      "plain": "Vanilla ransom: buy back kidnapped colonists. No goodwill change and no peace."
+    },
+    "POLITICS-10.U1": {
+      "plain": "RimPacts' war score, surrender and tribute treaties. Not recommended: no multiplayer support."
+    },
+    "POLITICS-11.E1": {
+      "plain": "A bought truce: fewer or no raids for a window while they stay hostile. The only route while they remain permanent enemies."
+    },
+    "POLITICS-11.L": {
+      "plain": "Lift their permanent-enemy status, for good or mid-campaign as a story beat, so normal peace routes apply. Reverses a deliberate design."
+    },
+    "TERRITORY-01.Build-B": {
+      "plain": "A timed marker over the ally's own settlement with a 'Join fight' option, so the settlement itself is at stake. Hardest route."
+    },
+    "AS-1": {
+      "plain": "An auto-accepted quest places an ally-owned battle site near the ally; attend for a three-way fight, or a roll reports the result."
+    },
+    "AS-2": {
+      "plain": "As AS-1, but offered with a response window first; letting it expire reaches the same roll."
+    },
+    "AS-3": {
+      "plain": "Worksites Expanded's defend-an-ally beat as the carrier. Hard: it picks its own attacker, rolls unseeded, and isn't authorable."
+    },
+    "AS-4": {
+      "plain": "Keep the battle map alive with no player so the NPCs genuinely fight it out unobserved. Not recommended."
+    },
+    "OC-C1": {
+      "plain": "A fixed materials-and-silver price per outpost type, carried by the founding caravan. Data only; can't scale by era."
+    },
+    "OC-C2": {
+      "plain": "The price rises with the era, or with each outpost already held, softly limiting how many."
+    },
+    "OC-C3": {
+      "plain": "Found now and pay later from home; no yield until the debt is paid, which also models build time."
+    },
+    "OC-N3": {
+      "plain": "A hard maximum number of outposts, fixed or by era. Only if one is ever wanted."
+    },
+    "OC-Y1": {
+      "plain": "Retune yields in data, for the 7 of 13 outpost types that allow it."
+    },
+    "OC-Y2": {
+      "plain": "Code the yields for the rest, such as scavenging and town outposts, which ignore data settings."
+    },
+    "OC-Y3": {
+      "plain": "Yield depends on who was sent: a slave, prisoner or colonist weighted differently."
+    },
+    "OR-1": {
+      "plain": "Staff stay at the outpost, but every recall and management control is removed. They still age, sicken and can die."
+    },
+    "OR-2": {
+      "plain": "Ghost staff, but frozen: no aging, disease or death, so the yield stays fixed at what was sent. Cheapest faithful option."
+    },
+    "OR-3": {
+      "plain": "Pawns are really sold and gone; the outpost yields a flat amount whoever went. Sending better people earns nothing."
+    },
+    "OR-4": {
+      "plain": "Pawns are sold, but a record of their count, skills and kinds sets the yield. Rewards sending better people; more patching."
+    },
+    "OR-5": {
+      "plain": "Our own map-less outpost that never holds pawns: a sale at founding, a clock, deliveries. Cleanest for multiplayer, hardest to build."
+    },
+    "OU-A2": {
+      "plain": "A quest spawns a hostile camp near the outpost with a deadline; break it or the outpost falls. The fight happens nearby, not there."
+    },
+    "OU-A1+OU-A3": {
+      "plain": "A timed attack at the outpost itself, attended or resolved in the colony's absence. Hard; shares the ally-battle machinery."
+    },
+    "OU-N1+OU-N2": {
+      "plain": "Non-attack upkeep: a notice letter with an immediate effect, or a declinable quest with a deadline and a refusal consequence."
+    },
+    "OU-D1..D4": {
+      "plain": "Softer stakes: a late payout, yield stalled until answered, or, only if staff are kept, a pack-up ultimatum or sick staff needing medicine."
+    },
+    "OU-T1..T3": {
+      "plain": "Different events, odds and consequences for each outpost type."
+    },
+    "OU-A4": {
+      "plain": "The outpost's own staff fight an ambush on a map. Not recommended: the player can't decline it."
+    },
+    "RU-1": {
+      "plain": "The outpost itself is flagged ruined: production stops, goods stay, its label changes; a caravan option rebuilds it."
+    },
+    "RU-2": {
+      "plain": "A dedicated ruin on the world map holding the surviving goods, with Loot and Rebuild options for a visiting caravan."
+    },
+    "RU-3": {
+      "plain": "The goods lie on a real map the caravan walks, optionally guarded; the site vanishes once left, looted or not."
+    },
+    "RU-4": {
+      "plain": "Vanilla's dated abandoned-settlement marker with no loot; useful only as an anchor for another route."
+    },
+    "RU-5": {
+      "plain": "Rebuild by founding a new outpost on the same tile at full price; nothing of the old one is remembered."
+    },
+    "SM-1": {
+      "plain": "Vanilla bases with re-authored defenders for tier flavour. Easy, but not hard enough on its own."
+    },
+    "SM-2": {
+      "plain": "Varied generated walled bases per faction, with more defenders; tier set by which layouts a faction uses. Data only."
+    },
+    "SM-3": {
+      "plain": "Hand-built castles and forts with walls, siege engines and placed defenders; the same fort every time."
+    },
+    "SM-4": {
+      "plain": "Garrison size follows a curve we choose, e.g. tech tier, and can remember losses from an earlier assault."
+    },
+    "SM-5": {
+      "plain": "One named settlement always generates as a set-piece citadel while its siblings stay generated; for places the plot names."
+    },
+    "SM-6": {
+      "plain": "Vanilla's own structure generator builds a different surface fortress each time; tribal or medieval looks need authored rooms."
+    },
+    "SM-7": {
+      "plain": "Defenders call reinforcements mid-assault; killing the caller stops them, and the base falls on a condition we set."
+    },
+    "TERRITORY-06.R1": {
+      "plain": "The taken settlement becomes a player-held world marker that remembers its old faction. No people, no map to run."
+    },
+    "TERRITORY-06.R2": {
+      "plain": "The settlement stays in its faction but is marked as the colony's; its map, defenders and trader remain the faction's."
+    },
+    "TERRITORY-06.R4": {
+      "plain": "A record at faction level, for whole factions that swear themselves to the colony and for the Schism's successor."
+    },
+    "TERRITORY-06.R5": {
+      "plain": "Vanilla's ally behaviour, such as gifts, traders and help when raided, covers part of the payout. Partial only."
+    },
+    "TERRITORY-06.R0+R3": {
+      "plain": "Vanilla Factions Expanded Empire's tithes: the Church's perk for a titled colonist, not a conquered holding. Widening it is not recommended."
+    },
+    "TERRITORY-06.R6+R7": {
+      "plain": "RimPacts or Faction Territories as shipped. Not recommended: neither works in multiplayer."
+    },
+    "TERRITORY-07.P1": {
+      "plain": "Reuse Vanilla Factions Expanded Empire's tithe engine for payload, cadence and accrual, with a readable due date."
+    },
+    "TERRITORY-07.P2": {
+      "plain": "Vanilla Expanded's five delivery methods, such as a pack animal walking in or a stockpile left on the tile."
+    },
+    "TERRITORY-07.P3": {
+      "plain": "The player calls for a drop of goods or pawns where they point, on a cooldown."
+    },
+    "TERRITORY-07.P4": {
+      "plain": "The rebuild debt shows on the holding's tile and is paid by a caravan standing there; nothing flows until it's paid."
+    },
+    "TERRITORY-07.P6": {
+      "plain": "Gifts and ally traffic arriving unprompted on the storyteller's own clock."
+    },
+    "TERRITORY-07.P5": {
+      "plain": "Accrued credit spent on the holding's menu. Ruled out: the requirement allows no holding currency."
+    },
+    "SF-1": {
+      "plain": "Vanilla already hints: trader-caravan letters name the trader type, and a slaver tribe is readable from its beliefs."
+    },
+    "SF-2": {
+      "plain": "Each faction's specialty declared in its definition, public from the start."
+    },
+    "SF-3": {
+      "plain": "A faction's specialty hidden until first contact: an envoy, caravan, comms call or meeting."
+    },
+    "SS-1": {
+      "plain": "Each settlement draws one of several trade profiles for its faction. Can't read the tile, and changes if the settlement is conquered."
+    },
+    "SS-2": {
+      "plain": "Specialty computed from the tile's biome, terrain and features plus the faction. Nothing stored, so later balance edits shift it."
+    },
+    "SS-3": {
+      "plain": "Specialty rolled once and saved per tile; can be hand-placed and survives conquest, era change and balance edits."
+    },
+    "SS-5": {
+      "plain": "No settlement layer, only the faction's specialty. The requirement still holds."
+    },
+    "SS-4": {
+      "plain": "Different settlement types at world generation. Not recommended: a weaker version of storing it per tile."
+    },
+    "SV-1": {
+      "plain": "Revealed when a caravan arrives to visit, trade, gift or attack."
+    },
+    "SV-3": {
+      "plain": "Revealed when a caravan passes within range, or at a roadside meeting."
+    },
+    "SV-4": {
+      "plain": "A scouting outpost reveals the settlements within its range."
+    },
+    "SV-5": {
+      "plain": "First contact reveals the faction's specialty only."
+    },
+    "SV-2": {
+      "plain": "Revealed by opening trade there; the stock itself shows the specialty."
+    },
+    "SV-6": {
+      "plain": "Everything public from the start. Fails the requirement."
+    },
+    "SD-0": {
+      "plain": "Remove or disable 'Show sellable items' until the settlement is learned. Required whatever else is chosen."
+    },
+    "SD-1..SD-11": {
+      "plain": "Where learned facts show: inspect line, settlement tab, attack menu, info card, map badge, map overlay, world search, own tab, Factions tab, reveal letter, Alt-hover."
+    },
+    "SW-1": {
+      "plain": "Faction names, descriptions, icons and art stop implying a tech tier. Data only, but vanilla's legibility is lost for everyone."
+    },
+    "SW-2+SW-4": {
+      "plain": "Neutral map icons for unlearned settlements, or removing World Tech Level's 'Tech level' line from faction tooltips."
+    },
+    "SW-3": {
+      "plain": "A faction's label, icon and description stay neutral on the Factions tab and elsewhere until the faction is known."
+    },
+    "SW-5": {
+      "plain": "Withhold tier text in RimPacts' war and puppet windows. Not recommended: those only address factions already engaged."
+    },
+    "SP-1": {
+      "plain": "Hide 'Trading here requires title' on an unlearned settlement; the rule itself stays."
+    },
+    "SP-2": {
+      "plain": "Same result as SP-1 by a more fragile method. Not recommended."
+    },
+    "SP-3": {
+      "plain": "Delete the Empire's trade-permit rule, so the line vanishes because anyone may trade. Changes a rule instead of withholding it."
+    },
+    "TR-1": {
+      "plain": "The holding's era is stored at conquest, from its former faction; only payment changes it."
+    },
+    "TR-2": {
+      "plain": "Era read live from the former faction. Not recommended: holdings climb for free whenever the parent does."
+    },
+    "TR-3": {
+      "plain": "Era held in the holding's definition, one per era; advancing swaps it, which is messy for world objects."
+    },
+    "TR-4": {
+      "plain": "Advance by handing the settlement to an existing later-era faction, so its map and defenders visibly modernize. Only for holdings kept in their faction."
+    },
+    "TG-1": {
+      "plain": "Gate: a holding can't advance past the colony's current era."
+    },
+    "TG-2": {
+      "plain": "Gate: only after the former parent faction has itself climbed an era."
+    },
+    "TG-3": {
+      "plain": "Gate: a research project must be finished first."
+    },
+    "TG-4": {
+      "plain": "No gate beyond the price and a cooldown."
+    },
+    "H-L1..H-L4": {
+      "plain": "Release: return it to its parent, cede it, abandon it, or let the parent buy it back. Only ceding to a randomly drawn faction conforms."
+    },
+    "H-T2": {
+      "plain": "The parent demands 'return it or we come'; refusing brings an attack. The holding goes only by the player's choice."
+    },
+    "H-T1": {
+      "plain": "A timed attack at the holding: go and fight, or lose it. Hard alone, medium if the ally-battle machinery exists."
+    },
+    "H-T4": {
+      "plain": "Break the enemy's staging camp near the holding before its deadline, or lose the holding."
+    },
+    "H-T3": {
+      "plain": "A warning, then one to four counter-attack waves over several weeks. Hard."
+    },
+    "H-T6": {
+      "plain": "The parent stops honouring the arrangement, with a grace-period quest to make it a moment. Only for holdings kept in their faction."
+    },
+    "H-T5": {
+      "plain": "RimPacts' silent reversion to the original owner. Not recommended: its code never actually runs."
+    },
+    "H-D1": {
+      "plain": "A named faction burns the holding. Doesn't conform as written, since a lost holding must pass to a random faction."
+    },
+    "H-D2": {
+      "plain": "The colony razes its own holding."
+    },
+    "H-O1": {
+      "plain": "Unrest builds through grievance events the player answers one by one; past a threshold, a retake demand or attack follows."
+    },
+    "H-O2": {
+      "plain": "RimPacts' quarterly revolt roll. Not recommended: silent, random, and no multiplayer."
+    },
+    "H-V": {
+      "plain": "Vanilla Factions Expanded Empire's 'release all vassals', only for its own tithe vassals."
+    },
+    "MO-F1": {
+      "plain": "Instantly move everyone into a caravan on the tile, close the map, then transfer. The only option that fits the era advance."
+    },
+    "MO-W1": {
+      "plain": "Queue the change until the players leave the map; suits the Schism, revolts and conquest, but may wait indefinitely."
+    },
+    "MO-W2+W3+F2+F3": {
+      "plain": "Variants: a visible countdown then forced exit, hold the whole advance while such a map is open, a forced pack-up window, or eject straight home."
+    },
+    "MO-A": {
+      "plain": "Transfer anyway. Not recommended: the settlement counts as defeated, or the party is lost or kidnapped."
+    },
+    "MO-S": {
+      "plain": "Skip that settlement. Not recommended: it keeps its old owner for good, leaving the world half-changed."
+    },
+    "GV-1": {
+      "plain": "Forbid landing the gravship on NPC settlements so the case never arises; costs Odyssey's land-on-an-enemy-base assault."
+    },
+    "GV-3+GV-5": {
+      "plain": "Transfer with the ship still there, and stop its takeoff erasing the settlement. Breaks the never-while-loaded rule for this case."
+    },
+    "GV-7": {
+      "plain": "Hold the era advance until the ship leaves. Breaks no rule, but waits on the players."
+    },
+    "GV-2": {
+      "plain": "Skip that settlement at the advance; it keeps its old owner for good. Breaks the era rules."
+    },
+    "GV-4": {
+      "plain": "Change it once the ship leaves: a forbidden delay that may never end."
+    },
+    "GV-6": {
+      "plain": "Force the ship to take off. Not recommended: it can't finish in one step and isn't multiplayer-safe."
+    },
+    "CF-B": {
+      "plain": "Caravans, pods and aircraft bound there stop, with a letter naming the new owner; closes the attacking-an-ally hazard."
+    },
+    "CF-C": {
+      "plain": "Re-aim the caravan: at the recreated settlement, to what the new relation allows, or on to the old owner's nearest settlement."
+    },
+    "CF-E": {
+      "plain": "Vanilla behaviour stands, but the transfer letter names the affected caravans."
+    },
+    "CF-G": {
+      "plain": "Attack orders refuse once the target's owner changes, whoever made the transfer, other mods included."
+    },
+    "CF-F": {
+      "plain": "The arrival becomes a scene with the new owner at the gate: parley, a toll, or being turned away."
+    },
+    "CF-A": {
+      "plain": "Vanilla as is. Not recommended alone: orders stall unexplained, and attack orders can land on allies."
+    },
+    "CF-D": {
+      "plain": "Don't transfer settlements with anything inbound. Not for the era advance: they'd keep their old owner for good."
+    },
+    "OS-1": {
+      "plain": "Vanilla comms requests: a trade caravan, orbital trader or military aid, priced in Goodwill. Needs a console and Ally; troops only from Industrial factions."
+    },
+    "OS-2": {
+      "plain": "Title-free permits granted by Reverence band, used from the royal aid menu on cooldowns: troops, lent labourers, goods drops, a shuttle."
+    },
+    "OS-3": {
+      "plain": "Our own comms options, shown locked with their Reverence threshold and priced in Goodwill; can start a quest or send troops."
+    },
+    "OS-4": {
+      "plain": "A shop-like menu of the faction's services, each a quest, priced in Goodwill behind a minimum-Goodwill gate."
+    },
+    "OS-5": {
+      "plain": "Always-on perks by band: reinforcements when raided, better trade prices, periodic donations, recruiting its visitors. Received, never asked."
+    },
+    "OS-6": {
+      "plain": "Offers, visits, gifts and help arrive unasked, at a frequency the Reverence band sets."
+    },
+    "OS-7": {
+      "plain": "A fixed basket or labour on a clock, e.g. one labourer each quarter. The route nearest to paying goods."
+    },
+    "OS-8": {
+      "plain": "People lent for a term who then leave, or offered as a reward the player picks; never dumped on the colony."
+    },
+    "OS-9": {
+      "plain": "A caravan at a sworn settlement asks in person for guides, recruits, resupply or shelter."
+    },
+    "OS-10": {
+      "plain": "A signal fire the colony builds summons the faction's warband; works in the Neolithic, before any comms console."
+    },
+    "TERRITORY-13.U1": {
+      "plain": "RimPacts' treaties and tributaries. Not recommended: no multiplayer sync, and it creates factions."
+    },
+    "PRESSURE-01.A": {
+      "plain": "Our own storytellers keep Cassandra, Randy and Phoebe's temperaments but recompute threat points from these inputs, between a floor and ceiling."
+    },
+    "PRESSURE-02.A": {
+      "plain": "Our own storytellers plus a pacing component whose firing rate follows enemy count and era time. Re-authors three vanilla curves."
+    },
+    "PRESSURE-03.A": {
+      "plain": "Cap the cost of each faction's most expensive pawn, pushing raids toward elite units. Data only; must be tuned with raid tactics' minimum sizes."
+    },
+    "PRESSURE-03.B": {
+      "plain": "An era's signature raid becomes possible only above a strength band. Data only."
+    },
+    "PRESSURE-04.Size": {
+      "plain": "Enemy count adds to raid size, through the strength formula."
+    },
+    "PRESSURE-04.Frequency": {
+      "plain": "Enemy count raises how often hostile events fire, through the pacing component."
+    },
+    "PRESSURE-04.a": {
+      "plain": "Vanilla Expanded's allies-reduce-threats option. Data only, but coarse, inverted from what's wanted, and blind to Reverence."
+    },
+    "PRESSURE-04.b": {
+      "plain": "Our own weighting by enemy count, Reverence band and era; expresses 'enemies increase threats' directly."
+    },
+    "PRESSURE-05.A": {
+      "plain": "Vanilla Expanded's special raid type fixes faction, points and tactic in data. Omitting the points range silently gives a zero-strength raid."
+    },
+    "PRESSURE-06.A": {
+      "plain": "A second pacing component driven by global Reverence fires our pilgrim, offering and volunteer events on vanilla visitor, trader and wanderer mechanics."
+    },
+    "PRESSURE-07.U1": {
+      "plain": "Fire beats from the campaign's spine quest, never from a random storyteller component, so chance never decides them."
+    },
+    "PRESSURE-07.U2": {
+      "plain": "A temporary game condition that quiets competing threats around a beat."
+    },
+    "PRESSURE-07.U3": {
+      "plain": "Put a beat's event in a special category that random components can't pick."
+    },
+    "PRESSURE-07.U4": {
+      "plain": "Set a minimum or fixed strength for a beat's raid, so it never arrives under-strength."
+    },
+    "PRESSURE-08.A": {
+      "plain": "One raid behaviour driven by per-aim settings, one raid type per aim with a titled letter, plus our own trigger for partial success."
+    },
+    "PRESSURE-09.A": {
+      "plain": "Raid size scales with how much that particular faction hates the colony."
+    },
+    "PRESSURE-09.B": {
+      "plain": "A named enemy raids on its own schedule, apart from the general storyteller."
+    },
+    "PRESSURE-09.C": {
+      "plain": "A declared war as a quest: its own raid rhythm, visible in the Quests tab, ended by a signal such as peace."
+    },
+    "PRESSURE-09.D": {
+      "plain": "The world generates hostility, e.g. taking settlements caps goodwill, with vanilla's letter and faction-card reason. Immediate, no new state."
+    },
+    "PRESSURE-09.E": {
+      "plain": "A named per-faction grudge that runs past −100 and can escalate, decay or be spent."
+    },
+    "PRESSURE-09.F": {
+      "plain": "Hated factions use non-raid actions too: sieges, caravan demands, ambushes, refusing trade. Data only."
+    },
+    "PRESSURE-09.G": {
+      "plain": "Hated factions are picked more often when the storyteller chooses who raids."
+    },
+    "PRESSURE-10.A": {
+      "plain": "A small readout feeding the campaign's political screen; which screen shows it is still undecided."
+    },
+    "ENCOUNTERS-01.T1": {
+      "plain": "One offer on a fixed day. If nothing qualifies that day, it's lost for good with no warning."
+    },
+    "ENCOUNTERS-01.T2": {
+      "plain": "Offered after a set day, and re-offered some days after it lapses unaccepted. Has a multiplayer joining edge case."
+    },
+    "ENCOUNTERS-01.T3": {
+      "plain": "Joins the random quest pool after a set day; may never come, or may recur."
+    },
+    "ENCOUNTERS-01.T4": {
+      "plain": "Our own timer: after day X it keeps retrying until the offer can actually be made. Fixes the fixed-day miss."
+    },
+    "ENCOUNTERS-01.T7": {
+      "plain": "A Vanilla Expanded quest chain offers it on a day drawn from a range, whatever the storyteller; generates even when broken."
+    },
+    "ENCOUNTERS-01.T5": {
+      "plain": "Our own game-level timer. Not recommended: the storyteller-based retrying timer does the same job."
+    },
+    "ENCOUNTERS-01.T6": {
+      "plain": "Put it in Charting's pool. Not recommended: wrong channel, and it can't be selected there."
+    },
+    "ENCOUNTERS-02.G1": {
+      "plain": "Any non-hostile faction at random. Can't filter by a goodwill number or by culture."
+    },
+    "ENCOUNTERS-02.G2": {
+      "plain": "A named faction leader asks, with chosen faction types excluded; the letter names the person."
+    },
+    "ENCOUNTERS-02.G3": {
+      "plain": "Our own filter for a minimum goodwill number, or tribal factions only."
+    },
+    "ENCOUNTERS-03.S1": {
+      "plain": "A generated site under the giver's faction with its people and an anima tree. One visit only; it vanishes once left."
+    },
+    "ENCOUNTERS-03.S2": {
+      "plain": "A map-less meeting on arrival, shaped like peace talks. Cheaper for the player, less vivid, and needs our code."
+    },
+    "ENCOUNTERS-04.V2": {
+      "plain": "Visitors walk to the tree, venerate it and leave, like Ideology's reliquary pilgrims; colonists only watch. Needs Ideology."
+    },
+    "ENCOUNTERS-04.V1": {
+      "plain": "Visitors loiter at the colony's edge and leave; the tree features only in the letter. Data only."
+    },
+    "ENCOUNTERS-04.V3": {
+      "plain": "Our own rite in which a colonist takes part alongside the visitors. Hard."
+    },
+    "ENCOUNTERS-05.U1": {
+      "plain": "A re-readable passage, a fading memory, an inert mark on a pawn, or an event that beliefs react to. Data only."
+    },
+    "ENCOUNTERS-05.U2": {
+      "plain": "A techprint unlocking research; only for projects the player can also reach another way."
+    },
+    "ENCOUNTERS-05.U3": {
+      "plain": "A remembered fact that later quests can check: did the colony learn it?"
+    },
+    "ENCOUNTERS-05.U4": {
+      "plain": "A readable lore object, at the site or carried home."
+    },
+    "ENCOUNTERS-06.A": {
+      "plain": "The offer expires with no failure consequence, an unvisited site times out, and the anima linking ritual is ruled out."
+    },
+    "TRACE-01.A": {
+      "plain": "Our own copy of VFE Deserters' Visibility ladder without needing that mod: a proven band-and-effects design, but a sizeable build."
+    },
+    "TRACE-02.A": {
+      "plain": "Each hack adds Trace by the target's depth, quests carry plus or minus Trace, analysis adds as it runs, and Trace fades daily."
+    },
+    "TRACE-03.A": {
+      "plain": "Two band effects: one blocks or allows specific incidents, one raises the Glitterites' odds of being the raider. Raid size scales only inside the pursuit."
+    },
+    "TRACE-04.A": {
+      "plain": "A permanent, auto-accepted pursuit quest holds the search; the countdown stays hidden until the reveal, then is recalculated from current Trace whenever shown."
+    },
+    "TRACE-05.A": {
+      "plain": "Vanilla's raid quest pieces in the same shape as Royalty's endgame 'survive the raids' quest; cheap, pure data."
+    },
+    "TRACE-06.A": {
+      "plain": "Each world tick, check whether the colony's tile changed and how far. Simple and safe; the escape registers a tick after landing, not instantly."
+    },
+    "TRACE-07.A": {
+      "plain": "Free: the existing distance check already treats a cross-layer move as infinitely far. Holds today by accident; one later change could silently break it."
+    },
+    "TRACE-07.B": {
+      "plain": "An explicit layer-change check: gives a named 'we left the planet' story event and a sturdier rule. Variant: count only entering or leaving space."
+    },
+    "TRACE-07.C": {
+      "plain": "A separate escape distance authored per layer, so orbit-to-orbit moves get a sensible threshold; the only route that answers moves within orbit."
+    },
+    "TRACE-07.D": {
+      "plain": "Detect the move the instant the gravship lands. Faster, but runs outside Multiplayer's safe window and fights other mods over the hook. Not recommended."
+    },
+    "TRACE-08.A": {
+      "plain": "Each colony gets its own hidden search, reveal, raids and escape on its own clock; one can be found while the other is safe."
+    },
+    "TRACE-08.Aprime": {
+      "plain": "Per colony, with each search meter on the colony's own map: removes one Multiplayer clock hazard, but a short move must carry progress by hand."
+    },
+    "TRACE-08.B": {
+      "plain": "Only one named colony, such as the gravship, is ever hunted; the other is a permanent haven. Smallest build, no Multiplayer work."
+    },
+    "TRACE-08.C": {
+      "plain": "One countdown for the whole faction; detection and repeat raids hit every colony, so splitting up doesn't help. The search runs on one colony's clock."
+    },
+    "TRACE-09.A": {
+      "plain": "Six readouts: band in the network window, Trace on quest offers, optional per-hack cost, band-change letter, quest-tab countdown, number always on screen."
+    },
+    "CURRENCIES-01.A": {
+      "plain": "One saved store for both, a network tab and a line under the date. As pure numbers they miss the top-left resource list. Large build."
+    },
+    "CURRENCIES-02.a": {
+      "plain": "Take VFE Deserters' Intel whole: Intel becomes rotting, lootable cargo, and buying needs a war with the Church first. Least code, fragile in Multiplayer."
+    },
+    "CURRENCIES-02.b": {
+      "plain": "Our own stored balance and exchange, as the spec builds: no rot or loss, spendable anywhere, earnable from lore. Most code."
+    },
+    "CURRENCIES-02.c": {
+      "plain": "Our own Intel item and vendor: free stockpile readout without Deserters' baggage, but lore can never pay Intel, and Multiplayer is untested."
+    },
+    "CURRENCIES-03.A": {
+      "plain": "A currency line among a quest's reward choices, plus a grant step for hand-written quests."
+    },
+    "CURRENCIES-04.Analysis": {
+      "plain": "Artifact dismantling pays Intel in instalments as it progresses; a one-shot use item was rejected because an interruption loses everything."
+    },
+    "CURRENCIES-04.Lore": {
+      "plain": "Studying a lore object at a site credits Intel directly, or a site quest grants it when the player investigates."
+    },
+    "CURRENCIES-05.A": {
+      "plain": "A decoder building at home, always usable once built, paced by its own research. Plot-critical items should be sold here."
+    },
+    "CURRENCIES-05.B": {
+      "plain": "A faction broker such as the Traders Guild; needs goodwill, comms and the faction revealed, so it can close on the player."
+    },
+    "CURRENCIES-06.A": {
+      "plain": "Vanilla Expanded Framework's quest shop with our currencies plugged in; less work, needs Multiplayer sync work."
+    },
+    "CURRENCIES-06.B": {
+      "plain": "Our own quest catalogue from scratch, the fallback if VEF is declined; several times the code."
+    },
+    "CURRENCIES-07.A": {
+      "plain": "One shelf for everything; an item is sold as a small quest that rewards the item. Pure data."
+    },
+    "CURRENCIES-07.B": {
+      "plain": "Each entry leaves and restocks the shelf on its own timer."
+    },
+    "CURRENCIES-07.C": {
+      "plain": "Our own eligibility check, so an entry can require an era, a balance or a political flag, not only research."
+    },
+    "CURRENCIES-07.D": {
+      "plain": "Two shelves: VEF's shop for missions, our Intel exchange for items."
+    },
+    "CURRENCIES-07.E": {
+      "plain": "Reskin a vanilla trader as the shop; costly and cannot sell a mission. Not recommended."
+    },
+    "CURRENCIES-08.A": {
+      "plain": "Put a freshly generated version of the same mission back on the shelf."
+    },
+    "CURRENCIES-08.B": {
+      "plain": "Refund the price when the mission fails; usable as a per-entry option."
+    },
+    "CURRENCIES-08.C": {
+      "plain": "Re-offer it free as an ordinary quest outside the shop; cheap, but also hands it out free at game start. Not for plot missions."
+    },
+    "CURRENCIES-08.D": {
+      "plain": "For Schism steps, the chain simply re-offers the failed step."
+    },
+    "CURRENCIES-08.E": {
+      "plain": "Use VFE Deserters' shop; its service missions never come back. Not recommended."
+    },
+    "CURRENCIES-09.A": {
+      "plain": "Schism steps wait in order in a catalogue, with favours alongside; buying one charges and starts it in one action."
+    },
+    "CURRENCIES-09.B": {
+      "plain": "Steps arrive as ordinary quest offers marked 'requires N Influence', charged on acceptance; offers must not expire, and Multiplayer needs care."
+    },
+    "CURRENCIES-09.C": {
+      "plain": "One VEF quest giver for plot and favours; loses the step order and discards favours on reset. Not recommended."
+    },
+    "CURRENCIES-09.D": {
+      "plain": "Adopt VFE Deserters as the Schism wholesale; arrives in the wrong era and offers a sell-out. Not recommended as shipped."
+    },
+    "CURRENCIES-10.U1": {
+      "plain": "Either physical Intel items rot, or the stored balance loses a set amount daily, as Trace does. Effort not yet assessed."
+    },
+    "HACKING-01.A": {
+      "plain": "Ushanka's Hacking Expansion security tiers plus two Ultra tiers, and a fix so a target always gets its highest qualifying tier."
+    },
+    "HACKING-02.A": {
+      "plain": "Tag each target with a class; the hack is refused with a readable reason until the matching project is done."
+    },
+    "HACKING-03.A": {
+      "plain": "Standard research gating on studied Glitterite objects, optionally plus an Intel-bought item; pure data, cheap."
+    },
+    "HACKING-04.A": {
+      "plain": "Reuse Ushanka's eight abilities, learned from hacked data items and re-gated behind Glitterite items and Ultra research; each wholly new ability is extra code."
+    },
+    "HACKING-05.A": {
+      "plain": "Works as shipped with Ushanka and Odyssey's security terminal; a small fix stops a seized turret staying mis-targeted."
+    },
+    "HACKING-06.A": {
+      "plain": "A relay item on the field colonist swaps in the home hacker's hacking stats; the field colonist still does the work."
+    },
+    "HACKING-06.B": {
+      "plain": "Mechanitor-style control across maps; far larger, and adds a capacity cap nobody asked for. Not selected."
+    },
+    "HACKING-07.A": {
+      "plain": "An intrusion log entry raised whenever a hack completes or the hacker is locked out."
+    },
+    "HACKING-08.A": {
+      "plain": "Mostly existing interface; intrusion history becomes a Cyberpod tab, with a letter per deep intrusion as the cheap fallback."
+    },
+    "ANDROIDS-01.A": {
+      "plain": "VRE – Android's production line as shipped; an android is a human xenotype, so faith and devotion work unchanged. Needs Multiplayer Compatibility's entry."
+    },
+    "ANDROIDS-02.A": {
+      "plain": "A normal research gate on a studied exemplar, pure data; holds only if the research shortcuts are also shut off."
+    },
+    "ANDROIDS-03.A": {
+      "plain": "Every android can hold and use a psylink: simple, but a fact about the whole species, and it strips their shield against psychic attacks."
+    },
+    "ANDROIDS-03.B": {
+      "plain": "Chosen per android at the creation station; a hearing android loses synthetic immunity and can catch disease, addiction and cancer."
+    },
+    "ANDROIDS-03.C": {
+      "plain": "Awakened androids may also link at an anima tree; stacks on top of A or B."
+    },
+    "ANDROIDS-03.D": {
+      "plain": "Gate it on a story condition such as a flag, the altar or the era; also reopens neuroformer upgrades. Needs code, fragile on VRE updates."
+    },
+    "ANDROIDS-03.E": {
+      "plain": "Leave androids psychically deaf, as a stated cost of an artificial body."
+    },
+    "ANDROIDS-04.K1": {
+      "plain": "Control who may be granted a psylink: the rite already admits only awakened androids and refuses prisoners."
+    },
+    "ANDROIDS-04.K2": {
+      "plain": "Awakening lifts deafness: basic androids stay deaf, awakened ones hear, with no disease cost."
+    },
+    "ANDROIDS-04.K3": {
+      "plain": "Per-android choice at the station, with arrived androids set by xenotype; carries the disease cost and a station loophole for prisoners."
+    },
+    "ANDROIDS-04.K4": {
+      "plain": "Each kind carries its own marker gene deciding deaf or hearing; the only data route separating built from arrived androids."
+    },
+    "ANDROIDS-04.K5": {
+      "plain": "Our own sensitivity rule; the only way to make deafness absolute, even against psychic gear or lost eyes."
+    },
+    "ANDROIDS-05.A": {
+      "plain": "Vanilla's no-faith and unrecruitable flags; cheap but leaky: a faithless prisoner converts at the first try, and difficulty settings undo it."
+    },
+    "ANDROIDS-05.B": {
+      "plain": "Hide every recruit, enslave and convert option, so the player sees a clear 'no'; other mods acting directly can still slip through."
+    },
+    "ANDROIDS-05.C": {
+      "plain": "Block the outcome where every path converges; absolute, but refusals can leave broken states, like a freed hostile prisoner. Meant as B's backstop."
+    },
+    "ANDROIDS-06.J1": {
+      "plain": "A surgery consuming a persona subcore that, in one step, removes the Glitterite mark, awakens it, gives it a faith and recruits it."
+    },
+    "ANDROIDS-06.J2": {
+      "plain": "Done in VRE's android modification station, patched: pick its subroutines gene by gene, but it consumes nothing without extra work."
+    },
+    "ANDROIDS-06.J3": {
+      "plain": "The operation only unlocks it; the colony then recruits it the normal way, with no restored personality. Cheapest."
+    },
+    "ANDROIDS-06.J4": {
+      "plain": "A ritual of the player's faith; drags in ritual quality and precepts. Not recommended."
+    },
+    "ANDROIDS-06.J5": {
+      "plain": "A dedicated jailbreak machine; a big build that J1 already covers. Not recommended."
+    },
+    "ANDROIDS-07.A": {
+      "plain": "Delete the 2% awakened-android chance from those factions; a tiny data patch, but it also removes them at Ultra."
+    },
+    "ANDROIDS-07.B": {
+      "plain": "Hand-authored faction spawn pools: a faction fields an android only if we write one in."
+    },
+    "HF-1+HF-2": {
+      "plain": "Write every faction and every reachable pawn type ourselves, so none inherits the android chance; a large volume of data."
+    },
+    "ANDROIDS.HF-4": {
+      "plain": "A check at pawn creation that rejects any xenotype not on the faction's list; the only route that also catches code-spawned pawns."
+    },
+    "RESEARCH-01.A": {
+      "plain": "Vanilla's study-to-unlock requirement with the object kept; works at any tech level, pure data. Needs Biotech."
+    },
+    "RESEARCH-02.A": {
+      "plain": "Vanilla techprints, quest rewards that unlock a fixed project, and the Intel exchange; pure data."
+    },
+    "RESEARCH-03.A": {
+      "plain": "Craft trial pieces from the resource and have a researcher take each apart; paid up front, a failure letter per trial. Needs Biotech."
+    },
+    "RESEARCH-03.B": {
+      "plain": "Craft the project's own techprints from the resource, then research normally; the prints leak to traders and loot unless excluded."
+    },
+    "RESEARCH-03.C": {
+      "plain": "Ushanka's item that turns into research points when used; speeds research, but is not a cost."
+    },
+    "RESEARCH-03.D": {
+      "plain": "More Realistic Research's experimental-materials system; that mod is declined. Not recommended."
+    },
+    "RESEARCH-03.E": {
+      "plain": "A special bench burns the resource while research runs and stops when empty; the only route that consumes during research."
+    },
+    "RESEARCH-03.F": {
+      "plain": "Our own per-project cost list, paid at start; A and B already do this. Not recommended."
+    },
+    "RESEARCH-04.A": {
+      "plain": "Vanilla's study-over-time loop with our payouts added; progress is saved on the item across interruptions."
+    },
+    "RESEARCH-04.B": {
+      "plain": "Our version of the bench 'Analyze' order; an interrupted session is lost, and it tangles with exemplar gates. Not recommended."
+    },
+    "RESEARCH-04.C": {
+      "plain": "A long crafting bill at a workstation; cannot target one specific artifact, and cancelling can lose it."
+    },
+    "RESEARCH-04.D": {
+      "plain": "A single timed use of the item; any interruption loses all progress. Not recommended."
+    },
+    "RESEARCH-04.E": {
+      "plain": "VEF's studiable building; works only on buildings, with no saved progress. Not recommended."
+    },
+    "RESEARCH-04.F": {
+      "plain": "Fully custom; it just rebuilds route A. Not recommended."
+    },
+    "RESEARCH-05.A": {
+      "plain": "One patch file switching off each offending source, a one-line fix to vanilla's Schematic book, and a script that audits every mod."
+    },
+    "RESEARCH-06.A": {
+      "plain": "Gate a whole build-menu category on research in pure data; it shows greyed and refuses with a message rather than hiding."
+    },
+    "RESEARCH-06.B": {
+      "plain": "Our own system, modelled on VFE Tribals, locking individual work types and orders like mining or hunting until researched."
+    },
+    "ERA-01.A": {
+      "plain": "The era advances the moment the capstone research completes. Simplest trigger, with no ceremony attached."
+    },
+    "ERA-01.B": {
+      "plain": "A celebrated rite fires the advance on success; a failed or cancelled rite advances nothing. The advance becomes a performed beat that can fail."
+    },
+    "ERA-01.C": {
+      "plain": "The capstone itself demands a build, resources or exemplars first, so the advance waits on a physical achievement, not just research."
+    },
+    "ERA-02.A": {
+      "plain": "Remove World Tech Level's change-era button, which also removes its add-factions window, and keep its faction filter off. The only route."
+    },
+    "ERA-03.U1": {
+      "plain": "The era log itself: an append-only record of every boundary crossed. Needed whichever clock is chosen."
+    },
+    "ERA-03.A": {
+      "plain": "One world clock for everyone, ticking whenever either colony plays. Simple, but era time rises while the other player is playing."
+    },
+    "ERA-03.B": {
+      "plain": "Each colony keeps its own era clock, running only while it plays. Fair per colony, but day-keyed beats fire at different moments for each."
+    },
+    "ERA-04.A": {
+      "plain": "World Tech Level already shows the era on the planet tab for free; we add an 'era began: day N' line and a boundary-log row."
+    },
+    "AE-1": {
+      "plain": "A scenario setting switches the content off for the game. Home-only for dangers and the walker, but strips road wrecks from every map."
+    },
+    "AE-2": {
+      "plain": "Delete the content from the map generator lists by patch, as Medieval Overhaul does. Same reach as the scenario setting: wrecks vanish everywhere."
+    },
+    "AE-3": {
+      "plain": "A blocking step added only to player-colony maps, so wrecks and ruins vanish at home while maps you travel to keep them."
+    },
+    "AE-4": {
+      "plain": "World Tech Level's filter holds content back until its era, but only on maps made later, and it also strips encounter maps. Not recommended."
+    },
+    "AE-5a": {
+      "plain": "Reaching Industrial itself delivers the mechanitor crash quest. Reliable one-time timing; needs code."
+    },
+    "AE-5b": {
+      "plain": "A storyteller event unlocked at Industrial delivers the crash. Easy, but it could fire more than once without a guard."
+    },
+    "AE-6": {
+      "plain": "The crashed walker stays in the yard, but its transponder can't be decrypted until Industrial. The Ultra-tech wreck is visible from day one."
+    },
+    "AE-9": {
+      "plain": "At an era advance, a sealed vault 'that was always there' appears on the living home map. Untested and hard; wrong for debris."
+    },
+    "AE-7": {
+      "plain": "Era-fitting debris or an authored structure sits where the ruin would have been. Props are easy; hostile defenders need code. Open from day one."
+    },
+    "AE-8": {
+      "plain": "The content becomes a place to travel to: an Archon site on a nearby tile, offered by quest or the transponder. Going is a choice."
+    },
+    "AB-1": {
+      "plain": "Configure Ignorance Is Bliss. Cheap, but it only weights and vetoes when the game picks the faction; quests, caravan meetings and orbital traders slip through."
+    },
+    "AB-2": {
+      "plain": "World Tech Level's per-event, per-quest era ceiling. A hard cap on what can fire, but it never picks factions, and every def needs a row."
+    },
+    "AB-3": {
+      "plain": "Our own gate on every faction arrival, with an explicit exemption for authored breaches. The full hard rule; the quest half is near-hard to build."
+    },
+    "DP-1": {
+      "plain": "Before Industrial, delivered goods and people simply appear at the map edge or trade spot, no pod. One patch covers everything."
+    },
+    "DP-2": {
+      "plain": "A courier or pack animal walks the goods in, drops them and leaves. Nicer flavour; hard if the courier must survive the trip."
+    },
+    "DP-3": {
+      "plain": "Pawn rewards and wandering joiners walk in from the edge instead of dropping in. Narrow and cheap."
+    },
+    "DP-4": {
+      "plain": "Called military aid arrives on foot instead of by pod, while Industrial allies still drop. A small data change."
+    },
+    "HF-1": {
+      "plain": "Write every faction definition ourselves, including those vanilla and mods spawn mid-game. Controls which pawn types a faction lists, not what they carry."
+    },
+    "HF-2": {
+      "plain": "Write every pawn type factions can use, with private gear tags and explicit xenotypes, so mod items join only by our choice. Large volume."
+    },
+    "HF-3": {
+      "plain": "Rewrite the pawn types the game and quests summon outside any faction: refugees, slaves, drifters and the like. Closes the side doors."
+    },
+    "ERA.HF-4": {
+      "plain": "One check on every pawn as it is generated, stripping or swapping anything off-list. The only route that catches mod code and recycled pawns."
+    },
+    "HF-5": {
+      "plain": "World Tech Level caps pawn tech at the era. An easy backstop, but not authored, and it downgrades the Glitterites' xenotypes too."
+    },
+    "CHARTING-01.A": {
+      "plain": "Build on vanilla's long-range scanner job with a second progress track. Vanilla supplies operator work, random finds, the guaranteed-find timer and saved progress."
+    },
+    "CHARTING-02.A": {
+      "plain": "A parent quest issues each story beat as a sub-quest, like vanilla's Archonexus chain, driven by apparatus work rather than a timer."
+    },
+    "CHARTING-02.B": {
+      "plain": "VEF's quest-chain gates. Easy, but fires on its own clock, so it suits side content only, not the main spine."
+    },
+    "CHARTING-03.A": {
+      "plain": "Tag quests as pool members and let vanilla's own quest weighting pace them. Adding a quest is a one-line patch."
+    },
+    "CHARTING-04.A": {
+      "plain": "Each quest carries an 'announced from' era; our code switches it from charted to storyteller-offered at each advance. Recommended; no game patching."
+    },
+    "CHARTING-04.B": {
+      "plain": "Two copies of each quest: a charted one, and a storyteller one World Tech Level hides until its era. Easy; leans on that mod."
+    },
+    "CHARTING-04.C": {
+      "plain": "An era check inside the quest itself. Not recommended: traders and books hand out quests without running the check."
+    },
+    "CHARTING-04.D": {
+      "plain": "Patch the storyteller's quest chooser. Not recommended: adds nothing over the 'announced from' era."
+    },
+    "CHARTING-05.A": {
+      "plain": "Hard minimum and maximum distance bands, a registry of mobility rungs, capped by the apparatus tier. A new rung is one data block."
+    },
+    "CHARTING-05.U1": {
+      "plain": "Optional extra: bias finds toward the near end of a band. Custom code; cost not stated."
+    },
+    "CHARTING-06.A": {
+      "plain": "One shared mechanism; each tier is just a building, a work job and a research project. Cheap to extend."
+    },
+    "CHARTING-07.A": {
+      "plain": "Two progress bars without vanilla's estimate, a Waystone status line, a reason in each arrival letter, and the chain count in the quest tab."
+    },
+    "CHARTING-08.A": {
+      "plain": "Every tile a caravan enters rolls for a find, on foot or in vehicles; flying never counts. One patch on an unused seam."
+    },
+    "CHARTING-08.B": {
+      "plain": "The same rolls without patching the game, via a component on each caravan type. More bookkeeping per caravan."
+    },
+    "CHARTING-08.C": {
+      "plain": "Copy Faction Territories' version. Not recommended: it misses vehicle caravans and its timer isn't saved."
+    },
+    "CHARTING-08.D": {
+      "plain": "Outposts search on their own: which types look, how often, how far, pausing while a find is unresolved. Built on VEF Outposts."
+    },
+    "CHARTING-08.E": {
+      "plain": "The find arrives as a quest rather than a bare map marker, still placed next to whoever found it."
+    },
+    "CHARTING-09.A": {
+      "plain": "A readable object on site, studied by right-click order. Pays Intel once, signals the quest, archives a letter, becomes a 'read' object."
+    },
+    "CHARTING-09.B": {
+      "plain": "A record looted as a book, hauled home and read there. Flagged as possible only; not designed."
+    },
+    "CHARTING-10.A": {
+      "plain": "Charting works orbit too; the scanner is removed or reskinned as an apparatus tier. Discovery stays labour, and the reveal gate is one check."
+    },
+    "CHARTING-10.B": {
+      "plain": "The passive orbital scanner delivers Charting's orbital content. Easy for everyday sites, but not labour, and story beats need code."
+    },
+    "CHARTING-10.C": {
+      "plain": "Two instruments sharing pools: Charting keeps the story; the scanner is a passive orbital survey eye. Needs a requirement amended."
+    },
+    "CHARTING-10.D": {
+      "plain": "Keep them fully separate, vanilla as shipped. Nothing to build, but orbit plays like somebody else's game."
+    },
+    "INFRA-01.A": {
+      "plain": "Remove ancient roads and stone roads from world generation, leaving paths and tracks. Must be decided before the world is made."
+    },
+    "INFRA-01.U1": {
+      "plain": "A five-step speed ladder across road tiers. Pure data, retunable any time."
+    },
+    "INFRA-01.U2": {
+      "plain": "Mark isolated factions, such as the anima tribe, to never join the road network. One field per faction."
+    },
+    "INFRA-02.A": {
+      "plain": "One setting per road tier that applies to every vehicle, including future ones, overriding their flat speeds. Selected."
+    },
+    "INFRA-02.B": {
+      "plain": "Code keeps each vehicle's own road modifier on top of the ladder. Preserves per-vehicle character at a code cost."
+    },
+    "INFRA-02.C": {
+      "plain": "Delete the flat road speeds from 14 Vanilla Vehicles Expanded vehicles. Not recommended: the per-tier setting does it better."
+    },
+    "INFRA-02.D": {
+      "plain": "Write per-tier speeds on each of 14 vehicles. Keeps per-vehicle tuning, but misses any vehicle added later."
+    },
+    "INFRA-03.Minimal": {
+      "plain": "Hand-authored routes instead of planned ones. Cheapest and needs no alliances, but loses 'every civilization' and extending roads farther."
+    },
+    "INFRA-03.Middle": {
+      "plain": "Keeps every clause with less code than the full spec. Like it, builds nothing between factions until NPC alliances exist."
+    },
+    "INFRA-03.As-specified": {
+      "plain": "A world system plans routes at each advance and lays segments over days; the half-built road is the progress bar. The most code."
+    },
+    "INFRA-04.C1": {
+      "plain": "A caravan standing at a road's endpoint settlement pays in person. The earliest channel."
+    },
+    "INFRA-04.C2": {
+      "plain": "The builder asks: a delivery quest with a deadline that names the road ('for the road to Ruen')."
+    },
+    "INFRA-04.C3": {
+      "plain": "Pledge over the comms console from Industrial, as its own radio beat. Multiplayer needs care."
+    },
+    "INFRA-04.C4": {
+      "plain": "Send payment by pod or shuttle to an endpoint. The late-era channel."
+    },
+    "INFRA-04.C5": {
+      "plain": "Pledge by messenger or radio, then deliver by caravan. Fits a Medieval messenger table if Medieval Overhaul ships."
+    },
+    "INFRA-04.Gift-variant": {
+      "plain": "Reuse vanilla's caravan gifts. Very cheap, but funds a faction rather than a chosen road, and can't extend a road farther."
+    },
+    "INFRA-05.H1": {
+      "plain": "Each faction builds at its own tech level; funding lifts a road to the era's best. Roads show each faction's tech. Recommended."
+    },
+    "INFRA-05.H2": {
+      "plain": "Everyone builds one tier behind the era; only funded roads reach the top tier, so paid roads stand out everywhere."
+    },
+    "INFRA-05.H3": {
+      "plain": "Buy a tier above the era, as RimPacts does. Easy in the engine, but breaks the era ceiling, so it is blocked."
+    },
+    "INFRA-06.Build-A": {
+      "plain": "Use VFE Classical's road building with our tiers. Nearly free, but one research unlocks every tier unless we add a gate."
+    },
+    "INFRA-06.Build-B": {
+      "plain": "Our own road-building feature. More work, but no dependency on VFE Classical."
+    },
+    "INFRA-07.A": {
+      "plain": "Vehicle Framework and Vanilla Vehicles Expanded as shipped, plus fixes that stop vehicles desyncing in Multiplayer. The only alternative is no vehicles."
+    },
+    "INFRA-07.U1": {
+      "plain": "Put aircraft behind their own research, so flight comes later than the first car."
+    },
+    "INFRA-08.N1": {
+      "plain": "Vehicles join hostile raids and base defenders, gated on the campaign era. Revives Vehicle Framework's dormant raid feature."
+    },
+    "INFRA-08.N2": {
+      "plain": "Give raiding vehicles proper armoured-assault behaviour, using Vehicle Framework's unused attack AI."
+    },
+    "INFRA-08.N3": {
+      "plain": "A vehicle travels with NPC trade caravans."
+    },
+    "INFRA-08.N4": {
+      "plain": "Parked, crewless vehicles at NPC sites via Worksites Expanded, a possible motor-pool prize. Multiplayer status unknown."
+    },
+    "INFRA-08.N5": {
+      "plain": "Our own pre-Industrial vehicles, such as carts, with new art. The only way any vehicle exists before Industrial."
+    },
+    "INFRA-08.N6": {
+      "plain": "Add vehicles to faction groups as pawns. Not recommended: with no crew they never move."
+    },
+    "INFRA-09.A": {
+      "plain": "Each road tier's research unlocks a farther search band."
+    },
+    "INFRA-09.B": {
+      "plain": "Vehicle research unlocks farther search bands."
+    },
+    "INFRA-09.C": {
+      "plain": "A band unlocks only when a real road actually leaves the colony's tile. Truer to mobility; needs code."
+    },
+    "ORBIT-01.A": {
+      "plain": "Empty orbit of everything so the view button greys out. Easy, but a ship can still fly straight up."
+    },
+    "ORBIT-01.B": {
+      "plain": "A custom orbit layer that refuses viewing, flight and drawing until the reveal. True closure, but must be set before world creation."
+    },
+    "ORBIT-01.C": {
+      "plain": "Block selecting orbit. Works on an existing world, but only hides it from view."
+    },
+    "ORBIT-02.R1": {
+      "plain": "Remove the quest givers, or lock them behind research the reveal completes. Easy; an early uplink hack then yields nothing."
+    },
+    "ORBIT-02.R2": {
+      "plain": "Givers check the reveal flag; a hacked uplink banks its coordinate and pays off at the reveal."
+    },
+    "ORBIT-02.R3": {
+      "plain": "Block the givers with a patch. Works on an existing save, but an early uplink hack is wasted."
+    },
+    "ORBIT-02.R4": {
+      "plain": "Point the givers at planet-side finds or lore until the reveal. Easy to close; reopening needs code."
+    },
+    "ORBIT-02.R5": {
+      "plain": "World Tech Level gates them by era, not by the reveal. Backup only, and it changes a frozen setting."
+    },
+    "ORBIT-03.Traders": {
+      "plain": "Orbital traders already need a comms console in vanilla; a later stage can be tied to our timing, or the event removed outright."
+    },
+    "ORBIT-03.Salvagers": {
+      "plain": "Salvager raids are held back until the reveal by a check when the game picks a raiding faction."
+    },
+    "ORBIT-04.U1": {
+      "plain": "Earn it however the fiction wants: a flag, a research project or a quest outcome. All write the same permanent flag."
+    },
+    "ORBIT-05.A": {
+      "plain": "Orbital factions exist hidden from world creation and are unveiled together at the reveal; surface factions gain stations with history intact."
+    },
+    "ORBIT-05.B": {
+      "plain": "Create factions fresh at the reveal. Not recommended: new names, leaders and ideologies, with no shared history."
+    },
+    "ORBIT-06.A": {
+      "plain": "One World Tech Level definition exempting the four orbital factions and the Empire. Insurance; the faction filter itself stays off."
+    },
+    "ORBIT-07.A": {
+      "plain": "The stronghold is a permanent faction settlement in orbit."
+    },
+    "ORBIT-07.B": {
+      "plain": "The stronghold is a quest site, using Odyssey's abandoned-platform quest as is."
+    },
+    "ORBIT-07.U1": {
+      "plain": "Hand-drawn station layouts. Not recommended: they can't hold air and are the same every visit."
+    },
+    "ORBIT-08.S1": {
+      "plain": "The quest spawns the station when needed and owns it from the start. Recommended."
+    },
+    "ORBIT-08.S2": {
+      "plain": "A permanent Glitterite station a quest points at. Visible beforehand, but needs the quest-site fallback if it's cleared first."
+    },
+    "ORBIT-08.C1": {
+      "plain": "An objective room filled from layout data. Easy, but items can silently fail to place: fine for loot, not for plot."
+    },
+    "ORBIT-08.C2": {
+      "plain": "The quest makes the exact item and places it; the quest hears when it's found, destroyed or carried off."
+    },
+    "ORBIT-08.C4": {
+      "plain": "A world-side record read when the map generates. Also works for permanent settlements."
+    },
+    "ORBIT-08.C3": {
+      "plain": "Vanilla's item-stash site. Not recommended: on a station it lands outside the hull or nowhere."
+    },
+    "ORBIT-08.C5": {
+      "plain": "Fix the whole floor plan at quest time. Not recommended: means replacing station generation."
+    },
+    "ORBIT-08.C6": {
+      "plain": "A hand-drawn station. Not recommended in orbit: it can't hold air."
+    },
+    "ORBIT-08.E1..E4": {
+      "plain": "Room traps and turrets, a garrison, station guns and timed response raids, all set in data."
+    },
+    "ORBIT-08.E5": {
+      "plain": "A boss mech in the objective room. Easy with Better Traders Guild; more work if ours."
+    },
+    "ORBIT-08.RA1": {
+      "plain": "Trust layout rules to keep the objective room reachable. Usually works; occasionally it's sealed."
+    },
+    "ORBIT-08.RA2": {
+      "plain": "After generation, check the objective exists and is reachable, and re-place it if not."
+    },
+    "ORBIT-08.RA3": {
+      "plain": "Pay the prize as a reward on arrival, so nothing has to be found or carried out."
+    },
+    "ORBIT-09.M1": {
+      "plain": "Leave and the site is gone; the quest resolves as its script says. Vanilla behaviour."
+    },
+    "ORBIT-09.M2": {
+      "plain": "The site persists while the objective remains; returning generates a fresh map around the same item."
+    },
+    "ORBIT-09.M3": {
+      "plain": "Park the gravship there and the map stays loaded indefinitely. The players' own move; nothing to build."
+    },
+    "ORBIT-09.F1": {
+      "plain": "A parent quest re-offers a fresh stronghold after an interval; success retires it."
+    },
+    "ORBIT-09.F2": {
+      "plain": "A failed quest immediately regenerates itself."
+    },
+    "ORBIT-09.F3": {
+      "plain": "VEF's free re-grant on failure. Easy, not recommended for plot."
+    },
+    "ORBIT-09.F4": {
+      "plain": "The storyteller might send another one eventually. Not recommended: no guarantee."
+    },
+    "GRAVSHIP-01.A": {
+      "plain": "Odyssey and Vanilla Gravship Expanded as shipped, research retiered so habitation is Spacer, plus an alert when the deck is over budget."
+    },
+    "GRAVSHIP-01.G": {
+      "plain": "Remove the standing cabin-fever mood penalty. Not recommended: the crew wanting sky is meant as a beat."
+    },
+    "GRAVSHIP-02.A": {
+      "plain": "Vanilla's archite total vacuum-immunity gene. No code; how founders get it is open: archite capsule supply, or the altar's gene grant."
+    },
+    "GRAVSHIP-03.A": {
+      "plain": "Our curated list of which events, conditions, factions and arrival types exist in orbit."
+    },
+    "GRAVSHIP-03.B": {
+      "plain": "Vanilla Gravship Expanded's orbital hazards as shipped: solar flares, micrometeor storms, hull-punching escape pods."
+    },
+    "GRAVSHIP-04.C": {
+      "plain": "Our own quests that deliver people by pod or shuttle."
+    },
+    "GRAVSHIP-04.D": {
+      "plain": "Let vanilla's wanderer and refugee-pod quests fire in orbit unmodified."
+    },
+    "GRAVSHIP-04.Build-d": {
+      "plain": "A small fix so two quest types still work with no surface home. Only needed if our content uses them."
+    },
+    "GRAVSHIP-05.E": {
+      "plain": "Visitors and trader caravans are dropped in instead of walking across the map edge."
+    },
+    "GRAVSHIP-05.F": {
+      "plain": "Shuttle to a Traders Guild station and trade there, via Better Traders Guild. Not Multiplayer-safe."
+    },
+    "GF-A": {
+      "plain": "Vanilla: the ship lands on the new owner, and an ally is attacked and turns hostile. Not acceptable alone."
+    },
+    "GF-B": {
+      "plain": "When our code transfers a tile, it checks the ship in flight and warns or turns it back."
+    },
+    "GF-C": {
+      "plain": "Divert the ship home, to the nearest valid tile, or via crash-landing abort. A response; something else must detect."
+    },
+    "GF-D": {
+      "plain": "Our transfers skip the ship's destination tile, or hold the change until it lands."
+    },
+    "GF-E": {
+      "plain": "Let it happen, but warn the player while the ship is still in the air."
+    },
+    "GF-F": {
+      "plain": "The changed arrival becomes the player's decision: land, move or abort, possibly leading to a parley or encounter."
+    },
+    "GF-G": {
+      "plain": "At touchdown, compare the tile with what was confirmed at launch, whoever changed it, then divert, warn or ask."
+    },
+    "GRAVSHIP-07.A": {
+      "plain": "Shipped shields, turrets, point defense and Ultra guns, retiered by era in data. Mortars need one small extra fix."
+    },
+    "COLONY-01.A": {
+      "plain": "Checkboxes per era; unticked eras vanish from the list. Clean and short, but hides things until re-ticked. Custom code."
+    },
+    "COLONY-01.B": {
+      "plain": "Current era on top, older recipes tinted, sorted below or folded into submenus. Nothing is hidden. Custom code; the spec's preferred base."
+    },
+    "COLONY-01.C": {
+      "plain": "Split recipes across era-specific benches. Pure XML but re-homes ~1,420 recipes and can't keep older ones reachable. Not recommended."
+    },
+    "COLONY-01.D": {
+      "plain": "Just a search box (Nice Bill Tab or our own). Easy, but has no idea of eras; only useful alongside A or B."
+    },
+    "COLONY-01.E": {
+      "plain": "Patch or fork the Nice Bill Tab mod to add an era dimension. Keeps a familiar mod's UI, but hard and needs multiplayer work."
+    },
+    "COLONY-01.F": {
+      "plain": "Make older recipes report themselves unavailable so they drop off the list. Changes what's on the bench, breaking the 'never a gate' rule. Not recommended."
+    },
+    "COLONY-02.A": {
+      "plain": "Passion nudges the odds of each recreation choice: a drift, not a rule. Automatically covers every skill-training recreation from any mod. Spec's pick."
+    },
+    "COLONY-02.B": {
+      "plain": "Hard rule: a passionate pawn always picks its passion recreation while available, falling back only when bored. More predictable, more intrusive."
+    },
+    "COLONY-02.C": {
+      "plain": "Rewrite each recreation type ourselves. Same result as A with much more code to maintain. Not recommended."
+    },
+    "COLONY-02.E": {
+      "plain": "Simply make all skill-training recreation more likely for everyone. Easy XML, but ignores passion entirely. Not recommended."
+    },
+    "COLONY-02.F": {
+      "plain": "Rewrite vanilla's recreation picker at a low level. Reaches nothing A doesn't, at more risk. Not recommended."
+    },
+    "COLONY-03.D": {
+      "plain": "Pawns reading for fun pick textbooks on their passion skills; vanilla has textbooks for all 12. Pairs with the passion drift."
+    },
+    "COLONY-03.U1": {
+      "plain": "No build of its own: add new skill-training recreation (archery butt, forge game) as content and the passion preference picks it up."
+    },
+    "DEFAULTS-01.B": {
+      "plain": "Apparel policies like 'Smith' ship pre-made in the Assign tab of every new colony. Always there, but carries no weapon."
+    },
+    "DEFAULTS-01.A": {
+      "plain": "Kits ship as Odyssey outfit stands; the player must build and stock each stand. Physical armoury, but not ready on day one."
+    },
+    "DEFAULTS-01.E": {
+      "plain": "Kits applied to spawned pawns (arrivals, quest pawns, starting colonists). Easy XML, but does nothing for pawns already in the colony."
+    },
+    "DEFAULTS-02.A": {
+      "plain": "Odyssey outfit stand holds apparel plus one weapon and swaps both in one job. Easy, but one stand equips one pawn once."
+    },
+    "DEFAULTS-02.C": {
+      "plain": "Use the Compositable Loadouts mod for weapons, inventory and quality rules. No multiplayer support and won't swap a held weapon. Not recommended."
+    },
+    "DEFAULTS-02.D": {
+      "plain": "Our own kit system covering every clause, standing and authored. The only complete answer, and hard to build."
+    },
+    "DEFAULTS-02.E": {
+      "plain": "Full kit, weapon included, on spawned pawns only. Easy XML; no help for colonists already present."
+    },
+    "DEFAULTS-03.B": {
+      "plain": "Apparel policy keeps a pawn dressed over time, but assigning isn't a single act and it can't handle weapons."
+    },
+    "DEFAULTS-03.A": {
+      "plain": "Outfit stand equips in one act, but only once: a pawn that later loses its weapon won't go back for it."
+    },
+    "DEFAULTS-03.D": {
+      "plain": "Our own system: one act, then the pawn keeps itself kitted indefinitely. Only route meeting both halves; hard."
+    },
+    "DEFAULTS-04.A": {
+      "plain": "Re-running the stand's 'Swap outfit' forces a re-gear; it only removes apparel that conflicts. Easy, but no full strip."
+    },
+    "DEFAULTS-04.D": {
+      "plain": "Our own 're-equip' and 'drop everything' orders covering the whole pawn. Complete, but hard and needs multiplayer work."
+    },
+    "DEFAULTS-05.U1": {
+      "plain": "Nothing to build: every kit route already tolerates future-era gear; the pawn wears its best reachable item and a stand stays partly empty."
+    },
+    "DEFAULTS-06.A": {
+      "plain": "A per-recipe table of starting counts and floors applied when a bill is created. One focused code hook; skips bills that can't count products."
+    },
+    "DEFAULTS-07.A": {
+      "plain": "Depend on Better Workbench Management as-is. Easy, but breaks in multiplayer and sometimes copies the material too."
+    },
+    "DEFAULTS-07.B": {
+      "plain": "Use Better Workbench Management but route its paste through our multiplayer-safe command. Works in co-op; still sometimes copies material."
+    },
+    "DEFAULTS-07.C": {
+      "plain": "Our own paste: we choose which settings copy, never the material, warn on skipped fields, and can paste to a whole bench. Spec's pick."
+    },
+    "DEFAULTS-07.D": {
+      "plain": "Our own paste relying on Multiplayer's automatic field syncing. Same code as C but syncs less reliably. Not recommended."
+    },
+    "DEFAULTS-07.E": {
+      "plain": "A shared library of named 'house standard' bill setups both players can apply. Richest option, and hard."
+    },
+    "ITEMS-01.A": {
+      "plain": "Use vanilla smelting, extended to leather, cloth, wool and wood, with two reclaim recipes. Pure XML; returns the exact material."
+    },
+    "ITEMS-02.A": {
+      "plain": "Declare the smelted return twice to get 50%. Pure XML; finer fractions are impossible without code."
+    },
+    "ITEMS-03.A": {
+      "plain": "Already true of vanilla's return; the bill's existing durability and quality sliders do the choosing. Nothing to build."
+    },
+    "ITEMS-04.A": {
+      "plain": "Reclaim bills live on the crafting spot from day one; a dedicated bench and era gate are plain XML if wanted."
+    },
+    "ITEMS-05.A": {
+      "plain": "Vanilla already refuses relics and never returns advanced resources. Nothing to build."
+    },
+    "ITEMS-06.A": {
+      "plain": "State the fraction in the recipe's description text. Easy; the info card can't show it correctly."
+    },
+    "ITEMS-07.A": {
+      "plain": "A small custom counter, modelled on vanilla's stone-block one, so the bill can target a stock level. About 30 lines of code."
+    },
+    "SPECIALISATION-01.A": {
+      "plain": "At skill thresholds, pick one entry from a list for that skill. The lightest of the full systems; spec's base."
+    },
+    "SPECIALISATION-01.B": {
+      "plain": "A branching tree with tiers; taking one branch closes its sibling (weapons vs armour). Stronger identity, more to build."
+    },
+    "SPECIALISATION-01.C": {
+      "plain": "A perk catalogue whose perks can do more than tweak a stat, e.g. extra yield on one recipe. Most flexible effects; hard."
+    },
+    "SPECIALISATION-01.D": {
+      "plain": "One board showing every option and unspent points, with an alert when points await. Makes the pick feel like a moment."
+    },
+    "SPECIALISATION-02.A..D": {
+      "plain": "Our own specialisation system simply checks for a major passion before allowing the pick."
+    },
+    "SPECIALISATION-02.E": {
+      "plain": "Specialist posts get a custom role requirement demanding major passion in the skill."
+    },
+    "SPECIALISATION-02.F": {
+      "plain": "The 'trained' health condition gets a small check that refuses pawns without the major passion."
+    },
+    "SPECIALISATION-02.G": {
+      "plain": "A trait links to passion in XML, but backwards: generation gives the pawn the passion to fit the trait."
+    },
+    "SPECIALISATION-03.U1": {
+      "plain": "Every route already works as small stat bonuses; only the perk-catalogue route can reach effects a stat can't express."
+    },
+    "SPECIALISATION-04.XML": {
+      "plain": "Add new weapon- and armour-smithing speed stats and point the recipes at them. Pure data, identical on both clients."
+    },
+    "SPECIALISATION-04.Csharp": {
+      "plain": "Code that knows which recipe is being made and applies the bonus accordingly (the perk catalogue's approach)."
+    },
+    "SPECIALISATION-05.A..D": {
+      "plain": "At pawn generation, roll specialisations from the pawn's final skills and passions, skipping starting colonists. Keyed on actual skill."
+    },
+    "SPECIALISATION-05.F": {
+      "plain": "Give pawn types a starting 'trained' condition in XML. Easy, but tied to the pawn type, not its actual skills."
+    },
+    "SPECIALISATION-05.G": {
+      "plain": "Force a trait via backstory or pawn type. XML, but the pawn's skills get shaped to fit the trait rather than vice versa."
+    },
+    "SPECIALISATION-05.E": {
+      "plain": "Not possible: generated pawns never hold Ideology roles."
+    },
+    "SPECIALISATION-06.E": {
+      "plain": "Vanilla Ideology specialist roles. Easy in XML but capped at two post types with unlimited holders; one-holder seats and passion gates need code."
+    },
+    "SPECIALISATION-07.E": {
+      "plain": "One role per pawn; switching posts means running the role-change ritual. Pure XML."
+    },
+    "SPECIALISATION-07.F": {
+      "plain": "A 'trained as weaponsmith' health entry, granted by surgery, item or rite and removed by surgery; visible in the Health tab. Easy."
+    },
+    "SPECIALISATION-07.G": {
+      "plain": "Make it a trait, reading as who the pawn is rather than training. More work than F. Not recommended over F."
+    },
+    "QUESTS-01.A": {
+      "plain": "A permanent, auto-accepted parent quest that generates each Chronicle beat as a child. Built on vanilla's sub-quest system, no engine patching."
+    },
+    "QUESTS-02.P": {
+      "plain": "Each subplot's parent quest is fired as a standing quest by a named event. Easy XML."
+    },
+    "QUESTS-02.N1": {
+      "plain": "Attach steps to their parent only where we grant them ourselves (Schism catalogue, shop purchases). Misses other channels."
+    },
+    "QUESTS-02.N2": {
+      "plain": "One hook tags any quest to its parent whatever delivered it: storyteller, giver, chains. Covers every channel; spec's pick with P."
+    },
+    "QUESTS-02.N3": {
+      "plain": "VEF's quest-chain badge icon. Easy but only an icon, not real nesting."
+    },
+    "QUESTS-03.A": {
+      "plain": "Only a successful beat advances the story; an expired or lost one leaves the same beat next in line. Already specced."
+    },
+    "QUESTS-04.A": {
+      "plain": "Vanilla already shows a 3 / 9 count on the parent and indents live beats beneath it. Free."
+    },
+    "QUESTS-04.T1": {
+      "plain": "As shipped: the parent's detail pane lists finished beats. Easy, but finished beats leave the list itself."
+    },
+    "QUESTS-04.T2": {
+      "plain": "Write a live beat list into the parent quest's description text. Modest code, no UI patching."
+    },
+    "QUESTS-04.T3": {
+      "plain": "Patch the quest tab to draw finished and upcoming beats under their parent. Most legible; touches vanilla UI."
+    },
+    "QUESTS-05.C1": {
+      "plain": "Add a difficulty rating to each quest definition, patchable onto any mod's quest. Easy but must be done quest by quest."
+    },
+    "QUESTS-05.C2": {
+      "plain": "Automatically give any unrated quest a fallback rating from its threat points. Catches everything; needs code."
+    },
+    "QUESTS-05.C3": {
+      "plain": "A load-time check that lists unrated quests so they can be fixed. Easy; a tool, not a fix."
+    },
+    "QUESTS-06.A": {
+      "plain": "Vanilla's quest letter accepts free text for its body; supply the reason, or name the asking leader."
+    },
+    "QUESTS-07.U1": {
+      "plain": "One XML line puts any quest into Charting's survey pool and keeps it out of the random storyteller. Easy."
+    },
+    "QUESTS-07.A": {
+      "plain": "One era check flips a quest from charted to self-announcing when the colony reaches a named era. Code; multiplayer-safe."
+    },
+    "QUESTS-07.B": {
+      "plain": "Two copies of each quest plus a World Tech Level setting, for quests a named event delivers. Easy XML, but relies on a mod setting."
+    },
+    "QUESTS-08.A": {
+      "plain": "Main story runs as a fixed ordered list; each discovery pool has a guaranteed-find timer that Charting work matures."
+    },
+    "QUESTS-09.Storyteller-pool": {
+      "plain": "Quest joins the storyteller's random pool from a set earliest day, drawn by weight. Easy XML; timing is loose."
+    },
+    "QUESTS-09.World-object": {
+      "plain": "Found via the Charting apparatus, or rolled by caravans and outposts as they travel."
+    },
+    "QUESTS-09.Named-incident": {
+      "plain": "Fire a specific quest on a fixed day (easy XML), or our own trigger once a condition holds (code)."
+    },
+    "QUESTS-10.G1": {
+      "plain": "The quest's giver is a random non-hostile faction. Easy XML."
+    },
+    "QUESTS-10.G2": {
+      "plain": "A named faction leader asks, with certain factions excluded. Easy XML; more personal."
+    },
+    "QUESTS-10.G3": {
+      "plain": "Choose givers by a goodwill threshold or by tech level/culture. Finer control; needs our code."
+    },
+    "QUESTS-10.GT": {
+      "plain": "Tag a quest so traders, books or orbital scans hand it over. One XML line; needs Odyssey, and bypasses the usual can-it-run checks."
+    },
+    "QUESTS-11.A": {
+      "plain": "Each Church decree defines its own failure penalty: mood, Exaltation or goodwill. Easy with Deserters, moderate without."
+    },
+    "QUESTS-11.B": {
+      "plain": "One patch stops decrees arriving while the Church is hostile. Easy XML."
+    },
+    "QUESTS-11.C": {
+      "plain": "A generic failure-cost hook in code. Nothing for it to reach. Not recommended."
+    },
+    "QUESTS-11.D": {
+      "plain": "Church decrees arrive on a schedule instead of only from a noble's mental break. XML for conceited titleholders only, else code."
+    },
+    "QUESTS-12.Build-A": {
+      "plain": "Build on VEF's quest-giver shop with our currencies and window. About 95 lines; spec's pick."
+    },
+    "QUESTS-12.Build-B": {
+      "plain": "Our own shop from scratch, about 260 lines. Harder; the fallback if the VEF dependency is refused."
+    },
+    "QUESTS-13.A": {
+      "plain": "One shelf; items sold as quests that reward the item, with XML eligibility and per-entry expiry. Easy."
+    },
+    "QUESTS-13.B": {
+      "plain": "Entries leave individually when expired or ineligible and restock one at a time, rather than the whole shelf refreshing."
+    },
+    "QUESTS-13.C": {
+      "plain": "A condition check reading era, a currency balance or a political flag. Needs re-checking at purchase to be multiplayer-safe."
+    },
+    "QUESTS-13.D": {
+      "plain": "Separate shelves for missions and items. Cleaner layout, more to build."
+    },
+    "QUESTS-13.E": {
+      "plain": "Reskin a vanilla trader as the shop. Hard, and traders can't sell quests. Not recommended."
+    },
+    "QUESTS-14.A": {
+      "plain": "A fresh copy of the failed mission restocks the same shelf, free or priced, set per entry. Spec's pick."
+    },
+    "QUESTS-14.B": {
+      "plain": "Refund all or part of the price on failure, as a per-entry option of the same piece."
+    },
+    "QUESTS-14.C": {
+      "plain": "VEF sends a free copy later as an ordinary offer. Easy XML, but unsuited to plot missions."
+    },
+    "QUESTS-14.D": {
+      "plain": "The Schism simply re-offers its current plot step. Already specified."
+    },
+    "QUESTS-14.E": {
+      "plain": "Adopt VFE Deserters' shop wholesale. Hard, and its failed missions never return. Not recommended."
+    },
+    "QUESTS-15.U1": {
+      "plain": "No build: Multiplayer already syncs accepting quests and picking rewards."
+    }
+  }
+}

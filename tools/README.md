@@ -71,8 +71,51 @@ Prints the match count and identifies each matched node — defName, whether it 
 instead hits one abstract parent is obvious here and silent everywhere else; that
 failure is `docs/TRAPS.md` T-02.
 
+## `route_inventory.py`
+
+Not a gate. Parses `docs/CAPABILITIES.md` into `docs/data/route-inventory.json`: every
+card, capability row and route, with a stable ID each, for the working surface (#200,
+#199). Regenerate after editing the capabilities document; never hand-edit the JSON.
+
+```bash
+python tools/route_inventory.py                    # regenerate
+python tools/route_inventory.py --check            # exit 1 if the JSON is stale
+python tools/route_inventory.py --accept-renumber  # retire IDs of removed or reworded rows
+```
+
+- **IDs never move.** The existing JSON is the registry: an unchanged row or route keeps
+  its ID wherever it moves in the document, and new ones are minted after the card's
+  highest number. A row or route that vanished or was reworded stops the run, because
+  surface state may point at it; `--accept-renumber` retires those IDs for good.
+- **Cells that do not parse mechanically** are handled by the fix-up tables at the top of
+  the script, each citing its line. A fix-up whose text is gone fails the run.
+- **A new card** fails the run until it has an ID in `CARD_IDS`.
+- Every route value carries provenance: `explicit` (the route states it), `inherited`
+  (from the row, a group heading or a shared label list) or `unstated` (null).
+
 ## The rest
 
 `defdb.py` is the shared database loader the checks build on. `inventory.py`,
 `survey_archite.py` and `make_faction_icons.py` are one-off surveys and asset
 tooling, not gates.
+
+## `surface_server.py`
+
+Not a gate. Serves the working surface (#199), `tools/surface/index.html`, on
+127.0.0.1. The surface state **is** `docs/data/working-surface.json`: the page loads it and
+saves the whole file after every edit, atomically and in a fixed key order. A save is refused
+if the file changed on disk since the page loaded it, so an agent's edit to the file is never
+overwritten; reload the page to pick it up.
+
+```bash
+python tools/surface_server.py                                                  # full inventory, http://127.0.0.1:8765
+python tools/surface_server.py --inventory docs/data/route-inventory.slice.json # the 14-row slice
+python tools/surface_server.py --state path/to/scratch.json                     # try things without touching the real file
+```
+
+`--port` and `--state` override the defaults; `--state` may be absolute. The slice,
+`docs/data/route-inventory.slice.json`, is 14 rows filtered verbatim from the full inventory,
+so its IDs match it. `GET /api/doc?path=docs/…md&anchor=slug` serves one markdown section,
+read-only, from under `docs/` only; the page uses it to render spec sections in its panel.
+`GET /api/glosses` serves `docs/data/capability-glosses.json` (override with `--glosses`); the page
+leads with each gloss title and falls back to the card's wording when the file or an entry is missing.

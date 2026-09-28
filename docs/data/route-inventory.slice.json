@@ -1,0 +1,2689 @@
+{
+  "schema": "archinity.route-inventory/1",
+  "source": "docs/CAPABILITIES.md",
+  "source_commit": "6aa9e34de2b6897a9c7badeeaba3fcc18e626fba",
+  "source_dirty": false,
+  "source_sha256": "5af30b4184229cd3cd4dff84a52a23f1abfbe2c94d9a3bb6c15c34fe2e65a03e",
+  "retired": [
+    "OS-6+OS-7"
+  ],
+  "slice": "#199 thin slice: 14 capability rows chosen for being awkward, filtered verbatim from docs/data/route-inventory.json so every ID matches it.",
+  "counts": {
+    "cards": 9,
+    "capabilities": 14,
+    "routes": 62
+  },
+  "cards": [
+    {
+      "id": "ALTAR",
+      "title": "The altar",
+      "group": "Faith",
+      "parent_card": null,
+      "anchor": "docs/CAPABILITIES.md#the-altar",
+      "possible": "Yes. The final rite and the lottery are specced. Charge that never spoils, and \"the donor dies, the recipient lives\", are already built. Willing means believing enough: a giver is admitted only at a certainty threshold (e.g. 85 %). No ritual ships that, but one small role class gates a vanilla-style sacrifice rite on it (#49). The threshold is #119's.",
+      "multiplayer": "Yes (spec, on reading), condition: every path runs on the altar's synced tick or through Multiplayer's own `PersistentDialog`. One two-client run is owed for the lottery (Verification 4). A stale caravan-dialogue flag can still split one click (T-82 by another door).",
+      "story_can": [
+        "Bank a sacrifice now and spend it eras later: charge never rots.",
+        "Burn a prisoner or slave as fuel, who dies, or put anyone else in as a recipient, who lives.",
+        "Let power and facilities make each rite cheaper, never below a quarter of the blood. For the lottery they also lean the draw toward a category and widen the offer.",
+        "Keep a named rite's promise: load a vector naming a gene, and the recipient walks out alive with it.",
+        "Offer the lottery as a gamble the player opts into. The capsule prints its domain, four genes of comparable worth appear in full, and one must be taken. Walking the pawn away is not an exit, and a pawn never draws a gene it already carries.",
+        "Lock the final rite with a stated reason: \"X has not claimed a title\". Once through, the founder goes straight to the Administrator."
+      ],
+      "story_cannot": [
+        "Gate a ritual role on certainty in XML alone. It takes one role class (~20 lines), and nothing re-checks certainty once the rite has started.",
+        "Give the worst lottery band teeth. Tier 1 holds one drawable gene, so the bottom band always widens into the next (#31). `Social` holds one gene, so a category is a lean, never a guarantee.",
+        "Skip the fuel refusal. Our own drain calls `Pawn.Kill`, which Deathless does not stop.",
+        "Use a null-gene vector before the lottery ships: it silently consumes the rite and reports success (**T-64**).",
+        "Run two offers at once. No one can enter while an offer is pending. An offer opened behind an unanswered Administrator dialog is invisible and can time out into a gene nobody saw (open build task). Under Multiplayer the offer re-shows only while its map is being drawn.",
+        "Keep `VRE_Transcendent` rite-only yet. Random genepacks, captured `VRE_Archon` pawns and More Archotech Garbage leak it (sealing is #119's). The pool also offers `VRE_InnatePsylink`, a psylink by gene (#31).",
+        "Gate the lottery to Industrial or convert hoarded Archon capsules. That is era and progression work, not priced here. The optional anima-teaching encounter is [`ENCOUNTERS.md`](specs/ENCOUNTERS.md)."
+      ],
+      "spec": [
+        "docs/specs/ALTAR.md"
+      ]
+    },
+    {
+      "id": "RELIGION",
+      "title": "Religion",
+      "group": "Faith",
+      "parent_card": null,
+      "anchor": "docs/CAPABILITIES.md#religion",
+      "possible": "Yes. Every behaviour has a verified route. The only thing no route gives is a revolt that splits off a new lasting faction, which the requirement forbids anyway.",
+      "multiplayer": "With work. The Schism's writes, and a revolt's pawn and leader generation, must fire from a quest signal or a synced command. Comms options must be disabled rather than omitted, and must host their action on an allowed type. Several compositions still owe a two-client run (#16).",
+      "story_can": [],
+      "story_cannot": [],
+      "spec": []
+    },
+    {
+      "id": "REVERENCE",
+      "title": "Religion · Reverence and institutions",
+      "group": "Faith",
+      "parent_card": "RELIGION",
+      "anchor": "docs/CAPABILITIES.md#religion--reverence-and-institutions",
+      "possible": "Yes.",
+      "multiplayer": "Yes [I] for the number. The hook fires inside simulation, and one two-client check is owed (#16). Gated comms actions need work: the enabled action must be on an allowed type, and gated options are disabled, never omitted.",
+      "story_can": [
+        "Make Reverence personal. It moves when a believer goes home, such as a converted visitor or a prisoner released as a believer, or when a deed is credited to the founders. Offer it as a quest reward the player chooses.",
+        "Show the carrot. Every Reverence gate appears greyed, with its threshold and the current value. Band crossings arrive as letters.",
+        "Make governments react to the faith. At low Goodwill and high Reverence a government is wary: gains shrink and losses deepen. Past the top band it is won over. This works per faction, optionally with a named reason line.",
+        "Plant a church or monastery by spending Goodwill behind a Reverence gate. It holds Reverence up, is suppressed with a letter when the host turns hostile, and is restored on peace. A hostile government can be made worse than neglect (a negative suppression factor). Destroying institutions is also buildable, and the spec prices a donor for it."
+      ],
+      "story_cannot": [
+        "Give Reverence or institutions to a faction the world was not created with (T-07).",
+        "Credit vanilla pilgrims. They belong to a throwaway hidden faction, so the number would vanish.",
+        "Stop a stored decay offset drifting. The spec's build recomputes it. Shipped without the clamp, institutions quietly make Reverence rise on its own.",
+        "Fail loudly. If the leaving-map hook or the suppression hook is missed, nothing logs; only the number shows it.",
+        "Own the storyteller's attention weight (`PRESSURE.md`) or the global view's surface (#119, #61)."
+      ],
+      "spec": [
+        "docs/specs/RELIGION.md"
+      ]
+    },
+    {
+      "id": "CHURCH",
+      "title": "Religion · The Church",
+      "group": "Faith",
+      "parent_card": "RELIGION",
+      "anchor": "docs/CAPABILITIES.md#religion--the-church",
+      "possible": "Yes.",
+      "multiplayer": "With work. The betrayal write must force a goodwill recalculation, or a player joining in the window diverges [I]. The ending's refiring timer is \"with work\", and one click ends the run for both players only when the accepter is on a map (#191). Everything else is Yes [I], with two-client checks owed (#16).",
+      "story_can": [
+        "Run the Church on vanilla Royalty. Quests pay Exaltation, and a rung brings a bestower and honour guard, or the founders' own rite.",
+        "Let titles open permits and Church trade. Titled colonists get decrees whose failure costs mood, Exaltation or Goodwill.",
+        "Put the temptation at \"Accept\". Each deed's reward rows are its credit, with consequences riding on the row.",
+        "Restrict titles to founders, to a kind, or to anyone.",
+        "Betray in one authored write. The Church turns hostile for good with vanilla's letter. Decrees and perks end; titles stay.",
+        "Offer the Church's own ending while the top title is held, closing for good at betrayal or the orbital reveal. The run ends at the *Accept* click."
+      ],
+      "story_cannot": [
+        "Rename the Church at identifier level, or swap its def to present it per era (T-36, T-98). Its name, clergy and creed exist only in a world generated after the patch. It must be exempt from World Tech Level's roster strip (T-54).",
+        "Grant a title without psylinks unless every Church title's psylink level is zeroed. Even then, VPE gives an honoree with no psylink one level (`PSYCHIC.md` R9, C#).",
+        "Change a quest's credit options once offered. Options freeze at generation, only one choice per quest is visible, and acceptance requirements apply to the whole quest.",
+        "Keep Church trade and steerable Church techprints open while the Church is hostile. After betrayal they close for good without VFED.",
+        "Keep titles founders-only for free. The first point of Exaltation is a title (T-184), and a dead founder's favour passes to an heir (T-183).",
+        "Take both players out with one click when the offer is accepted from a caravan, unless we register the dialog with the MP API (T-193)."
+      ],
+      "spec": [
+        "docs/specs/RELIGION.md"
+      ]
+    },
+    {
+      "id": "PSYCHIC",
+      "title": "The psychic track",
+      "group": "Faith",
+      "parent_card": null,
+      "anchor": "docs/CAPABILITIES.md#the-psychic-track",
+      "possible": "Partly. A founder-only psycaster path is buildable with any of six keys. \"Rank comes only from the altar\" does not survive Vanilla Psycasts Expanded as shipped until its XP loop is cut or gated, or VPE is dropped.",
+      "multiplayer": "Yes (spec), condition: locks act on saved per-pawn state inside synced simulation. The settings-only cut (route B) is per-install (T-18), and keys F1 and F5 inherit the founder record's gap under multifaction.",
+      "story_can": [
+        "Make each rank a rite at the altar, and tell authored breakthroughs as altar rites.",
+        "Keep meditation meaningful as cultivation. Under D2 pawns climb to a ceiling only the altar raises; under D3 meditation buys psycasts, never rank.",
+        "Open a founders-only path from day one (F1), at an altar beat (F2), or as a postgame tier after transcendence (F3).",
+        "Give VPE's \"archotech\" path to the Church's people (F4a) or take it for the founders (F4b). Under F4b the Church loses its only native path.",
+        "Give the Church psychics at fixed levels that never climb, and decide whether a captured enemy caster keeps its powers.",
+        "Turn the neuroformer into an inert trade good, or an altar reagent in the fiction."
+      ],
+      "story_cannot": [
+        "Separate psycaster level from psylink rank under VPE. They are one number, and every psyfocus gain is XP: meditation, caravans, go-juice, the founders' own deathrest.",
+        "Keep a path locked against psytrainers and psyrings unless the path is sealed (T-167). A lost key parks the path; it never revokes it or refunds points (T-168).",
+        "Keep neuroformers out of quest rewards by tag. A pity timer injects them (T-170), and the vanilla-looking psylink chokepoint is not one (T-169).",
+        "Stop VPE giving a bestowing honoree with no psylink one level, short of C# or holding no ceremonies (R9).",
+        "Use VPE's max-level setting as a cap. It also caps the altar.",
+        "Use genes as founder identity (T-111). Hemosage is open to every convert. Deleting the founder record also closes F1's path."
+      ],
+      "spec": [
+        "docs/specs/PSYCHIC.md"
+      ]
+    },
+    {
+      "id": "TRANSCENDENCE",
+      "title": "Transcendence",
+      "group": "Faith",
+      "parent_card": null,
+      "anchor": "docs/CAPABILITIES.md#transcendence",
+      "possible": "Yes. The claimed title, its gate on the final rite, the once-only Administrator scene and three endings are all specced.",
+      "multiplayer": "Yes (spec, on reading), condition: *Enter*'s action is hosted on an allowed type and both options close the dialog. One dev check is owed for the claim, and Verification 3 for the Administrator. Ending the game for both players together is Unknown until one two-client run (#182); a deferred-exit fallback exists.",
+      "story_can": [
+        "Let the player name the founder in their own words. The name rides with the founder in the inspect pane and in any letter or dialogue we write.",
+        "Make the claim, an act of Self, the key to the final rite. A ritual or quest beat may open the same dialog (unverified).",
+        "Keep a Church title beside the epithet, or strip it at the claim (VFED shows the shape).",
+        "Meet the Administrator once per founder. *Stay* keeps the founder transcendent and playing.",
+        "Let the two founders transcend separately: credits then play (A) leaves the second arc open.",
+        "End the campaign with credits only, credits then the menu, or one shared game-over."
+      ],
+      "story_cannot": [
+        "Show the epithet on the colonist bar or the in-world map label on route A alone. The nickname (N) or a display patch (C) puts it there; the bar's name slot holds about a dozen characters.",
+        "Accept more than 27 characters through the vanilla dialog without overriding its cap.",
+        "Re-offer the choice. The Administrator appears once, with no standing re-offer at the altar.",
+        "Pause the other player's colony while a founder types or while credits roll under Multiplayer (T-53).",
+        "End both players' games together with route B. The host skipping the credits closes the server on the other player mid-roll.",
+        "Show the game-over dialog to a player looking at another map, or end anything through `GameEnder` (T-176).",
+        "Survive dropping a comp from the record hediff (T-34), or building *Enter* without closing the dialog (T-97, which re-offers the ending forever). No field here tracks founder psylink progression; the capability is in `PSYCHIC.md` (#31)."
+      ],
+      "spec": [
+        "docs/specs/TRANSCENDENCE.md"
+      ]
+    },
+    {
+      "id": "POLITICS",
+      "title": "Faction politics",
+      "group": "Politics",
+      "parent_card": null,
+      "anchor": "docs/CAPABILITIES.md#faction-politics",
+      "possible": "Yes, with one named exception: no peace with a permanent enemy (Glitterites, Archons) while our own `permanentEnemy` flag stands. The spec marks that one part Partly. It is not a requirement clause failing, because requirements/TERRITORY puts the Glitterites *\"outside diplomacy\"*, and the spec records that both defs' comments state the flag keeps them out of diplomacy (§ Ending a losing war, route L).",
+      "multiplayer": "Yes for the ripple, the demand, the standing gate, caravan route B and the ways out of a war. With work for caravan route A (a saved cooldown), for any comms-console action of ours (a whitelisted host type, and a fixed option order, T-82) and for route L's mid-campaign def swap. No for caravan route C and for RimPacts. Two-client checks are owed on #16.",
+      "story_can": [
+        "Put two rivals' demands in one letter. The player sees *serve the Reach: +Reach, −Clans* beside the opposite branch and picks one.",
+        "Have any demand name a third faction whose goodwill moves when it resolves, with a message naming who changed and why.",
+        "Ask for something pointed: supplies delivered to a tile, a colonist lent for 30 days (walked there and back before pods exist), someone with Medicine 10, an embargo on a rival, a bandit camp cleared, refugees hosted, or a prisoner released.",
+        "Make candour a reward. Who a faction hates is hidden until standing, a quest, a comms question or a battle earns it, and a locked row says what earns it.",
+        "Fire a retaliation raid, or a follow-up quest, from the refused faction when an offer lapses. The refusal can also win standing with that faction's enemies.",
+        "Spread gossip. Once the seed table says who loves whom, kidnapping one faction's pawn reaches its friends over the following day, as one letter per faction.",
+        "Hang a visible carrot on a quest, a comms option or a rite: *need 60 Reverence with the Reach (now 42)*. The gate can check one axis and charge another, the way vanilla's comms asks charge Goodwill.",
+        "Stage road encounters: a friendly settlement offers trade, a hostile one ambushes the caravan or demands a toll.",
+        "Lose a war: sue for peace, pay reparations or cede a holding, or become a tributary whose missed payment is war the same day."
+      ],
+      "story_cannot": [
+        "NPC factions are never allied in a fresh world. The alliance ripple does nothing until someone authors the seed table (T-100), and seeded edges never drift on their own.",
+        "Goodwill does not land as written:\n- A change toward a faction's natural goodwill lands 25% larger, and Reverence scaling moves it too (#160 route A).\n- A write against a permanent enemy, a quest-locked pair or a faction at its cap fails silently.\n- A *positive* change fails silently during an assault on that faction's settlement (T-110).\nChurch↔Glitterites and Church↔Free Companies can never change.",
+        "Ally and Hostile are latches, not numbers. A faction turns hostile at −75 and becomes neutral again only at 0, so a gate on \"Ally\" is not a gate on \"goodwill ≥ 75\".",
+        "An offer cannot be declined; refusal means letting it expire. The stated consequence is prose, and nothing keeps it in sync with what actually fires.",
+        "A demand cannot ask the player to defend a world-map route; routes are never threatened (#174). A prisoner gifted back by caravan arrives factionless unless patched (T-196), and a release by caravan never sends `Released` (T-197). A demand copied from vanilla's loan (L0) pays at hand-over and scores all lent colonists dying as a success (T-198).",
+        "Relations between NPC factions change silently, with no letter (T-199). NPC factions fighting on the colony's map reveal their enmity, and that cannot be withheld.",
+        "Research and trader stock cannot be locked behind standing on their own screens. Reach them through a quest, a dialogue option or a rite.",
+        "Caravan meetings have gaps:\n- Route A misses parked caravans, and reaches Vehicle Framework caravans only with a second patch (T-117).\n- Route B cannot guarantee a meeting, and skips biomes missing from its list (T-119).\n- Aircraft in flight meet nobody, and no encounter fires on the settlement's own tile.\n- Vanilla's random ambushes still fire beside friendly settlements unless they are suppressed.",
+        "\"Losing\" means nothing to the engine; we write the predicate. There is no subordinate relation, only Hostile, Neutral and Ally. Vanilla has no trade price that follows goodwill; that takes a patch (TERRITORY OS-5)."
+      ],
+      "spec": [
+        "docs/specs/POLITICS.md"
+      ]
+    },
+    {
+      "id": "TERRITORY",
+      "title": "Territory",
+      "group": "Politics",
+      "parent_card": null,
+      "anchor": "docs/CAPABILITIES.md#territory",
+      "possible": "Yes. Every clause has a verified route, though nothing on disk delivers any tier as it ships. The exception is a settlement due to change hands at the era advance while the players' gravship is parked on it. No route satisfies both ERA.md's single act and #118's \"never while its map is loaded\". GV-1 stops the case arising; GV-7 waits it out.",
+      "multiplayer": "With work. Every player act must be a synced commit: a float-menu option on a world object, or a quest accept or choice. Never a gizmo, a dialog or a modded letter (T-80, T-96). Every roll is seeded (§0 P4). VEF outposts need §2's harness unless OR-5 is taken. RimPacts and FT&V as shipped are No.",
+      "story_can": [
+        "*Bob runs the outpost now.* The colony sells named pawns to a place and gets goods in kind. Deliveries come by pack animal before pods exist, and follow the gravship home without extra work. A scouting outpost also reveals the settlements around it.",
+        "A raiders' camp appears near an outpost with a deadline. Break it, or the outpost falls into a ruin with loot, which the colony can rebuild for a price.",
+        "Make one named fortress a hand-built citadel with authored defenders at any tier, while the rest of that faction's bases are generated. Defenders can call reinforcements, and killing the caller stops them.",
+        "A holding pays in character: a slaver tribe sends newly generated slaves, an armourer sends arms. The debt and the next due date show on the tile.",
+        "The colony learns a place by going there: visiting, trading, passing nearby or scouting. A letter marks the moment. The fact then shows on hover, in a tab, in world search and in the Attack menu.",
+        "Endings are beats. *Return it or we come*, then a battle at the holding, forfeit if ignored. A province's grievances can be answered one event at a time.",
+        "A sworn people answers a signal fire in the Neolithic and lends a specialist who leaves when the term ends. It offers help on its own schedule, and opens more at higher Reverence bands. Goodwill pays; Reverence opens.",
+        "Call the player to an ally's battle at a tile: fight alongside, or hear who won. The site shape puts it on a tile near the ally, at Medium rather than Build B's Hard."
+      ],
+      "story_cannot": [
+        "A settlement's map does not persist. The garrison returns at full strength, so an assault is won in one sitting (SM-4 can carry losses; #174 does not require it). Vanilla garrisons are 1150–1600 points at any tier, and no generator places turrets or mortars below Industrial (T-30).",
+        "A holding is never a map the player runs. Under R1 it has no people.",
+        "No faction can be created mid-game (T-07), and no settlement can be left factionless. A lost or released holding passes to a randomly drawn existing faction (#174). Handing it back to its parent, a buy-back, the victor or the attacker does not conform as written.",
+        "A settlement's only identity that survives replacement is its tile; conquest or recreation mints a new ID (T-140).",
+        "The era advance silently re-tiers holdings unless the tier is stored under R1 (T-145). Never write `FactionDef.techLevel` (T-11).",
+        "Taking a faction's last settlement defeats it. It then takes no goodwill and is never drawn by the storyteller, though an authored raid that names it still fires.",
+        "A transfer with a map open fake-defeats the settlement (T-179), or loses or kidnaps the party. A parked gravship's takeoff erases the NPC settlement (T-180). An attack order is not re-checked against a new owner, so it can land on an ally (T-138).",
+        "A bare destroy drops an outpost's pawns and goods (T-151). An outpost adopts any map made on its tile (T-150).",
+        "There is no vassal relation in the engine. A sworn faction is held at Ally, and Ally is a latch. There are no titles but the Church's, and a titleless permit is permanent until we remove it (T-146). Comms military aid refuses factions below Industrial. Orbit refuses any surface faction whose `arrivalLayerWhitelist` does not list it (T-48).",
+        "Any caravan arrival action of ours (attend, release, loot) must override `StillValid`, which defaults to true (T-139).",
+        "An aid site's battle is simulated only while the player is there; unattended, the outcome is always a roll. Only Build B puts the ally's settlement itself at stake. An ally-owned site reports its enemies defeated before any arrive (T-187), raids a caravan with a substituted faction on its default timer (T-188), and a vanilla raid will not carry a non-hostile attacker (T-189)."
+      ],
+      "spec": [
+        "docs/specs/TERRITORY.md"
+      ]
+    },
+    {
+      "id": "PRESSURE",
+      "title": "Pressure",
+      "group": "Politics",
+      "parent_card": null,
+      "anchor": "docs/CAPABILITIES.md#pressure",
+      "possible": "Yes. Strength, frequency, composition, declared raid objectives and per-faction hostility all have verified seams. The exception is that hostility cannot keep growing *inside* goodwill. Whether the seams compose into \"hard for two demigod founders\" is [I] until played.",
+      "multiplayer": "Yes (spec), condition: nothing new is saved, the strength postfix never draws `Rand` (UI calls it), and objective targets are chosen inside incident execution, reading no UI state or settings. Hostility route E is With work. Two-client checks are owed (Verification 9, 14).",
+      "story_can": [
+        "Grow raids with time spent in an era. They flatten at the era's ceiling and never reset at a boundary. Military capability, Reverence and enemy count add to that, and wealth is a minor share.",
+        "Title the letter with the raid's aim: *\"Slave raid: the Ashen Clans\"*, *\"Livestock raid\"*, *\"Stores raid\"*. The player reads it before the group arrives, and the group leaves once it has what it came for.",
+        "Declare war as a beat. The war is a quest with its own cadence and size, visible in the Quests tab, that ends when a signal says so. Peace or a bought truce can be that signal.",
+        "A hated faction comes more often and in greater numbers, and can besiege or breach at strengths where others cannot. Taking its settlements turns it hostile at once, with the reason shown on the faction card.",
+        "Send an authored raid of fixed faction, size and strategy in XML. It can be kept out of every random pool, and the storyteller quieted around it.",
+        "Give chosen factions fewer, better pawns. An era's signature raid appears only above a strength band.",
+        "Bring pilgrims, offerings and volunteers as Reverence rises, alongside the bigger threats."
+      ],
+      "story_cannot": [
+        "Hatred cannot live in the goodwill number. It is clamped at −100, and nothing in vanilla reads how hostile a faction is past −75. Vanilla's natural drift takes about 400 in-game days to turn a faction hostile and stops at −80. A war needs a goodwill cap (route D) or a direct write.",
+        "A declared war (route C) bypasses quiet windows and planet-layer limits, because its raids are `forced`. It sends only raids and mech clusters, and only against a map. Disable it around a beat.",
+        "Raids aimed at stockpiled items, crops, walls or doors silently do nothing (T-88). A partial-herd objective ends only when the whole herd is dead unless we write our own trigger (T-89). A strategy without `arriveModes` is never picked (T-90). An authored raid without `forcedPointsRange` has zero points (T-65).",
+        "Raid strategies have no `minTechLevel` (T-16). Era gates go through per-faction curves, pawn kinds or the worker.",
+        "The Schism's deserters cannot raid through the storyteller without an Empire-titled pawn present, so their raids must be authored (T-14, T-91). An emptied raid pool stops raids with no message (T-17).",
+        "Inserting a comp into a shared storyteller re-rolls every later comp's schedule (T-66). In orbit only 18 of 91 incidents are legal (T-48). Route A's heavier raids drop the same loot.",
+        "Trace never scales ordinary raids. Pursuit raids and their timing belong to TRACE.md (#56)."
+      ],
+      "spec": [
+        "docs/specs/PRESSURE.md"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "ALTAR-01",
+      "card": "ALTAR",
+      "text": "Charge that never spoils; the donor dies, the recipient lives",
+      "possible": "Yes, built [V]",
+      "multiplayer": "Yes (the altar's synced tick)",
+      "spec_link": [
+        "docs/specs/ALTAR.md#the-three-asserted-and-nowhere-verified-altar-behaviours-are-built-and-they-work"
+      ],
+      "notes": [],
+      "line": 100,
+      "key": "ALTAR\u001fCharge that never spoils; the donor dies, the recipient lives"
+    },
+    {
+      "id": "ALTAR-05",
+      "card": "ALTAR",
+      "text": "An opt-in lottery with genuinely bad outcomes, and a drawn offer the player must take",
+      "possible": "Yes (mechanism). The bad band has no teeth until tier 1 holds more genes",
+      "multiplayer": "Yes (spec, on reading), condition: one two-client run (Verification 4)",
+      "spec_link": [
+        "docs/specs/ALTAR.md#the-build--the-repeatable-lottery"
+      ],
+      "notes": [],
+      "line": 104,
+      "key": "ALTAR\u001fAn opt-in lottery with genuinely bad outcomes, and a drawn offer the player must take"
+    },
+    {
+      "id": "REVERENCE-03",
+      "card": "REVERENCE",
+      "text": "Shown beside Goodwill; gated diplomacy visible before it opens",
+      "possible": "Yes. The faction info card is not an option",
+      "multiplayer": "With work: the enabled option's action must be on an allowed type",
+      "spec_link": [
+        "docs/specs/RELIGION.md#6-where-the-player-sees-it"
+      ],
+      "notes": [],
+      "line": 147,
+      "key": "REVERENCE\u001fShown beside Goodwill; gated diplomacy visible before it opens"
+    },
+    {
+      "id": "REVERENCE-04",
+      "card": "REVERENCE",
+      "text": "Reverence scales Goodwill: a wary middle, a sharp top, losses too",
+      "possible": "Yes",
+      "multiplayer": "Yes",
+      "spec_link": [
+        "docs/specs/RELIGION.md#reverence-scales-the-goodwill-a-faction-gains"
+      ],
+      "notes": [],
+      "line": 148,
+      "key": "REVERENCE\u001fReverence scales Goodwill: a wary middle, a sharp top, losses too"
+    },
+    {
+      "id": "CHURCH-06",
+      "card": "CHURCH",
+      "text": "Betrayal is final: the Church is permanently hostile",
+      "possible": "Yes (the latch). The threshold firing the authored mission is not routed in RELIGION. The seam is ENCOUNTERS T4, our storyteller comp that offers a quest once its condition holds [I], and revolt route A's quest eligibility already reads Reverence. The beat itself is #119's",
+      "multiplayer": "Yes (spec), condition: the bit's write calls `RecalculateAll`",
+      "spec_link": [
+        "docs/specs/RELIGION.md#6-betrayal--the-permanent-hostility-latch"
+      ],
+      "notes": [],
+      "line": 180,
+      "key": "CHURCH\u001fBetrayal is final: the Church is permanently hostile"
+    },
+    {
+      "id": "CHURCH-07",
+      "card": "CHURCH",
+      "text": "The Church's ending: sanctioned apotheosis offered at the top title, and accepting ends the run for both players",
+      "possible": "Yes. Accept is a synced command, and a quest part listening to its `Initiate` signal runs inside it on both machines; the command's map context follows the accepter (T-193)",
+      "multiplayer": "With work: one click ends the run for both only with a spawned accepter (the two-client run is shared with TRANSCENDENCE); otherwise each player leaves on their own click, or we sync the dialog through the MP API",
+      "spec_link": [
+        "docs/specs/RELIGION.md#7-cost",
+        "docs/specs/RELIGION.md#8-the-churchs-ending--accepting-ends-the-run-for-both-players"
+      ],
+      "notes": [
+        "Vanilla `QuestNode_EndGame` is *not a route*: it rolls credits and play continues"
+      ],
+      "line": 181,
+      "key": "CHURCH\u001fThe Church's ending: sanctioned apotheosis offered at the top title, and accepting ends the run for both players"
+    },
+    {
+      "id": "PSYCHIC-02",
+      "card": "PSYCHIC",
+      "text": "Meditation or cultivation does not raise rank",
+      "possible": "Partly: not under VPE as shipped",
+      "multiplayer": "Yes. B needs work (T-18)",
+      "spec_link": [
+        "docs/specs/PSYCHIC.md#what-raises-psylink-rank-besides-the-altar"
+      ],
+      "notes": [
+        "Spec recommends D2 + C + I1"
+      ],
+      "line": 267,
+      "key": "PSYCHIC\u001fMeditation or cultivation does not raise rank"
+    },
+    {
+      "id": "PSYCHIC-07",
+      "card": "PSYCHIC",
+      "text": "Psychic ranks carry names or titles",
+      "possible": "Yes. XML alone reaches only the tooltip: the psylink row ignores stage labels (T-213)",
+      "multiplayer": "Yes [I] (display only, or written in simulation)",
+      "spec_link": [
+        "docs/specs/PSYCHIC.md#open-questions-1"
+      ],
+      "notes": [],
+      "line": 272,
+      "key": "PSYCHIC\u001fPsychic ranks carry names or titles"
+    },
+    {
+      "id": "TRANSCENDENCE-03",
+      "card": "TRANSCENDENCE",
+      "text": "The claimed title is seen in play",
+      "possible": "Yes. A reaches the inspect-pane header, the Bio tab and grammar; the colonist bar and map label need N or C",
+      "multiplayer": "Yes",
+      "spec_link": [
+        "docs/specs/TRANSCENDENCE.md#5-where-the-player-sees-it"
+      ],
+      "notes": [],
+      "line": 305,
+      "key": "TRANSCENDENCE\u001fThe claimed title is seen in play"
+    },
+    {
+      "id": "POLITICS-08",
+      "card": "POLITICS",
+      "text": "Standing buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction",
+      "possible": "Yes. Vanilla shows NPC↔NPC relations in one standing place, the Factions tab's \"Enemy of\" strip, and shows hostility only; it never displays an alliance",
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "spec_link": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "notes": [
+        "Spec recommends RK-2 (+ RK-3), RD-1 + RD-2, with event surfaces counted as reveals"
+      ],
+      "line": 350,
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction"
+    },
+    {
+      "id": "TERRITORY-01",
+      "card": "TERRITORY",
+      "text": "An ally under attack names a tile and a short window: attend and it is a real fight, decline and it resolves without the player and reports the outcome",
+      "possible": "Yes, in two shapes: over the ally's settlement (Build B), or on an ally-owned site at a tile near it (AS)",
+      "multiplayer": "Build B: Yes (spec), condition: created from the world tick or a synced incident, the roll seeded (§0 P4), attendance a float-menu option (§0 P5) [I]. AS: Yes [I]: quest accept is synced, attendance is vanilla's visit-site option, the roll is P4",
+      "spec_link": [
+        "docs/specs/TERRITORY.md#1-the-ally-aid-battle--build-it-against-a-read-reference",
+        "docs/specs/TERRITORY.md#1a-the-site-shape--the-battle-on-an-ally-owned-site-at-a-tile-e-queste-site"
+      ],
+      "notes": [
+        "VFE Medieval 2's raid-on-fail is not a route: its raiders land on a player map. Build A (ship FT&V) was declined on #8 and is out of scope (#35)"
+      ],
+      "line": 399,
+      "key": "TERRITORY\u001fAn ally under attack names a tile and a short window: attend and it is a real fight, decline and it resolves without the player and reports the outcome"
+    },
+    {
+      "id": "TERRITORY-13",
+      "card": "TERRITORY",
+      "text": "A sworn faction owes services, not goods, and the player can ask as well as receive",
+      "possible": "Yes",
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "spec_link": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "notes": [
+        "The routes compose"
+      ],
+      "line": 411,
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive"
+    },
+    {
+      "id": "PRESSURE-05",
+      "card": "PRESSURE",
+      "text": "A beat, a refused demand or the pursuit can send a raid of fixed faction, size and strategy",
+      "possible": "Yes",
+      "multiplayer": "Yes",
+      "spec_link": [
+        "docs/specs/PRESSURE.md#4-composition--quality-not-only-quantity"
+      ],
+      "notes": [],
+      "line": 453,
+      "key": "PRESSURE\u001fA beat, a refused demand or the pursuit can send a raid of fixed faction, size and strategy"
+    },
+    {
+      "id": "PRESSURE-10",
+      "card": "PRESSURE",
+      "text": "Players can broadly see what is raising pressure",
+      "possible": "Yes [I]. A costed piece only, with no section",
+      "multiplayer": "Unknown. The spec is silent; a design and a two-client check would settle it",
+      "spec_link": [
+        "docs/specs/PRESSURE.md#cost"
+      ],
+      "notes": [],
+      "line": 458,
+      "key": "PRESSURE\u001fPlayers can broadly see what is raising pressure"
+    }
+  ],
+  "routes": [
+    {
+      "id": "ALTAR-01.A",
+      "capability": "ALTAR-01",
+      "label": "A (already built)",
+      "group": null,
+      "summary": "The charge lives in the altar and has no decay path. A prisoner or slave is fuel and dies. Anyone else is a recipient and leaves alive",
+      "text": "The charge lives in the altar and has no decay path. A prisoner or slave is fuel and dies. Anyone else is a recipient and leaves alive · `ArchinityAltar.dll` · Easy (mapped: nothing to build)",
+      "carrier": "`ArchinityAltar.dll`",
+      "kind": null,
+      "kind_text": null,
+      "weight": "easy",
+      "weight_text": "Easy (mapped: nothing to build)",
+      "weight_mapped": true,
+      "multiplayer": "Yes (the altar's synced tick)",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/ALTAR.md#the-three-asserted-and-nowhere-verified-altar-behaviours-are-built-and-they-work"
+      ],
+      "line": 100,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "explicit",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "ALTAR\u001fCharge that never spoils; the donor dies, the recipient lives\u001fL:A (already built)\u001f"
+    },
+    {
+      "id": "ALTAR-05.A",
+      "capability": "ALTAR-05",
+      "label": "A (as specced)",
+      "group": null,
+      "summary": "One roll picks a tier band.",
+      "text": "One roll picks a tier band. Four genes, plus facility extras, are drawn by weight; the capsule's category is a weight, never a filter. The offer is a vanilla `Dialog_NodeTree` with no Close option. The recipient is held until the player chooses, and a deadline picks at random · our C#, no Harmony · Medium (mapped)",
+      "carrier": "our C#, no Harmony",
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "our C#, no Harmony",
+      "weight": "medium",
+      "weight_text": "Medium (mapped)",
+      "weight_mapped": true,
+      "multiplayer": "Yes (spec, on reading), condition: one two-client run (Verification 4)",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": true,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/ALTAR.md#the-build--the-repeatable-lottery"
+      ],
+      "line": 104,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "explicit",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "ALTAR\u001fAn opt-in lottery with genuinely bad outcomes, and a drawn offer the player must take\u001fL:A (as specced)\u001f"
+    },
+    {
+      "id": "ALTAR-05.B",
+      "capability": "ALTAR-05",
+      "label": "B",
+      "group": null,
+      "summary": "Multiplayer's `GrowthMomentSession` shape plus a `Multiplayer.API` reference",
+      "text": "Multiplayer's `GrowthMomentSession` shape plus a `Multiplayer.API` reference · C# · weight not stated · *fallback only if the two-client check fails*. Ruled out: a custom `ChoiceLetter` (unsynced) and VQE Ancients' window (desyncs)",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": null,
+      "weight_text": "weight not stated",
+      "weight_mapped": false,
+      "multiplayer": "Yes (spec, on reading), condition: one two-client run (Verification 4)",
+      "not_recommended": false,
+      "marks": [
+        "fallback only if the two-client check fails"
+      ],
+      "as_specced": false,
+      "fallback_only": true,
+      "composes_with": [],
+      "source": [
+        "docs/specs/ALTAR.md#the-build--the-repeatable-lottery"
+      ],
+      "line": 104,
+      "provenance": {
+        "weight": "unstated",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "ALTAR\u001fAn opt-in lottery with genuinely bad outcomes, and a drawn offer the player must take\u001fL:B\u001f"
+    },
+    {
+      "id": "REVERENCE-03.D1",
+      "capability": "REVERENCE-03",
+      "label": "D1",
+      "group": null,
+      "summary": "A strip on the Factions-tab row. Real, but contested by three mods and needing a re-check each update",
+      "text": "A strip on the Factions-tab row. Real, but contested by three mods and needing a re-check each update · Medium (mapped)",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium (mapped)",
+      "weight_mapped": true,
+      "multiplayer": "With work: the enabled option's action must be on an allowed type",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#6-where-the-player-sees-it"
+      ],
+      "line": 147,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fShown beside Goodwill; gated diplomacy visible before it opens\u001fL:D1\u001f"
+    },
+    {
+      "id": "REVERENCE-03.Own-political-tab",
+      "capability": "REVERENCE-03",
+      "label": "Own political tab",
+      "group": null,
+      "summary": "Own political tab",
+      "text": "· a vanilla `MainButtonDef` + `MainTabWindow`, no conflict · C# + XML · Medium (the shape of POLITICS RD-7) · the surface is #119's",
+      "carrier": "a vanilla `MainButtonDef` + `MainTabWindow`, no conflict",
+      "kind": [
+        "xml",
+        "cs"
+      ],
+      "kind_text": "C# + XML",
+      "weight": "medium",
+      "weight_text": "Medium (the shape of POLITICS RD-7)",
+      "weight_mapped": false,
+      "multiplayer": "With work: the enabled option's action must be on an allowed type",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#6-where-the-player-sees-it"
+      ],
+      "line": 147,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "explicit",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fShown beside Goodwill; gated diplomacy visible before it opens\u001fL:Own political tab\u001f"
+    },
+    {
+      "id": "REVERENCE-03.D2",
+      "capability": "REVERENCE-03",
+      "label": "D2",
+      "group": null,
+      "summary": "A greyed comms option: \"requires N Reverence — currently M\"",
+      "text": "A greyed comms option: \"requires N Reverence — currently M\" · Medium (mapped)",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium (mapped)",
+      "weight_mapped": true,
+      "multiplayer": "With work: the enabled option's action must be on an allowed type",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#6-where-the-player-sees-it"
+      ],
+      "line": 147,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fShown beside Goodwill; gated diplomacy visible before it opens\u001fL:D2\u001f"
+    },
+    {
+      "id": "REVERENCE-04.A",
+      "capability": "REVERENCE-04",
+      "label": "A",
+      "group": null,
+      "summary": "a reason-aware scaler at the one goodwill choke point",
+      "text": "a reason-aware scaler at the one goodwill choke point · Medium (spec recommends)",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium (spec recommends)",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#reverence-scales-the-goodwill-a-faction-gains"
+      ],
+      "line": 148,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fReverence scales Goodwill: a wary middle, a sharp top, losses too\u001fL:A\u001f"
+    },
+    {
+      "id": "REVERENCE-04.A2",
+      "capability": "REVERENCE-04",
+      "label": "A2",
+      "group": null,
+      "summary": "A plus a named \"why\" line per change",
+      "text": "A plus a named \"why\" line per change · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#reverence-scales-the-goodwill-a-faction-gains"
+      ],
+      "line": 148,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fReverence scales Goodwill: a wary middle, a sharp top, losses too\u001fL:A2\u001f"
+    },
+    {
+      "id": "REVERENCE-04.B",
+      "capability": "REVERENCE-04",
+      "label": "B",
+      "group": null,
+      "summary": "scale vanilla's adjuster; reason-blind",
+      "text": "scale vanilla's adjuster; reason-blind · Medium · *not recommended* unless every change counts",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": true,
+      "marks": [
+        "not recommended"
+      ],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#reverence-scales-the-goodwill-a-faction-gains"
+      ],
+      "line": 148,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fReverence scales Goodwill: a wary middle, a sharp top, losses too\u001fL:B\u001f"
+    },
+    {
+      "id": "REVERENCE-04.C",
+      "capability": "REVERENCE-04",
+      "label": "C",
+      "group": null,
+      "summary": "scale at each source",
+      "text": "scale at each source · Medium→Hard",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium-hard",
+      "weight_text": "Medium→Hard",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#reverence-scales-the-goodwill-a-faction-gains"
+      ],
+      "line": 148,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fReverence scales Goodwill: a wary middle, a sharp top, losses too\u001fL:C\u001f"
+    },
+    {
+      "id": "REVERENCE-04.D",
+      "capability": "REVERENCE-04",
+      "label": "D",
+      "group": null,
+      "summary": "Reverence as natural goodwill",
+      "text": "Reverence as natural goodwill · *partial, not recommended alone*: cannot reduce a gain",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": null,
+      "weight_text": null,
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": true,
+      "marks": [
+        "partial, not recommended alone"
+      ],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#reverence-scales-the-goodwill-a-faction-gains"
+      ],
+      "line": 148,
+      "provenance": {
+        "weight": "unstated",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fReverence scales Goodwill: a wary middle, a sharp top, losses too\u001fL:D\u001f"
+    },
+    {
+      "id": "REVERENCE-04.E",
+      "capability": "REVERENCE-04",
+      "label": "E",
+      "group": null,
+      "summary": "a ceiling instead of damping",
+      "text": "a ceiling instead of damping · *partial*: a different fiction",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": null,
+      "weight_text": null,
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [
+        "partial"
+      ],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#reverence-scales-the-goodwill-a-faction-gains"
+      ],
+      "line": 148,
+      "provenance": {
+        "weight": "unstated",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "REVERENCE\u001fReverence scales Goodwill: a wary middle, a sharp top, losses too\u001fL:E\u001f"
+    },
+    {
+      "id": "CHURCH-06.A",
+      "capability": "CHURCH-06",
+      "label": "A",
+      "group": null,
+      "summary": "one saved bit read by a goodwill worker, capping the Church at −100",
+      "text": "one saved bit read by a goodwill worker, capping the Church at −100 · C# · Medium (mapped)",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": "medium",
+      "weight_text": "Medium (mapped)",
+      "weight_mapped": true,
+      "multiplayer": "Yes (spec), condition: the bit's write calls `RecalculateAll`",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#6-betrayal--the-permanent-hostility-latch"
+      ],
+      "line": 180,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "CHURCH\u001fBetrayal is final: the Church is permanently hostile\u001fL:A\u001f"
+    },
+    {
+      "id": "CHURCH-06.B",
+      "capability": "CHURCH-06",
+      "label": "B",
+      "group": null,
+      "summary": "VFE Deserters' latch, if VFED ships",
+      "text": "VFE Deserters' latch, if VFED ships · as shipped",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": null,
+      "weight_text": null,
+      "weight_mapped": false,
+      "multiplayer": "Yes (spec), condition: the bit's write calls `RecalculateAll`",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#6-betrayal--the-permanent-hostility-latch"
+      ],
+      "line": 180,
+      "provenance": {
+        "weight": "unstated",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "CHURCH\u001fBetrayal is final: the Church is permanently hostile\u001fL:B\u001f"
+    },
+    {
+      "id": "CHURCH-07.U1",
+      "capability": "CHURCH-07",
+      "label": "(as specced)",
+      "group": "Offer",
+      "summary": "Royal Ascent's shape, a refiring offer gated on the top title, closed by the betrayal bit or the orbital reveal; vanilla's Royal Ascent is stripped",
+      "text": "Royal Ascent's shape, a refiring offer gated on the top title, closed by the betrayal bit or the orbital reveal; vanilla's Royal Ascent is stripped · XML · Easy (mapped)",
+      "carrier": null,
+      "kind": [
+        "xml"
+      ],
+      "kind_text": "XML",
+      "weight": "easy",
+      "weight_text": "Easy (mapped)",
+      "weight_mapped": true,
+      "multiplayer": "With work: one click ends the run for both only with a spawned accepter (the two-client run is shared with TRANSCENDENCE); otherwise each player leaves on their own click, or we sync the dialog through the MP API",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": true,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#7-cost",
+        "docs/specs/RELIGION.md#8-the-churchs-ending--accepting-ends-the-run-for-both-players"
+      ],
+      "line": 181,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "CHURCH\u001fThe Church's ending: sanctioned apotheosis offered at the top title, and accepting ends the run for both players\u001fL:(as specced)\u001fOffer"
+    },
+    {
+      "id": "CHURCH-07.A",
+      "capability": "CHURCH-07",
+      "label": "A",
+      "group": "Ending",
+      "summary": "accept on the map: a titled, spawned accepter, and our quest part opens the game-over dialog",
+      "text": "accept on the map: a titled, spawned accepter, and our quest part opens the game-over dialog · XML + C# · Medium (spec recommends) · MP Unknown until TRANSCENDENCE § Verification 5–6",
+      "carrier": null,
+      "kind": [
+        "xml",
+        "cs"
+      ],
+      "kind_text": "XML + C#",
+      "weight": "medium",
+      "weight_text": "Medium (spec recommends)",
+      "weight_mapped": false,
+      "multiplayer": "Unknown until TRANSCENDENCE § Verification 5–6",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#7-cost",
+        "docs/specs/RELIGION.md#8-the-churchs-ending--accepting-ends-the-run-for-both-players"
+      ],
+      "line": 181,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "explicit",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "CHURCH\u001fThe Church's ending: sanctioned apotheosis offered at the top title, and accepting ends the run for both players\u001fL:A\u001fEnding"
+    },
+    {
+      "id": "CHURCH-07.B",
+      "capability": "CHURCH-07",
+      "label": "B",
+      "group": "Ending",
+      "summary": "accept anywhere, the dialog registered with `MP.RegisterSyncDialogNodeTree`",
+      "text": "accept anywhere, the dialog registered with `MP.RegisterSyncDialogNodeTree` · C# · Medium · MP Unknown, the same run · not saved, so a rejoining player never sees it",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Unknown, the same run",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#7-cost",
+        "docs/specs/RELIGION.md#8-the-churchs-ending--accepting-ends-the-run-for-both-players"
+      ],
+      "line": 181,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "explicit",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "CHURCH\u001fThe Church's ending: sanctioned apotheosis offered at the top title, and accepting ends the run for both players\u001fL:B\u001fEnding"
+    },
+    {
+      "id": "CHURCH-07.C",
+      "capability": "CHURCH-07",
+      "label": "C",
+      "group": "Ending",
+      "summary": "accept anywhere, each player leaves on their own click",
+      "text": "accept anywhere, each player leaves on their own click · C# · Medium · MP Yes",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#7-cost",
+        "docs/specs/RELIGION.md#8-the-churchs-ending--accepting-ends-the-run-for-both-players"
+      ],
+      "line": 181,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "explicit",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "CHURCH\u001fThe Church's ending: sanctioned apotheosis offered at the top title, and accepting ends the run for both players\u001fL:C\u001fEnding"
+    },
+    {
+      "id": "CHURCH-07.D",
+      "capability": "CHURCH-07",
+      "label": "D",
+      "group": "Ending",
+      "summary": "accepting summons the ending and a later act on the map finishes it",
+      "text": "accepting summons the ending and a later act on the map finishes it · Medium · changes the requirement's wording",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "With work: one click ends the run for both only with a spawned accepter (the two-client run is shared with TRANSCENDENCE); otherwise each player leaves on their own click, or we sync the dialog through the MP API",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/RELIGION.md#7-cost",
+        "docs/specs/RELIGION.md#8-the-churchs-ending--accepting-ends-the-run-for-both-players"
+      ],
+      "line": 181,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "CHURCH\u001fThe Church's ending: sanctioned apotheosis offered at the top title, and accepting ends the run for both players\u001fL:D\u001fEnding"
+    },
+    {
+      "id": "PSYCHIC-02.A",
+      "capability": "PSYCHIC-02",
+      "label": "A",
+      "group": null,
+      "summary": "drop VPE",
+      "text": "drop VPE · Easy",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "easy",
+      "weight_text": "Easy",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#what-raises-psylink-rank-besides-the-altar"
+      ],
+      "line": 267,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fMeditation or cultivation does not raise rank\u001fL:A\u001f"
+    },
+    {
+      "id": "PSYCHIC-02.B",
+      "capability": "PSYCHIC-02",
+      "label": "B",
+      "group": null,
+      "summary": "VPE's XP setting at zero",
+      "text": "VPE's XP setting at zero · Easy · *not recommended as a lock*: it misses three abilities and is per-install",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "easy",
+      "weight_text": "Easy",
+      "weight_mapped": false,
+      "multiplayer": "B needs work (T-18)",
+      "not_recommended": true,
+      "marks": [
+        "not recommended as a lock"
+      ],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#what-raises-psylink-rank-besides-the-altar"
+      ],
+      "line": 267,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fMeditation or cultivation does not raise rank\u001fL:B\u001f"
+    },
+    {
+      "id": "PSYCHIC-02.D1",
+      "capability": "PSYCHIC-02",
+      "label": "D1",
+      "group": null,
+      "summary": "XP to zero",
+      "text": "XP to zero",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium.",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#what-raises-psylink-rank-besides-the-altar"
+      ],
+      "line": 267,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "inherited",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fMeditation or cultivation does not raise rank\u001fL:D1\u001f"
+    },
+    {
+      "id": "PSYCHIC-02.D2",
+      "capability": "PSYCHIC-02",
+      "label": "D2",
+      "group": null,
+      "summary": "XP levels a pawn only up to a ceiling the altar writes",
+      "text": "XP levels a pawn only up to a ceiling the altar writes",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium.",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#what-raises-psylink-rank-besides-the-altar"
+      ],
+      "line": 267,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "inherited",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fMeditation or cultivation does not raise rank\u001fL:D2\u001f"
+    },
+    {
+      "id": "PSYCHIC-02.D3",
+      "capability": "PSYCHIC-02",
+      "label": "D3",
+      "group": null,
+      "summary": "XP buys points, never rank",
+      "text": "XP buys points, never rank · C# · Medium.",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": "medium",
+      "weight_text": "Medium.",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#what-raises-psylink-rank-besides-the-altar"
+      ],
+      "line": 267,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fMeditation or cultivation does not raise rank\u001fL:D3\u001f"
+    },
+    {
+      "id": "PSYCHIC-07.A",
+      "capability": "PSYCHIC-07",
+      "label": "A",
+      "group": null,
+      "summary": "name-only psylink stages, the name in the health-tab tooltip",
+      "text": "name-only psylink stages, the name in the health-tab tooltip · XML · Easy · *partial*: the row still reads \"level N\"",
+      "carrier": null,
+      "kind": [
+        "xml"
+      ],
+      "kind_text": "XML",
+      "weight": "easy",
+      "weight_text": "Easy",
+      "weight_mapped": false,
+      "multiplayer": "Yes [I] (display only, or written in simulation)",
+      "not_recommended": false,
+      "marks": [
+        "partial"
+      ],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#open-questions-1"
+      ],
+      "line": 272,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fPsychic ranks carry names or titles\u001fL:A\u001f"
+    },
+    {
+      "id": "PSYCHIC-07.B",
+      "capability": "PSYCHIC-07",
+      "label": "B",
+      "group": null,
+      "summary": "relabel the psylink row: \"Psylink (Adept)\", read from the level so it never drifts",
+      "text": "relabel the psylink row: \"Psylink (Adept)\", read from the level so it never drifts · C# · Medium",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes [I] (display only, or written in simulation)",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#open-questions-1"
+      ],
+      "line": 272,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fPsychic ranks carry names or titles\u001fL:B\u001f"
+    },
+    {
+      "id": "PSYCHIC-07.E",
+      "capability": "PSYCHIC-07",
+      "label": "E",
+      "group": null,
+      "summary": "a title ladder on a faction **other than the Church** (a Church rung would overwrite the Church title): a real title in the Bio tab, but it leaves the inspect pane while a Church title is held, and the player can renounce it",
+      "text": "a title ladder on a faction **other than the Church** (a Church rung would overwrite the Church title): a real title in the Bio tab, but it leaves the inspect pane while a Church title is held, and the player can renounce it · C# + XML · Medium",
+      "carrier": null,
+      "kind": [
+        "xml",
+        "cs"
+      ],
+      "kind_text": "C# + XML",
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes [I] (display only, or written in simulation)",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#open-questions-1"
+      ],
+      "line": 272,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fPsychic ranks carry names or titles\u001fL:E\u001f"
+    },
+    {
+      "id": "PSYCHIC-07.F",
+      "capability": "PSYCHIC-07",
+      "label": "F",
+      "group": null,
+      "summary": "the rank as the pawn's epithet, \"Aria, Adept\", on Transcendence's surface; on a founder it shares the string with the claimed title",
+      "text": "the rank as the pawn's epithet, \"Aria, Adept\", on Transcendence's surface; on a founder it shares the string with the claimed title · C# · Medium",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes [I] (display only, or written in simulation)",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PSYCHIC.md#open-questions-1"
+      ],
+      "line": 272,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PSYCHIC\u001fPsychic ranks carry names or titles\u001fL:F\u001f"
+    },
+    {
+      "id": "TRANSCENDENCE-03.A",
+      "capability": "TRANSCENDENCE-03",
+      "label": "A (as specced)",
+      "group": null,
+      "summary": "vanilla's per-pawn title string, shown as \"Name, Title\"",
+      "text": "vanilla's per-pawn title string, shown as \"Name, Title\" · none",
+      "carrier": null,
+      "kind": [],
+      "kind_text": "none",
+      "weight": null,
+      "weight_text": null,
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": true,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TRANSCENDENCE.md#5-where-the-player-sees-it"
+      ],
+      "line": 305,
+      "provenance": {
+        "weight": "unstated",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TRANSCENDENCE\u001fThe claimed title is seen in play\u001fL:A (as specced)\u001f"
+    },
+    {
+      "id": "TRANSCENDENCE-03.N",
+      "capability": "TRANSCENDENCE-03",
+      "label": "N",
+      "group": null,
+      "summary": "the claim becomes the founder's nickname: on the bar and map label with no patch, but it is then their name in every letter and log",
+      "text": "the claim becomes the founder's nickname: on the bar and map label with no patch, but it is then their name in every letter and log · C# inside A's setter · Easy",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C# inside A's setter",
+      "weight": "easy",
+      "weight_text": "Easy",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TRANSCENDENCE.md#5-where-the-player-sees-it"
+      ],
+      "line": 305,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TRANSCENDENCE\u001fThe claimed title is seen in play\u001fL:N\u001f"
+    },
+    {
+      "id": "TRANSCENDENCE-03.C",
+      "capability": "TRANSCENDENCE-03",
+      "label": "C",
+      "group": null,
+      "summary": "a display-only postfix, founders only: on the bar and map label and nowhere else",
+      "text": "a display-only postfix, founders only: on the bar and map label and nowhere else",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TRANSCENDENCE.md#5-where-the-player-sees-it"
+      ],
+      "line": 305,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "inherited",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TRANSCENDENCE\u001fThe claimed title is seen in play\u001fL:C\u001f"
+    },
+    {
+      "id": "TRANSCENDENCE-03.Cprime",
+      "capability": "TRANSCENDENCE-03",
+      "label": "C′",
+      "group": null,
+      "summary": "draws a second line or tooltip under the portrait",
+      "text": "draws a second line or tooltip under the portrait · C# · Medium. The bar's name slot fits ~12–14 characters; a long claim shows whole only on C′. A is vanilla's own rename-window title, already synced by Multiplayer",
+      "carrier": null,
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TRANSCENDENCE.md#5-where-the-player-sees-it"
+      ],
+      "line": 305,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TRANSCENDENCE\u001fThe claimed title is seen in play\u001fL:C′\u001f"
+    },
+    {
+      "id": "TRANSCENDENCE-03.R",
+      "capability": "TRANSCENDENCE-03",
+      "label": "R",
+      "group": null,
+      "summary": "a royal title awarded by the player's own faction: vanilla accepts it and it sits beside the Church title, but typed text means one def per founder relabelled on load; a Bio-tab chip, not the bar",
+      "text": "a royal title awarded by the player's own faction: vanilla accepts it and it sits beside the Church title, but typed text means one def per founder relabelled on load; a Bio-tab chip, not the bar · XML + C# · Medium",
+      "carrier": null,
+      "kind": [
+        "xml",
+        "cs"
+      ],
+      "kind_text": "XML + C#",
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TRANSCENDENCE.md#5-where-the-player-sees-it"
+      ],
+      "line": 305,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TRANSCENDENCE\u001fThe claimed title is seen in play\u001fL:R\u001f"
+    },
+    {
+      "id": "RK-1",
+      "capability": "POLITICS-08",
+      "label": "RK-1",
+      "group": "Knowledge",
+      "summary": "derived from a standing threshold, nothing stored, lost if standing falls",
+      "text": "derived from a standing threshold, nothing stored, lost if standing falls · Easy once the gate's resolver exists",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "easy",
+      "weight_text": "Easy once the gate's resolver exists",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RK-1\u001fKnowledge"
+    },
+    {
+      "id": "RK-2",
+      "capability": "POLITICS-08",
+      "label": "RK-2",
+      "group": "Knowledge",
+      "summary": "a per-faction record, kept for good",
+      "text": "a per-faction record, kept for good · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RK-2\u001fKnowledge"
+    },
+    {
+      "id": "RK-3",
+      "capability": "POLITICS-08",
+      "label": "RK-3",
+      "group": "Knowledge",
+      "summary": "a per-pair record, so a quest or battle reveals one enmity",
+      "text": "a per-pair record, so a quest or battle reveals one enmity · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RK-3\u001fKnowledge"
+    },
+    {
+      "id": "RD-1",
+      "capability": "POLITICS-08",
+      "label": "RD-1",
+      "group": "Display",
+      "summary": "the strip filtered to earned edges (one predicate postfix)",
+      "text": "the strip filtered to earned edges (one predicate postfix)",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RD-1\u001fDisplay"
+    },
+    {
+      "id": "RD-2",
+      "capability": "POLITICS-08",
+      "label": "RD-2",
+      "group": "Display",
+      "summary": "a locked row, \"revealed at +40\"",
+      "text": "a locked row, \"revealed at +40\"",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RD-2\u001fDisplay"
+    },
+    {
+      "id": "RD-3",
+      "capability": "POLITICS-08",
+      "label": "RD-3",
+      "group": "Display",
+      "summary": "alliances shown",
+      "text": "alliances shown",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RD-3\u001fDisplay"
+    },
+    {
+      "id": "RD-4",
+      "capability": "POLITICS-08",
+      "label": "RD-4",
+      "group": "Display",
+      "summary": "an info-card line",
+      "text": "an info-card line",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RD-4\u001fDisplay"
+    },
+    {
+      "id": "RD-5",
+      "capability": "POLITICS-08",
+      "label": "RD-5",
+      "group": "Display",
+      "summary": "asked on the comms console, not in the Neolithic",
+      "text": "asked on the comms console, not in the Neolithic",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RD-5\u001fDisplay"
+    },
+    {
+      "id": "RD-7",
+      "capability": "POLITICS-08",
+      "label": "RD-7",
+      "group": "Display",
+      "summary": "our own ledger tab",
+      "text": "our own ledger tab",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RD-7\u001fDisplay"
+    },
+    {
+      "id": "RD-8",
+      "capability": "POLITICS-08",
+      "label": "RD-8",
+      "group": "Display",
+      "summary": "no sheet, learned only from text",
+      "text": "no sheet, learned only from text · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RD-8\u001fDisplay"
+    },
+    {
+      "id": "RD-6",
+      "capability": "POLITICS-08",
+      "label": "RD-6",
+      "group": "Display",
+      "summary": "a letter at the reveal",
+      "text": "a letter at the reveal · Easy on RK-2",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "easy",
+      "weight_text": "Easy on RK-2",
+      "weight_mapped": false,
+      "multiplayer": "Yes. Every display route reads synced state; a stored record needs synced writes. Faction Customizer's editor writes relations unsynced",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/POLITICS.md#withholding-who-a-faction-hates"
+      ],
+      "line": 350,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "POLITICS\u001fStanding buys candour: who a faction hates (and is allied to) is withheld until earned, and revealed per faction\u001fL:RD-6\u001fDisplay"
+    },
+    {
+      "id": "TERRITORY-01.Build-B",
+      "capability": "TERRITORY-01",
+      "label": "Build B (as specced)",
+      "group": null,
+      "summary": "Our timed world object over the ally's settlement, with *Join fight* and a seeded winner when nobody attends.",
+      "text": "Our timed world object over the ally's settlement, with *Join fight* and a seeded winner when nobody attends. The winner can be predicted from the object's fields · ours, copying FT&V's invasions · C# · Hard *(mapped)*",
+      "carrier": "ours, copying FT&V's invasions",
+      "kind": [
+        "cs"
+      ],
+      "kind_text": "C#",
+      "weight": "hard",
+      "weight_text": "Hard *(mapped)*",
+      "weight_mapped": true,
+      "multiplayer": "Build B: Yes (spec), condition: created from the world tick or a synced incident, the roll seeded (§0 P4), attendance a float-menu option (§0 P5) [I]",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": true,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TERRITORY.md#1-the-ally-aid-battle--build-it-against-a-read-reference",
+        "docs/specs/TERRITORY.md#1a-the-site-shape--the-battle-on-an-ally-owned-site-at-a-tile-e-queste-site"
+      ],
+      "line": 399,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "explicit",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fAn ally under attack names a tile and a short window: attend and it is a real fight, decline and it resolves without the player and reports the outcome\u001fL:Build B (as specced)\u001f"
+    },
+    {
+      "id": "AS-1",
+      "capability": "TERRITORY-01",
+      "label": "AS-1",
+      "group": null,
+      "summary": "an auto-accepted quest places an ally-owned site; attend and it is a three-way fight, stay home and a P4 roll part reports the outcome, with goodwill and letter in XML",
+      "text": "an auto-accepted quest places an ally-owned site; attend and it is a three-way fight, stay home and a P4 roll part reports the outcome, with goodwill and letter in XML · XML + C# · Medium",
+      "carrier": null,
+      "kind": [
+        "xml",
+        "cs"
+      ],
+      "kind_text": "XML + C#",
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "AS: Yes [I]: quest accept is synced, attendance is vanilla's visit-site option, the roll is P4",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TERRITORY.md#1-the-ally-aid-battle--build-it-against-a-read-reference",
+        "docs/specs/TERRITORY.md#1a-the-site-shape--the-battle-on-an-ally-owned-site-at-a-tile-e-queste-site"
+      ],
+      "line": 399,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fAn ally under attack names a tile and a short window: attend and it is a real fight, decline and it resolves without the player and reports the outcome\u001fL:AS-1\u001f"
+    },
+    {
+      "id": "AS-2",
+      "capability": "TERRITORY-01",
+      "label": "AS-2",
+      "group": null,
+      "summary": "AS-1 behind #91's offer window; expiry reaches the same roll",
+      "text": "AS-1 behind #91's offer window; expiry reaches the same roll · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "AS: Yes [I]: quest accept is synced, attendance is vanilla's visit-site option, the roll is P4",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TERRITORY.md#1-the-ally-aid-battle--build-it-against-a-read-reference",
+        "docs/specs/TERRITORY.md#1a-the-site-shape--the-battle-on-an-ally-owned-site-at-a-tile-e-queste-site"
+      ],
+      "line": 399,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fAn ally under attack names a tile and a short window: attend and it is a real fight, decline and it resolves without the player and reports the outcome\u001fL:AS-2\u001f"
+    },
+    {
+      "id": "AS-3",
+      "capability": "TERRITORY-01",
+      "label": "AS-3",
+      "group": null,
+      "summary": "Worksites Expanded as the carrier (`Worksite_DefendAlly`)",
+      "text": "Worksites Expanded as the carrier (`Worksite_DefendAlly`) · Hard: it picks its own attacker, rolls unseeded, and its caravan gizmo is unsynced · its value is as the donor",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "hard",
+      "weight_text": "Hard: it picks its own attacker, rolls unseeded, and its caravan gizmo is unsynced",
+      "weight_mapped": false,
+      "multiplayer": "AS: Yes [I]: quest accept is synced, attendance is vanilla's visit-site option, the roll is P4",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TERRITORY.md#1-the-ally-aid-battle--build-it-against-a-read-reference",
+        "docs/specs/TERRITORY.md#1a-the-site-shape--the-battle-on-an-ally-owned-site-at-a-tile-e-queste-site"
+      ],
+      "line": 399,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fAn ally under attack names a tile and a short window: attend and it is a real fight, decline and it resolves without the player and reports the outcome\u001fL:AS-3\u001f"
+    },
+    {
+      "id": "AS-4",
+      "capability": "TERRITORY-01",
+      "label": "AS-4",
+      "group": null,
+      "summary": "a live NPC-only site map",
+      "text": "a live NPC-only site map · Hard · *not recommended*",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "hard",
+      "weight_text": "Hard",
+      "weight_mapped": false,
+      "multiplayer": "AS: Yes [I]: quest accept is synced, attendance is vanilla's visit-site option, the roll is P4",
+      "not_recommended": true,
+      "marks": [
+        "not recommended"
+      ],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TERRITORY.md#1-the-ally-aid-battle--build-it-against-a-read-reference",
+        "docs/specs/TERRITORY.md#1a-the-site-shape--the-battle-on-an-ally-owned-site-at-a-tile-e-queste-site"
+      ],
+      "line": 399,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fAn ally under attack names a tile and a short window: attend and it is a real fight, decline and it resolves without the player and reports the outcome\u001fL:AS-4\u001f"
+    },
+    {
+      "id": "OS-1",
+      "capability": "TERRITORY-13",
+      "label": "OS-1",
+      "group": null,
+      "summary": "vanilla comms asks: trader, orbital trader, military aid",
+      "text": "vanilla comms asks: trader, orbital trader, military aid · XML · Easy",
+      "carrier": null,
+      "kind": [
+        "xml"
+      ],
+      "kind_text": "XML",
+      "weight": "easy",
+      "weight_text": "Easy",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-2",
+        "OS-3",
+        "OS-4",
+        "OS-5",
+        "OS-6",
+        "OS-7",
+        "OS-8",
+        "OS-9",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-1\u001f"
+    },
+    {
+      "id": "OS-2",
+      "capability": "TERRITORY-13",
+      "label": "OS-2",
+      "group": null,
+      "summary": "titleless permits granted by Reverence band: troops, lent labourers, goods drops, a shuttle",
+      "text": "titleless permits granted by Reverence band: troops, lent labourers, goods drops, a shuttle · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-3",
+        "OS-4",
+        "OS-5",
+        "OS-6",
+        "OS-7",
+        "OS-8",
+        "OS-9",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-2\u001f"
+    },
+    {
+      "id": "OS-3",
+      "capability": "TERRITORY-13",
+      "label": "OS-3",
+      "group": null,
+      "summary": "our gated comms options",
+      "text": "our gated comms options · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-2",
+        "OS-4",
+        "OS-5",
+        "OS-6",
+        "OS-7",
+        "OS-8",
+        "OS-9",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-3\u001f"
+    },
+    {
+      "id": "OS-4",
+      "capability": "TERRITORY-13",
+      "label": "OS-4",
+      "group": null,
+      "summary": "a service shelf priced in Goodwill",
+      "text": "a service shelf priced in Goodwill · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-2",
+        "OS-3",
+        "OS-5",
+        "OS-6",
+        "OS-7",
+        "OS-8",
+        "OS-9",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-4\u001f"
+    },
+    {
+      "id": "OS-5",
+      "capability": "TERRITORY-13",
+      "label": "OS-5",
+      "group": null,
+      "summary": "always-on boons; prices may follow Goodwill",
+      "text": "always-on boons; prices may follow Goodwill · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-2",
+        "OS-3",
+        "OS-4",
+        "OS-6",
+        "OS-7",
+        "OS-8",
+        "OS-9",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-5\u001f"
+    },
+    {
+      "id": "OS-6",
+      "capability": "TERRITORY-13",
+      "label": "OS-6",
+      "group": null,
+      "summary": "on the faction's own schedule",
+      "text": "on the faction's own schedule",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-2",
+        "OS-3",
+        "OS-4",
+        "OS-5",
+        "OS-7",
+        "OS-8",
+        "OS-9",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "inherited",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-6\u001f"
+    },
+    {
+      "id": "OS-7",
+      "capability": "TERRITORY-13",
+      "label": "OS-7",
+      "group": null,
+      "summary": "a fixed one",
+      "text": "a fixed one · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-2",
+        "OS-3",
+        "OS-4",
+        "OS-5",
+        "OS-6",
+        "OS-8",
+        "OS-9",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-7\u001f"
+    },
+    {
+      "id": "OS-8",
+      "capability": "TERRITORY-13",
+      "label": "OS-8",
+      "group": null,
+      "summary": "people lent or offered, never dumped",
+      "text": "people lent or offered, never dumped · Easy–Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "easy-medium",
+      "weight_text": "Easy–Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-2",
+        "OS-3",
+        "OS-4",
+        "OS-5",
+        "OS-6",
+        "OS-7",
+        "OS-9",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-8\u001f"
+    },
+    {
+      "id": "OS-9",
+      "capability": "TERRITORY-13",
+      "label": "OS-9",
+      "group": null,
+      "summary": "asked in person by a caravan",
+      "text": "asked in person by a caravan · Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-2",
+        "OS-3",
+        "OS-4",
+        "OS-5",
+        "OS-6",
+        "OS-7",
+        "OS-8",
+        "OS-10"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-9\u001f"
+    },
+    {
+      "id": "OS-10",
+      "capability": "TERRITORY-13",
+      "label": "OS-10",
+      "group": null,
+      "summary": "a signal fire the colony builds",
+      "text": "a signal fire the colony builds · Easy–Medium",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "easy-medium",
+      "weight_text": "Easy–Medium",
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [
+        "OS-1",
+        "OS-2",
+        "OS-3",
+        "OS-4",
+        "OS-5",
+        "OS-6",
+        "OS-7",
+        "OS-8",
+        "OS-9"
+      ],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fL:OS-10\u001f"
+    },
+    {
+      "id": "TERRITORY-13.U1",
+      "capability": "TERRITORY-13",
+      "label": "RimPacts",
+      "group": null,
+      "summary": "RimPacts",
+      "text": "RimPacts · *not recommended*",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": null,
+      "weight_text": null,
+      "weight_mapped": false,
+      "multiplayer": "Yes for vanilla carriers; With work for ours (T-82, T-137); No for RimPacts",
+      "not_recommended": true,
+      "marks": [
+        "not recommended"
+      ],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/TERRITORY.md#a-sworn-faction-owes-services--every-form-that-can-take"
+      ],
+      "line": 411,
+      "provenance": {
+        "weight": "unstated",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "TERRITORY\u001fA sworn faction owes services, not goods, and the player can ask as well as receive\u001fT:RimPacts · *not recommended*"
+    },
+    {
+      "id": "PRESSURE-05.A",
+      "capability": "PRESSURE-05",
+      "label": "A",
+      "group": null,
+      "summary": "an `IncidentDef` on VEF's `IncidentWorker_RaidEnemySpecial`",
+      "text": "an `IncidentDef` on VEF's `IncidentWorker_RaidEnemySpecial` · XML · Easy *(mapped)*. Always write `forcedPointsRange` (T-65)",
+      "carrier": null,
+      "kind": [
+        "xml"
+      ],
+      "kind_text": "XML",
+      "weight": "easy",
+      "weight_text": "Easy *(mapped)*",
+      "weight_mapped": true,
+      "multiplayer": "Yes",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": false,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PRESSURE.md#4-composition--quality-not-only-quantity"
+      ],
+      "line": 453,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "explicit",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PRESSURE\u001fA beat, a refused demand or the pursuit can send a raid of fixed faction, size and strategy\u001fL:A\u001f"
+    },
+    {
+      "id": "PRESSURE-10.A",
+      "capability": "PRESSURE-10",
+      "label": "A (as specced)",
+      "group": null,
+      "summary": "A readout of about 40 lines of C#, supplied to the political surface",
+      "text": "A readout of about 40 lines of C#, supplied to the political surface · Medium *(mapped)*. Which surface is #119's, per #61",
+      "carrier": null,
+      "kind": null,
+      "kind_text": null,
+      "weight": "medium",
+      "weight_text": "Medium *(mapped)*",
+      "weight_mapped": true,
+      "multiplayer": "Unknown. The spec is silent; a design and a two-client check would settle it",
+      "not_recommended": false,
+      "marks": [],
+      "as_specced": true,
+      "fallback_only": false,
+      "composes_with": [],
+      "source": [
+        "docs/specs/PRESSURE.md#cost"
+      ],
+      "line": 458,
+      "provenance": {
+        "weight": "explicit",
+        "kind": "unstated",
+        "carrier": "unstated",
+        "multiplayer": "inherited",
+        "summary": "explicit",
+        "source": "inherited"
+      },
+      "key": "PRESSURE\u001fPlayers can broadly see what is raising pressure\u001fL:A (as specced)\u001f"
+    }
+  ]
+}
