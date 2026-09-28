@@ -1308,6 +1308,8 @@ awakened android arrives before Ultra.
 **One route is removal: three operations and no C#.** It also removes them at Ultra. An era-scoped
 removal is another route; which ships is the build map's
 ([#119](https://github.com/cjd721/Rimworld-Archinity/issues/119)).
+Hand-authored factions and pools, which close this chance, are routed in [`ERA.md`](ERA.md)
+§ *[Hand-authored factions and spawn pools](ERA.md#hand-authored-factions-and-spawn-pools)*.
 
 ```xml
 <!-- expect: 1 -->

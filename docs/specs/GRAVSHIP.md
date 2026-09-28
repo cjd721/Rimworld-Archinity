@@ -1085,6 +1085,11 @@ references `CompGravshipFacility`. **[V]** Two concerns specific to this system:
 
 Nothing else in this system reads `Rand`, threads, or holds static collections keyed by map. **[V]**
 
+**Multiplayer? With work** for the gravship as a permanent home [I]: the work is the two hazards
+above — agreeing the settlement-cap slider across clients, and keeping the naming dialog off the
+shared tick. The slider has a two-client check listed but not yet run ([`RELIGION.md`](RELIGION.md)
+§ *Revolt* › *Open questions*, RUN); **nothing covers `Dialog_NamePlayerGravship`.**
+
 ## Failure and recovery
 
 | Failure | Detection | Recovery |

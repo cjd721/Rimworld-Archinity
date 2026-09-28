@@ -25,6 +25,10 @@ requires the comp's `requiredFocus` to be one the recipient can use
 meditation focus's backstory gate has exactly one XML bypass*) [V]. No vanilla focus is open to
 every pawn, so that means a hediff-listed focus such as F1's. A rite can gate on the giver's
 faith and certainty ([#49](https://github.com/cjd721/Rimworld-Archinity/issues/49)). The focus, rites, counts and costs are the build map's.
+**Multiplayer? Yes** [I, composition]: it is the same vanilla `CompPsylinkable` linking rite that
+[`ANDROIDS.md`](ANDROIDS.md) § *Psylinks — verdict and routes* marks Yes in routes C and K1, and a
+ritual outcome runs inside the synced tick ([`docs/engine/ideology.md`](../engine/ideology.md)
+§ *Moving a pawn's ideology*).
 
 **Why a document of its own and not a section of `ALTAR.md`.** `ALTAR.md` owns the altar's
 builds: the final rite, the lottery and the charge. The psychic track reaches past the

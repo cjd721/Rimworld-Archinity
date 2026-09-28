@@ -883,9 +883,15 @@ Needed the moment the campaign wants *"the fourth settlement you take costs more
 
 **The cheap form stores nothing.** The magnitude the story wants is how many of the faction's
 holdings the colony has taken, and that is world state [`TERRITORY.md`](TERRITORY.md) already owns.
-Read it in A's or B's curve and there is no new scribing and no new sync surface. Whether that store
-exposes a per-faction count is **[I]** here — it is a sibling document's answer, and this route's
-weight depends on it.
+Read it in A's or B's curve and there is no new scribing and no new sync surface. **The count of
+holdings now held from F is derivable; the count ever taken from F needs one field.** R1's holding
+remembers its former faction (the shape of FT&V's `FactionTerritories_VassalOutpost`, which stores it by
+loadID [V], as a donor only) and
+R2's is still a marked `Settlement` of F, so the live count is a filter over state
+[`TERRITORY.md`](TERRITORY.md) § *3. Vassals — every shape, by route* R1/R2 already routes [I]. A holding that ends takes its
+record with it (§ *How a holding ends* › *Debt and credit at the end*), so a count that survives
+release or loss is one scribed per-faction integer written in R1/R2's synced conquest command —
+Easy on top of R1/R2, Multiplayer as theirs (With work) [I].
 
 **The expensive form** is a `WorldComponent` holding a per-faction value, ticked on the world tick,
 spent and reset when the faction "arrives at the door". **RimPacts has already built it** — see
@@ -1110,8 +1116,9 @@ nothing has been built.
   diplomacy as the **count** of enemy factions; the per-faction **degree** requirement lives only in
   `TERRITORY.md`. They are compatible — count and degree are separate terms — but a reader of
   PRESSURE.md alone would conclude the count is all there is.
-- **Does TERRITORY's holdings store expose "settlements taken from faction F"?** Route E's cheap
-  form depends on it; **[I]** here, and [`TERRITORY.md`](TERRITORY.md) owns the answer.
+- **Answered: TERRITORY's holdings expose "held from faction F", not "ever taken from F".** The
+  live count filters R1's remembered former faction or R2's marked settlements; a cumulative count
+  is one per-faction integer written at conquest, Easy on top of R1/R2 (route E above) [I].
 - **Build questions, unowned until a route is selected:** where the per-faction curve lives; whether
   the hostility factor is one curve or a band table; whether raid **loot** is scaled with the raid;
   whether a declared war suspends itself around a Chronicle beat, given `forced`'s gate bypass.
