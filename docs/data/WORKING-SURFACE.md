@@ -151,9 +151,25 @@ Enforced by the page. An agent writing the file directly must keep them.
   or one session rejects what another suggests), `agree`, `compose`, `waiting` (fewer than two
   sessions have suggested) or `decided`.
 
+## The agent's assessment
+
+`docs/data/working-surface.agent.json` is an agent's own need tree over the same inventory, for
+Conrad to compare against his.
+
+- **Same schema and invariants** as the surface state above. It is written only by an agent,
+  never by the page.
+- The page shows it **read-only**, under the header toggle **Mine | Agent's**: every edit control
+  is off and nothing is saved. A missing file is normal and shows as "no assessment yet".
+- Its selections' `decided_by` names the ticket that wrote the file.
+- It never records a decision on the campaign's behalf. It is a reference to compare against; a
+  decision exists only once Conrad makes it in his own state.
+
 ## Server endpoints
 
 - `GET /` — the page. `GET|PUT` the state file; `GET` the inventory and `/api/glosses`.
+- `GET /api/agent-state` — the agent's assessment, read-only (a PUT is refused with 405; a
+  missing file is a 404).
 - `GET /api/doc?path=docs/…md&anchor=slug` — one markdown section, read-only, from under `docs/`
   only (traversal rejected), cut at the next heading of the same or higher level.
-- Flags: `--port` (8765), `--inventory`, `--state`, `--glosses`.
+- Flags: `--port` (8765), `--inventory`, `--state`, `--glosses`, `--agent-state`
+  (`docs/data/working-surface.agent.json`).

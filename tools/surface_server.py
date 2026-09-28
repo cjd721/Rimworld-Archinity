@@ -4,6 +4,7 @@
     python tools/surface_server.py --inventory docs/data/route-inventory.slice.json
     python tools/surface_server.py --state path/to/scratch-state.json
     python tools/surface_server.py --glosses path/to/glosses.json   # default docs/data/capability-glosses.json
+    python tools/surface_server.py --agent-state path/to/agent.json # default docs/data/working-surface.agent.json
 
 Serves tools/surface/index.html on 127.0.0.1. The surface state IS the repo file
 (docs/data/working-surface.json by default): the page GETs it on load and PUTs the whole
@@ -17,6 +18,9 @@ the same or a higher level. No anchor, or an anchor that does not match, returns
 
 GET /api/glosses serves the plain-language glosses file ({"capabilities": {ID: {title, summary}},
 "routes": {ID: {plain}}}), read-only; a missing file serves empty maps.
+
+GET /api/agent-state serves the agent's assessment (same schema as the state), read-only: a
+PUT to it is refused with 405, and a missing file is a 404 the page shows as "no assessment yet".
 """
 import argparse
 import hashlib
@@ -155,7 +159,7 @@ def doc_section(p, anchor):
     return body
 
 
-def make_handler(inventory, state_path, glosses):
+def make_handler(inventory, state_path, glosses, agent_path):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):
             sys.stderr.write("%s %s\n" % (self.command, fmt % args))
@@ -185,6 +189,13 @@ def make_handler(inventory, state_path, glosses):
                     return self.send(404, b"no state file yet", headers=rel)
                 data = state_path.read_bytes()
                 return self.send(200, data, "application/json; charset=utf-8", {"ETag": etag(data), **rel})
+            if path == "/api/agent-state":
+                # The agent's assessment: read-only here, written only by an agent. Missing is normal.
+                rel = {"X-State-Path": shown(agent_path)}
+                if not agent_path.exists():
+                    return self.send(404, b"no agent assessment yet", headers=rel)
+                data = agent_path.read_bytes()
+                return self.send(200, data, "application/json; charset=utf-8", {"ETag": etag(data), **rel})
             if path == "/api/glosses":
                 # Plain-language glosses of capabilities and routes; a missing file means none yet.
                 body = glosses.read_bytes() if glosses.exists() else b'{"capabilities": {}, "routes": {}}'
@@ -201,6 +212,8 @@ def make_handler(inventory, state_path, glosses):
             self.send(404, b"not found")
 
         def do_PUT(self):
+            if urlsplit(self.path).path == "/api/agent-state":
+                return self.send(405, b"the agent's assessment is read-only", headers={"Allow": "GET"})
             if urlsplit(self.path).path != "/api/state":
                 return self.send(404, b"not found")
             try:
@@ -228,12 +241,15 @@ def main():
                     help="surface state JSON, relative to the repo root or absolute")
     ap.add_argument("--glosses", default="docs/data/capability-glosses.json",
                     help="plain-language glosses JSON, relative to the repo root or absolute; missing means none")
+    ap.add_argument("--agent-state", default="docs/data/working-surface.agent.json",
+                    help="the agent's assessment JSON, served read-only; relative to the repo root or absolute; "
+                         "missing means no assessment yet")
     a = ap.parse_args()
     inventory, state_path = (REPO / a.inventory).resolve(), (REPO / a.state).resolve()
-    glosses = (REPO / a.glosses).resolve()
+    glosses, agent_path = (REPO / a.glosses).resolve(), (REPO / a.agent_state).resolve()
     if not inventory.exists():
         sys.exit(f"inventory not found: {inventory}")
-    srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(inventory, state_path, glosses))
+    srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(inventory, state_path, glosses, agent_path))
     print(f"Working surface: http://127.0.0.1:{a.port}\n  inventory {shown(inventory)}\n"
           f"  state     {shown(state_path)}\n"
           f"  glosses   {shown(glosses)}{'' if glosses.exists() else ' (not there yet: no glosses)'}\nCtrl+C to stop.")

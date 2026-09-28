@@ -14,6 +14,7 @@
   --accent:#4F5BD5; --accent-2:#3E48B8; --accent-soft:#EEF0FC; --accent-line:#C9CEF5;
   --ok:#1E7F55; --ok-soft:#E6F4EC; --bad:#BF3B34; --bad-soft:#FBECEA; --warn:#A8670E; --warn-soft:#FBF1E0;
   --dig:#2C6FB7; --dig-soft:#E8F1FB;
+  --agent:#0E7C86; --agent-soft:#E2F3F4; --agent-line:#9FD3D8;
   --sans:"Segoe UI Variable Text","Segoe UI Variable","Segoe UI",Inter,system-ui,-apple-system,sans-serif;
   --display:"Segoe UI Variable Display","Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif;
   --mono:"Cascadia Code","Cascadia Mono",Consolas,ui-monospace,monospace;
@@ -54,7 +55,8 @@ kbd{font:600 11px/1 var(--sans);border:1px solid var(--line-2);border-bottom-wid
 .link:hover{text-decoration:underline}
 
 /* app frame */
-.app{display:grid;grid-template-rows:56px minmax(0,1fr);height:100vh}
+.app{display:grid;grid-template-rows:56px auto minmax(0,1fr);height:100vh}
+.app>.top{grid-row:1} .app>.viewbanner{grid-row:2} .app>.body{grid-row:3}
 .top{display:flex;align-items:center;gap:24px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:650;font-size:15px;letter-spacing:-.01em}
 .brand small{font-weight:500;color:var(--ink-3);font-size:13px}
@@ -70,6 +72,14 @@ kbd{font:600 11px/1 var(--sans);border:1px solid var(--line-2);border-bottom-wid
 .savepill .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
 .savepill.dirty .dot,.savepill.saving .dot{background:var(--warn)}
 .savepill.bad{background:var(--bad-soft);color:var(--bad)} .savepill.bad .dot{background:var(--bad)}
+.savepill.ro{background:var(--agent-soft);color:var(--agent)} .savepill.ro .dot{background:var(--agent)}
+/* Mine | Agent's: the agent's view is read-only and tinted so the two cannot be confused */
+#viewtog{margin-left:auto} #viewtog+.topright{margin-left:0}
+.seg.view button.on.agent{background:var(--agent)}
+.viewbanner{display:flex;align-items:center;gap:12px;padding:8px 20px;background:var(--agent-soft);color:#0A5A61;border-bottom:1px solid var(--agent-line);font-size:13px;font-weight:600}
+.viewbanner:empty{display:none}
+.viewbanner .small{font-weight:400;color:#2F6F75;font-family:var(--mono);font-size:11.5px}
+body.ro .top{box-shadow:inset 0 4px 0 var(--agent)}
 
 .body{display:grid;grid-template-columns:minmax(0,1fr);min-height:0}
 .body.with-panel{grid-template-columns:minmax(0,1fr) 540px}
@@ -392,8 +402,10 @@ details.framing .inner{padding:0 0 14px}
   <header class="top">
     <div class="brand">Archinity <small>Working surface</small></div>
     <nav class="tabs" id="tabs"></nav>
+    <div id="viewtog"></div>
     <div class="topright" id="topright"></div>
   </header>
+  <div class="viewbanner" id="viewbanner"></div>
   <div class="body" id="body">
     <main class="main" id="main"><div class="page"><p class="muted">Loading the inventory and the state file…</p></div></main>
     <aside class="panel" id="panel" hidden></aside>
@@ -744,7 +756,18 @@ const Surface = (() => {
 /* ================= Page ================= */
 let IX = null, S = null, LOAD = "loading";
 let ETAG = null, SAVE = "saved", saving = false, again = false, saveTimer = null;
-let PATHS = { inventory: "", state: "" }, LOAD_WARNINGS = [];
+let PATHS = { inventory: "", state: "", agent: "" }, LOAD_WARNINGS = [];
+/* Two views. "mine" is Conrad's state, edited and saved. "agent" is the agent's assessment, read-only.
+   While the agent's view shows, S is the agent's state and Conrad's waits in MINE_S; saving only ever writes Conrad's. */
+let VIEW = "mine", MINE_S = null, MINE_OPEN = null, AGENT = { status: "unloaded" }, switching = false;
+const RO = () => VIEW === "agent";
+const mineState = () => RO() ? MINE_S : S;
+/* Every control that edits. In the agent's view they are hidden (the style below) and refused (the click guard). */
+const EDIT_ACTS = ["undo", "backup", "startAdd", "addMenu", "linkCap", "linkNeed", "moveNeed", "flag", "flagKind", "flagSave", "noOwner",
+  "unlink", "unlinkAny", "strike", "unstrike", "reasonSave", "clearNoOwner", "panelRename", "toggleSession", "reorder", "askDelete",
+  "deleteNeed", "decMode", "select", "setOpen", "clearDec", "rnState", "rnSave", "rnClear", "fuToggle", "fuDelete", "popPick",
+  "download", "copy", "checkImport", "askImport", "doImport"];
+document.head.insertAdjacentHTML("beforeend", `<style>${EDIT_ACTS.map(a => `body.ro [data-act="${a}"]`).join(",")}{display:none!important}</style>`);
 const UNDO = [];
 const SPEC = new Map();   // "path#anchor" -> {loading} | {data} | {error}
 const UI = {
@@ -792,10 +815,10 @@ function toast(msg, kind, undo) {
 }
 
 /* ---------- persistence: the repo file is the state; every edit PUTs the whole of it ---------- */
-const stateText = () => JSON.stringify(Surface.exportObject(S, new Date().toISOString()), null, 2) + "\n";
-function scheduleSave() { SAVE = "dirty"; renderTop(); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 250); }
+const stateText = () => JSON.stringify(Surface.exportObject(mineState(), new Date().toISOString()), null, 2) + "\n";
+function scheduleSave() { if (RO()) return; SAVE = "dirty"; renderTop(); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 250); }
 async function saveNow() {
-  if (!S) return;
+  if (!mineState()) return;
   if (saving) { again = true; return; }
   saving = true; SAVE = "saving"; renderTop();
   try {
@@ -809,6 +832,7 @@ async function saveNow() {
 window.addEventListener("beforeunload", (e) => { if (SAVE === "dirty" || SAVE === "saving" || SAVE === "error") { e.preventDefault(); e.returnValue = ""; } });
 
 function dispatch(action, quiet) {
+  if (RO()) { toast("The agent's assessment is read-only. Switch to Mine to edit.", "warn"); return false; }
   const r = Surface.apply(S || Surface.empty(IX), IX, action);
   if (r.error) { toast(r.error, "err"); return false; }
   if (S) { UNDO.push(S); if (UNDO.length > 80) UNDO.shift(); }
@@ -819,6 +843,7 @@ function dispatch(action, quiet) {
   return true;
 }
 function undo() {
+  if (RO()) return;
   if (!UNDO.length) { toast("Nothing to undo."); return; }
   S = UNDO.pop(); closePop(); scheduleSave(); render(); toast("Undone.");
 }
@@ -844,10 +869,55 @@ async function load() {
     if (!LS.get("open")) { UI.open.add("n|" + rt.id); S.needs.forEach(n => UI.open.add("n|" + n.id)); }
     UI.open.add("n|" + rt.id);
     render();
+    if (LS.get("view") === "agent") setView("agent");
   } catch (e) {
     LOAD = "failed"; renderTop();
     $("main").innerHTML = `<div class="page"><h1>Cannot reach the surface server</h1><p class="lede">Start it from the repo root with <code>python tools/surface_server.py</code> (or double-click <code>tools/surface.cmd</code>), then reload. (${esc(e.message)})</p></div>`;
   }
+}
+
+/* ---------- the two views ---------- */
+async function flushSave() {
+  clearTimeout(saveTimer);
+  if (SAVE === "dirty") await saveNow();
+  while (saving) await new Promise(r => setTimeout(r, 25));
+}
+async function loadAgent() {
+  try {
+    const r = await fetch("/api/agent-state", { cache: "no-store" }); PATHS.agent = r.headers.get("X-State-Path") || PATHS.agent;
+    if (r.status === 404) return { status: "missing" };
+    if (!r.ok) return { status: "error", errors: ["HTTP " + r.status] };
+    const x = Surface.importObject(IX, await r.json());
+    if (x.errors.length) return { status: "error", errors: x.errors };
+    if (!x.state.needs.length) return { status: "error", errors: ["It has no needs, so there is no tree to show."] };
+    return { status: "ready", state: x.state, warnings: x.warnings };
+  } catch (e) { return { status: "error", errors: [e.message] }; }
+}
+async function setView(v) {
+  if (LOAD !== "ready" || switching || (v === "mine" && !RO())) return;
+  switching = true;
+  try {
+    if (!RO() && document.activeElement && document.activeElement.blur) document.activeElement.blur();   // commits a half-typed field
+    await flushSave();                                     // an edit pending now is written to Mine before anything swaps
+    const next = v === "agent" ? await loadAgent() : null; // re-read on every switch, so a fresh assessment shows
+    closePop(); UI.modal = null; renderModal();
+    UI.sel = null; UI.back = []; UI.adding = null; UI.renaming = null; UI.decMode = null; UI.confirmDelete = false; UI.rnDraft = {};
+    if (v === "agent") {
+      if (!RO()) { MINE_S = S; MINE_OPEN = UI.open; }
+      AGENT = next; VIEW = "agent"; S = next.state || null;
+      UI.open = new Set(S ? S.needs.map(n => "n|" + n.id) : []);
+    } else {
+      VIEW = "mine"; S = MINE_S; MINE_S = null; UI.open = MINE_OPEN || UI.open; MINE_OPEN = null;
+    }
+    LS.set("view", VIEW);
+    document.body.classList.toggle("ro", RO());
+    UI._railReveal = true; render(); $("main").scrollTop = 0;
+  } finally { switching = false; }
+}
+const viewWarnings = () => RO() ? (AGENT.warnings || []) : LOAD_WARNINGS;
+function agentEmpty() {
+  if (AGENT.status === "error") return `<div class="page"><h1>The agent's assessment does not load</h1><ul>${(AGENT.errors || []).map(e => `<li>${esc(e)}</li>`).join("")}</ul><p class="lede">Nothing was changed. The file is <code>${esc(PATHS.agent)}</code>; switch to it again once it is fixed.</p></div>`;
+  return `<div class="page"><div class="empty" style="margin-top:24px">No agent assessment yet. It's written by the agent's-tree ticket to <code>docs/data/working-surface.agent.json</code>.</div></div>`;
 }
 
 /* ---------- derived reads (cached per render) ---------- */
@@ -941,11 +1011,14 @@ function flagChips(r, noGroup) {
 }
 
 /* ---------- render ---------- */
+/* In the agent's view its notes and descriptions still show, but cannot be typed into. */
+function lockInputs() { if (RO()) document.querySelectorAll("#main textarea, #panel textarea, #main input:not([type=search]), #panel input:not([type=search])").forEach(x => { x.disabled = true; }); }
 function render() {
   C = null;
   renderTop();
   if (LOAD !== "ready") return;
-  renderMain(); renderPanel();
+  if (RO() && !S) { $("panel").hidden = true; $("body").classList.remove("with-panel"); $("main").innerHTML = agentEmpty(); return; }
+  renderMain(); renderPanel(); lockInputs();
   if (UI.flashKey) {
     const key = UI.flashKey; UI.flashKey = null;
     requestAnimationFrame(() => {
@@ -956,7 +1029,10 @@ function render() {
 }
 
 function renderTop() {
-  if (!IX || !S) { $("tabs").innerHTML = ""; $("topright").innerHTML = ""; return; }
+  $("viewtog").innerHTML = LOAD === "ready" ? `<div class="seg view" role="group" aria-label="Whose tree"><button class="${RO() ? "" : "on"}" data-act="view" data-v="mine" ${tip("Your tree, " + PATHS.state + ". Every edit saves as you go.")}>Mine</button><button class="agent ${RO() ? "on" : ""}" data-act="view" data-v="agent" ${tip("The agent's assessment, " + (PATHS.agent || "docs/data/working-surface.agent.json") + ". Read-only; re-read each time you switch to it.")}>Agent's</button></div>` : "";
+  $("viewbanner").innerHTML = RO() ? `<span>Agent's assessment — read-only. Your tree is under Mine.</span><span class="small">${esc(PATHS.agent)}</span>` : "";
+  const roPill = `<span class="savepill ro" ${tip("Nothing in this view is saved. Your own file is untouched.")}><span class="dot"></span>Read-only</span>`;
+  if (!IX || !S) { $("tabs").innerHTML = ""; $("topright").innerHTML = RO() && LOAD === "ready" ? roPill : ""; return; }
   const o = Surface.orphans(S, IX);
   const conf = Surface.conflicts(S, IX).filter(c => c.kind === "conflict").length;
   const fu = (S.followups || []).filter(f => f.status === "open").length;
@@ -970,6 +1046,7 @@ function renderTop() {
   $("topright").innerHTML = `<span class="savepill ${lab[0]}" id="saveState" data-state="${SAVE}" ${tip(lab[2])}><span class="dot"></span>${lab[1]}</span>
     <button class="btn ghost sm" data-act="undo" ${tip("Undo the last edit (Ctrl+Z).")}>Undo</button>
     <button class="btn sm" data-act="backup" ${tip("Download the state as a file, or restore it from one.")}>Backup</button>`;
+  if (RO()) $("topright").innerHTML = roPill;
 }
 
 function renderMain() {
@@ -977,7 +1054,8 @@ function renderMain() {
   const keep = UI._lastTab === UI.tab ? { top: m.scrollTop, left: m.scrollLeft } : null;
   const rl = m.querySelector(".raillist"), cp = $("cpage");
   const keepCaps = UI._lastTab === UI.tab && rl ? { rail: rl.scrollTop, page: cp ? cp.scrollTop : 0 } : null;
-  const warn = LOAD_WARNINGS.length ? `<div class="banner"><b>${plural(LOAD_WARNINGS.length, "warning")} loading the state file.</b> ${LOAD_WARNINGS.slice(0, 4).map(esc).join(" · ")} <button class="link" data-act="dismissWarn">Dismiss</button></div>` : "";
+  const W = viewWarnings();
+  const warn = W.length ? `<div class="banner"><b>${plural(W.length, "warning")} loading ${RO() ? "the agent's assessment" : "the state file"}.</b> ${W.slice(0, 4).map(esc).join(" · ")} <button class="link" data-act="dismissWarn">Dismiss</button></div>` : "";
   m.innerHTML = warn + ({ tree: viewTree, caps: viewCaps, conflicts: viewConflicts, followups: viewFollowups }[UI.tab] || viewTree)();
   if (keep) { m.scrollTop = keep.top; m.scrollLeft = keep.left; }
   if (UI.tab === "caps") {
@@ -995,7 +1073,7 @@ function renderMain() {
 
 /* ================= Tree ================= */
 const isOpen = (k) => UI.open.has(k);
-function setOpen(k, v) { if (v) UI.open.add(k); else UI.open.delete(k); LS.set("open", [...UI.open]); }
+function setOpen(k, v) { if (v) UI.open.add(k); else UI.open.delete(k); if (!RO()) LS.set("open", [...UI.open]); }
 const selIs = (type, id, need) => UI.sel && UI.sel.type === type && UI.sel.id === id && (need === undefined || UI.sel.need === need);
 
 function viewTree() {
@@ -1295,7 +1373,7 @@ function routeCompare(cap, routes) {
 function decisionSection(id, routes, tags, own) {
   const dec = Surface.decisionOf(S, id);
   const surv = routes.filter(r => !Surface.isStruck(S, r.id));
-  const mode = UI.decMode || (dec ? dec.state : null);
+  const mode = RO() ? null : UI.decMode || (dec ? dec.state : null);   // the agent's view shows the decision, never the form
   const lbl = (rid) => esc(routeLabel(IX.routes.get(rid) || { id: rid }));
   const now = dec ? (dec.state === "selected"
       ? `<div class="box"><span class="chip ok">Selected</span> <b>${dec.routes.map(lbl).join(" + ")}</b> · decided in <b>${esc(dec.decided_by)}</b>${dec.routes.length > 1 && !Surface.allCompose(IX, dec.routes) ? ` <span class="chip warn">the card does not say these combine</span>` : ""}${dec.known ? `<div class="small" style="margin-top:6px">${esc(dec.known)}</div>` : ""}</div>`
@@ -1864,17 +1942,19 @@ document.addEventListener("click", async (e) => {
   if (el.disabled) return;
   const act = el.dataset.act, d = el.dataset;
   if (el.tagName === "A") e.preventDefault();
+  if (RO() && EDIT_ACTS.includes(act)) return;   // the agent's view has no edit path, keyboard-triggered clicks included
   switch (act) {
+    case "view": if (e.detail === 0) setView(d.v); break;   // keyboard; the mouse is handled on mousedown below
     case "tab": switchTab(d.v); break;
     case "undo": undo(); break;
-    case "dismissWarn": LOAD_WARNINGS = []; render(); break;
+    case "dismissWarn": if (RO()) AGENT.warnings = []; else LOAD_WARNINGS = []; render(); break;
     case "backup": UI.modal = "open"; renderModal(); break;
     case "closeModal": UI.modal = null; renderModal(); break;
     case "modalBg": if (e.target === el) { UI.modal = null; renderModal(); } break;
     /* tree */
     case "toggle": e.stopPropagation(); setOpen(d.key, !isOpen(d.key)); render(); break;
     case "expandAll": S.needs.forEach(n => setOpen("n|" + n.id, true)); S.tags.forEach(t => setOpen(`c|${t.need}|${t.capability}`, true)); render(); break;
-    case "collapseAll": { UI.open = new Set(["n|" + Surface.root(S).id]); LS.set("open", [...UI.open]); render(); break; }
+    case "collapseAll": { UI.open = new Set(["n|" + Surface.root(S).id]); if (!RO()) LS.set("open", [...UI.open]); render(); break; }
     case "selNeed": {
       if (e.target.closest("input")) break;
       const k = "n|" + d.id, was = selIs("need", d.id);
@@ -1960,7 +2040,15 @@ document.addEventListener("click", async (e) => {
   }
 });
 
+/* The view toggle acts on mousedown: committing a half-typed field re-renders the header, which would
+   swallow the click. preventDefault keeps focus, and setView blurs (so commits) the field itself. */
+document.addEventListener("mousedown", (e) => {
+  const el = e.target.closest && e.target.closest("[data-act=view]"); if (!el || e.button !== 0) return;
+  e.preventDefault(); setView(el.dataset.v);
+});
+
 document.addEventListener("dblclick", (e) => {
+  if (RO()) return;
   const el = e.target.closest("[data-dbl=rename]"); if (!el) return;
   UI.renaming = el.dataset.id; renderMain(); const f = $("rename-" + el.dataset.id); if (f) { f.focus(); f.select(); }
 });

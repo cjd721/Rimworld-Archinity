@@ -119,3 +119,6 @@ so its IDs match it. `GET /api/doc?path=docs/…md&anchor=slug` serves one markd
 read-only, from under `docs/` only; the page uses it to render spec sections in its panel.
 `GET /api/glosses` serves `docs/data/capability-glosses.json` (override with `--glosses`); the page
 leads with each gloss title and falls back to the card's wording when the file or an entry is missing.
+`GET /api/agent-state` serves the agent's assessment, `docs/data/working-surface.agent.json`
+(override with `--agent-state`), read-only: a PUT to it is refused, and a missing file means no
+assessment yet. The page's **Mine | Agent's** toggle shows it with every edit control off.
